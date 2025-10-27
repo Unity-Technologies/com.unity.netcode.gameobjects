@@ -115,7 +115,7 @@ def verifyReleaseConditions(config: ReleaseConfig):
         print(f"Yamato Trigger Type: {trigger_type}")
         is_manual = trigger_type in {"Manual", "AdHoc"}
         
-        if if not is_manual and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
+        if not is_manual and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
             error_messages.append(f"Condition not met: Today is not the scheduled release day. It should be weekday: {config.release_weekday}, every {config.release_week_cycle} weeks starting from {config.anchor_date}.")
 
         if is_changelog_empty(config.changelog_path, exceptions):
