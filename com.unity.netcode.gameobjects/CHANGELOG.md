@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.7.0] - 2025-10-27
 
 ### Added
 
@@ -42,12 +42,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 - Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.6.0] - 2025-10-12
 
