@@ -785,79 +785,14 @@ namespace Unity.Netcode.Transports.UTP
             SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
 
-        internal struct Override<T>
-        {
-            private T m_Value;
-            public bool Overidden { get; private set; }
-            internal T Value
-            {
-                get { return Overidden ? m_Value : default(T); }
-                set { Overidden = true; m_Value = value; }
-            }
-        };
-
-        internal Override<ushort> PortOverride;
-
-        // Command line options
-        private const string k_OverridePortArg = "-port";
-
-        private string GetArg(string[] commandLineArgs, string arg)
-        {
-            var argIndex = Array.IndexOf(commandLineArgs, arg);
-            if (argIndex >= 0 && argIndex < commandLineArgs.Length - 1)
-            {
-                return commandLineArgs[argIndex + 1];
-            }
-
-            return null;
-        }
-
-        private void ParseArg<T>(string arg, ref Override<T> value)
-        {
-            if (GetArg(Environment.GetCommandLineArgs(), arg) is string argValue)
-            {
-                value.Value = (T)Convert.ChangeType(argValue, typeof(T));
-            }
-        }
-
-        private void ParseCommandLineOptions()
-        {
-#if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
-
-            Debug.Log("This is happening 1");
-            if ( UnityEngine.DedicatedServer.Arguments.Port != null)
-            {
-                Debug.Log("This is happening 2");
-                PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
-            }
-#else
-            ParseArg(k_OverridePortArg, ref PortOverride);
-#endif
-        }
-
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
         /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name)</param>
         /// <param name="port">The remote port</param>
         /// <param name="listenAddress">The local listen address</param>
-        /// <param name="overrideCommandLineArgs">Should override port value</param>
-        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool overrideCommandLineArgs = false)
+        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
-            if (overrideCommandLineArgs)
-            {
-                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
-                {
-                    Debug.Log($"Already has command line option set. Using connection data set to {ipv4Address}:{port}");
-                }
-
-                ConnectionData.Port = port;
-            }
-            else
-            {
-                ParseCommandLineOptions();
-            }
-
             ConnectionData = new ConnectionAddressData
             {
                 Address = ipv4Address,
@@ -1626,9 +1561,9 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkManager = networkManager;
 
-            if (m_NetworkManager && PortOverride.Overidden)
+            if (m_NetworkManager && m_NetworkManager.PortOverride.Overidden)
             {
-                ConnectionData.Port = PortOverride.Value;
+                ConnectionData.Port = m_NetworkManager.PortOverride.Value;
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
