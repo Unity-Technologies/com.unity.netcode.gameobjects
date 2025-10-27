@@ -28,6 +28,7 @@ def get_yamato_trigger_type():
     In other words, we can check if the job was triggered manually, by a schedule, or by a PR, etc.
     """
     trigger_type = os.environ.get('YAMATO_TRIGGER_TYPE', 'unknown')
+    
     return trigger_type
 
 
@@ -84,7 +85,11 @@ def verifyReleaseConditions(config: ReleaseConfig):
     error_messages = []
 
     try:
-        if get_yamato_trigger_type() != "Manual" and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
+        trigger_type = get_yamato_trigger_type()
+        print(f"Yamato Trigger Type: {trigger_type}")
+        is_manual = trigger_type in {"Manual", "AdHoc"}
+        
+        if if not is_manual and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
             error_messages.append(f"Condition not met: Today is not the scheduled release day. It should be weekday: {config.release_weekday}, every {config.release_week_cycle} weeks starting from {config.anchor_date}.")
 
         if is_changelog_empty(config.changelog_path):
@@ -98,7 +103,7 @@ def verifyReleaseConditions(config: ReleaseConfig):
             for i, msg in enumerate(error_messages, 1):
                 print(f"{i}. {msg}")
             print("\nJob will not run. Exiting.")
-            sys.exit(1)
+            sys.exit(0)
 
     except Exception as e:
         print("\n--- ERROR: Release Verification failed ---", file=sys.stderr)
