@@ -88,9 +88,9 @@ def regenerate_wrench():
     print("\nRegenerating CI files...")
     script_path = ""
     if platform.system() == "Windows":
-        script_path = os.path.join('Tools', 'CI', 'regenerate-ci.bat')
+        script_path = os.path.join('Tools', 'CI', 'regenerate.bat')
     else: # macOS and Linux
-        script_path = os.path.join('Tools', 'CI', 'regenerate-ci.sh')
+        script_path = os.path.join('Tools', 'CI', 'regenerate.sh')
 
     if not os.path.exists(script_path):
         print(f"Error: Regeneration script not found at '{script_path}'.")
