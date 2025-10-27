@@ -1,6 +1,12 @@
 using System;
 using Unity.Collections;
+
+// The following gets complained on by standards check that is
+// likely not analyzing extension method usage deeply enough and thinks the using directive is unused.
+// The directive is required for GetUnsafePtr() to be available.
+#pragma warning disable IDE0005
 using Unity.Collections.LowLevel.Unsafe;
+#pragma warning restore IDE0005
 
 namespace Unity.Netcode
 {

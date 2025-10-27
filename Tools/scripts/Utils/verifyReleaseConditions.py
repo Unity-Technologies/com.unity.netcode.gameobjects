@@ -4,6 +4,7 @@ Determines if Release conditions are met.
 The script will check the following conditions:
 1. **Is today a release day?**
     - The script checks if today is a specified in ReleaseConfig weekday that falls on the release cycle of the team.
+    - Note that if the job is triggered manually, this condition will be bypassed.
 2. **Is the [Unreleased] section of the CHANGELOG.md not empty?**
     - The script checks if the [Unreleased] section in the CHANGELOG.md contains meaningful entries.
 3. **Does the release branch already exist?**
@@ -20,6 +21,15 @@ sys.path.insert(0, PARENT_DIR)
 import datetime
 import re
 from release_config import ReleaseConfig
+
+def get_yamato_trigger_type():
+    """
+    Retrieves the trigger type for the current Yamato job from environment variables.
+    In other words, we can check if the job was triggered manually, by a schedule, or by a PR, etc.
+    """
+    trigger_type = os.environ.get('YAMATO_TRIGGER_TYPE', 'unknown')
+    return trigger_type
+
 
 def is_release_date(weekday, release_week_cycle, anchor_date):
     """
@@ -100,7 +110,7 @@ def verifyReleaseConditions(config: ReleaseConfig):
     ]
 
     try:
-        if not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
+        if get_yamato_trigger_type() != "Manual" and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
             error_messages.append(f"Condition not met: Today is not the scheduled release day. It should be weekday: {config.release_weekday}, every {config.release_week_cycle} weeks starting from {config.anchor_date}.")
 
         if is_changelog_empty(config.changelog_path, exceptions):
