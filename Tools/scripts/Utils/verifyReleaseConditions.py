@@ -26,8 +26,9 @@ def get_yamato_trigger_type():
     """
     Retrieves the trigger type for the current Yamato job from environment variables.
     In other words, we can check if the job was triggered manually, by a schedule, or by a PR, etc.
+    This value is set to Recurring when triggered by automation
     """
-    trigger_type = os.environ.get('YAMATO_TRIGGER_TYPE', 'unknown')
+    trigger_type = os.environ.get('YAMATO_TRIGGER_TYPE', 'Manual')
     
     return trigger_type
 
@@ -112,7 +113,6 @@ def verifyReleaseConditions(config: ReleaseConfig):
 
     try:
         trigger_type = get_yamato_trigger_type()
-        print(f"Yamato Trigger Type: {trigger_type}")
         is_manual = trigger_type in {"Manual", "AdHoc"}
         
         if not is_manual and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
