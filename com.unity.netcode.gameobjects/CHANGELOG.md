@@ -10,6 +10,29 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.7.0] - 2025-10-27
+
+### Added
+
 - `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
 - Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
@@ -24,6 +47,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
 - Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 - The first session owner no longer sends two synchronization messages to the service. (#3563)
+- Updated transport dependency of the package to 2.6.0 (#3736)
 
 ### Deprecated
 
@@ -32,6 +56,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
+- Removed usage of UNITY_UNET_PRESENT define (#3736)
+
 ### Fixed
 
 - Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
@@ -39,12 +65,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 - Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.6.0] - 2025-10-12
 
