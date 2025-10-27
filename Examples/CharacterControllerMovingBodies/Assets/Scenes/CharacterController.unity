@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -218,7 +219,7 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -260,6 +261,10 @@ PrefabInstance:
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3246499739
+      objectReference: {fileID: 0}
+    - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
@@ -349,6 +354,10 @@ PrefabInstance:
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 4013775021
+      objectReference: {fileID: 0}
+    - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
@@ -489,7 +498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4d8d44c602b97b47ba488a40c66267c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkManagerExpanded: 0
+  NetworkManagerExpanded: 1
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 455857871}
@@ -520,10 +529,13 @@ MonoBehaviour:
   RunInBackground: 1
   LogLevel: 1
   ExtendedNetworkManagerExpanded: 1
-  ConnectionType: 1
   TargetFrameRate: 100
   EnableVSync: 0
-  m_OriginalVSyncCount: 1
+  UseDAHost: 0
+  AuthenticateWithServices: 1
+  UseRelayConnection: 1
+  m_OriginalVSyncCount: 0
+  m_ServicesRegistered: 1
 --- !u!1 &479361661
 GameObject:
   m_ObjectHideFlags: 0
@@ -860,6 +872,10 @@ PrefabInstance:
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1449196534
+      objectReference: {fileID: 0}
+    - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
@@ -1239,6 +1255,10 @@ PrefabInstance:
       value: 4258258070
       objectReference: {fileID: 0}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
       value: 1084435762
       objectReference: {fileID: 0}
@@ -1357,6 +1377,10 @@ PrefabInstance:
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1259759422
+      objectReference: {fileID: 0}
+    - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash

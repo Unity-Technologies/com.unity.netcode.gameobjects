@@ -48,7 +48,8 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
     public override void OnInspectorGUI()
     {
         var moverScriptNoRigidbody = target as MoverScriptNoRigidbody;
-        void SetExpanded(bool expanded) { moverScriptNoRigidbody.MoverScriptNoRigidbodyExpanded = expanded; };
+        void SetExpanded(bool expanded) { moverScriptNoRigidbody.MoverScriptNoRigidbodyExpanded = expanded; }
+        ;
         DrawFoldOutGroup<MoverScriptNoRigidbody>(moverScriptNoRigidbody.GetType(), DisplayerMoverScriptNoRigidbodyProperties, moverScriptNoRigidbody.MoverScriptNoRigidbodyExpanded, SetExpanded);
         base.OnInspectorGUI();
     }

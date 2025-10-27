@@ -3,112 +3,115 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
+using Unity.Services.Relay.Models;
+using Unity.Services.Relay;
 using SessionState = Unity.Services.Multiplayer.SessionState;
 
+
+#region ExtendedNetworkManagerEditor
 #if UNITY_EDITOR
 using Unity.Netcode.Editor;
 using UnityEditor;
 
 /// <summary>
-/// The custom editor for the <see cref="ExtendedNetworkManager"/> component.
+/// The custom editor for the <see cref="NetworkManagerBootstrapper"/> component.
 /// </summary>
 [CustomEditor(typeof(ExtendedNetworkManager), true)]
 [CanEditMultipleObjects]
 public class ExtendedNetworkManagerEditor : NetworkManagerEditor
 {
-    private SerializedProperty m_ConnectionType;
     private SerializedProperty m_TargetFrameRate;
     private SerializedProperty m_EnableVSync;
+    private SerializedProperty m_UseDAHost;
+    private SerializedProperty m_AuthenticateWithServices;
+    private SerializedProperty m_UseRelayConnection;
 
     public override void OnEnable()
     {
-        m_ConnectionType = serializedObject.FindProperty(nameof(ExtendedNetworkManager.ConnectionType));
         m_TargetFrameRate = serializedObject.FindProperty(nameof(ExtendedNetworkManager.TargetFrameRate));
         m_EnableVSync = serializedObject.FindProperty(nameof(ExtendedNetworkManager.EnableVSync));
+        m_UseDAHost = serializedObject.FindProperty(nameof(ExtendedNetworkManager.UseDAHost));
+        m_AuthenticateWithServices = serializedObject.FindProperty(nameof(ExtendedNetworkManager.AuthenticateWithServices));
+        m_UseRelayConnection = serializedObject.FindProperty(nameof(ExtendedNetworkManager.UseRelayConnection));
         base.OnEnable();
     }
 
     private void DisplayExtendedNetworkManagerProperties()
     {
-        EditorGUILayout.PropertyField(m_ConnectionType);
         EditorGUILayout.PropertyField(m_TargetFrameRate);
         EditorGUILayout.PropertyField(m_EnableVSync);
+        EditorGUILayout.PropertyField(m_UseDAHost);
+        EditorGUILayout.PropertyField(m_AuthenticateWithServices);
+        var extendedNetworkManager = target as ExtendedNetworkManager;
+        if (extendedNetworkManager.AuthenticateWithServices)
+        {
+            EditorGUILayout.PropertyField(m_UseRelayConnection);
+        }
+        else
+        {
+
+            extendedNetworkManager.UseRelayConnection = false;
+        }
     }
 
     public override void OnInspectorGUI()
     {
         var extendedNetworkManager = target as ExtendedNetworkManager;
-        // Handle switching the appropriate connection type based on the network topology
-        // Host connectio type can be set for client-server and distributed authority
-        // Live Service can only be used with distributed authority
-        // Client-server can only be used with a host connection type
-        var connectionTypes = Enum.GetValues(typeof(ExtendedNetworkManager.ConnectionTypes));
-        var connectionType = ExtendedNetworkManager.ConnectionTypes.LiveService;
-        if (m_ConnectionType.enumValueIndex > 0 && m_ConnectionType.enumValueIndex < connectionTypes.Length)
-        {
-            connectionType = (ExtendedNetworkManager.ConnectionTypes)connectionTypes.GetValue(m_ConnectionType.enumValueIndex);
-        }
-        void SetExpanded(bool expanded) { extendedNetworkManager.ExtendedNetworkManagerExpanded = expanded; };
+        void SetExpanded(bool expanded) { extendedNetworkManager.ExtendedNetworkManagerExpanded = expanded; }
+        ;
         DrawFoldOutGroup<ExtendedNetworkManager>(extendedNetworkManager.GetType(), DisplayExtendedNetworkManagerProperties, extendedNetworkManager.ExtendedNetworkManagerExpanded, SetExpanded);
-
-        var updatedConnectedType = (ExtendedNetworkManager.ConnectionTypes)connectionTypes.GetValue(m_ConnectionType.enumValueIndex);
-        if (connectionType == updatedConnectedType && updatedConnectedType == ExtendedNetworkManager.ConnectionTypes.LiveService && extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
-        {
-            extendedNetworkManager.ConnectionType = ExtendedNetworkManager.ConnectionTypes.Host;
-        }
-        else if (connectionType == ExtendedNetworkManager.ConnectionTypes.Host && updatedConnectedType == ExtendedNetworkManager.ConnectionTypes.LiveService && extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
-        {
-            extendedNetworkManager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
-        }
         base.OnInspectorGUI();
     }
 }
 #endif
+#endregion
 
-
-
+/// <summary>
+/// An extended NetworkManager to handle the bootstrap loading process specific to a client-server
+/// topology where one might want to have local server-side scenes, local client-side scenes, and shared (synchronized) scenes.
+/// <see cref="SceneBootstrapLoader"/>
+/// </summary>
 public class ExtendedNetworkManager : NetworkManager
 {
+    #region Validation
 #if UNITY_EDITOR
     // Inspector view expand/collapse settings for this derived child class
     [HideInInspector]
     public bool ExtendedNetworkManagerExpanded;
-#endif
-
-    public static ExtendedNetworkManager Instance;
-
-    public enum ConnectionTypes
+    protected override void OnValidateComponent()
     {
-        LiveService,
-        Host,
+        m_OriginalVSyncCount = QualitySettings.vSyncCount;
+        CheckServiceStatus();
+        base.OnValidateComponent();
     }
-    public ConnectionTypes ConnectionType;
+
+    private void CheckServiceStatus()
+    {
+        m_ServicesRegistered = CloudProjectSettings.organizationName != string.Empty && CloudProjectSettings.organizationId != string.Empty;
+    }
+#endif
+    #endregion
+
+    #region Properties
+    public static ExtendedNetworkManager Instance;
 
     public int TargetFrameRate = 100;
     public bool EnableVSync = false;
+    public bool UseDAHost = true;
+    public bool AuthenticateWithServices = true;
+    public bool UseRelayConnection = true;
+
+    private Allocation m_Allocation;
+    private string m_RelayJoinCode;
 
     [HideInInspector]
     [SerializeField]
     private int m_OriginalVSyncCount;
-
-#if UNITY_EDITOR
-
-    protected override void OnValidateComponent()
-    {
-        m_OriginalVSyncCount = QualitySettings.vSyncCount;
-        base.OnValidateComponent();
-    }
-#endif
-
-    private ISession m_CurrentSession;
-
-    private string m_SessionName;
-    private string m_ProfileName;
-    private Task m_SessionTask;
 
     private enum ConnectionStates
     {
@@ -119,6 +122,17 @@ public class ExtendedNetworkManager : NetworkManager
 
     private ConnectionStates m_ConnectionState;
 
+    [SerializeField]
+    private bool m_ServicesRegistered;
+    private ISession m_CurrentSession;
+    private string m_SessionName;
+    private string m_ProfileName;
+    private Task m_SessionTask;
+    private SceneLoader m_SceneLoader;
+
+    #endregion
+
+    #region Initialization and Destroy
     public static string GetRandomString(int length)
     {
         var r = new System.Random();
@@ -133,9 +147,18 @@ public class ExtendedNetworkManager : NetworkManager
 
     private void Awake()
     {
+#if UNITY_EDITOR
+
+        if (!EditorApplication.isPlaying)
+        {
+            CheckServiceStatus();
+        }
+#endif
+
         Screen.SetResolution((int)(Screen.currentResolution.width * 0.40f), (int)(Screen.currentResolution.height * 0.40f), FullScreenMode.Windowed);
         SetFrameRate(TargetFrameRate, EnableVSync);
         SetSingleton();
+        m_SceneLoader = GetComponent<SceneLoader>();
     }
 
     private async void Start()
@@ -143,20 +166,34 @@ public class ExtendedNetworkManager : NetworkManager
         OnClientConnectedCallback += OnClientConnected;
         OnClientDisconnectCallback += OnClientDisconnect;
         OnConnectionEvent += OnClientConnectionEvent;
-        if (UnityServices.Instance != null && UnityServices.Instance.State != ServicesInitializationState.Initialized)
+
+        // Check to see if the project has been registered with an organization before trying to sign in
+        if (m_ServicesRegistered && AuthenticateWithServices)
         {
-            await UnityServices.InitializeAsync();
-        }
-        if (!AuthenticationService.Instance.IsSignedIn)
-        {
-            AuthenticationService.Instance.SignInFailed += SignInFailed;
-            AuthenticationService.Instance.SignedIn += SignedIn;
-            if (string.IsNullOrEmpty(m_ProfileName))
+            if (UnityServices.Instance != null && UnityServices.Instance.State != ServicesInitializationState.Initialized)
             {
-                m_ProfileName = GetRandomString(5);
+                await UnityServices.InitializeAsync();
             }
-            AuthenticationService.Instance.SwitchProfile(m_ProfileName);
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                AuthenticationService.Instance.SignInFailed += SignInFailed;
+                AuthenticationService.Instance.SignedIn += SignedIn;
+                if (string.IsNullOrEmpty(m_ProfileName))
+                {
+                    m_ProfileName = GetRandomString(5);
+                }
+                AuthenticationService.Instance.SwitchProfile(m_ProfileName);
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
+        }
+
+        // Handle bootstrap loading the main menu into main menu
+        // NOTE: A common issue is when you place the NetworkManager within the same "primary" scene to 
+        // load. Using the bootstrap approach, the 1st scene loaded is the bootstrap scene that 
+        // contains the NetworkManager and it is never reloaded for that application instance lifespan.
+        if (m_SceneLoader)
+        {
+            m_SceneLoader.LoadMainMenu();
         }
     }
 
@@ -165,6 +202,44 @@ public class ExtendedNetworkManager : NetworkManager
         OnClientConnectedCallback -= OnClientConnected;
         OnClientDisconnectCallback -= OnClientDisconnect;
         OnConnectionEvent -= OnClientConnectionEvent;
+    }
+    #endregion
+
+    #region Session and Connection Event Handling
+    /// <summary>
+    /// Server and Clients all invoke this method
+    /// </summary>
+    private void OnClientConnectionEvent(NetworkManager networkManager, ConnectionEventData eventData)
+    {
+        LogMessage($"Connection event {eventData.EventType} for Client-{eventData.ClientId}.");
+        if (eventData.ClientId != LocalClientId)
+        {
+            return;
+        }
+
+        switch (eventData.EventType)
+        {
+            case ConnectionEvent.ClientConnected:
+                {
+                    m_ConnectionState = ConnectionStates.Connected;
+                    break;
+                }
+            case ConnectionEvent.ClientDisconnected:
+                {
+                    m_ConnectionState = ConnectionStates.None;
+                    break;
+                }
+        }
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        LogMessage($"Connected event invoked for Client-{clientId}.");
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        LogMessage($"Disconnected event invoked for Client-{clientId}.");
     }
 
     private void SignedIn()
@@ -179,165 +254,29 @@ public class ExtendedNetworkManager : NetworkManager
         Debug.LogError($"Failed to sign in {m_ProfileName} anonymously: {error}");
     }
 
-    private void OnDrawLiveServiceGUI()
+    private void SessionStarted()
     {
-        m_SessionName = GUILayout.TextField(m_SessionName);
-
-        if (GUILayout.Button("Create or Connect To Session"))
+        OnClientStarted -= SessionStarted;
+        m_ConnectionState = IsServer && !IsHost ? ConnectionStates.Connected : ConnectionStates.Connecting;
+        if (IsServer)
         {
-            NetworkConfig.UseCMBService = true;
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            m_SessionTask = ConnectThroughLiveService();
-            m_ConnectionState = ConnectionStates.Connecting;
-            LogMessage($"Connecting to session {m_SessionName}...");
-        }
-    }
-
-    private void OnDrawDAHostGUI()
-    {
-        if (GUILayout.Button("Start Host"))
-        {
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            StartHost();
-        }
-
-        if (GUILayout.Button("Start Client"))
-        {
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            StartClient();
-        }
-    }
-
-    private void OnUpdateGUIDisconnected()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 300, 800));
-
-        GUILayout.Label("Session Name", GUILayout.Width(100));
-
-        var connectionType = ConnectionType;
-        if (NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer && connectionType != ConnectionTypes.Host)
-        {
-            connectionType = ConnectionTypes.Host;
-        }
-
-        switch (connectionType)
-        {
-            case ConnectionTypes.LiveService:
-                {
-                    OnDrawLiveServiceGUI();
-                    break;
-                }
-            case ConnectionTypes.Host:
-                {
-                    OnDrawDAHostGUI();
-                    break;
-                }
-        }
-
-        GUILayout.EndArea();
-
-        GUILayout.BeginArea(new Rect(10, Display.main.renderingHeight - 40, Display.main.renderingWidth - 10, 30));
-        var scenesPreloaded = new System.Text.StringBuilder();
-        scenesPreloaded.Append("Scenes Preloaded: ");
-        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
-        {
-            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
-            scenesPreloaded.Append($"[{scene.name}]");
-        }
-        GUILayout.Label(scenesPreloaded.ToString());
-        GUILayout.EndArea();
-    }
-
-    private void OnUpdateGUIConnected()
-    {
-        if (CMBServiceConnection)
-        {
-            GUILayout.BeginArea(new Rect(10, 10, 800, 800));
-            GUILayout.Label($"Session: {m_SessionName}");
-            GUILayout.EndArea();
+            LogMessage($"Server started session.");
         }
         else
         {
-            GUILayout.BeginArea(new Rect(10, 10, 800, 800));
-            if (DistributedAuthorityMode)
-            {
-                GUILayout.Label($"DAHosted Session");
-            }
-            else
-            {
-                GUILayout.Label($"Client-Server Session");
-            }
-
-            GUILayout.EndArea();
+            LogMessage($"Client connecting to session.");
         }
-
-        GUILayout.BeginArea(new Rect(Display.main.renderingWidth - 160, 10, 150, 80));
-
-        if (GUILayout.Button("Disconnect"))
+        if (DistributedAuthorityMode && CMBServiceConnection)
         {
-            if (m_CurrentSession != null && m_CurrentSession.State == SessionState.Connected)
-            {
-                m_CurrentSession.LeaveAsync();
-                m_CurrentSession = null;
-            }
-            else
-            {
-                Shutdown();
-            }
+            m_SceneLoader.DAClientStarted();
         }
-
-        GUILayout.EndArea();
     }
 
-    private void OnGUI()
+    private void SessionStopped(bool isHost)
     {
-        var yAxisOffset = 10;
-        switch (m_ConnectionState)
-        {
-            case ConnectionStates.None:
-                {
-                    yAxisOffset = 80;
-                    OnUpdateGUIDisconnected();
-                    break;
-                }
-            case ConnectionStates.Connected:
-                {
-                    yAxisOffset = 40;
-                    OnUpdateGUIConnected();
-                    break;
-                }
-        }
-
-        GUILayout.BeginArea(new Rect(10, yAxisOffset, 600, 800));
-        if (m_MessageLogs.Count > 0)
-        {
-            GUILayout.Label("-----------(Log)-----------");
-            // Display any messages logged to screen
-            foreach (var messageLog in m_MessageLogs)
-            {
-                GUILayout.Label(messageLog.Message);
-            }
-            GUILayout.Label("---------------------------");
-        }
-        GUILayout.EndArea();
-    }
-
-    private void ClientStarted()
-    {
-        OnClientStarted -= ClientStarted;
-        m_ConnectionState = ConnectionStates.Connected;
-        LogMessage($"Connected to session {m_SessionName}.");
-    }
-
-    private void ClientStopped(bool isHost)
-    {
-        OnClientStopped -= ClientStopped;
+        LogMessage($"NetworkManager has stopped.");
+        OnClientStopped -= SessionStopped;
         m_ConnectionState = ConnectionStates.None;
-        m_SessionTask = null;
-        m_CurrentSession = null;
     }
 
     private async Task<ISession> ConnectThroughLiveService()
@@ -360,8 +299,263 @@ public class ExtendedNetworkManager : NetworkManager
         }
         return null;
     }
+    #endregion
 
-    private void Update()
+    #region GUI Menu
+    public void StartOrConnectToDistributedAuthoritySession()
+    {
+        m_SessionTask = ConnectThroughLiveService();
+        m_ConnectionState = ConnectionStates.Connecting;
+        LogMessage($"Connecting to session {m_SessionName}...");
+    }
+
+    private void OnUpdateGUIDisconnected()
+    {
+        GUILayout.BeginArea(new Rect(10, 10, 300, 800));
+
+        if (NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+        {
+            if (!m_ServicesRegistered)
+            {
+                GUILayout.Label("Project-Settings:Services-General-Settings is not configured.");
+                GUILayout.Label("Distributed authority requires project to be registered with your organization's services account for authentication purposes.");
+            }
+            else
+            {
+                if (UseDAHost)
+                {
+                    if (GUILayout.Button("Start DAHost"))
+                    {
+                        OnServerStopped += SessionStopped;
+                        OnServerStarted += SessionStarted;
+                        StartHost();
+                    }
+                    else
+                    if (GUILayout.Button("Start DAClient"))
+                    {
+                        OnClientStopped += SessionStopped;
+                        OnClientStarted += SessionStarted;
+                        StartClient();
+                    }
+                }
+                else
+                {
+                    m_SessionName = GUILayout.TextField(m_SessionName);
+                    if (GUILayout.Button("Create or Connect To Session"))
+                    {
+                        NetworkConfig.UseCMBService = true;
+                        OnClientStopped += SessionStopped;
+                        OnClientStarted += SessionStarted;
+                        StartOrConnectToDistributedAuthoritySession();
+                    }
+                }
+            }
+        }
+        else
+        {
+            var startText = "Start";
+            if (UseRelayConnection)
+            {
+                startText += " Relay";
+                GUILayout.Label("Join Code:", GUILayout.Width(100));
+                m_RelayJoinCode = GUILayout.TextField(m_RelayJoinCode);
+            }
+            if (!UseRelayConnection && GUILayout.Button($"{startText} Server"))
+            {
+                OnServerStopped += SessionStopped;
+                OnServerStarted += SessionStarted;
+                StartServer();
+            }
+            else
+            if (GUILayout.Button($"{startText} Host"))
+            {
+                OnServerStopped += SessionStopped;
+                OnServerStarted += SessionStarted;
+                if (UseRelayConnection)
+                {
+                    StartHostWithRelay();
+                }
+                else
+                {
+                    StartHost();
+                }
+            }
+            else
+            if (GUILayout.Button($"{startText} Client"))
+            {
+                OnClientStopped += SessionStopped;
+                OnClientStarted += SessionStarted;
+                if (UseRelayConnection)
+                {
+                    StartClientWithRelay();
+                }
+                else
+                {
+                    StartClient();
+                }
+            }
+        }
+        GUILayout.EndArea();
+    }
+
+    private async void StartHostWithRelay(int maxConnections = 15)
+    {
+        m_ConnectionState = ConnectionStates.Connecting;
+        await UnityServices.InitializeAsync();
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        m_Allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
+        var unityTransport = NetworkConfig.NetworkTransport as UnityTransport;
+        unityTransport.UseEncryption = true;
+        var defaultEndPoint = (RelayServerEndpoint)null;
+        foreach (var endPoint in m_Allocation.ServerEndpoints)
+        {
+            if (endPoint.Secure && endPoint.Network == RelayServerEndpoint.NetworkOptions.Udp)
+            {
+                defaultEndPoint = endPoint;
+                break;
+            }
+        }
+        m_RelayJoinCode = await RelayService.Instance.GetJoinCodeAsync(m_Allocation.AllocationId);
+        unityTransport.SetRelayServerData(defaultEndPoint.Host, (ushort)defaultEndPoint.Port, m_Allocation.AllocationIdBytes, m_Allocation.Key, m_Allocation.ConnectionData, null, defaultEndPoint.Secure);
+        StartHost();
+
+    }
+
+    private async void StartClientWithRelay()
+    {
+        m_ConnectionState = ConnectionStates.Connecting;
+        await UnityServices.InitializeAsync();
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        var joinAllocation = await RelayService.Instance.JoinAllocationAsync(m_RelayJoinCode);
+        var defaultEndPoint = (RelayServerEndpoint)null;
+        foreach (var endPoint in joinAllocation.ServerEndpoints)
+        {
+            if (endPoint.Secure && endPoint.Network == RelayServerEndpoint.NetworkOptions.Udp)
+            {
+                defaultEndPoint = endPoint;
+                break;
+            }
+        }
+        //Populate the joining data
+        var unityTransport = NetworkConfig.NetworkTransport as UnityTransport;
+        unityTransport.UseEncryption = true;
+        unityTransport.SetClientRelayData(defaultEndPoint.Host, (ushort)defaultEndPoint.Port, joinAllocation.AllocationIdBytes, joinAllocation.Key, joinAllocation.ConnectionData, joinAllocation.HostConnectionData, defaultEndPoint.Secure);
+        StartClient();
+    }
+
+    private int OnUpdateGUIConnected(int yAxisOffset)
+    {
+        GUILayout.BeginArea(new Rect(10, 10, 800, 800));
+        if (CMBServiceConnection)
+        {
+            GUILayout.Label($"Distributed Authority Session: {m_SessionName}");
+            if (LocalClient.IsSessionOwner)
+            {
+                GUILayout.Label("[Session Owner]");
+                yAxisOffset += 20;
+            }
+        }
+        else
+        {
+            GUILayout.Label($"Client-Server Session");
+            if (UseRelayConnection && IsHost)
+            {
+                GUILayout.Label($"Join Code: {m_RelayJoinCode} (CTRL-C Copy)");
+                if (!string.IsNullOrEmpty(m_RelayJoinCode) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.C))
+                {
+                    GUIUtility.systemCopyBuffer = m_RelayJoinCode;
+                }
+            }
+        }
+        GUILayout.EndArea();
+
+        GUILayout.BeginArea(new Rect(Display.main.renderingWidth - 230, 10, 220, 300));
+        var endSessionText = IsServer && !DistributedAuthorityMode ? "Shutdown" : "Disconnect";
+        if (GUILayout.Button(endSessionText))
+        {
+            if (m_CurrentSession != null && m_CurrentSession.State == SessionState.Connected)
+            {
+                m_CurrentSession.LeaveAsync();
+                m_CurrentSession = null;
+            }
+            else
+            {
+                Shutdown();
+            }
+        }
+
+        if (m_SceneLoader && !m_SceneLoader.SceneLoadingInProgress)
+        {
+            GUILayout.Label($"Current Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+            if (IsSessionAuthority())
+            {
+                var buttonText = $"Load {m_SceneLoader.GetNextSceneNameToLoad()}";
+                if (GUILayout.Button(buttonText))
+                {
+                    m_SceneLoader.LoadNextScene();
+                }
+            }
+        }
+
+        GUILayout.EndArea();
+
+        return yAxisOffset;
+    }
+
+    private void OnGUI()
+    {
+        var yAxisOffset = 10;
+        switch (m_ConnectionState)
+        {
+            case ConnectionStates.None:
+                {
+                    yAxisOffset = 80;
+                    OnUpdateGUIDisconnected();
+                    break;
+                }
+            case ConnectionStates.Connected:
+                {
+                    if (UseRelayConnection && IsHost)
+                    {
+                        yAxisOffset = OnUpdateGUIConnected(64);
+                    }
+                    else
+                    {
+                        yAxisOffset = OnUpdateGUIConnected(40);
+                    }
+                    break;
+                }
+        }
+
+        GUILayout.BeginArea(new Rect(10, yAxisOffset, 800, 800));
+        if (m_MessageLogs.Count > 0)
+        {
+            GUILayout.Label("-----------(Log)-----------");
+            // Display any messages logged to screen
+            foreach (var messageLog in m_MessageLogs)
+            {
+                GUILayout.Label(messageLog.Message);
+            }
+            GUILayout.Label("---------------------------");
+        }
+        GUILayout.EndArea();
+    }
+    #endregion
+
+    #region Update and Status Methods
+
+    public bool IsSceneEventInProgress()
+    {
+        return m_SceneLoader != null ? m_SceneLoader.SceneLoadingInProgress : false;
+    }
+
+    private void UpdateRuntimeMessageConsole()
     {
         if (m_MessageLogs.Count == 0)
         {
@@ -377,20 +571,25 @@ public class ExtendedNetworkManager : NetworkManager
         }
     }
 
-    private void OnClientConnectionEvent(NetworkManager networkManager, ConnectionEventData eventData)
+    public bool IsSessionAuthority()
     {
-        LogMessage($"[{Time.realtimeSinceStartup}] Connection event {eventData.EventType} for Client-{eventData.ClientId}.");
+        if (!DistributedAuthorityMode)
+        {
+            return IsServer;
+        }
+        else
+        {
+            return LocalClientId == CurrentSessionOwner;
+        }
     }
 
-    private void OnClientConnected(ulong clientId)
+    private void Update()
     {
-        LogMessage($"[{Time.realtimeSinceStartup}] Connected event invoked for Client-{clientId}.");
+        UpdateRuntimeMessageConsole();
     }
+    #endregion
 
-    private void OnClientDisconnect(ulong clientId)
-    {
-        LogMessage($"[{Time.realtimeSinceStartup}] Disconnected event invoked for Client-{clientId}.");
-    }
+    #region Message Logging
 
     private List<MessageLog> m_MessageLogs = new List<MessageLog>();
 
@@ -408,6 +607,7 @@ public class ExtendedNetworkManager : NetworkManager
 
     public void LogMessage(string msg, float timeToLive = 10.0f)
     {
+        msg = $"[{Time.realtimeSinceStartup}] {msg}";
         if (m_MessageLogs.Count > 0)
         {
             m_MessageLogs.Insert(0, new MessageLog(msg, timeToLive));
@@ -419,6 +619,7 @@ public class ExtendedNetworkManager : NetworkManager
 
         Debug.Log(msg);
     }
+    #endregion
 
     public ExtendedNetworkManager()
     {
