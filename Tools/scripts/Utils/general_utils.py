@@ -5,6 +5,7 @@ import os
 import re
 import datetime
 import platform
+import subprocess
 
 UNRELEASED_CHANGELOG_SECTION_TEMPLATE = r"""
 ## [Unreleased]
