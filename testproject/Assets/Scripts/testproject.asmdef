@@ -9,8 +9,16 @@
         "Unity.Services.Authentication",
         "Unity.Services.Core",
         "Unity.Services.Relay",
-        "Unity.Addressables.Editor"
+        "Unity.Addressables.Editor",
+        "Unity.Networking.Transport"
     ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.services.relay",
@@ -22,5 +30,6 @@
             "expression": "",
             "define": "TESTPROJECT_USE_ADDRESSABLES"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }
