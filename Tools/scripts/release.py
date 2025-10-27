@@ -13,7 +13,7 @@ import sys
 import subprocess
 import platform
 
-from Utils.general_utils import get_package_version_from_manifest, update_changelog, update_validation_exceptions # nopep8
+from Utils.general_utils import get_package_version_from_manifest, update_changelog, update_validation_exceptions, regenerate_wrench # nopep8
 
 def make_package_release_ready(manifest_path, changelog_path, validation_exceptions_path, package_version):
 
@@ -36,6 +36,8 @@ def make_package_release_ready(manifest_path, changelog_path, validation_excepti
     # package version is already know as explained in
     # https://github.cds.internal.unity3d.com/unity/dots/pull/14318
     update_changelog(changelog_path, package_version)
+    # Make sure that the wrench scripts are up to date
+    regenerate_wrench()
 
 
 if __name__ == '__main__':

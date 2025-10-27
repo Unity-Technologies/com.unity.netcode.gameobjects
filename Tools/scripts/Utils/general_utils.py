@@ -4,6 +4,8 @@ import json
 import os
 import re
 import datetime
+import platform
+import subprocess
 
 UNRELEASED_CHANGELOG_SECTION_TEMPLATE = r"""
 ## [Unreleased]
@@ -75,6 +77,42 @@ def update_package_version_by_patch(package_manifest_path):
     return new_package_version
 
 
+def regenerate_wrench():
+    """
+    It runs Tools/regenerate-ci.cmd OR Tools/regenerate-ci.sh script
+    to regenerate the CI files. (depending on the OS)
+    
+    This is needed because wrench scripts content is created dynamically depending on the available editors
+    """
+
+    # --- Regenerate the CI files ---
+    print("\nRegenerating CI files...")
+    script_path = ""
+    if platform.system() == "Windows":
+        script_path = os.path.join('Tools', 'CI', 'regenerate.bat')
+    else: # macOS and Linux
+        script_path = os.path.join('Tools', 'CI', 'regenerate.sh')
+
+    if not os.path.exists(script_path):
+        print(f"Error: Regeneration script not found at '{script_path}'.")
+        return
+
+    try:
+        # Execute the regeneration script
+        # On non-Windows systems, the script might need execute permissions.
+        if platform.system() != "Windows":
+            os.chmod(script_path, 0o755)
+
+        print(f"Running '{script_path}'...")
+        subprocess.run([script_path], check=True, shell=True)
+        print("CI regeneration completed successfully.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: The CI regeneration script failed with exit code {e.returncode}.")
+    except Exception as e:
+        print(f"An unexpected error occurred while running the regeneration script: {e}")
+        
+        
 def update_validation_exceptions(validation_file, package_version):
     """
     Updates the ValidationExceptions.json file with the new package version.

@@ -39,9 +39,9 @@ class ReleaseConfig:
         self.yamato_project_id = '1201'
         self.command_to_run_on_release_branch = make_package_release_ready
 
-        self.release_weekday = 5  # Saturday
+        self.release_weekday = 6  # Sunday
         self.release_week_cycle = 4  # Release every 4 weeks
-        self.anchor_date = datetime.date(2025, 7, 19) # Anchor date for the release cycle (previous release Saturday)
+        self.anchor_date = datetime.date(2025, 7, 20) # Anchor date for the release cycle (previous release Sunday)
 
         self.package_version = get_package_version_from_manifest(self.manifest_path)
         self.release_branch_name = f"release/{self.package_version}" # Branch from which we want to release
