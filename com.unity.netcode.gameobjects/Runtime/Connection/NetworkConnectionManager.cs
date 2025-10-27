@@ -1450,6 +1450,7 @@ namespace Unity.Netcode
             var transportId = ClientIdToTransportId(clientId);
             if (transportId.Item2)
             {
+                DisconnectReason = string.Empty;
                 GenerateDisconnectInformation(clientId, transportId.Item1, reason);
             }
 
