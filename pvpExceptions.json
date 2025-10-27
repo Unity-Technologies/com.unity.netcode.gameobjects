@@ -246,6 +246,7 @@
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests: void WhenCallingInitializeAfterAddingAPrefabUsingPrefabsAPI_ThePrefabStillExists(): undocumented",
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests: void WhenShuttingDownAndReinitializingPrefabs_RuntimeAddedPrefabsStillExists(): undocumented",
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests: void WhenCallingInitializeMultipleTimes_NothingBreaks(): undocumented",
+          "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests: void WhenThereAreUninitializedElementsInPrefabsList_NoErrors(): undocumented",
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests.NetworkObjectPlacement: undocumented",
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests.NetworkObjectPlacement: Root: undocumented",
           "Unity.Netcode.EditorTests.NetworkManagerConfigurationTests.NetworkObjectPlacement: Child: undocumented",
