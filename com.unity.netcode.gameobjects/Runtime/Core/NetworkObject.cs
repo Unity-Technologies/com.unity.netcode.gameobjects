@@ -2619,6 +2619,11 @@ namespace Unity.Netcode
 
         private List<NetworkBehaviour> m_ChildNetworkBehaviours;
 
+        internal string GenerateDisabledNetworkBehaviourWarning(NetworkBehaviour networkBehaviour)
+        {
+            return $"[{name}][{networkBehaviour.GetType().Name}][{nameof(isActiveAndEnabled)}: {networkBehaviour.isActiveAndEnabled}] Disabled {nameof(NetworkBehaviour)}s are not supported and will be excluded from spawning and synchronization!";
+        }
+
         internal List<NetworkBehaviour> ChildNetworkBehaviours
         {
             get
@@ -2637,6 +2642,11 @@ namespace Unity.Netcode
                     var networkObj = networkBehaviours[i].GetComponentInParent<NetworkObject>();
                     if (networkObj != this)
                     {
+                        continue;
+                    }
+                    else if (!networkBehaviours[i].isActiveAndEnabled)
+                    {
+                        Debug.LogWarning(GenerateDisabledNetworkBehaviourWarning(networkBehaviours[i]));
                         continue;
                     }
 
