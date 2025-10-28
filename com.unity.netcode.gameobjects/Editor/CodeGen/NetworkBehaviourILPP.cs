@@ -1654,18 +1654,14 @@ namespace Unity.Netcode.Editor.CodeGen
                 return null;
             }
 
-            var typeSystem = methodDefinition.Module.TypeSystem;
-            var hasInvokePermission = false;
+            bool hasInvokePermission = false, hasRequireOwnership = false;
 
-            CustomAttributeNamedArgument? invokePermissionAttribute = null;
             foreach (var argument in rpcAttribute.Fields)
             {
                 switch (argument.Name)
                 {
                     case k_ServerRpcAttribute_RequireOwnership:
-                        var requireOwnership = argument.Argument.Type == typeSystem.Boolean && (bool)argument.Argument.Value;
-                        var invokePermissionArg = new CustomAttributeArgument(m_RpcInvokePermissions_TypeRef, requireOwnership ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone);
-                        invokePermissionAttribute = new CustomAttributeNamedArgument(k_RpcAttribute_InvokePermission, invokePermissionArg);
+                        hasRequireOwnership = true;
                         break;
                     case k_RpcAttribute_InvokePermission:
                         hasInvokePermission = true;
@@ -1673,15 +1669,10 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            if (invokePermissionAttribute != null)
+            if (hasInvokePermission && hasRequireOwnership)
             {
-                if (hasInvokePermission)
-                {
-                    m_Diagnostics.AddError($"{methodDefinition.Name} cannot declare both RequireOwnership and InvokePermission!");
-                    return null;
-                }
-
-                rpcAttribute.Fields.Add(invokePermissionAttribute.Value);
+                m_Diagnostics.AddError($"{methodDefinition.Name} cannot declare both RequireOwnership and InvokePermission!");
+                return null;
             }
 
 
