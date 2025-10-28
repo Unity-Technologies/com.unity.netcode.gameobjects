@@ -2639,6 +2639,11 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+                    else if (!networkBehaviours[i].isActiveAndEnabled)
+                    {
+                        Debug.LogWarning($"[{name}][{networkBehaviours[i].GetType().Name}][{nameof(isActiveAndEnabled)}: {networkBehaviours[i].isActiveAndEnabled}] Disabled {nameof(NetworkBehaviour)}s are not supported and will be excluded from spawning and synchronization!");
+                        continue;
+                    }
 
                     // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
                     var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
