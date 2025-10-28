@@ -103,11 +103,52 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
+        private string m_DisconnectReason;
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// provide disconnect information that will be followed by the server's disconnect reason.
         /// </summary>
-        public string DisconnectReason { get; internal set; }
+        /// <remarks>
+        /// On a server or host, this value could no longer exist after all subscribed callbacks are invoked for the
+        /// client that disconnected. It is recommended to copy the message to some other property or field when
+        /// <see cref="OnClientDisconnectCallback"/> is invoked.
+        /// </remarks>
+        public string DisconnectReason
+        {
+            get
+            {
+                // For in-frequent event driven invocations, a method within a getter
+                // is "generally ok".
+                return GetDisconnectReason();
+            }
+            internal set
+            {
+                m_DisconnectReason = value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the conbined result of the locally applied <see cref="DisconnectReason"/> and the
+        /// server applied <see cref="ServerDisconnectReason"/>.
+        /// - If both values are empty or null, then it returns <see cref="string.Empty"/>.
+        /// - If either value is valid, then it returns that <see cref="string"/> value.
+        /// - If both values are valid, then it returns <see cref="DisconnectReason"/> followed by a 
+        /// new line and then <see cref="ServerDisconnectReason"/>.
+        /// </summary>
+        /// <returns>A disconnect reason, if any.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal string GetDisconnectReason(string header = null)
+        {
+            var disconnectReason = string.IsNullOrEmpty(m_DisconnectReason) ? string.Empty : m_DisconnectReason;
+            var serverDisconnectReason = string.IsNullOrEmpty(ServerDisconnectReason) ? string.Empty : $"\n{ServerDisconnectReason}";
+            var headerInfo = string.IsNullOrEmpty(header) ? string.Empty : header;
+            return $"{headerInfo}{disconnectReason}{serverDisconnectReason}";
+        }
+
+        /// <summary>
+        /// Updated by <see cref="DisconnectReasonMessage"/>.
+        /// </summary>
+        internal string ServerDisconnectReason;
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
@@ -537,17 +578,15 @@ namespace Unity.Netcode
         private void GenerateDisconnectInformation(ulong clientId, ulong transportClientId, string reason = null)
         {
             var header = $"[Disconnect Event][Client-{clientId}][TransportClientId-{transportClientId}]";
-            var existingDisconnectReason = DisconnectReason;
-
             var defaultMessage = Transport.DisconnectEventMessage;
             if (reason != null)
             {
                 defaultMessage = $"{reason} {defaultMessage}";
             }
+
             // Just go ahead and set this whether client or server so any subscriptions to a disconnect event can check the DisconnectReason
             // to determine why the client disconnected
-            DisconnectReason = $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
-            DisconnectReason = $"{DisconnectReason}\n{existingDisconnectReason}";
+            m_DisconnectReason = $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -1450,7 +1489,6 @@ namespace Unity.Netcode
             var transportId = ClientIdToTransportId(clientId);
             if (transportId.Item2)
             {
-                DisconnectReason = string.Empty;
                 GenerateDisconnectInformation(clientId, transportId.Item1, reason);
             }
 
@@ -1476,7 +1514,8 @@ namespace Unity.Netcode
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
             NetworkObject.OrphanChildren.Clear();
-            DisconnectReason = string.Empty;
+            m_DisconnectReason = string.Empty;
+            ServerDisconnectReason = string.Empty;
 
             NetworkManager = networkManager;
             MessageManager = networkManager.MessageManager;
