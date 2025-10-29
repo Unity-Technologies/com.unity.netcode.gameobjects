@@ -10,6 +10,29 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.7.0] - 2025-10-27
+
+### Added
+
 - `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
 - Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
@@ -42,12 +65,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 - Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.6.0] - 2025-10-12
 
