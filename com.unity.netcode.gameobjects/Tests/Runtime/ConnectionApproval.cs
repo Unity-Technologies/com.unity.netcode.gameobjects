@@ -92,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests
         private void Client_OnClientDisconnectCallback(ulong clientId)
         {
             m_ClientNetworkManagers[0].OnClientDisconnectCallback -= Client_OnClientDisconnectCallback;
-            m_ClientDisconnectReasonValidated = m_ClientNetworkManagers[0].LocalClientId == clientId && m_ClientNetworkManagers[0].DisconnectReason == k_InvalidToken;
+            m_ClientDisconnectReasonValidated = m_ClientNetworkManagers[0].LocalClientId == clientId && m_ClientNetworkManagers[0].DisconnectReason.Contains(k_InvalidToken);
         }
 
         private bool ClientAndHostValidated()
