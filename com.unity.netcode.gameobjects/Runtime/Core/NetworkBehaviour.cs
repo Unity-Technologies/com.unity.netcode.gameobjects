@@ -761,6 +761,13 @@ namespace Unity.Netcode
 
             UpdateNetworkProperties();
 
+            // Exit early for disabled NetworkBehaviours.
+            // We still want the above values to be set.
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
             try
             {
                 OnNetworkPreSpawn(ref networkManager);
