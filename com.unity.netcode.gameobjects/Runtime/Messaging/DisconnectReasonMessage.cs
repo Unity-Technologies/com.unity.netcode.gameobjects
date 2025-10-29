@@ -37,7 +37,10 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).ConnectionManager.DisconnectReason = Reason;
+            // Always apply the server-side generated disconnect reason to the server specific disconnect reason.
+            // This is combined with the additional disconnect information when getting NetworkManager.DisconnectReason
+            // (NetworkConnectionManager.DisconnectReason).
+            ((NetworkManager)context.SystemOwner).ConnectionManager.ServerDisconnectReason = Reason;
         }
     };
 }
