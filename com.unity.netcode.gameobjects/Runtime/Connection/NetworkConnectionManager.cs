@@ -132,7 +132,7 @@ namespace Unity.Netcode
         /// server applied <see cref="ServerDisconnectReason"/>.
         /// - If both values are empty or null, then it returns <see cref="string.Empty"/>.
         /// - If either value is valid, then it returns that <see cref="string"/> value.
-        /// - If both values are valid, then it returns <see cref="DisconnectReason"/> followed by a 
+        /// - If both values are valid, then it returns <see cref="DisconnectReason"/> followed by a
         /// new line and then <see cref="ServerDisconnectReason"/>.
         /// </summary>
         /// <returns>A disconnect reason, if any.</returns>
