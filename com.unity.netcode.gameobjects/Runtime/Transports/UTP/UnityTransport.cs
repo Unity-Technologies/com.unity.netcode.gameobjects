@@ -824,10 +824,10 @@ namespace Unity.Netcode.Transports.UTP
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
 
-            Debug.Log("This is happening 1");
-            if ( UnityEngine.DedicatedServer.Arguments.Port != null)
+            Debug.Log("UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT");
+            if (UnityEngine.DedicatedServer.Arguments.Port != null)
             {
-                Debug.Log("This is happening 2");
+                Debug.Log("UnityEngine.DedicatedServer.Arguments.Port is not null");
                 PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
             }
 #else
@@ -851,7 +851,7 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.Log($"Already has command line option set. Using connection data set to {ipv4Address}:{port}");
                 }
 
-                ConnectionData.Port = port;
+                port = ConnectionData.Port;
             }
             else
             {
