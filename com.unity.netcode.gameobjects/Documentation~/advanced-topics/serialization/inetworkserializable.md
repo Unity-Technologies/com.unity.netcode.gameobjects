@@ -186,7 +186,7 @@ public struct MyStructB : MyStructA
 
 Netcode for GameObjects doesn't support generic `INetworkSerializable` types with generic `IEquatable`s when implemented as `public class NotSupported<T> : INetworkSerializable, IEquatable<NotSupported<T>>`, where the type is passed in during declaration like `NetworkVariable<NotSupported<int>> myVar;`.
 
-The recommended workaround for this would be to create the generic class as usual but add a virtual method for handling the serialization of the type. Then wrap this generic `INetworkSerializable` in a derived class which then needs to have a serializable type defined where the implementation for the serialization is provided.
+You can work around this limitation by creating the generic class as normal and adding a virtual method for handling the serialization of the type. Then wrap the generic `INetworkSerializable` in a derived class that has a serializable type defined where the implementation for the serialization is provided.
 
 For example:
 
