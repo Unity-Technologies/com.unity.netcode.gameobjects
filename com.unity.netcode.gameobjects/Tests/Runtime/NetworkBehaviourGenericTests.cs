@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -71,8 +73,8 @@ namespace Unity.Netcode.RuntimeTests
         /// is not deleted until a later time would cause an exception due to the
         /// NetworkBehaviour not being removed from the NetworkObject.ChildNetworkBehaviours
         /// list.
-        /// - That when a child GameObject is deleted/disabled or a NetworkBehaviour is disabled
-        /// a message is logged and the NetworkObject still can be spawned and synchronized.
+        /// - When a NetworkBehaviour is disabled but the associated GameObject is enabled,
+        /// the object spawns without any issues.
         /// </summary>
         [UnityTest]
         public IEnumerator ValidatedDisableddNetworkBehaviourWarning([Values] bool disableGameObject)
@@ -101,11 +103,18 @@ namespace Unity.Netcode.RuntimeTests
             // Now create an instance of the prefab
             var instance = Object.Instantiate(m_PrefabToSpawn);
             var instanceNetworkObject = instance.GetComponent<NetworkObject>();
-            // Generate the expected warning message
-            var expectedWarning = instanceNetworkObject.GenerateDisabledNetworkBehaviourWarning(instanceNetworkObject.GetComponentInChildren<NetworkTransform>(true));
+            // When the GameObject is disabled, check for the warning.
+            if (disableGameObject)
+            {
+                // Generate the expected warning message
+                var expectedWarning = instanceNetworkObject.GenerateDisabledNetworkBehaviourWarning(instanceNetworkObject.GetComponentInChildren<NetworkTransform>(true));
+                var expectedSplit = expectedWarning.Split(']');
+                var expectedWarningBody = expectedSplit.Last();
+                LogAssert.Expect(LogType.Warning, new Regex($".*{expectedWarningBody}*."));
+            }
+
             // Spawn the instance
             SpawnObjectInstance(instanceNetworkObject, m_ServerNetworkManager);
-            LogAssert.Expect(LogType.Warning, $"{expectedWarning}");
             // Asure the connected client spawned the object first
             yield return WaitForSpawnedOnAllOrTimeOut(instanceNetworkObject);
             AssertOnTimeout($"Not all clients spawned {instanceNetworkObject.name}!");
