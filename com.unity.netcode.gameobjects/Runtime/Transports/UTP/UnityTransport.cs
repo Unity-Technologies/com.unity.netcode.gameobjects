@@ -246,6 +246,12 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             /// <summary>
+            /// The port the client will bind to. If 0 (the default), an ephemeral port will be used.
+            /// </summary>
+            [SerializeField]
+            public ushort ClientBindPort;
+
+            /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
             /// <remarks>
@@ -683,6 +689,20 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             InitDriver();
+
+            // Don't bind yet if connecting to a hostname, since we don't know if it will resolve to IPv4 or IPv6.
+            if (serverEndpoint.Family != NetworkFamily.Invalid && ConnectionData.ClientBindPort != 0)
+            {
+                var bindEndpoint = serverEndpoint.Family == NetworkFamily.Ipv6
+                    ? NetworkEndpoint.AnyIpv6.WithPort(ConnectionData.ClientBindPort)
+                    : NetworkEndpoint.AnyIpv4.WithPort(ConnectionData.ClientBindPort);
+                if (m_Driver.Bind(bindEndpoint) != 0)
+                {
+                    Debug.LogError($"Couldn't create socket. Possibly another process is using port {ConnectionData.ClientBindPort}.");
+                    return false;
+                }
+            }
+
             Connect(serverEndpoint);
 
             return true;
