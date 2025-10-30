@@ -753,6 +753,8 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnNetworkPreDespawn() { }
 
+        internal virtual void InternalOnNetworkPreSpawn(ref NetworkManager networkManager) { }
+
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
@@ -760,6 +762,8 @@ namespace Unity.Netcode
             RpcTarget = networkManager.RpcTarget;
 
             UpdateNetworkProperties();
+
+            InternalOnNetworkPreSpawn(ref networkManager);
 
             // Exit early for disabled NetworkBehaviours.
             // We still want the above values to be set.
