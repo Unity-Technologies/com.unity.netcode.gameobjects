@@ -781,7 +781,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
-            Debug.Log($"[Auth]{name} State Pushed.");
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
             AuthorityPushedTransformState?.Invoke(ref networkTransformState);
@@ -792,7 +791,6 @@ namespace Unity.Netcode.RuntimeTests
         public bool StateUpdated { get; internal set; }
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
-            Debug.Log($"[Non-Auth]{name} State Updated.");
             StateUpdated = true;
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
         }
