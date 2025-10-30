@@ -720,13 +720,16 @@ namespace Unity.Netcode.Components
             return m_AnimationMessage;
         }
 
+        internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
+        {
+            // Save internal state references
+            m_LocalNetworkManager = networkManager;
+            DistributedAuthorityMode = m_LocalNetworkManager.DistributedAuthorityMode;
+        }
+
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            // Save internal state references
-            m_LocalNetworkManager = NetworkManager;
-            DistributedAuthorityMode = m_LocalNetworkManager.DistributedAuthorityMode;
-
             // If there is no assigned Animator then generate a server network warning (logged locally and if applicable on the server-host side as well).
             if (m_Animator == null)
             {
