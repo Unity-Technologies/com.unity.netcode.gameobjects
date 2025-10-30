@@ -817,7 +817,8 @@ namespace Unity.Netcode.Transports.UTP
             {
                 Address = ipv4Address,
                 Port = port,
-                ServerListenAddress = listenAddress ?? ipv4Address
+                ServerListenAddress = listenAddress ?? ipv4Address,
+                ClientBindPort = ConnectionData.ClientBindPort
             };
 
             SetProtocol(ProtocolType.UnityTransport);
