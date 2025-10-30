@@ -788,9 +788,9 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name)</param>
-        /// <param name="port">The remote port</param>
-        /// <param name="listenAddress">The local listen address</param>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
+        /// <param name="port">The remote port to connect to.</param>
+        /// <param name="listenAddress">The address the server is going to listen on.</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
             ConnectionData = new ConnectionAddressData
@@ -806,8 +806,8 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="endPoint">The remote end point</param>
-        /// <param name="listenEndPoint">The local listen endpoint</param>
+        /// <param name="endPoint">The remote endpoint the client should connect to.</param>
+        /// <param name="listenEndPoint">The endpoint the server should listen on.</param>
         public void SetConnectionData(NetworkEndpoint endPoint, NetworkEndpoint listenEndPoint = default)
         {
             string serverAddress = endPoint.Address.Split(':')[0];
