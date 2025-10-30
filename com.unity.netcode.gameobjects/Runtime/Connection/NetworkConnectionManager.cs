@@ -113,36 +113,21 @@ namespace Unity.Netcode
         /// client that disconnected. It is recommended to copy the message to some other property or field when
         /// <see cref="OnClientDisconnectCallback"/> is invoked.
         /// </remarks>
-        public string DisconnectReason
-        {
-            get
-            {
-                // For in-frequent event driven invocations, a method within a getter
-                // is "generally ok".
-                return GetDisconnectReason();
-            }
-            internal set
-            {
-                m_DisconnectReason = value;
-            }
-        }
+        public string DisconnectReason => GetDisconnectReason(); // fine as function because this call is infrequent
 
         /// <summary>
-        /// Returns the conbined result of the locally applied <see cref="DisconnectReason"/> and the
-        /// server applied <see cref="ServerDisconnectReason"/>.
-        /// - If both values are empty or null, then it returns <see cref="string.Empty"/>.
-        /// - If either value is valid, then it returns that <see cref="string"/> value.
-        /// - If both values are valid, then it returns <see cref="DisconnectReason"/> followed by a
-        /// new line and then <see cref="ServerDisconnectReason"/>.
+        /// Gets the reason for why this client was disconnected if exists.
         /// </summary>
-        /// <returns>A disconnect reason, if any.</returns>
+        /// <returns><see cref="ServerDisconnectReason"/> disconnect reason if it exists, otherwise <see cref="m_DisconnectReason"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal string GetDisconnectReason(string header = null)
+        internal string GetDisconnectReason()
         {
-            var disconnectReason = string.IsNullOrEmpty(m_DisconnectReason) ? string.Empty : m_DisconnectReason;
-            var serverDisconnectReason = string.IsNullOrEmpty(ServerDisconnectReason) ? string.Empty : $"\n{ServerDisconnectReason}";
-            var headerInfo = string.IsNullOrEmpty(header) ? string.Empty : header;
-            return $"{headerInfo}{disconnectReason}{serverDisconnectReason}";
+            // TODO: fix this properly
+            if (!string.IsNullOrEmpty(ServerDisconnectReason))
+            {
+                return ServerDisconnectReason;
+            }
+            return m_DisconnectReason;
         }
 
         /// <summary>
@@ -590,7 +575,8 @@ namespace Unity.Netcode
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo($"{DisconnectReason}");
+                var serverDisconnectReason = string.IsNullOrEmpty(ServerDisconnectReason) ? string.Empty : $"\n{ServerDisconnectReason}";
+                NetworkLog.LogInfo($"{m_DisconnectReason}{serverDisconnectReason}");
             }
         }
 
