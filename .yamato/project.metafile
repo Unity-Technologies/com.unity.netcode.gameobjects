@@ -59,7 +59,7 @@ test_platforms:
         - name: mac
           type: Unity::VM::osx
           image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
-          smaller_flavor: m1.mac # mac doesn't have a smaller vm size. We define it anyway as it simplifies the yaml templating to have it defined.
+          flavor: m1.mac # mac doesn't have a smaller vm size. We define it anyway as it simplifies the yaml templating to have it defined.
           smaller_flavor: b1.medium
           standalone: StandaloneOSX
           model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures

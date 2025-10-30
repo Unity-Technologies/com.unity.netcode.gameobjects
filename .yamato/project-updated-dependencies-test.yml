@@ -42,7 +42,28 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
+    - .yamato/project-updated-dependencies-test.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  
+  
+# TODO: This job was removed on PR-3711 but the above job somehow can find proper artifacts with package pack job. 
+# This job should be removed when issue will be resolved since it's not used anywhere
+{% for project in projects.all -%}
+{% for platform in test_platforms.desktop -%}
+project_pack_-_{{ project.name }}_{{ platform.name }}:
+  name: Project Pack - {{ project.name }} [{{ platform.name }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
+    - upm-ci project pack --project-path {{ project.path }}
+  artifacts:
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
 {% endfor -%}
 {% endfor -%}
