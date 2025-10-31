@@ -26,6 +26,14 @@ namespace Unity.Netcode.Components
         internal bool NetworkTransformExpanded;
 #endif
 
+        internal enum Axis { X, Y, Z }
+
+        internal enum AxialType
+        {
+            Position,
+            Rotation,
+            Scale
+        }
         #region NETWORK TRANSFORM STATE
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
@@ -64,14 +72,6 @@ namespace Unity.Netcode.Components
             private const int k_SwitchTransformSpaceWhenParented = 0x0400000;
             // (Internal Debugging) When set each state update will contain a state identifier
             private const int k_TrackStateId = 0x10000000;
-
-            // Stores persistent and state relative flags
-            private uint m_Bitset;
-            internal uint BitSet
-            {
-                get { return m_Bitset; }
-                set { m_Bitset = value; }
-            }
 
             // Used to store the tick calculated sent time
             internal double SentTime;
@@ -131,74 +131,33 @@ namespace Unity.Netcode.Components
             /// world and local space.
             /// <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
             /// </summary>
-            internal bool SwitchTransformSpaceWhenParented
-            {
-                get => GetFlag(k_SwitchTransformSpaceWhenParented);
-                set
-                {
-                    SetFlag(value, k_SwitchTransformSpaceWhenParented);
-                }
-            }
+            internal bool SwitchTransformSpaceWhenParented;
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> is operates in local space
             /// </summary>
-            public bool InLocalSpace
-            {
-                get => GetFlag(k_InLocalSpaceBit);
-                internal set
-                {
-                    SetFlag(value, k_InLocalSpaceBit);
-                }
-            }
+            public bool InLocalSpace { get; internal set; }
 
             // Position
             /// <summary>
             /// When set, the X-Axis position value has changed
             /// </summary>
-            public bool HasPositionX
-            {
-                get => GetFlag(k_PositionXBit);
-                internal set
-                {
-                    SetFlag(value, k_PositionXBit);
-                }
-            }
+            public bool HasPositionX { get; internal set; }
 
             /// <summary>
             /// When set, the Y-Axis position value has changed
             /// </summary>
-            public bool HasPositionY
-            {
-                get => GetFlag(k_PositionYBit);
-                internal set
-                {
-                    SetFlag(value, k_PositionYBit);
-                }
-            }
+            public bool HasPositionY { get; internal set; }
 
             /// <summary>
             /// When set, the Z-Axis position value has changed
             /// </summary>
-            public bool HasPositionZ
-            {
-                get => GetFlag(k_PositionZBit);
-                internal set
-                {
-                    SetFlag(value, k_PositionZBit);
-                }
-            }
+            public bool HasPositionZ { get; internal set; }
 
             /// <summary>
             /// When set, at least one of the position axis values has changed.
             /// </summary>
-            public bool HasPositionChange
-            {
-                get
-                {
-                    return HasPositionX || HasPositionY || HasPositionZ;
-                }
-            }
+            public bool HasPositionChange { get; internal set; }
 
             // RotAngles
             /// <summary>
@@ -207,14 +166,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleX
-            {
-                get => GetFlag(k_RotAngleXBit);
-                internal set
-                {
-                    SetFlag(value, k_RotAngleXBit);
-                }
-            }
+            public bool HasRotAngleX { get; internal set; }
 
             /// <summary>
             /// When set, the Euler rotation Y-Axis value has changed.
@@ -222,14 +174,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleY
-            {
-                get => GetFlag(k_RotAngleYBit);
-                internal set
-                {
-                    SetFlag(value, k_RotAngleYBit);
-                }
-            }
+            public bool HasRotAngleY { get; internal set; }
 
             /// <summary>
             /// When set, the Euler rotation Z-Axis value has changed.
@@ -237,14 +182,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleZ
-            {
-                get => GetFlag(k_RotAngleZBit);
-                internal set
-                {
-                    SetFlag(value, k_RotAngleZBit);
-                }
-            }
+            public bool HasRotAngleZ { get; internal set; }
 
             /// <summary>
             /// When set, at least one of the rotation axis values has changed.
@@ -252,72 +190,73 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleChange
-            {
-                get
-                {
-                    return HasRotAngleX || HasRotAngleY || HasRotAngleZ;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal bool HasScale(int axisIndex)
-            {
-                return GetFlag(k_ScaleXBit << axisIndex);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal void SetHasScale(int axisIndex, bool isSet)
-            {
-                SetFlag(isSet, k_ScaleXBit << axisIndex);
-            }
+            public bool HasRotAngleChange{ get; internal set; }
 
             // Scale
             /// <summary>
             /// When set, the X-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleX
-            {
-                get => GetFlag(k_ScaleXBit);
-                internal set
-                {
-                    SetFlag(value, k_ScaleXBit);
-                }
-            }
+            public bool HasScaleX { get; internal set; }
 
             /// <summary>
             /// When set, the Y-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleY
-            {
-                get => GetFlag(k_ScaleYBit);
-                internal set
-                {
-                    SetFlag(value, k_ScaleYBit);
-                }
-            }
+            public bool HasScaleY { get; internal set; }
 
             /// <summary>
             /// When set, the Z-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleZ
-            {
-                get => GetFlag(k_ScaleZBit);
-                internal set
-                {
-                    SetFlag(value, k_ScaleZBit);
-                }
-            }
+            public bool HasScaleZ { get; internal set; }
 
             /// <summary>
             /// When set, at least one of the scale axis values has changed.
             /// </summary>
-            public bool HasScaleChange
+            public bool HasScaleChange { get; internal set; }
+
+            internal void MarkChanged(AxialType axialType, bool changed)
             {
-                get
+                switch (axialType)
                 {
-                    return HasScaleX || HasScaleY || HasScaleZ;
+                    case AxialType.Position:
+                        HasPositionX = changed;
+                        HasPositionY = changed;
+                        HasPositionZ = changed;
+                        HasPositionChange = changed;
+                        break;
+                    case AxialType.Rotation:
+                        HasRotAngleX = changed;
+                        HasRotAngleY = changed;
+                        HasRotAngleZ = changed;
+                        HasRotAngleChange = changed;
+                        break;
+                    case AxialType.Scale:
+                        HasScaleX = changed;
+                        HasScaleY = changed;
+                        HasScaleZ = changed;
+                        HasScaleChange = changed;
+                        break;
                 }
+            }
+            internal void SetHasScale(Axis axis, bool changed)
+            {
+                switch (axis)
+                {
+                    case Axis.X:
+                        HasScaleX = changed;
+                        break;
+                    case Axis.Y:
+                        HasScaleY = changed;
+                        break;
+                    case Axis.Z:
+                        HasScaleZ = changed;
+                        break;
+                }
+                HasScaleChange = HasScaleX || HasScaleY || HasScaleZ;
+            }
+
+            internal bool HasScale(Axis axis)
+            {
+                return axis == Axis.X ? HasScaleX : axis == Axis.Y ? HasScaleY : HasScaleZ;
             }
 
             /// <summary>
@@ -329,14 +268,7 @@ namespace Unity.Netcode.Components
             /// - If using half precision, full precision values are used.
             /// - All axis marked to be synchronized will be updated.
             /// </remarks>
-            public bool IsTeleportingNextFrame
-            {
-                get => GetFlag(k_TeleportingBit);
-                internal set
-                {
-                    SetFlag(value, k_TeleportingBit);
-                }
-            }
+            public bool IsTeleportingNextFrame { get; internal set; }
 
             /// <summary>
             /// When overriding <see cref="OnAuthorityPushTransformState(ref NetworkTransformState)"/>, if the state that was pushed was a teleport then this will be set to true.
@@ -353,14 +285,7 @@ namespace Unity.Netcode.Components
             /// Authority does not apply interpolation via <see cref="NetworkTransform"/>.
             /// Authority should handle its own motion/rotation/scale smoothing locally.
             /// </remarks>
-            public bool UseInterpolation
-            {
-                get => GetFlag(k_Interpolate);
-                internal set
-                {
-                    SetFlag(value, k_Interpolate);
-                }
-            }
+            public bool UseInterpolation { get; internal set; }
 
             /// <summary>
             /// When enabled, this <see cref="NetworkTransform"/> instance uses <see cref="Quaternion"/> synchronization.
@@ -370,14 +295,7 @@ namespace Unity.Netcode.Components
             /// When quaternion synchronization is enabled, the entire quaternion is updated when there are any changes to any axial values.
             /// You can use half float precision or quaternion compression to reduce the bandwidth cost.
             /// </remarks>
-            public bool QuaternionSync
-            {
-                get => GetFlag(k_QuaternionSync);
-                internal set
-                {
-                    SetFlag(value, k_QuaternionSync);
-                }
-            }
+            public bool QuaternionSync { get; internal set; }
 
             /// <summary>
             /// When set <see cref="Quaternion"/>s will be compressed down to 4 bytes using a smallest three implementation.
@@ -388,14 +306,7 @@ namespace Unity.Netcode.Components
             /// - Quaternion Compression: 4 bytes per delta update
             /// - Half float precision: 8 bytes per delta update
             /// </remarks>
-            public bool QuaternionCompression
-            {
-                get => GetFlag(k_QuaternionCompress);
-                internal set
-                {
-                    SetFlag(value, k_QuaternionCompress);
-                }
-            }
+            public bool QuaternionCompression { get; internal set; }
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> will use half float precision for position, rotation, and scale.
@@ -404,40 +315,19 @@ namespace Unity.Netcode.Components
             /// Postion is synchronized through delta position updates in order to reduce precision loss/drift and to extend to positions beyond the limitation of half float maximum values.
             /// Rotation and scale both use half float precision (<see cref="HalfVector4"/> and <see cref="HalfVector3"/>)
             /// </remarks>
-            public bool UseHalfFloatPrecision
-            {
-                get => GetFlag(k_UseHalfFloats);
-                internal set
-                {
-                    SetFlag(value, k_UseHalfFloats);
-                }
-            }
+            public bool UseHalfFloatPrecision { get; internal set; }
 
             /// <summary>
             /// When set, this indicates it is the first state being synchronized.
             /// Typically when the associate <see cref="NetworkObject"/> is spawned or a client is being synchronized after connecting to a network session in progress.
             /// </summary>
-            public bool IsSynchronizing
-            {
-                get => GetFlag(k_Synchronization);
-                internal set
-                {
-                    SetFlag(value, k_Synchronization);
-                }
-            }
+            public bool IsSynchronizing { get; internal set; }
 
             /// <summary>
             /// Determines if position interpolation will Slerp towards its target position.
             /// This is only really useful if you are moving around a point in a circular pattern.
             /// </summary>
-            public bool UsePositionSlerp
-            {
-                get => GetFlag(k_PositionSlerp);
-                internal set
-                {
-                    SetFlag(value, k_PositionSlerp);
-                }
-            }
+            public bool UsePositionSlerp { get; internal set; }
 
             /// <summary>
             /// Returns whether this state update was a frame synchronization when
@@ -463,78 +353,35 @@ namespace Unity.Netcode.Components
                 return ReliableSequenced;
             }
 
-            internal bool IsParented
-            {
-                get => GetFlag(k_IsParented);
-                set
-                {
-                    SetFlag(value, k_IsParented);
-                }
-            }
+            internal bool IsParented;
 
-            internal bool SynchronizeBaseHalfFloat
-            {
-                get => GetFlag(k_SynchBaseHalfFloat);
-                set
-                {
-                    SetFlag(value, k_SynchBaseHalfFloat);
-                }
-            }
+            internal bool SynchronizeBaseHalfFloat;
 
-            internal bool ReliableSequenced
-            {
-                get => GetFlag(k_ReliableSequenced);
-                set
-                {
-                    SetFlag(value, k_ReliableSequenced);
-                }
-            }
+            internal bool ReliableSequenced;
 
-            internal bool UseUnreliableDeltas
-            {
-                get => GetFlag(k_UseUnreliableDeltas);
-                set
-                {
-                    SetFlag(value, k_UseUnreliableDeltas);
-                }
-            }
+            internal bool UseUnreliableDeltas;
 
-            internal bool UnreliableFrameSync
-            {
-                get => GetFlag(k_UnreliableFrameSync);
-                set
-                {
-                    SetFlag(value, k_UnreliableFrameSync);
-                }
-            }
+            internal bool UnreliableFrameSync;
 
-            internal bool TrackByStateId
-            {
-                get => GetFlag(k_TrackStateId);
-                set
-                {
-                    SetFlag(value, k_TrackStateId);
-                }
-            }
+            internal bool TrackByStateId;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private bool GetFlag(int flag)
-            {
-                return (m_Bitset & flag) != 0;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void SetFlag(bool set, int flag)
-            {
-                if (set) { m_Bitset = m_Bitset | (uint)flag; }
-                else { m_Bitset = m_Bitset & (uint)~flag; }
-            }
-
+            /// <summary>
+            /// Clear everything but flags that should persist between state updates until changed by authority.
+            /// Persistent (non-cleared) flags are <see cref="InLocalSpace"/>, <see cref="UseInterpolation"/>, <see cref="QuaternionSync"/>,
+            /// <see cref="QuaternionCompressed"/>, <see cref="UsePositionSlerp"/>, <see cref="UseUnreliableDeltas"/>, <see cref="SwitchTransformSpaceWhenParented"/>
+            /// </summary>
             internal void ClearBitSetForNextTick()
             {
-                // Clear everything but flags that should persist between state updates until changed by authority
-                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp | k_UseUnreliableDeltas | k_SwitchTransformSpaceWhenParented;
-                IsDirty = false;
+                MarkChanged(AxialType.Position, false);
+                MarkChanged(AxialType.Rotation, false);
+                MarkChanged(AxialType.Scale, false);
+                IsTeleportingNextFrame = false;
+                IsSynchronizing = false;
+                IsParented = false;
+                SynchronizeBaseHalfFloat = false;
+                ReliableSequenced = false;
+                UnreliableFrameSync = false;
+                TrackByStateId = false;
             }
 
             /// <summary>
@@ -687,14 +534,14 @@ namespace Unity.Netcode.Components
                             ReliableSequenced = true;
                         }
 
-                        BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
+                        SerializeBitset(ref m_Writer);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
                     }
                     else
                     {
-                        ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
+                        DeserializeBitset(ref m_Reader);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
@@ -996,6 +843,72 @@ namespace Unity.Netcode.Components
                     Debug.Log($"[NT-WriteSize][BitsAndTick: {bitSetAndTickSize}][position: {positionSize}][rotation: {rotationSize}][scale: {scaleSize}]");
 #endif
                 }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void SerializeBitset(ref FastBufferWriter writer)
+            {
+                uint bitset = 0;
+
+                if (InLocalSpace) { bitset |= k_InLocalSpaceBit; }
+                if (HasPositionX) { bitset |= k_PositionXBit; }
+                if (HasPositionY) { bitset |= k_PositionYBit; }
+                if (HasPositionZ) { bitset |= k_PositionZBit; }
+                if (HasRotAngleX) { bitset |= k_RotAngleXBit; }
+                if (HasRotAngleY) { bitset |= k_RotAngleYBit; }
+                if (HasRotAngleZ) { bitset |= k_RotAngleZBit; }
+                if (HasScaleX) { bitset |= k_ScaleXBit; }
+                if (HasScaleY) { bitset |= k_ScaleYBit; }
+                if (HasScaleZ) { bitset |= k_ScaleZBit; }
+                if (IsTeleportingNextFrame) { bitset |= k_TeleportingBit; }
+                if (UseInterpolation) { bitset |= k_Interpolate; }
+                if (QuaternionSync) { bitset |= k_QuaternionSync; }
+                if (QuaternionCompression) { bitset |= k_QuaternionCompress; }
+                if (UseHalfFloatPrecision) { bitset |= k_UseHalfFloats; }
+                if (IsSynchronizing) { bitset |= k_Synchronization; }
+                if (UsePositionSlerp) { bitset |= k_PositionSlerp; }
+                if (IsParented) { bitset |= k_IsParented; }
+                if (SynchronizeBaseHalfFloat) { bitset |= k_SynchBaseHalfFloat; }
+                if (ReliableSequenced) { bitset |= k_ReliableSequenced; }
+                if (UseUnreliableDeltas) { bitset |= k_UseUnreliableDeltas; }
+                if (UnreliableFrameSync) { bitset |= k_UnreliableFrameSync; }
+                if (SwitchTransformSpaceWhenParented) { bitset |= k_SwitchTransformSpaceWhenParented; }
+                if (TrackByStateId) { bitset |= k_TrackStateId; }
+
+                BytePacker.WriteValueBitPacked(writer, bitset);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void DeserializeBitset(ref FastBufferReader reader)
+            {
+                ByteUnpacker.ReadValueBitPacked(reader, out uint bitset);
+
+                InLocalSpace = (bitset & k_InLocalSpaceBit) != 0;
+                HasPositionX = (bitset & k_PositionXBit) != 0;
+                HasPositionY =  (bitset & k_PositionYBit) != 0;
+                HasPositionZ =  (bitset & k_PositionZBit) != 0;
+                HasPositionChange = HasPositionX || HasPositionY || HasPositionZ;
+                HasRotAngleX =  (bitset & k_RotAngleXBit) != 0;
+                HasRotAngleY =  (bitset & k_RotAngleYBit) != 0;
+                HasRotAngleZ =  (bitset & k_RotAngleZBit) != 0;
+                HasRotAngleChange = HasRotAngleX || HasRotAngleY || HasRotAngleZ;
+                SetHasScale(Axis.X, (bitset & k_ScaleXBit) != 0);
+                SetHasScale(Axis.Y, (bitset & k_ScaleYBit) != 0);
+                SetHasScale(Axis.Z, (bitset & k_ScaleZBit) != 0);
+                IsTeleportingNextFrame = (bitset & k_TeleportingBit) != 0;
+                UseInterpolation = (bitset & k_Interpolate) != 0;
+                QuaternionSync = (bitset & k_QuaternionSync) != 0;
+                QuaternionCompression = (bitset & k_QuaternionCompress) != 0;
+                UseHalfFloatPrecision = (bitset & k_UseHalfFloats) != 0;
+                IsSynchronizing = (bitset & k_Synchronization) != 0;
+                UsePositionSlerp = (bitset & k_PositionSlerp) != 0;
+                IsParented = (bitset & k_IsParented) != 0;
+                SynchronizeBaseHalfFloat = (bitset & k_SynchBaseHalfFloat) != 0;
+                ReliableSequenced = (bitset & k_ReliableSequenced) != 0;
+                UseUnreliableDeltas = (bitset & k_UseUnreliableDeltas) != 0;
+                UnreliableFrameSync = (bitset & k_UnreliableFrameSync) != 0;
+                SwitchTransformSpaceWhenParented = (bitset & k_SwitchTransformSpaceWhenParented) != 0;
+                TrackByStateId = (bitset & k_TrackStateId) != 0;
             }
         }
         #endregion
@@ -2281,6 +2194,7 @@ namespace Unity.Netcode.Components
                     networkState.HasPositionZ = true;
                     isPositionDirty = true;
                 }
+                networkState.HasPositionChange = isPositionDirty;
             }
             else if (SynchronizePosition)
             {
@@ -2386,6 +2300,7 @@ namespace Unity.Netcode.Components
                     networkState.HasPositionX = SyncPositionX;
                     networkState.HasPositionY = SyncPositionY;
                     networkState.HasPositionZ = SyncPositionZ;
+                    networkState.HasPositionChange = SyncPositionX || SyncPositionY || SyncPositionZ;
                 }
             }
 
@@ -2411,6 +2326,7 @@ namespace Unity.Netcode.Components
                     networkState.HasRotAngleZ = true;
                     isRotationDirty = true;
                 }
+                networkState.HasRotAngleChange = isRotationDirty;
             }
             else if (SynchronizeRotation)
             {
@@ -2432,9 +2348,7 @@ namespace Unity.Netcode.Components
                 if (isRotationDirty)
                 {
                     networkState.Rotation = rotation;
-                    networkState.HasRotAngleX = true;
-                    networkState.HasRotAngleY = true;
-                    networkState.HasRotAngleZ = true;
+                    networkState.MarkChanged(AxialType.Rotation, true);
                 }
             }
 
@@ -2474,6 +2388,7 @@ namespace Unity.Netcode.Components
                         networkState.HasScaleZ = true;
                         isScaleDirty = true;
                     }
+                    networkState.HasScaleChange = isScaleDirty;
                 }
                 else if (SynchronizeScale)
                 {
@@ -2484,7 +2399,7 @@ namespace Unity.Netcode.Components
                         {
                             isScaleDirty = true;
                             networkState.Scale[i] = scale[i];
-                            networkState.SetHasScale(i, i == 0 ? SyncScaleX : i == 1 ? SyncScaleY : SyncScaleZ);
+                            networkState.SetHasScale((Axis)i, i == 0 ? SyncScaleX : i == 1 ? SyncScaleY : SyncScaleZ);
                         }
                     }
                 }
@@ -2502,9 +2417,7 @@ namespace Unity.Netcode.Components
                 {
                     networkState.Scale = transform.localScale;
                 }
-                networkState.HasScaleX = true;
-                networkState.HasScaleY = true;
-                networkState.HasScaleZ = true;
+                networkState.MarkChanged(AxialType.Scale, true);
                 isScaleDirty = true;
             }
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
@@ -2735,7 +2648,7 @@ namespace Unity.Netcode.Components
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            if (m_LocalAuthoritativeNetworkState.HasScale(i))
+                            if (m_LocalAuthoritativeNetworkState.HasScale((Axis)i))
                             {
                                 adjustedScale[i] = m_LocalAuthoritativeNetworkState.Scale[i];
                             }
@@ -3190,7 +3103,7 @@ namespace Unity.Netcode.Components
                 {
                     for (int i = 0; i < 3; i++)
                     {
-                        if (m_LocalAuthoritativeNetworkState.HasScale(i))
+                        if (m_LocalAuthoritativeNetworkState.HasScale((Axis)i))
                         {
                             currentScale[i] = m_LocalAuthoritativeNetworkState.Scale[i];
                         }

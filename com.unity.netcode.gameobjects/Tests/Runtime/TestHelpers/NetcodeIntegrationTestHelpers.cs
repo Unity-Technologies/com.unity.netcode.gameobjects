@@ -201,6 +201,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #endif
         }
 
+        internal static readonly string IgnoredForCmbServiceReason = "[CMB-Service Test Run] Skipping non-distributed authority test.";
+
         /// <summary>
         /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
         /// test if running against a CMB server.
@@ -209,7 +211,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool isTrue) ? isTrue : false)
             {
-                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+                Assert.Ignore(IgnoredForCmbServiceReason);
             }
         }
 
