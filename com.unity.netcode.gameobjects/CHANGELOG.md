@@ -10,6 +10,29 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.7.0] - 2025-10-27
+
+### Added
+
 - Adding this as a mock change.
 - `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
