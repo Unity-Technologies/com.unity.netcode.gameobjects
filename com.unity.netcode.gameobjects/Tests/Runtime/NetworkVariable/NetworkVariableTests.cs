@@ -216,9 +216,7 @@ namespace Unity.Netcode.RuntimeTests
         Default,
     }
 
-#if !MULTIPLAYER_TOOLS
     [TestFixture(Serialization.EnsureLengthSafety)]
-#endif
     [TestFixture(Serialization.Default)]
     internal class NetworkVariableTests : NetcodeIntegrationTest
     {
@@ -339,7 +337,6 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelToNextTick();
         }
 
-#if !MULTIPLAYER_TOOLS
         /// <summary>
         /// Runs generalized tests on all predefined NetworkVariable types
         /// </summary>
@@ -4884,4 +4881,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-#endif

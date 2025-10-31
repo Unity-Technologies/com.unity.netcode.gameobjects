@@ -10,7 +10,7 @@ namespace Unity.Netcode
         {
             string reasonSent = Reason ?? string.Empty;
 
-            // Since we don't send a ConnectionApprovedMessage, the version for this message is encded with the message itself.
+            // Since we don't send a ConnectionApprovedMessage, the version for this message is encoded with the message itself.
             // However, note that we HAVE received a ConnectionRequestMessage, so we DO have a valid targetVersion on this side of things.
             // We just have to make sure the receiving side knows what version we sent it, since whoever has the higher version number is responsible for versioning and they may be the one with the higher version number.
             BytePacker.WriteValueBitPacked(writer, Version);
@@ -37,7 +37,10 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).ConnectionManager.DisconnectReason = Reason;
+            // Always apply the server-side generated disconnect reason to the server specific disconnect reason.
+            // This is combined with the additional disconnect information when getting NetworkManager.DisconnectReason
+            // (NetworkConnectionManager.DisconnectReason).
+            ((NetworkManager)context.SystemOwner).ConnectionManager.ServerDisconnectReason = Reason;
         }
     };
 }
