@@ -230,6 +230,11 @@ namespace Unity.Netcode.RuntimeTests
         {
             var networkTransformTestComponent = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
             networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
+            // Handle setting up additional transform settings for the current test here.
+            networkTransformTestComponent.UseUnreliableDeltas = UseUnreliableDeltas();
+            networkTransformTestComponent.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            networkTransformTestComponent.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
+            networkTransformTestComponent.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
         }
 
         protected override void OnServerAndClientsCreated()
@@ -291,19 +296,6 @@ namespace Unity.Netcode.RuntimeTests
             // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
             m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
             m_NonAuthoritativeTransform = m_NonAuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
-
-            // Setup whether we are or are not using unreliable deltas
-            m_AuthoritativeTransform.UseUnreliableDeltas = UseUnreliableDeltas();
-            m_NonAuthoritativeTransform.UseUnreliableDeltas = UseUnreliableDeltas();
-
-            m_AuthoritativeTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
-            m_AuthoritativeTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
-            m_AuthoritativeTransform.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
-            m_NonAuthoritativeTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
-            m_NonAuthoritativeTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
-            m_NonAuthoritativeTransform.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
-
-
             m_OwnerTransform = m_AuthoritativeTransform.IsOwner ? m_AuthoritativeTransform : m_NonAuthoritativeTransform;
         }
 
@@ -781,7 +773,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
-            Debug.Log($"[Auth]{name} State Pushed.");
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
             AuthorityPushedTransformState?.Invoke(ref networkTransformState);
@@ -792,7 +783,6 @@ namespace Unity.Netcode.RuntimeTests
         public bool StateUpdated { get; internal set; }
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
-            Debug.Log($"[Non-Auth]{name} State Updated.");
             StateUpdated = true;
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
         }

@@ -335,7 +335,11 @@ namespace Unity.Netcode
                 throw new RpcException("This RPC can only be sent by the server.");
             }
 
-            if (attributeParams.InvokePermission == RpcInvokePermission.Owner && !IsOwner)
+#pragma warning disable CS0618 // Type or member is obsolete
+            var requireOwnership = attributeParams.RequireOwnership;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            if ((requireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }
@@ -749,6 +753,8 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnNetworkPreDespawn() { }
 
+        internal virtual void InternalOnNetworkPreSpawn(ref NetworkManager networkManager) { }
+
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
@@ -756,6 +762,15 @@ namespace Unity.Netcode
             RpcTarget = networkManager.RpcTarget;
 
             UpdateNetworkProperties();
+
+            InternalOnNetworkPreSpawn(ref networkManager);
+
+            // Exit early for disabled NetworkBehaviours.
+            // We still want the above values to be set.
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
 
             try
             {
