@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Adding this as a mock change.
 - `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
 - Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
