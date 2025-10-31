@@ -184,6 +184,20 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        [Test]
+        public void UnityTransport_BindClientToSpecificPort()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+            transport.SetConnectionData("127.0.0.1", 4242);
+            transport.ConnectionData.ClientBindPort = 14242;
+
+            Assert.True(transport.StartClient());
+            Assert.AreEqual(14242, transport.GetLocalEndpoint().Port);
+
+            transport.Shutdown();
+        }
+
 #if HOSTNAME_RESOLUTION_AVAILABLE
         private static readonly (string, bool)[] k_HostnameChecks =
         {
