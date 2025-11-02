@@ -34,7 +34,7 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
+                    m_NetworkAnimator.SendClientAnimStateRpc(animationUpdate.AnimationMessage, animationUpdate.RpcParams);
                 }
             }
 
@@ -48,7 +48,7 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
+                    m_NetworkAnimator.SendClientParametersUpdateRpc(sendEntry.ParametersUpdateMessage, sendEntry.RpcParams);
                 }
             }
             m_SendParameterUpdates.Clear();
@@ -63,11 +63,11 @@ namespace Unity.Netcode.Components
                 {
                     if (!sendEntry.SendToServer)
                     {
-                        m_NetworkAnimator.SendAnimTriggerClientRpc(sendEntry.AnimationTriggerMessage, sendEntry.ClientRpcParams);
+                        m_NetworkAnimator.SendClientAnimTriggerRpc(sendEntry.AnimationTriggerMessage, sendEntry.RpcParams);
                     }
                     else
                     {
-                        m_NetworkAnimator.SendAnimTriggerServerRpc(sendEntry.AnimationTriggerMessage);
+                        m_NetworkAnimator.SendServerAnimTriggerRpc(sendEntry.AnimationTriggerMessage);
                     }
                 }
             }
@@ -127,7 +127,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private struct AnimationUpdate
         {
-            public ClientRpcParams ClientRpcParams;
+            public RpcParams RpcParams;
             public NetworkAnimator.AnimationMessage AnimationMessage;
         }
 
@@ -136,14 +136,14 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked when a server needs to forwarding an update to the animation state
         /// </summary>
-        internal void SendAnimationUpdate(NetworkAnimator.AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
+        internal void SendAnimationUpdate(NetworkAnimator.AnimationMessage animationMessage, RpcParams rpcParams = default)
         {
-            m_SendAnimationUpdates.Add(new AnimationUpdate() { ClientRpcParams = clientRpcParams, AnimationMessage = animationMessage });
+            m_SendAnimationUpdates.Add(new AnimationUpdate() { RpcParams = rpcParams, AnimationMessage = animationMessage });
         }
 
         private struct ParameterUpdate
         {
-            public ClientRpcParams ClientRpcParams;
+            public RpcParams RpcParams;
             public NetworkAnimator.ParametersUpdateMessage ParametersUpdateMessage;
         }
 
@@ -152,9 +152,9 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked when a server needs to forwarding an update to the parameter state
         /// </summary>
-        internal void SendParameterUpdate(NetworkAnimator.ParametersUpdateMessage parametersUpdateMessage, ClientRpcParams clientRpcParams = default)
+        internal void SendParameterUpdate(NetworkAnimator.ParametersUpdateMessage parametersUpdateMessage, RpcParams rpcParams = default)
         {
-            m_SendParameterUpdates.Add(new ParameterUpdate() { ClientRpcParams = clientRpcParams, ParametersUpdateMessage = parametersUpdateMessage });
+            m_SendParameterUpdates.Add(new ParameterUpdate() { RpcParams = rpcParams, ParametersUpdateMessage = parametersUpdateMessage });
         }
 
         private List<NetworkAnimator.ParametersUpdateMessage> m_ProcessParameterUpdates = new List<NetworkAnimator.ParametersUpdateMessage>();
@@ -166,7 +166,7 @@ namespace Unity.Netcode.Components
         private struct TriggerUpdate
         {
             public bool SendToServer;
-            public ClientRpcParams ClientRpcParams;
+            public RpcParams RpcParams;
             public NetworkAnimator.AnimationTriggerMessage AnimationTriggerMessage;
         }
 
@@ -175,9 +175,9 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked when a server needs to forward an update to a Trigger state
         /// </summary>
-        internal void QueueTriggerUpdateToClient(NetworkAnimator.AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
+        internal void QueueTriggerUpdateToClient(NetworkAnimator.AnimationTriggerMessage animationTriggerMessage, RpcParams clientRpcParams = default)
         {
-            m_SendTriggerUpdates.Add(new TriggerUpdate() { ClientRpcParams = clientRpcParams, AnimationTriggerMessage = animationTriggerMessage });
+            m_SendTriggerUpdates.Add(new TriggerUpdate() { RpcParams = clientRpcParams, AnimationTriggerMessage = animationTriggerMessage });
         }
 
         internal void QueueTriggerUpdateToServer(NetworkAnimator.AnimationTriggerMessage animationTriggerMessage)
@@ -677,8 +677,8 @@ namespace Unity.Netcode.Components
         private float[] m_LayerWeights;
         private static byte[] s_EmptyArray = new byte[] { };
         private List<int> m_ParametersToUpdate;
-        private List<ulong> m_ClientSendList;
-        private ClientRpcParams m_ClientRpcParams;
+        private RpcParams m_RpcParams;
+        private RpcTargetGroup m_TargetGroup;
         private AnimationMessage m_AnimationMessage;
         private NetworkAnimatorStateChangeHandler m_NetworkAnimatorStateChangeHandler;
 
@@ -733,6 +733,8 @@ namespace Unity.Netcode.Components
         public override void OnDestroy()
         {
             SpawnCleanup();
+
+            m_TargetGroup?.Dispose();
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
@@ -901,12 +903,12 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogWarningServer($"[{gameObject.name}][{nameof(NetworkAnimator)}] {nameof(Animator)} is not assigned! Animation synchronization will not work for this instance!");
             }
 
-            m_ClientSendList = new List<ulong>(128);
-            m_ClientRpcParams = new ClientRpcParams
+            m_TargetGroup = RpcTarget.Group(new List<ulong>(128), RpcTargetUse.Persistent) as RpcTargetGroup;
+            m_RpcParams = new RpcParams()
             {
-                Send = new ClientRpcSendParams
+                Send = new RpcSendParams()
                 {
-                    TargetClientIds = m_ClientSendList
+                    Target = m_TargetGroup
                 }
             };
 
@@ -1178,27 +1180,27 @@ namespace Unity.Netcode.Components
                 else
                 if (!IsServer && IsOwner)
                 {
-                    SendAnimStateServerRpc(m_AnimationMessage);
+                    SendServerAnimStateRpc(m_AnimationMessage);
                 }
                 else
                 {
                     // Just notify all remote clients and not the local server
-                    m_ClientSendList.Clear();
+                    m_TargetGroup.Clear();
                     foreach (var clientId in m_LocalNetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == m_LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
                         {
                             continue;
                         }
-                        m_ClientSendList.Add(clientId);
+                        m_TargetGroup.Add(clientId);
                     }
-                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                    SendAnimStateClientRpc(m_AnimationMessage, m_ClientRpcParams);
+                    m_RpcParams.Send.Target = m_TargetGroup;
+                    SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
                 }
             }
         }
 
-        private void SendParametersUpdate(ClientRpcParams clientRpcParams = default, bool sendDirect = false)
+        private void SendParametersUpdate(RpcParams rpcParams = default, bool sendDirect = false)
         {
             WriteParameters(ref m_ParameterWriter);
 
@@ -1221,17 +1223,17 @@ namespace Unity.Netcode.Components
             {
                 if (!IsServer)
                 {
-                    SendParametersUpdateServerRpc(parametersMessage);
+                    SendServerParametersUpdateRpc(parametersMessage);
                 }
                 else
                 {
                     if (sendDirect)
                     {
-                        SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
+                        SendClientParametersUpdateRpc(parametersMessage, rpcParams);
                     }
                     else
                     {
-                        m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersMessage, clientRpcParams);
+                        m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersMessage, rpcParams);
                     }
                 }
             }
@@ -1498,8 +1500,8 @@ namespace Unity.Netcode.Components
         /// Server-side animator parameter update request
         /// The server sets its local parameters and then forwards the message to the remaining clients
         /// </summary>
-        [ServerRpc]
-        private unsafe void SendParametersUpdateServerRpc(ParametersUpdateMessage parametersUpdate, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
+        private unsafe void SendServerParametersUpdateRpc(ParametersUpdateMessage parametersUpdate, RpcParams rpcParams = default)
         {
             if (IsServerAuthoritative())
             {
@@ -1507,7 +1509,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+                if (rpcParams.Receive.SenderClientId != OwnerClientId)
                 {
                     return;
                 }
@@ -1518,26 +1520,26 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
-                m_ClientSendList.Clear();
+                m_TargetGroup.Clear();
                 foreach (var clientId in connectedClientIds)
                 {
-                    if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
+                    if (clientId == rpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                     {
                         continue;
                     }
-                    m_ClientSendList.Add(clientId);
+                    m_TargetGroup.Add(clientId);
                 }
 
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
+                m_RpcParams.Send.Target = m_TargetGroup;
+                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_RpcParams);
             }
         }
 
         /// <summary>
         /// Distributed Authority: Updates the client's animator's parameters
         /// </summary>
-        [Rpc(SendTo.NotAuthority)]
-        internal void SendParametersUpdateRpc(ParametersUpdateMessage parametersUpdate)
+        [Rpc(SendTo.NotAuthority, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
+        internal void SendParametersUpdateRpc(ParametersUpdateMessage parametersUpdate, RpcParams rpcParams = default)
         {
             m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
         }
@@ -1545,11 +1547,11 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Client-Server: Updates the client's animator's parameters
         /// </summary>
-        [ClientRpc]
-        internal void SendParametersUpdateClientRpc(ParametersUpdateMessage parametersUpdate, ClientRpcParams clientRpcParams = default)
+        [Rpc(SendTo.NotMe, AllowTargetOverride = true)]
+        internal void SendClientParametersUpdateRpc(ParametersUpdateMessage parametersUpdate, RpcParams rpcParams = default)
         {
             var isServerAuthoritative = IsServerAuthoritative();
-            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
+            if ((!isServerAuthoritative && !IsOwner) || (isServerAuthoritative && !IsServer))
             {
                 m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
             }
@@ -1559,8 +1561,8 @@ namespace Unity.Netcode.Components
         /// Server-side animation state update request
         /// The server sets its local state and then forwards the message to the remaining clients
         /// </summary>
-        [ServerRpc]
-        private void SendAnimStateServerRpc(AnimationMessage animationMessage, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server, AllowTargetOverride = true)]
+        private void SendServerAnimStateRpc(AnimationMessage animationMessage, RpcParams rcParams = default)
         {
             if (IsServerAuthoritative())
             {
@@ -1568,7 +1570,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+                if (rcParams.Receive.SenderClientId != OwnerClientId)
                 {
                     return;
                 }
@@ -1584,25 +1586,26 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
-                m_ClientSendList.Clear();
+                m_TargetGroup.Clear();
+
                 foreach (var clientId in connectedClientIds)
                 {
-                    if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
+                    if (clientId == rcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                     {
                         continue;
                     }
-                    m_ClientSendList.Add(clientId);
+                    m_TargetGroup.Add(clientId);
                 }
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animationMessage, m_ClientRpcParams);
+                m_RpcParams.Send.Target = m_TargetGroup;
+                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animationMessage, m_RpcParams);
             }
         }
 
         /// <summary>
         /// Client-Server: Internally-called RPC client-side receiving function to update animation states
         /// </summary>
-        [ClientRpc]
-        internal void SendAnimStateClientRpc(AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
+        [Rpc(SendTo.NotServer, AllowTargetOverride = true)]
+        internal void SendClientAnimStateRpc(AnimationMessage animationMessage, RpcParams rpcParams = default)
         {
             ProcessAnimStates(animationMessage);
         }
@@ -1610,8 +1613,8 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Distributed Authority: Internally-called RPC non-authority receiving function to update animation states
         /// </summary>
-        [Rpc(SendTo.NotAuthority)]
-        internal void SendAnimStateRpc(AnimationMessage animationMessage)
+        [Rpc(SendTo.NotAuthority, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
+        internal void SendAnimStateRpc(AnimationMessage animationMessage, RpcParams rpcParams = default)
         {
             ProcessAnimStates(animationMessage);
         }
@@ -1643,11 +1646,11 @@ namespace Unity.Netcode.Components
         /// Server-side trigger state update request
         /// The server sets its local state and then forwards the message to the remaining clients
         /// </summary>
-        [ServerRpc]
-        internal void SendAnimTriggerServerRpc(AnimationTriggerMessage animationTriggerMessage, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server, AllowTargetOverride = true)]
+        internal void SendServerAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage, RpcParams rpcParams = default)
         {
             // Ignore if a non-owner sent this.
-            if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+            if (rpcParams.Receive.SenderClientId != OwnerClientId)
             {
                 if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
                 {
@@ -1661,23 +1664,22 @@ namespace Unity.Netcode.Components
 
             var connectedClientIds = m_LocalNetworkManager.ConnectionManager.ConnectedClientIds;
 
-            m_ClientSendList.Clear();
+            m_TargetGroup.Clear();
             foreach (var clientId in connectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                 {
                     continue;
                 }
-                m_ClientSendList.Add(clientId);
+                m_TargetGroup.Add(clientId);
             }
             if (IsServerAuthoritative())
             {
-                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_ClientRpcParams);
+                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_RpcParams);
             }
             else if (connectedClientIds.Count > (IsHost ? 2 : 1))
             {
-                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_ClientRpcParams);
+                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_RpcParams);
             }
         }
 
@@ -1694,8 +1696,8 @@ namespace Unity.Netcode.Components
         ///  a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
-        [Rpc(SendTo.NotAuthority)]
-        internal void SendAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage)
+        [Rpc(SendTo.NotAuthority, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
+        internal void SendAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage, RpcParams rpcParams = default)
         {
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
@@ -1706,8 +1708,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
         /// <param name="clientRpcParams">unused</param>
-        [ClientRpc]
-        internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
+        [Rpc(SendTo.NotServer, AllowTargetOverride = true)]
+        internal void SendClientAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage, RpcParams rpcParams = default)
         {
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
@@ -1750,10 +1752,7 @@ namespace Unity.Netcode.Components
                 {
                     /// <see cref="UpdatePendingTriggerStates"/> as to why we queue
                     m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animTriggerMessage);
-                    if (!IsHost)
-                    {
-                        InternalSetTrigger(hash, setTrigger);
-                    }
+                    InternalSetTrigger(hash, setTrigger);
                 }
                 else
                 {
