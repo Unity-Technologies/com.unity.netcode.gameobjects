@@ -111,6 +111,11 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var networkManager in m_NetworkManagers)
             {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_AuthoritySeqControllerInstance.NetworkObjectId))
+                {
+                    hasErrors = true;
+                    continue;
+                }
                 var nonAuthorityInstance = networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].GetComponent<SpawnSequenceController>();
                 var nonAuthorityEulerRotation = nonAuthorityInstance.GetSpaceRelativeRotation().eulerAngles;
 
@@ -173,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
             var parent1 = m_AuthorityParentInstances[0];
             var parent2 = m_AuthorityParentInstances[1];
 
-            ConfigureSequencesTest1(parent1);
+            ConfigureSequencesTest1_ClientServerOnly(parent1);
             yield return RunTestSequences();
 
             ConfigureSequencesTest2(parent1);
@@ -288,12 +293,19 @@ namespace Unity.Netcode.RuntimeTests
 
         #region Test Sequence Configurations
         /// <summary>
+        /// Client server only - under da mode only the authority can parent
         /// Test-1:
         /// Authority-> Spawn, change ownership, (wait), parent
         /// </summary>
-        private void ConfigureSequencesTest1(NetworkObject parent)
+        private void ConfigureSequencesTest1_ClientServerOnly(NetworkObject parent)
         {
-            SpawnSequenceController.CurrentTest = "Test1";
+            SpawnSequenceController.CurrentTest = "Test1 (Client-Server Only)";
+            if (m_AuthorityNetworkManager.DistributedAuthorityMode)
+            {
+                SpawnSequenceController.ClientServerOnly = true;
+                return;
+            }
+
             var changeOwnershipSequence = new ChangeOwnershipSequence()
             {
                 Stage = SpawnSequence.SpawnStage.AfterSpawn,
@@ -305,6 +317,7 @@ namespace Unity.Netcode.RuntimeTests
                 TimeDelayInMS = 200,
                 Stage = SpawnSequence.SpawnStage.AfterSpawn,
                 TargetParent = parent,
+                InvokeOnlyOnClientId = GetAuthorityNetworkManager().LocalClientId,
             };
 
             SpawnSequenceController.AddAction(changeOwnershipSequence);
@@ -855,6 +868,10 @@ namespace Unity.Netcode.RuntimeTests
             protected override void OnAction()
             {
                 m_NetworkObject.ChangeOwnership(TargetOwnerClientId);
+                if (TargetOwnerClientId != m_NetworkObject.OwnerClientId)
+                {
+                    Debug.LogError($"[{m_NetworkObject.name}] Failed to change ownership!");
+                }
                 base.OnAction();
             }
         }
@@ -866,7 +883,20 @@ namespace Unity.Netcode.RuntimeTests
 
             protected override bool OnShouldInvoke(SpawnStage stage)
             {
-                return base.OnShouldInvoke(stage) && (m_NetworkObject.HasAuthority || (m_NetworkObject.IsOwner && m_NetworkObject.AllowOwnerToParent));
+                // Don't invoke if the base says no
+                if (!base.OnShouldInvoke(stage))
+                {
+                    return false;
+                }
+
+                // If sequence is configured to specifically invoke on this client
+                if (InvokeOnlyOnClientId.HasValue && m_NetworkObject.NetworkManager.LocalClientId == InvokeOnlyOnClientId.Value)
+                {
+                    return true;
+                }
+
+                // Otherwise we should invoke if we have the authority to invoke
+                return m_NetworkObject.HasAuthority || (m_NetworkObject.IsOwner && m_NetworkObject.AllowOwnerToParent);
             }
 
             protected override void OnAction()

@@ -7,9 +7,6 @@ using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.MultiprocessRuntimeTests;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 using Unity.Netcode.Transports.UTP;
 
 /// <summary>
@@ -195,17 +192,6 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"transport is {transport}");
         switch (transport)
         {
-#if UNITY_UNET_PRESENT
-            case UNetTransport unetTransport:
-                unetTransport.ConnectPort = ushortport;
-                unetTransport.ServerListenPort = ushortport;
-                if (m_IsClient)
-                {
-                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
-                    unetTransport.ConnectAddress = m_ConnectAddress;
-                }
-                break;
-#endif
             case UnityTransport unityTransport:
                 MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
                 unityTransport.ConnectionData.Port = ushortport;
@@ -402,7 +388,7 @@ public class TestCoordinator : NetworkBehaviour
         };
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void ClientFinishedServerRpc(ServerRpcParams p = default)
     {
         // signal from clients to the server to say the client is done with it's task
@@ -487,7 +473,7 @@ public class TestCoordinator : NetworkBehaviour
         m_TimeSinceLastKeepAlive = Time.time;
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
@@ -506,16 +492,15 @@ public class TestCoordinator : NetworkBehaviour
     /// <remarks>
     /// Use <see cref="NetworkLog.LogErrorServer"/> to log server-side without MultiprocessLogger formatting.
     /// </remarks>
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteLogServerRpc(string logMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.Log($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {logMessage}");
     }
 }
-

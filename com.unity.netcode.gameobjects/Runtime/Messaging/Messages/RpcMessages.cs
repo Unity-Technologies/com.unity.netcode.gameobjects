@@ -66,23 +66,37 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning($"[{metadata.NetworkObjectId}, {metadata.NetworkBehaviourId}, {metadata.NetworkRpcMethodId}] An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
                 }
+
                 return;
             }
-            var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
 
+            var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
             try
             {
+                var permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId];
+
+                if ((permission == RpcInvokePermission.Server && rpcParams.SenderId != NetworkManager.ServerClientId) ||
+                    (permission == RpcInvokePermission.Owner && rpcParams.SenderId != networkObject.OwnerClientId))
+                {
+                    if (networkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogErrorServer($"Rpc message received from client-{rpcParams.SenderId} who does not have permission to perform this operation!");
+                    }
+                    return;
+                }
+
                 NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
             }
             catch (Exception ex)
             {
-                Debug.LogException(new Exception("Unhandled RPC exception!", ex));
-                if (networkManager.LogLevel == LogLevel.Developer)
+                Debug.LogException(new Exception($"Unhandled RPC exception!", ex));
+                if (networkManager.LogLevel <= LogLevel.Developer)
                 {
                     Debug.Log($"RPC Table Contents");
                     foreach (var entry in NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()])
                     {
-                        Debug.Log($"{entry.Key} | {entry.Value.Method.Name}");
+                        var permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId];
+                        Debug.Log($"{entry.Key} | {entry.Value.Method.Name} | {permission}");
                     }
                 }
             }
@@ -121,6 +135,7 @@ namespace Unity.Netcode
         {
             var rpcParams = new __RpcParams
             {
+                SenderId = context.SenderId,
                 Server = new ServerRpcParams
                 {
                     Receive = new ServerRpcReceiveParams
@@ -158,6 +173,7 @@ namespace Unity.Netcode
         {
             var rpcParams = new __RpcParams
             {
+                SenderId = NetworkManager.ServerClientId,
                 Client = new ClientRpcParams
                 {
                     Receive = new ClientRpcReceiveParams
@@ -196,13 +212,20 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+
+            // If the server is receiving, always trust the transportId for the SenderClientId
+            // Otherwise, use the proxied id.
+            var senderId = networkManager.IsServer ? context.SenderId : SenderClientId;
+
             var rpcParams = new __RpcParams
             {
+                SenderId = senderId,
                 Ext = new RpcParams
                 {
                     Receive = new RpcReceiveParams
                     {
-                        SenderClientId = SenderClientId
+                        SenderClientId = senderId
                     }
                 }
             };

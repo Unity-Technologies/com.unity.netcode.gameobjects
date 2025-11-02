@@ -1,4 +1,4 @@
-#if !MULTIPLAYER_TOOLS && !NGO_MINIMALPROJECT
+#if !NGO_MINIMALPROJECT
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -433,69 +433,69 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             OnRpcReceived();
         }
 
-        // RPCs with RequireOwnership = true
+        // RPCs with InvokePermission.Owner
 
-        [Rpc(SendTo.Everyone, RequireOwnership = true)]
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToEveryoneRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.Me, RequireOwnership = true)]
+        [Rpc(SendTo.Me, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToMeRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.Owner, RequireOwnership = true)]
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToOwnerRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.NotOwner, RequireOwnership = true)]
+        [Rpc(SendTo.NotOwner, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotOwnerRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.Server, RequireOwnership = true)]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToServerRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.NotMe, RequireOwnership = true)]
+        [Rpc(SendTo.NotMe, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotMeRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.NotServer, RequireOwnership = true)]
+        [Rpc(SendTo.NotServer, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotServerRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.ClientsAndHost, RequireOwnership = true)]
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToClientsAndHostRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.SpecifiedInParams, RequireOwnership = true)]
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Owner)]
         public void SpecifiedInParamsRequireOwnershipRpc(RpcParams rpcParams)
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.Authority, RequireOwnership = true)]
+        [Rpc(SendTo.Authority, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToAuthorityRequireOwnershipRpc()
         {
             OnRpcReceived();
         }
 
-        [Rpc(SendTo.NotAuthority, RequireOwnership = true)]
+        [Rpc(SendTo.NotAuthority, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotAuthorityRequireOwnershipRpc()
         {
             OnRpcReceived();
@@ -1231,7 +1231,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var sendTo in sendToValues)
                 {
-                    UnityEngine.Debug.Log($"[{testType}][{sendTo}]");
+                    VerboseDebug($"[{testType}][{sendTo}]");
                     for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
                     {
                         for (ulong sender = 0; sender <= numberOfClientsULong; sender++)

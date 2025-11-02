@@ -46,7 +46,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         }
 
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void ToggleRotateAnimationServerRpc(bool rotate)
         {
             m_Rotate = rotate;
@@ -73,7 +73,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void PlayPulseAnimationServerRpc(bool rotate)
         {
             m_NetworkAnimator.SetTrigger("Pulse");
@@ -255,4 +255,3 @@ namespace Tests.Manual.NetworkAnimatorTests
         }
     }
 }
-

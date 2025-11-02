@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
@@ -285,7 +286,11 @@ namespace Unity.Netcode.Editor
                             }
                         }
                         var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
+#if UNITY_6000_2_OR_NEWER
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetEntityId()}.asset");
+#else
                         string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
+#endif
                         Debug.Log("Saving migrated Network Prefabs List to " + path);
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
@@ -296,6 +301,10 @@ namespace Unity.Netcode.Editor
                     if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
                     {
                         EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                    }
+                    else if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.All(x => x == null))
+                    {
+                        EditorGUILayout.HelpBox("All prefab lists selected are uninitialized. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
                     }
                     EditorGUILayout.PropertyField(m_PrefabsList);
                 }
@@ -390,7 +399,8 @@ namespace Unity.Netcode.Editor
 #if !MULTIPLAYER_TOOLS
             DrawInstallMultiplayerToolsTip();
 #endif
-            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; }
+            ;
             DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
             DisplayCallToActionButtons();
             base.OnInspectorGUI();

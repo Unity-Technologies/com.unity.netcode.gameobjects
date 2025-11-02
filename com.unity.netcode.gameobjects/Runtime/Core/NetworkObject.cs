@@ -2082,6 +2082,12 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
+                // Any NetworkBehaviour that is not spawned and the associated GameObject is disabled should be
+                // skipped over (i.e. not supported).
+                if (!ChildNetworkBehaviours[i].IsSpawned && !ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
                 // Invoke internal notification
                 ChildNetworkBehaviours[i].InternalOnNetworkObjectParentChanged(parentNetworkObject);
                 // Invoke public notification
@@ -2376,47 +2382,29 @@ namespace Unity.Netcode
                 m_CachedWorldPositionStays = true;
             }
 
-            // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
+            // If we're not the server, we should tell the server about this parent change
+            if (!NetworkManager.IsServer)
             {
-                if (!NetworkManager.DAHost)
+                // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
+                if (distributedAuthority && Observers.Count <= 1)
                 {
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, 0);
                     return;
                 }
-                else
-                {
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
-                    }
-                }
+
+                NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                return;
             }
-            else
+
+            // Otherwise we are a Server (client-server or DAHost). Send to all observers
+            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
             {
-                // Otherwise we are running in client-server =or= this has to be a DAHost instance.
-                // Send to all connected clients.
-                unsafe
+                if (clientId == NetworkManager.ServerClientId)
                 {
-                    var maxCount = NetworkManager.ConnectedClientsIds.Count;
-                    ulong* clientIds = stackalloc ulong[maxCount];
-                    int idx = 0;
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        if (Observers.Contains(clientId))
-                        {
-                            clientIds[idx++] = clientId;
-                        }
-                    }
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientIds, idx);
+                    continue;
+                }
+                if (Observers.Contains(clientId))
+                {
+                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
@@ -2560,10 +2548,7 @@ namespace Unity.Netcode
             var networkManager = NetworkManager;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
-                {
-                    ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager, this);
-                }
+                ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager, this);
             }
         }
 
@@ -2575,10 +2560,9 @@ namespace Unity.Netcode
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
                 {
-                    Debug.LogWarning($"{childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
+                    Debug.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
                     continue;
                 }
-
                 childBehaviour.InternalOnNetworkSpawn();
             }
         }
@@ -2635,6 +2619,11 @@ namespace Unity.Netcode
         }
 
         private List<NetworkBehaviour> m_ChildNetworkBehaviours;
+
+        internal string GenerateDisabledNetworkBehaviourWarning(NetworkBehaviour networkBehaviour)
+        {
+            return $"[{name}][{networkBehaviour.GetType().Name}][{nameof(isActiveAndEnabled)}: {networkBehaviour.isActiveAndEnabled}] Disabled {nameof(NetworkBehaviour)}s will be excluded from spawning and synchronization!";
+        }
 
         internal List<NetworkBehaviour> ChildNetworkBehaviours
         {
