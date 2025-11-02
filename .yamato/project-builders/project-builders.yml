@@ -62,21 +62,21 @@ build_{{ netcodeProject[0] }}_project:
     # Build the project using Unity Editor. This will call the given static BuilderScripts method.
     # Ideally, it would be nice to parametrize the BuilderScripts (for example to pass scripting backend as parameter) but -executeMethod only calls static methods without parameters so for now we will have multiple configurations
     # Notice that for Android platform even if mono is selected, il2cpp will be used since mono is not supported for Android builds.
-    - IF "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
-        IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+    - IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
+        IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
         ) ELSE (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
         )
       )
-      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
-          IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
+          IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
             C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
           ) ELSE (
             C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
           )
       )
-      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
+      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget android -executeMethod BuilderScripts.BuildAndroidIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
       )
 
