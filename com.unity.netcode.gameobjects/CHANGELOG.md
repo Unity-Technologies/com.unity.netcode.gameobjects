@@ -11,10 +11,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
-
+- Added `NetworkAnimator.AuthorityMode` which allows you to select whether the `NetworkAnimator` will use a server or owner authority model for state updates (like `NetworkTransform`). (#3586)
+- Added the ability to select which `Animator` parameters the authority `NetworkAnimator` instance should synchronize. This can be done via the inspector view interface or during runtime via `NetworkAnimator.EnableParameterSynchronization`. (#3586)
 
 ### Changed
 
+- Changed NetworkAnimator's to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 
 ### Deprecated
 
@@ -24,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with authority animator instance sending itself RPCs. (#3586)
 
 ### Security
 
