@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             // Simulate a state update
             localState.UseInterpolation = false;
             localState.CurrentPosition = new Vector3(5.0f, 0.0f, 0.0f);
-            localState.HasPositionX = true;
+            localState.SetHasPosition(NetworkTransform.Axis.X, true);
             localState.PositionX = 5.0f;
             localState.NetworkTick++;
 
@@ -85,8 +85,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(localState.NetworkTick == lastStateTick, $"Previous Non-authority state tick was {lastStateTick} but is now {localState.NetworkTick}. Authority pushed a state update.");
 
             // Simualate a 2nd state update on a different position axis
-            localState.HasPositionX = false;
-            localState.HasPositionZ = true;
+            localState.SetHasPosition(NetworkTransform.Axis.X, false);
+            localState.SetHasPosition(NetworkTransform.Axis.Z, true);
             localState.PositionZ = -5.0f;
             localState.NetworkTick++;
             m_NonAuthoritativeTransform.ApplyUpdatedState(localState);

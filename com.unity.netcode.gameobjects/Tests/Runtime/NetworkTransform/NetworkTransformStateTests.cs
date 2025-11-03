@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests
         public void NetworkTransformStateFlags()
         {
             // The current number of flags on the NetworkTransformState
-            var numFlags = 23;
+            var numFlags = 24;
 
             var indexValues = new uint[numFlags];
 
@@ -77,7 +77,8 @@ namespace Unity.Netcode.RuntimeTests
                     ReliableSequenced = boolSet[19],
                     UseUnreliableDeltas = boolSet[20],
                     UnreliableFrameSync = boolSet[21],
-                    TrackByStateId = boolSet[22],
+                    SwitchTransformSpaceWhenParented = boolSet[22],
+                    TrackByStateId = boolSet[23],
                 };
 
                 writer = new FastBufferWriter(64, Allocator.Temp);
@@ -85,7 +86,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Test the bitset representation of the serialization matches the pre-refactor serialization
                 reader = new FastBufferReader(writer, Allocator.None);
-                reader.ReadValueSafe(out uint serializedBitset);
+                ByteUnpacker.ReadValueBitPacked(reader, out uint serializedBitset);
 
                 Assert.True((serializedBitset & indexValues[j]) == indexValues[j], $"[FlagTest][Individual] Set flag value {indexValues[j]} at index {j}, but BitSet value did not match!");
 
@@ -124,6 +125,7 @@ namespace Unity.Netcode.RuntimeTests
                 ReliableSequenced = true,
                 UseUnreliableDeltas = true,
                 UnreliableFrameSync = true,
+                SwitchTransformSpaceWhenParented = true,
                 TrackByStateId = true,
             };
 
@@ -139,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             var legacyBitsetWriter = new FastBufferWriter(64, Allocator.Temp);
-            legacyBitsetWriter.WriteValueSafe(bitset);
+            BytePacker.WriteValueBitPacked(legacyBitsetWriter, bitset);
 
             // Test refactored serialization matches pre-refactor flag serialization
             Assert.AreEqual(legacyBitsetWriter.ToArray(), serializedBuffer, "[Flag serialization] Serialized NetworkTransformState doesn't match original serialization!");
@@ -178,7 +180,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(expected[19], actual.ReliableSequenced, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.ReliableSequenced)} is incorrect!");
             Assert.AreEqual(expected[20], actual.UseUnreliableDeltas, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UseUnreliableDeltas)} is incorrect!");
             Assert.AreEqual(expected[21], actual.UnreliableFrameSync, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UnreliableFrameSync)} is incorrect!");
-            Assert.AreEqual(expected[22], actual.TrackByStateId, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.TrackByStateId)} is incorrect!");
+            Assert.AreEqual(expected[22], actual.SwitchTransformSpaceWhenParented, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.SwitchTransformSpaceWhenParented)} is incorrect!");
+            Assert.AreEqual(expected[23], actual.TrackByStateId, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.TrackByStateId)} is incorrect!");
         }
 
     }
