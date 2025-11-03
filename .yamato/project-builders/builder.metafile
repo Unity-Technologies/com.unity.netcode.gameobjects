@@ -5,6 +5,7 @@ NetcodeProjects:
     # The parameters specify repo location, default branch to use (since you can modify it via job variable), path to manifest.json file so we can replace package entry and path to the project root folder since it differs between projects
     # Note that for BossRoom 'main' branch supports NGOv1.X and 'develop' branch supports NGOv2.X
     # TODO: For BossRoom correct branch to develop when PR-3736 is merged in their repo
+    # TODO: For CharacterControllerMovingBodies correct the branch to use 'main' when this branch gets merged
     BossRoom:
         GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git"
         defaultBranch: ngo-playtest-update
@@ -20,3 +21,8 @@ NetcodeProjects:
         defaultBranch: main
         manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
         projectPath: 'Basic/DistributedAuthoritySocialHub'
+    CharacterControllerMovingBodies:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git"
+        branch: chore/update-charactercontroller-example-to-use-relay
+        manifestPath: Examples/CharacterControllerMovingBodies/Packages/manifest.json
+        projectPath: 'Examples/CharacterControllerMovingBodies'
