@@ -103,11 +103,37 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
+        private string m_DisconnectReason;
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// provide disconnect information that will be followed by the server's disconnect reason.
         /// </summary>
-        public string DisconnectReason { get; internal set; }
+        /// <remarks>
+        /// On a server or host, this value could no longer exist after all subscribed callbacks are invoked for the
+        /// client that disconnected. It is recommended to copy the message to some other property or field when
+        /// <see cref="OnClientDisconnectCallback"/> is invoked.
+        /// </remarks>
+        public string DisconnectReason => GetDisconnectReason(); // fine as function because this call is infrequent
+
+        /// <summary>
+        /// Gets the reason for why this client was disconnected if exists.
+        /// </summary>
+        /// <returns><see cref="ServerDisconnectReason"/> disconnect reason if it exists, otherwise <see cref="m_DisconnectReason"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal string GetDisconnectReason()
+        {
+            // TODO: fix this properly
+            if (!string.IsNullOrEmpty(ServerDisconnectReason))
+            {
+                return ServerDisconnectReason;
+            }
+            return m_DisconnectReason;
+        }
+
+        /// <summary>
+        /// Updated by <see cref="DisconnectReasonMessage"/>.
+        /// </summary>
+        internal string ServerDisconnectReason;
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
@@ -537,21 +563,20 @@ namespace Unity.Netcode
         private void GenerateDisconnectInformation(ulong clientId, ulong transportClientId, string reason = null)
         {
             var header = $"[Disconnect Event][Client-{clientId}][TransportClientId-{transportClientId}]";
-            var existingDisconnectReason = DisconnectReason;
-
             var defaultMessage = Transport.DisconnectEventMessage;
             if (reason != null)
             {
                 defaultMessage = $"{reason} {defaultMessage}";
             }
+
             // Just go ahead and set this whether client or server so any subscriptions to a disconnect event can check the DisconnectReason
             // to determine why the client disconnected
-            DisconnectReason = $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
-            DisconnectReason = $"{DisconnectReason}\n{existingDisconnectReason}";
+            m_DisconnectReason = $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo($"{DisconnectReason}");
+                var serverDisconnectReason = string.IsNullOrEmpty(ServerDisconnectReason) ? string.Empty : $"\n{ServerDisconnectReason}";
+                NetworkLog.LogInfo($"{m_DisconnectReason}{serverDisconnectReason}");
             }
         }
 
@@ -1475,7 +1500,8 @@ namespace Unity.Netcode
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
             NetworkObject.OrphanChildren.Clear();
-            DisconnectReason = string.Empty;
+            m_DisconnectReason = string.Empty;
+            ServerDisconnectReason = string.Empty;
 
             NetworkManager = networkManager;
             MessageManager = networkManager.MessageManager;

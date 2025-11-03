@@ -246,6 +246,12 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             /// <summary>
+            /// The port the client will bind to. If 0 (the default), an ephemeral port will be used.
+            /// </summary>
+            [SerializeField]
+            public ushort ClientBindPort;
+
+            /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
             /// <remarks>
@@ -683,6 +689,20 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             InitDriver();
+
+            // Don't bind yet if connecting to a hostname, since we don't know if it will resolve to IPv4 or IPv6.
+            if (serverEndpoint.Family != NetworkFamily.Invalid && ConnectionData.ClientBindPort != 0)
+            {
+                var bindEndpoint = serverEndpoint.Family == NetworkFamily.Ipv6
+                    ? NetworkEndpoint.AnyIpv6.WithPort(ConnectionData.ClientBindPort)
+                    : NetworkEndpoint.AnyIpv4.WithPort(ConnectionData.ClientBindPort);
+                if (m_Driver.Bind(bindEndpoint) != 0)
+                {
+                    Debug.LogError($"Couldn't create socket. Possibly another process is using port {ConnectionData.ClientBindPort}.");
+                    return false;
+                }
+            }
+
             Connect(serverEndpoint);
 
             return true;
@@ -838,9 +858,9 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name)</param>
-        /// <param name="port">The remote port</param>
-        /// <param name="listenAddress">The local listen address</param>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
+        /// <param name="port">The remote port to connect to.</param>
+        /// <param name="listenAddress">The address the server is going to listen on.</param>
         /// <param name="overrideCommandLineArgs">Should override port value</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool overrideCommandLineArgs = false)
         {
@@ -862,7 +882,8 @@ namespace Unity.Netcode.Transports.UTP
             {
                 Address = ipv4Address,
                 Port = port,
-                ServerListenAddress = listenAddress ?? ipv4Address
+                ServerListenAddress = listenAddress ?? ipv4Address,
+                ClientBindPort = ConnectionData.ClientBindPort
             };
 
             SetProtocol(ProtocolType.UnityTransport);
@@ -871,8 +892,8 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="endPoint">The remote end point</param>
-        /// <param name="listenEndPoint">The local listen endpoint</param>
+        /// <param name="endPoint">The remote endpoint the client should connect to.</param>
+        /// <param name="listenEndPoint">The endpoint the server should listen on.</param>
         public void SetConnectionData(NetworkEndpoint endPoint, NetworkEndpoint listenEndPoint = default)
         {
             string serverAddress = endPoint.Address.Split(':')[0];

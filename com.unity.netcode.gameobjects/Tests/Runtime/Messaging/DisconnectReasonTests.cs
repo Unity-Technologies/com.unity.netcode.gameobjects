@@ -57,9 +57,8 @@ namespace Unity.Netcode.RuntimeTests
                 yield return null;
             }
 
-            Assert.AreEqual(m_ClientNetworkManagers[0].DisconnectReason, "Bogus reason 1");
-            Assert.AreEqual(m_ClientNetworkManagers[1].DisconnectReason, "Bogus reason 2");
-
+            Assert.True(m_ClientNetworkManagers[0].DisconnectReason.Contains("Bogus reason 1"), $"[Client-{m_ClientNetworkManagers[0].LocalClientId}] Disconnect reason should contain \"Bogus reason 1\" but is: {m_ClientNetworkManagers[0].DisconnectReason}");
+            Assert.True(m_ClientNetworkManagers[1].DisconnectReason.Contains("Bogus reason 2"), $"[Client-{m_ClientNetworkManagers[0].LocalClientId}] Disconnect reason should contain \"Bogus reason 2\" but is: {m_ClientNetworkManagers[1].DisconnectReason}");
             Debug.Assert(m_DisconnectCount == 2);
         }
 

@@ -98,11 +98,13 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var (manager, instance) in m_InvokeInstances)
             {
                 instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc)] = 1;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerRequireOwnershipRpc)] = 1;
 
                 var threwException = false;
                 try
                 {
                     instance.OwnerInvokePermissionRpc();
+                    instance.OwnerRequireOwnershipRpc();
                 }
                 catch (RpcException)
                 {
@@ -167,8 +169,10 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var (manager, instance) in m_InvokeInstances)
             {
                 instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc)] = 1;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerRequireOwnershipRpc)] = 1;
 
                 SendUncheckedMessage(manager, instance, nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc));
+                SendUncheckedMessage(manager, instance, nameof(InvokePermissionBehaviour.OwnerRequireOwnershipRpc));
             }
 
             yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
@@ -441,6 +445,15 @@ namespace Unity.Netcode.RuntimeTests
 
         [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
         public void ServerInvokePermissionRpc()
+        {
+            TrackRpcCalled(GetCaller());
+        }
+
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        [Rpc(SendTo.Everyone, RequireOwnership = true)]
+#pragma warning restore CS0618 // Type or member is obsolete
+        public void OwnerRequireOwnershipRpc()
         {
             TrackRpcCalled(GetCaller());
         }
