@@ -819,13 +819,13 @@ namespace Unity.Netcode.Transports.UTP
             return null;
         }
 
-        private bool ParseCommandLineOptions(out int port)
+        private bool ParseCommandLineOptions(out ushort port)
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
 
             if (UnityEngine.DedicatedServer.Arguments.Port != null)
             {
-                port = UnityEngine.DedicatedServer.Arguments.Port.Value;
+                port = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
                 return true;
             }
 
@@ -846,12 +846,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
         /// <param name="port">The remote port to connect to.</param>
         /// <param name="listenAddress">The address the server is going to listen on.</param>
-        /// <param name="forceOverrideCommandLineArgs">Should override port value</param>
+        /// <param name="forceOverrideCommandLineArgs">When true, any command line arguments will be ignored.</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool forceOverrideCommandLineArgs = false)
         {
-            if (!forceOverrideCommandLineArgs)
+            m_HasForcedConnectionData = forceOverrideCommandLineArgs;
+            if (!forceOverrideCommandLineArgs && ParseCommandLineOptions(out var commandLinePort))
             {
-                port = ParseCommandLineOptions(out var newPort) ? (ushort)newPort : ConnectionData.Port;
+                port = commandLinePort;
             }
 
             ConnectionData = new ConnectionAddressData
@@ -1607,7 +1608,9 @@ namespace Unity.Netcode.Transports.UTP
             return m_UnityTransportNotificationHandler.GetDisconnectEventMessage(disconnectEvent);
         }
 
-
+        /// <summary>
+        /// This is set in <see cref="SetConnectionData(string, ushort, string, bool)"/>
+        /// </summary>
         private bool m_HasForcedConnectionData;
 
         /// <summary>
@@ -1626,7 +1629,7 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkManager = networkManager;
 
-            if (m_HasForcedConnectionData && ParseCommandLineOptions(out var port))
+            if (!m_HasForcedConnectionData && ParseCommandLineOptions(out var port))
             {
                 if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
                 {

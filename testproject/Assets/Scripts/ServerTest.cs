@@ -17,7 +17,7 @@ public class ServerTest : MonoBehaviour
     {
         ushort port = 8889;
         Debug.Log("Start Server Port " + port);          // <---- Start Server Port 8888
-        m_Transport.SetConnectionData("0.0.0.0", port, forceOverrideCommandLineArgs: true);   // <----  Port set to 8888
+       // m_Transport.SetConnectionData("0.0.0.0", port, forceOverrideCommandLineArgs: false);   // <----  Port set to true 8888 false 9999
         m_Network.StartServer();
         Debug.Log("Server listening on port: " + m_Transport.ConnectionData.Port); // <---- Shows      Server listening on port: 7777
     }
