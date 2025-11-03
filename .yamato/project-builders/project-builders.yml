@@ -34,7 +34,7 @@ build_{{ netcodeProject[0] }}_project:
   commands:
     # Validate inputs passed via Yamato variables
     - python Tools/scripts/BuildAutomation/validate_params.py
-    - echo Building {{ netcodeProject[0] }} project with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
+    - echo Building {{ netcodeProject[0] }} project from branch {{ netcodeProject[1].defaultBranch }} with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
 
     # Clone the external project repository into a specific directory. Notice that branch is also specified.
     - git clone --single-branch --branch %SAMPLE_BRANCH% {{ netcodeProject[1].GithubRepo }} C:/ClonedProject
