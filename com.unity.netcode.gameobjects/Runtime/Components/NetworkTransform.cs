@@ -190,7 +190,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleChange{ get; internal set; }
+            public bool HasRotAngleChange { get; internal set; }
 
             // Scale
             /// <summary>
@@ -885,12 +885,12 @@ namespace Unity.Netcode.Components
 
                 InLocalSpace = (bitset & k_InLocalSpaceBit) != 0;
                 HasPositionX = (bitset & k_PositionXBit) != 0;
-                HasPositionY =  (bitset & k_PositionYBit) != 0;
-                HasPositionZ =  (bitset & k_PositionZBit) != 0;
+                HasPositionY = (bitset & k_PositionYBit) != 0;
+                HasPositionZ = (bitset & k_PositionZBit) != 0;
                 HasPositionChange = HasPositionX || HasPositionY || HasPositionZ;
-                HasRotAngleX =  (bitset & k_RotAngleXBit) != 0;
-                HasRotAngleY =  (bitset & k_RotAngleYBit) != 0;
-                HasRotAngleZ =  (bitset & k_RotAngleZBit) != 0;
+                HasRotAngleX = (bitset & k_RotAngleXBit) != 0;
+                HasRotAngleY = (bitset & k_RotAngleYBit) != 0;
+                HasRotAngleZ = (bitset & k_RotAngleZBit) != 0;
                 HasRotAngleChange = HasRotAngleX || HasRotAngleY || HasRotAngleZ;
                 SetHasScale(Axis.X, (bitset & k_ScaleXBit) != 0);
                 SetHasScale(Axis.Y, (bitset & k_ScaleYBit) != 0);
