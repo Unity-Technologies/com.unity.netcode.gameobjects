@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.Components;
