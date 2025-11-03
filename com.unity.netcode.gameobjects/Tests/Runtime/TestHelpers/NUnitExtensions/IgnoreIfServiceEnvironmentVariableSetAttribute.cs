@@ -6,7 +6,7 @@ using NUnit.Framework.Internal;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-    public class IgnoreIfServiceEnvironmentVariableSetAttribute : NUnitAttribute, IApplyToTest
+    internal class IgnoreIfServiceEnvironmentVariableSetAttribute : NUnitAttribute, IApplyToTest
     {
         public void ApplyToTest(Test test)
         {

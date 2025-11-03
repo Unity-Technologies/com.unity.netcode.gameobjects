@@ -846,7 +846,7 @@ namespace Unity.Netcode.Components
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SerializeBitset(ref FastBufferWriter writer)
+            internal void SerializeBitset(ref FastBufferWriter writer)
             {
                 uint bitset = 0;
 
@@ -879,7 +879,7 @@ namespace Unity.Netcode.Components
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void DeserializeBitset(ref FastBufferReader reader)
+            internal void DeserializeBitset(ref FastBufferReader reader)
             {
                 ByteUnpacker.ReadValueBitPacked(reader, out uint bitset);
 
