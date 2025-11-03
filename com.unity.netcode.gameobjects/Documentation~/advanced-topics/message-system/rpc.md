@@ -1,6 +1,6 @@
 # RPC
 
-Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is the recommended attribute to use when declaring RPC methods. The `Rpc` attribute's parameters define the receivers and execution rights for the RPC method.
+Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is the recommended attribute to use when declaring RPC methods and its parameters define the receivers and execution rights for the RPC method.
 
 ![](../../images/sequence_diagrams/RPCs/ServerRPCs.png)
 
@@ -204,7 +204,7 @@ There are a few other parameters that can be passed to either the `Rpc` attribut
 | Parameter               | Description                                                  |
 | ----------------------- | ------------------------------------------------------------ |
 | `Delivery`            | Controls whether the delivery is reliable (default) or unreliable.<br /><br />Options: `RpcDelivery.Reliable` or `RpcDelivery.Unreliable`<br />Default: `RpcDelivery.Reliable` |
-| `InvokePermission`    | Sets an RPC's invocation permissions.<br /><br />Options:<br /> `RpcInvokePermission.Server` - This RPC throws an exception if invoked by a game client that is not the server.<br />`RpcInvokePermission.Owner` - This RPC throws an exception if invoked by a game client that does not own the object.<br />`RpcInvokePermission.Everyone` - This can be invoked by any connected game client.<br />Default: `RpcInvokePermission.Everyone` |
+| `InvokePermission`    | Sets an RPC's invocation permissions.<br /><br />Options:<br /> `RpcInvokePermission.Server` - This RPC throws an exception if invoked by a game client that isn't the server.<br />`RpcInvokePermission.Owner` - This RPC throws an exception if invoked by a game client that doesn't own the object.<br />`RpcInvokePermission.Everyone` - This RPC can be invoked by any connected game client.<br />Default: `RpcInvokePermission.Everyone` |
 | `DeferLocal`          | If `true`, RPCs that execute locally will be deferred until the start of the next frame, as if they had been sent over the network. (They will not actually be sent over the network, but will be treated as if they were.) This is useful for mutually recursive RPCs on hosts, where sending back and forth between the server and the "host client" will cause a stack overflow if each RPC is executed instantly; simulating the flow of RPCs between remote client and server enables this flow to work the same in both contexts.<br /><br />Default: `false` |
 | `AllowTargetOverride` | By default, any `SendTo` value other than `SendTo.SpecifiedInParams` is a hard-coded value that cannot be changed. Setting this to `true` allows you to provide an alternate target at runtime, while using the `SendTo` value as a fallback if no runtime value is provided. |
 
@@ -217,7 +217,7 @@ There are a few other parameters that can be passed to either the `Rpc` attribut
 
 ## Invocation order
 
-Rpc message sent with `RpcDelivery.Reliable` will be sent and invoked on other game clients in the same order as they were called on the local game client.
+RPCs sent with `RpcDelivery.Reliable` are invoked on other game clients in the same order as they were called on the local game client.
 
 ```csharp
 [Rpc(SendTo.Server)]
@@ -254,11 +254,11 @@ void Update()
 ```
 
 > [!Warning]
-> Invocation order is not guaranteed with nested RPC invocations that include targets that may invoke locally. Invocation order is also not guaranteed when using `RpcDelivery.Unreliable`
+> Invocation order isn't guaranteed with nested RPC invocations that include targets that may invoke locally. Invocation order is also not guaranteed when using `RpcDelivery.Unreliable`.
 
 ### Deferring local invocation
 
-Invoking an RPC from within another RPC introduces the risk that the local RPC may invoke before messages are sent to other game clients. This will result in the RPC message for the inner RPC invocation being sent before the message for the outer RPC.
+Invoking an RPC from within another RPC introduces the risk that the local RPC may invoke before messages are sent to other game clients. This can result in the RPC message for the inner RPC invocation being sent before the message for the outer RPC.
 
 ```csharp
 [Rpc(SendTo.Everyone)]
@@ -290,7 +290,7 @@ void Update()
 }
 ```
 
-Use the RPC `LocalDeferMode` to resolve issue. Configuring the RPC to be deferred when invoked locally will ensure that any outer RPC messages are always sent before the inner function is invoked.
+You can use the RPC `LocalDeferMode` to resolve this issue. Configuring the RPC to be deferred when invoked locally ensures that any outer RPC messages are always sent before the inner function is invoked.
 
 ```csharp
 // An RPC can be configured to defer the local invocation in the attribute definition

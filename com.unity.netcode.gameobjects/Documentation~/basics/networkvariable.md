@@ -145,7 +145,7 @@ This works the same way with dynamically spawned NetworkObjects.
 
 The [synchronization and notification example](#synchronization-and-notification-example) highlights the differences between synchronizing a `NetworkVariable` with newly-joining clients and notifying connected clients when a `NetworkVariable` changes, but it doesn't provide any concrete example usage.
 
-The `OnValueChanged` example shows a simple server-authoritative `NetworkVariable` being used to track the state of a door (that is, open or closed) using an RPC that is sent to the server. Each time the door is used by a client, the `Door.ToggleStateRpc` is invoked and the server-side toggles the state of the door. When the `Door.State.Value` changes, all connected clients are synchronized to the (new) current `Value` and the `OnStateChanged` method is invoked locally on each client.
+The `OnValueChanged` example shows a simple server-authoritative `NetworkVariable` being used to track the state of a door (open or closed) using an RPC that's sent to the server. Each time the door is used by a client, the `Door.ToggleStateRpc` is invoked and the server-side toggles the state of the door. When the `Door.State.Value` changes, all connected clients are synchronized to the (new) current `Value` and the `OnStateChanged` method is invoked locally on each client.
 
 ```csharp
 public class Door : NetworkBehaviour
