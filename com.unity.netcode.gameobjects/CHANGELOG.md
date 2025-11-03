@@ -16,7 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed NetworkAnimator's to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
+- Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 
 ### Deprecated
 
