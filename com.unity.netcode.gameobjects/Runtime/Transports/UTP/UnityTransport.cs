@@ -823,10 +823,8 @@ namespace Unity.Netcode.Transports.UTP
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
 
-            Debug.Log("UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT");
             if (UnityEngine.DedicatedServer.Arguments.Port != null)
             {
-                Debug.Log("UnityEngine.DedicatedServer.Arguments.Port is not null");
                 port = UnityEngine.DedicatedServer.Arguments.Port.Value;
                 return true;
             }
