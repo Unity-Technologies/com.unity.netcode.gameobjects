@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -16,6 +18,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_AllowServerToStart;
 
+        private GameObject m_PrefabToSpawn;
+
         protected override bool CanStartServerAndClients()
         {
             return m_AllowServerToStart;
@@ -32,45 +36,95 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        protected override void OnServerAndClientsCreated()
+        {
+            m_PrefabToSpawn = CreateNetworkObjectPrefab("TestPrefab");
+
+            var childObject = new GameObject
+            {
+                name = "ChildObject"
+            };
+            childObject.transform.parent = m_PrefabToSpawn.transform;
+            childObject.AddComponent<NetworkTransform>();
+            base.OnServerAndClientsCreated();
+        }
+
         protected override IEnumerator OnSetup()
         {
             m_AllowServerToStart = false;
             return base.OnSetup();
         }
 
+
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab()
+            {
+                Prefab = m_PrefabToSpawn,
+            });
+            base.OnNewClientCreated(networkManager);
+        }
+
+
         /// <summary>
-        /// This validates the fix for when a child GameObject with a NetworkBehaviour
+        /// This validates:
+        /// - The fix for when a child GameObject with a NetworkBehaviour
         /// is deleted while the parent GameObject with a NetworkObject is spawned and
         /// is not deleted until a later time would cause an exception due to the
         /// NetworkBehaviour not being removed from the NetworkObject.ChildNetworkBehaviours
         /// list.
+        /// - When a NetworkBehaviour is disabled but the associated GameObject is enabled,
+        /// the object spawns without any issues.
         /// </summary>
         [UnityTest]
-        public IEnumerator ValidatedDisableddNetworkBehaviourWarning()
+        public IEnumerator ValidatedDisableddNetworkBehaviourWarning([Values] bool disableGameObject)
         {
             m_AllowServerToStart = true;
-
-            yield return s_DefaultWaitForTick;
 
             // Now just start the Host
             yield return StartServerAndClients();
 
-            var parentObject = new GameObject();
-            var childObject = new GameObject
+            // Now join a new client to make sure a connected client spawns the instance.
+            yield return CreateAndStartNewClient();
+
+            // Adjust the prefab to either have the child GameObject completely disabled or the NetworkBehaviour
+            // disabled.
+            var childBehaviour = m_PrefabToSpawn.GetComponentInChildren<NetworkTransform>(true);
+            if (disableGameObject)
             {
-                name = "ChildObject"
-            };
-            childObject.transform.parent = parentObject.transform;
-            var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
-            var childBehaviour = childObject.AddComponent<NetworkTransform>();
+                childBehaviour.enabled = true;
+                childBehaviour.gameObject.SetActive(false);
+            }
+            else
+            {
+                childBehaviour.enabled = false;
+                childBehaviour.gameObject.SetActive(true);
+            }
+            // Now create an instance of the prefab
+            var instance = Object.Instantiate(m_PrefabToSpawn);
+            var instanceNetworkObject = instance.GetComponent<NetworkObject>();
+            // When the GameObject is disabled, check for the warning.
+            if (disableGameObject)
+            {
+                // Generate the expected warning message
+                var expectedWarning = instanceNetworkObject.GenerateDisabledNetworkBehaviourWarning(instanceNetworkObject.GetComponentInChildren<NetworkTransform>(true));
+                var expectedSplit = expectedWarning.Split(']');
+                var expectedWarningBody = expectedSplit.Last();
+                LogAssert.Expect(LogType.Warning, new Regex($".*{expectedWarningBody}*."));
+            }
 
-            // Set the child object to be inactive in the hierarchy
-            childObject.SetActive(false);
+            // Spawn the instance
+            SpawnObjectInstance(instanceNetworkObject, m_ServerNetworkManager);
+            // Asure the connected client spawned the object first
+            yield return WaitForSpawnedOnAllOrTimeOut(instanceNetworkObject);
+            AssertOnTimeout($"Not all clients spawned {instanceNetworkObject.name}!");
 
-            LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
+            // Now join a new client to make sure the client synchronizes with the disabled GameObject or NetworkBehaviour component.
+            yield return CreateAndStartNewClient();
 
-            parentNetworkObject.Spawn();
-            yield return s_DefaultWaitForTick;
+            // Asure the newly connected client synchronizes the spawned object correctly
+            yield return WaitForSpawnedOnAllOrTimeOut(instanceNetworkObject);
+            AssertOnTimeout($"Not all clients spawned {instanceNetworkObject.name}!");
         }
 
         /// <summary>

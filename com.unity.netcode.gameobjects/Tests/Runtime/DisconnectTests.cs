@@ -35,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests
             ClientDisconnectsFromServer
         }
 
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 2;
 
         private OwnerPersistence m_OwnerPersistence;
         private ClientDisconnectType m_ClientDisconnectType;
@@ -99,8 +99,14 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return;
             }
-
-            m_DisconnectedEvent.Add(networkManager, connectionEventData);
+            if (!m_DisconnectedEvent.ContainsKey(networkManager))
+            {
+                m_DisconnectedEvent.Add(networkManager, connectionEventData);
+            }
+            else
+            {
+                m_DisconnectedEvent[networkManager] = connectionEventData;
+            }
         }
 
         /// <summary>
@@ -144,10 +150,29 @@ namespace Unity.Netcode.RuntimeTests
             return !m_ServerNetworkManager.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == m_ClientId);
         }
 
+        /// <summary>
+        /// Used to compare against when the client-side disconnects
+        /// </summary>
+        private int m_ExpectedConnectedClientCount;
+
         [UnityTest]
         public IEnumerator ClientPlayerDisconnected([Values] ClientDisconnectType clientDisconnectType)
         {
-            var clientNetworkManager = m_ClientNetworkManagers[0];
+            // Cycling through 2 (or more) clients disconnecting
+            for (int i = m_ClientNetworkManagers.Length - 1; i >= 0; i--)
+            {
+                var client = m_ClientNetworkManagers[i];
+                if (client.LocalClientId == m_ServerNetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                m_ExpectedConnectedClientCount = m_ServerNetworkManager.ConnectedClients.Count;
+                yield return DisconnectClient(m_ClientNetworkManagers[i], clientDisconnectType);
+            }
+        }
+
+        private IEnumerator DisconnectClient(NetworkManager clientNetworkManager, ClientDisconnectType clientDisconnectType)
+        {
             m_ClientId = clientNetworkManager.LocalClientId;
             m_ClientDisconnectType = clientDisconnectType;
 
@@ -163,6 +188,9 @@ namespace Unity.Netcode.RuntimeTests
                 clientNetworkManager.OnConnectionEvent += OnConnectionEvent;
                 m_ServerNetworkManager.OnConnectionEvent += OnConnectionEvent;
                 m_ServerNetworkManager.DisconnectClient(m_ClientId);
+                Assert.True(!string.IsNullOrEmpty(m_ServerNetworkManager.DisconnectReason), "Server-side disconnect notification should have been generated but was not!");
+                var splitByDisconnectEvent = m_ServerNetworkManager.DisconnectReason.Split("[Disconnect Event]");
+                Assert.IsTrue(splitByDisconnectEvent.Length <= 2, $"Multiple disconnect events found in the server-side disconnect reason:\n {m_ServerNetworkManager.DisconnectReason}");
             }
             else
             {
@@ -187,13 +215,14 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
+                m_ExpectedConnectedClientCount -= 1;
                 Assert.IsTrue(m_DisconnectedEvent.ContainsKey(m_ServerNetworkManager), $"Could not find the server {nameof(NetworkManager)} disconnect event entry!");
                 Assert.IsTrue(m_DisconnectedEvent[m_ServerNetworkManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the server {nameof(NetworkManager)} disconnect event entry!");
                 Assert.IsTrue(m_DisconnectedEvent.ContainsKey(clientNetworkManager), $"Could not find the client {nameof(NetworkManager)} disconnect event entry!");
                 Assert.IsTrue(m_DisconnectedEvent[clientNetworkManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the client {nameof(NetworkManager)} disconnect event entry!");
-                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Count == 1, $"Expected connected client identifiers count to be 1 but it was {m_ServerNetworkManager.ConnectedClientsIds.Count}!");
-                Assert.IsTrue(m_ServerNetworkManager.ConnectedClients.Count == 1, $"Expected connected client identifiers count to be 1 but it was {m_ServerNetworkManager.ConnectedClients.Count}!");
-                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsList.Count == 1, $"Expected connected client identifiers count to be 1 but it was {m_ServerNetworkManager.ConnectedClientsList.Count}!");
+                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Count == m_ExpectedConnectedClientCount, $"Expected connected client identifiers count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClientsIds.Count}!");
+                Assert.IsTrue(m_ServerNetworkManager.ConnectedClients.Count == m_ExpectedConnectedClientCount, $"Expected connected client identifiers count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClients.Count}!");
+                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsList.Count == m_ExpectedConnectedClientCount, $"Expected connected client identifiers count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClientsList.Count}!");
             }
 
             if (m_OwnerPersistence == OwnerPersistence.DestroyWithOwner)
@@ -244,6 +273,8 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.IsNull(m_ServerNetworkManager.ConnectionManager.LocalClient.PlayerObject, $"{m_ServerNetworkManager.name} still has Player assigned!");
                 }
             }
+            m_DisconnectedEvent.Clear();
+            m_ClientDisconnected = false;
         }
     }
 }

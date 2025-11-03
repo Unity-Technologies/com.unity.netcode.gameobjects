@@ -1,4 +1,4 @@
-#if !MULTIPLAYER_TOOLS && !NGO_MINIMALPROJECT
+#if !NGO_MINIMALPROJECT
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1231,7 +1231,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var sendTo in sendToValues)
                 {
-                    UnityEngine.Debug.Log($"[{testType}][{sendTo}]");
+                    VerboseDebug($"[{testType}][{sendTo}]");
                     for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
                     {
                         for (ulong sender = 0; sender <= numberOfClientsULong; sender++)

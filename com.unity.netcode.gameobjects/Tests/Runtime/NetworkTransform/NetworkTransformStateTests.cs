@@ -1,4 +1,3 @@
-#if !MULTIPLAYER_TOOLS
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -916,4 +915,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-#endif
