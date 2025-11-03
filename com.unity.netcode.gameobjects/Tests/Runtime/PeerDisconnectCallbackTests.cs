@@ -83,9 +83,21 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        private bool m_TargetClientShutdown;
+        private NetworkManager m_TargetClient;
+
+        private void ClientToDisconnect_OnClientStopped(bool wasHost)
+        {
+            m_TargetClient.OnClientStopped -= ClientToDisconnect_OnClientStopped;
+            m_TargetClientShutdown = true;
+        }
+
         [UnityTest]
         public IEnumerator TestPeerDisconnectCallback([Values] ClientDisconnectType clientDisconnectType, [Values(1ul, 2ul, 3ul)] ulong disconnectedClient)
         {
+            m_TargetClientShutdown = false;
+            m_TargetClient = m_ClientNetworkManagers[disconnectedClient - 1];
+            m_TargetClient.OnClientStopped += ClientToDisconnect_OnClientStopped;
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.OnConnectionEvent += OnConnectionEventCallback;
@@ -129,12 +141,15 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
-                yield return StopOneClient(m_ClientNetworkManagers[disconnectedClient - 1]);
+                yield return StopOneClient(m_TargetClient);
             }
 
             yield return WaitForConditionOrTimeOut(hooks);
+            AssertOnTimeout($"Timed out waiting for all clients to receive the {nameof(ClientDisconnectedMessage)}!");
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut);
+            // Make sure the target client is shutdown before performing validation
+            yield return WaitForConditionOrTimeOut(() => m_TargetClientShutdown);
+            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} to shutdown!");
 
             foreach (var client in m_ClientNetworkManagers)
             {
@@ -182,5 +197,6 @@ namespace Unity.Netcode.RuntimeTests
             // Host receives peer disconnect, dedicated server does not
             Assert.AreEqual(m_UseHost ? 3 : 2, m_PeerDisconnectCount);
         }
+
     }
 }

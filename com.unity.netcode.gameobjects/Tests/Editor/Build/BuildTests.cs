@@ -1,4 +1,3 @@
-#if !MULTIPLAYER_TOOLS
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
@@ -41,4 +40,3 @@ namespace Unity.Netcode.EditorTests
         }
     }
 }
-#endif
