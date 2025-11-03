@@ -805,19 +805,6 @@ namespace Unity.Netcode.Transports.UTP
             SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
 
-        internal struct Override<T>
-        {
-            private T m_Value;
-            public bool Overidden { get; private set; }
-            internal T Value
-            {
-                get { return Overidden ? m_Value : default(T); }
-                set { Overidden = true; m_Value = value; }
-            }
-        };
-
-        internal Override<ushort> PortOverride;
-
         // Command line options
         private const string k_OverridePortArg = "-port";
 
@@ -832,15 +819,7 @@ namespace Unity.Netcode.Transports.UTP
             return null;
         }
 
-        private void ParseArg<T>(string arg, ref Override<T> value)
-        {
-            if (GetArg(Environment.GetCommandLineArgs(), arg) is string argValue)
-            {
-                value.Value = (T)Convert.ChangeType(argValue, typeof(T));
-            }
-        }
-
-        private void ParseCommandLineOptions()
+        private bool ParseCommandLineOptions(out int port)
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
 
@@ -848,11 +827,19 @@ namespace Unity.Netcode.Transports.UTP
             if (UnityEngine.DedicatedServer.Arguments.Port != null)
             {
                 Debug.Log("UnityEngine.DedicatedServer.Arguments.Port is not null");
-                PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
+                port = UnityEngine.DedicatedServer.Arguments.Port.Value;
+                return true;
             }
+
 #else
-            ParseArg(k_OverridePortArg, ref PortOverride);
+            if (GetArg(Environment.GetCommandLineArgs(), arg) is string argValue)
+            {
+                port = (T)Convert.ChangeType(argValue, typeof(T));
+                return true;
+            }
 #endif
+            port = default;
+            return false;
         }
 
         /// <summary>
@@ -864,18 +851,9 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="forceOverrideCommandLineArgs">Should override port value</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool forceOverrideCommandLineArgs = false)
         {
-            if (forceOverrideCommandLineArgs)
+            if (!forceOverrideCommandLineArgs)
             {
-                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
-                {
-                    Debug.Log($"Already has command line option set. Using connection data set to {ipv4Address}:{port}");
-                }
-
-                port = ConnectionData.Port;
-            }
-            else
-            {
-                ParseCommandLineOptions();
+                port = ParseCommandLineOptions(out var newPort) ? (ushort)newPort : ConnectionData.Port;
             }
 
             ConnectionData = new ConnectionAddressData
@@ -1631,6 +1609,9 @@ namespace Unity.Netcode.Transports.UTP
             return m_UnityTransportNotificationHandler.GetDisconnectEventMessage(disconnectEvent);
         }
 
+
+        private bool m_HasForcedConnectionData;
+
         /// <summary>
         /// Initializes the transport
         /// </summary>
@@ -1647,9 +1628,13 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkManager = networkManager;
 
-            if (m_NetworkManager && PortOverride.Overidden)
+            if (m_HasForcedConnectionData && ParseCommandLineOptions(out var port))
             {
-                ConnectionData.Port = PortOverride.Value;
+                if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log($"Already has command line option set. Using connection data set to {ConnectionData.Address}:{port}");
+                }
+                ConnectionData.Port = (ushort)port;
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
