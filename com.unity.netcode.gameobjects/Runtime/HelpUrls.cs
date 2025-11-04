@@ -10,8 +10,8 @@ namespace Unity.Netcode.Runtime
         public const string NetworkManager = k_BaseManualUrl + "components/core/networkmanager.html";
         public const string NetworkObject = k_BaseManualUrl + "components/core/networkobject.html";
         public const string NetworkAnimator = k_BaseManualUrl + "components/helper/networkanimator.html";
-        public const string NetworkRigidbody = k_BaseManualUrl + "advanced-topics/physics.html#networkrigidbody";
-        public const string NetworkRigidbody2D = k_BaseManualUrl + "advanced-topics/physics.html#networkrigidbody2d";
+        public const string NetworkRigidbody = k_BaseManualUrl + "components/helper/networkrigidbody.html";
+        public const string NetworkRigidbody2D = k_BaseManualUrl + "components/helper/networkrigidbody.html#networkrigidbody2d";
         public const string NetworkTransform = k_BaseManualUrl + "components/helper/networktransform.html";
         public const string AnticipatedNetworkTransform = k_BaseManualUrl + "advanced-topics/client-anticipation.html";
         public const string UnityTransport = k_BaseApiUrl + ".Transports.UTP.UnityTransport.html";

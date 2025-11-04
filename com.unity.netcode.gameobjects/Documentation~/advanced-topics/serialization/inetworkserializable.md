@@ -181,3 +181,55 @@ public struct MyStructB : MyStructA
     }
 }
 ```
+
+## Generic IEquatable network variables
+
+Netcode for GameObjects doesn't support generic `INetworkSerializable` types with generic `IEquatable`s when implemented as `public class NotSupported<T> : INetworkSerializable, IEquatable<NotSupported<T>>`, where the type is passed in during declaration like `NetworkVariable<NotSupported<int>> myVar;`.
+
+You can work around this limitation by creating the generic class as normal and adding a virtual method for handling the serialization of the type. Then wrap the generic `INetworkSerializable` in a derived class that has a serializable type defined where the implementation for the serialization is provided.
+
+For example:
+
+```csharp
+public class MyGameData<T> : INetworkSerializable
+{
+    // This needs to be a serializable type according to what network variables support
+    public T Data;
+
+    protected virtual void OnNetworkSerialize<T2>(BufferSerializer<T2> serializer) where T2 : IReaderWriter
+    {
+    }
+
+    public void NetworkSerialize<T2>(BufferSerializer<T2> serializer) where T2 : IReaderWriter
+    {
+        OnNetworkSerialize(serializer);
+    }
+}
+
+public class GameDataWithLong : MyGameData<long>, IEquatable<GameDataWithLong>
+{
+    // Potential additional data
+    public int AdditionalData;
+
+    protected virtual bool OnEquals(GameDataWithLong other)
+    {
+        return other.Data.Equals(other);
+    }
+    public bool Equals(GameDataWithLong other)
+    {
+        return OnEquals(other);
+    }
+
+    protected override void OnNetworkSerialize<T2>(BufferSerializer<T2> serializer)
+    {
+        serializer.SerializeValue(ref AdditionalData);
+        serializer.SerializeValue(ref Data);
+    }
+}
+```
+
+Then declare this network variable like so:
+
+```csharp
+NetworkVariable<GameDataWithLong> myVar = new NetworkVariable<GameDataWithLong>();
+```
