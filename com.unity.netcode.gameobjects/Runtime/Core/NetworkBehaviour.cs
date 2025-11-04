@@ -797,17 +797,6 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
-
-            // Initialize again in case the user's OnNetworkSpawn changed something
-            InitializeVariables();
-
-            if (m_NetworkObject.HasAuthority)
-            {
-                // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
-                // NetworkList, we need to mark the object as free of updates.
-                // This should happen for all objects on the machine triggering the spawn.
-                PostNetworkVariableWrite(true);
-            }
         }
 
         internal void NetworkPostSpawn()
