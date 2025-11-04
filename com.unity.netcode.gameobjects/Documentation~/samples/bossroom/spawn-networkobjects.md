@@ -1,8 +1,7 @@
 # Spawn NetworkObjects in Boss Room
 
-:::note
-Required reading: [Object Spawning](../../basics/object-spawning.md).
-:::
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
 
 This document serves as a walkthrough of Boss Room's approach to solving the following issue: Late-joining clients entering networked sessions encountering zombie `NetworkObjects`. Zombie `NetworkObjects` represent `NetworkObjects` that are instantiated for a client due to scene loads but aren't despawned or destroyed by Netcode.
 
