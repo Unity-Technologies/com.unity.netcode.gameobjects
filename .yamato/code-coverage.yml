@@ -39,7 +39,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_{{ platform.name }}_{{ editor }};flags:NGOv2_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_{{ platform.name }}_{{ editor }};flags:NGOv2_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
