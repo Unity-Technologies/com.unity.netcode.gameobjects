@@ -830,9 +830,9 @@ namespace Unity.Netcode.Transports.UTP
             }
 
 #else
-            if (GetArg(Environment.GetCommandLineArgs(), arg) is string argValue)
+            if (GetArg(Environment.GetCommandLineArgs(), k_OverridePortArg) is string argValue)
             {
-                port = (T)Convert.ChangeType(argValue, typeof(T));
+                port = (ushort)Convert.ChangeType(argValue, typeof(ushort));
                 return true;
             }
 #endif
