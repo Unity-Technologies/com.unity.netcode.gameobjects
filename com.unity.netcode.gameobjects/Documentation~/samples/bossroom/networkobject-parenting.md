@@ -1,8 +1,7 @@
 # NetworkObject parenting inside Boss Room
 
-:::note
-Required reading: [NetworkObject Parenting](../../advanced-topics/networkobject-parenting.md)
-:::
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
 
 Before detailing Boss Room's approach to NetworkObject parenting, it's important to highlight a limitation of Netcode: A dynamically-spawned NetworkObject **can't** contain another NetworkObject in its hierarchy. If you spawn such a NetworkObject, you can't spawn children `NetworkObjects`. You can only add children NetworkObject components to a NetworkObject that is part of a scene.
 
