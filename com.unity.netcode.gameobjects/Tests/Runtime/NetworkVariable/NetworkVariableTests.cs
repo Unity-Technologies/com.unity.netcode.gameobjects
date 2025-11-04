@@ -582,7 +582,6 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyCallback));
         }
-#endif
 
         [Test]
         public void TestINetworkSerializableStructCallsNetworkSerialize([Values] HostOrServer useHost)
@@ -4881,3 +4880,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
