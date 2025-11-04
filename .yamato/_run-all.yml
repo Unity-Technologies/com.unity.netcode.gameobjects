@@ -10,6 +10,7 @@
 
 #-----------------------------------------------------------------------------------
 
+
 # This job runs the fastest checks (PVP and code standards)
 # This is mainly used to quickly validate the easy mistakes before for example running PR trigger jobs (see _triggers.yml)
 run_quick_checks:
