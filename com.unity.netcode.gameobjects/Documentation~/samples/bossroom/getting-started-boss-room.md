@@ -1,5 +1,8 @@
 # Getting started with Boss Room
 
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
+
 Boss Room is a fully functional co-op multiplayer RPG made with Unity Netcode. It's an educational sample designed to showcase typical netcode [patterns](bossroom-actions.md) often featured in similar multiplayer games.
 
 > [!NOTE]
