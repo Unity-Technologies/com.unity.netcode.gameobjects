@@ -11,6 +11,7 @@ using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using static UnityEngine.UI.GridLayoutGroup;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -2171,42 +2172,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return SpawnObject(prefabNetworkObject, owner, destroyWithScene, true);
         }
 
-        /// <summary>
-        /// Spawn an already instantiated instance of a network prefab.
-        /// Note: If you pass in the NetworkPrefab itself this method will not create an instance but will spawn the pefab itself. (don't do this)
-        /// </summary>
-        /// <param name="networkObjectToSpawn">the instance of a prefab <see cref="NetworkObject"/> to spawn</param>
-        /// <param name="owner">the owner of the instance</param>
-        /// <param name="destroyWithScene">default is false</param>
-        /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
-        protected void SpawnObjectInstance(NetworkObject networkObjectToSpawn, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
+
+        internal void SpawnInstanceWithOwnership(NetworkObject networkObjectToSpawn, NetworkManager spawnAuthority, ulong clientId, bool destroyWithScene = false, bool isPlayerObject = false)
         {
-            if (owner.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            if (spawnAuthority.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
             {
-                networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
+                networkObjectToSpawn.NetworkManagerOwner = spawnAuthority; // Required to assure the client does the spawning
                 if (isPlayerObject)
                 {
-                    networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                    networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
                 }
                 else
                 {
-                    networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                    networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
                 }
             }
             else
             {
                 networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
-                if (owner == m_ServerNetworkManager)
+                if (spawnAuthority == m_ServerNetworkManager)
                 {
                     if (m_UseHost)
                     {
                         if (isPlayerObject)
                         {
-                            networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                            networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
                         }
                         else
                         {
-                            networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                            networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
                         }
                     }
                     else
@@ -2218,14 +2212,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     if (isPlayerObject)
                     {
-                        networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                        networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
                     }
                     else
                     {
-                        networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                        networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Spawn an already instantiated instance of a network prefab.
+        /// Note: If you pass in the NetworkPrefab itself this method will not create an instance but will spawn the pefab itself. (don't do this)
+        /// </summary>
+        /// <param name="networkObjectToSpawn">the instance of a prefab <see cref="NetworkObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
+        protected void SpawnObjectInstance(NetworkObject networkObjectToSpawn, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
+        {
+            SpawnInstanceWithOwnership(networkObjectToSpawn, owner, owner.LocalClientId, destroyWithScene, isPlayerObject);
         }
 
         /// <summary>
