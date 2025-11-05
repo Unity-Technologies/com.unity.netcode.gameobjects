@@ -810,6 +810,13 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
+
+            // Let each NetworkVariableBase derived instance know that
+            // all spawn related methods have been invoked.
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].OnSpawned();
+            }
         }
 
         internal void NetworkSessionSynchronized()
@@ -846,6 +853,13 @@ namespace Unity.Netcode
             catch (Exception e)
             {
                 Debug.LogException(e);
+            }
+
+            // Let each NetworkVariableBase derived instance know that
+            // all spawn related methods have been invoked.
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].OnPreDespawn();
             }
         }
 
