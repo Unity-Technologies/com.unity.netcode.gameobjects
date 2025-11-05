@@ -62,7 +62,8 @@ namespace Unity.Netcode
         {
             // If we are dirty and have write permissions by the time the NetworkObject
             // is finished spawning (same frame), then go ahead and reset the dirty related
-            // properties for NetworkList.
+            // properties for NetworkList in the event user script has made changes when
+            // spawning to prevent duplicate entries.
             if (IsDirty() && CanSend())
             {
                 UpdateLastSentTime();
