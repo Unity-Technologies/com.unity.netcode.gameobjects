@@ -60,7 +60,7 @@ namespace Unity.Netcode.Editor
         {
             m_TransportTypes.Clear();
 
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = CurrentAssemblies.GetLoadedAssemblies();
 
             foreach (var assembly in assemblies)
             {
