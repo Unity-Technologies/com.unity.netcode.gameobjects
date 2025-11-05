@@ -132,6 +132,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator VerifyDoesNotRepeatOnSomeClients()
         {
+            var authority = GetAuthorityNetworkManager();
             OwnerModifiedObject.EnableVerbose = m_EnableVerboseDebug;
             // We use this to assure we are the "last client" connected.
             yield return CreateAndStartNewClient();
@@ -144,10 +145,10 @@ namespace Unity.Netcode.RuntimeTests
                 ownerModLastClient.NetworkUpdateStageToCheck = (NetworkUpdateStage)updateLoopType;
                 VerboseDebug($"Testing Update Stage: {ownerModLastClient.NetworkUpdateStageToCheck}");
                 ownerModLastClient.AddValues = true;
-                yield return WaitForTicks(m_ServerNetworkManager, 5);
+                yield return WaitForTicks(authority, 5);
             }
 
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return WaitForTicks(authority, 5);
 
             // We'll have at least one update per stage per client, if all goes well.
             Assert.True(OwnerModifiedObject.Updates > 20);
