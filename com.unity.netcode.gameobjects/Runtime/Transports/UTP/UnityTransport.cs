@@ -1622,7 +1622,7 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{port}");
                 }
-                ConnectionData.Port = (ushort)port;
+                ConnectionData.Port = port;
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
