@@ -808,29 +808,16 @@ namespace Unity.Netcode.Transports.UTP
         // Command line options
         private const string k_OverridePortArg = "-port";
 
-        private string GetArg(string[] commandLineArgs, string arg)
-        {
-            var argIndex = Array.IndexOf(commandLineArgs, arg);
-            if (argIndex >= 0 && argIndex < commandLineArgs.Length - 1)
-            {
-                return commandLineArgs[argIndex + 1];
-            }
-
-            return null;
-        }
-
         private bool ParseCommandLineOptions(out ushort port)
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
-
             if (UnityEngine.DedicatedServer.Arguments.Port != null)
             {
                 port = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
                 return true;
             }
-
 #else
-            if (GetArg(Environment.GetCommandLineArgs(), k_OverridePortArg) is string argValue)
+            if (CommandLineOptions.Instance.GetArg(k_OverridePortArg) is string argValue)
             {
                 port = (ushort)Convert.ChangeType(argValue, typeof(ushort));
                 return true;
@@ -1626,14 +1613,14 @@ namespace Unity.Netcode.Transports.UTP
                 return;
             }
 #endif
-
             m_NetworkManager = networkManager;
 
+            //If the port doesn't have a forced value and is set by a command line option, override it.
             if (!m_HasForcedConnectionData && ParseCommandLineOptions(out var port))
             {
                 if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
                 {
-                    Debug.Log($"Already has command line option set. Using connection data set to {ConnectionData.Address}:{port}");
+                    Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{port}");
                 }
                 ConnectionData.Port = (ushort)port;
             }
