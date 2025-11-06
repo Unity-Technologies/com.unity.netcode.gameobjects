@@ -4,8 +4,15 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// This class contains a list of the application instance domain's command line arguments that
+    /// are used when entering PlayMode or the build is executed.
+    /// </summary>
     public class CommandLineOptions
     {
+        /// <summary>
+        /// Command Line Options Singleton
+        /// </summary>
         public static CommandLineOptions Instance { get; private set; } = null!;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -34,7 +41,6 @@ namespace Unity.Netcode
             {
                 return CommandLineArguments[argIndex + 1];
             }
-
             return null;
         }
     }
