@@ -106,11 +106,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     fieldDefinition.IsPublic = true;
                 }
-
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
                 {
                     fieldDefinition.IsPublic = true;
                 }
+#endif
             }
 
             foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
@@ -151,11 +152,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     fieldDefinition.IsFamilyOrAssembly = true;
                 }
-
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_name_table))
                 {
                     fieldDefinition.IsFamilyOrAssembly = true;
                 }
+#endif
             }
 
             foreach (var methodDefinition in typeDefinition.Methods)
