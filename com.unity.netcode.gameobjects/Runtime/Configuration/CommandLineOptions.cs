@@ -34,6 +34,7 @@ namespace Unity.Netcode
         /// Returns the value of an argument or null if there the argument is not present
         /// </summary>
         /// <param name="arg">The name of the argument</param>
+        /// <returns><see cref="string"/>Value of the command line argument passed in.</returns>
         public string GetArg(string arg)
         {
             var argIndex = CommandLineArguments.IndexOf(arg);
