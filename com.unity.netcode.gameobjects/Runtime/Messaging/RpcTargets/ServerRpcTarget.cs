@@ -43,19 +43,10 @@ namespace Unity.Netcode
                     using var tempBuffer = new FastBufferReader(message.WriteBuffer, Allocator.None);
                     message.ReadBuffer = tempBuffer;
                     message.Handle(ref context);
-                    // If enabled, then add the RPC metrics for this
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-                    int length = tempBuffer.Length;
-                    if (NetworkBehaviour.__rpc_name_table[behaviour.GetType()].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
-                    {
-                        m_NetworkManager.NetworkMetrics.TrackRpcSent(
-                            m_NetworkManager.LocalClientId,
-                            behaviour.NetworkObject,
-                            rpcMethodName,
-                            behaviour.__getTypeName(),
-                            length);
-                    }
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+                    behaviour.TrackRpcMetricsSend(ref message, tempBuffer.Length);
 #endif
+
                 }
                 else // Otherwise, send a proxied message to the owner of the object
                 {

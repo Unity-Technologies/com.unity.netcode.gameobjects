@@ -23,25 +23,11 @@ namespace Unity.Netcode
                 return;
             }
             var proxyMessage = new ProxyMessage { Delivery = delivery, TargetClientIds = TargetClientIds.AsArray(), WrappedMessage = message };
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            var size =
+            var size = behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            behaviour.TrackRpcMetricsSend(ref message, size);
 #endif
-                behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            if (NetworkBehaviour.__rpc_name_table[behaviour.GetType()].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
-            {
-                foreach (var clientId in TargetClientIds)
-                {
-                    behaviour.NetworkManager.NetworkMetrics.TrackRpcSent(
-                        clientId,
-                        behaviour.NetworkObject,
-                        rpcMethodName,
-                        behaviour.__getTypeName(),
-                        size);
-                }
-            }
-#endif
             if (Ids.Contains(NetworkManager.ServerClientId))
             {
                 m_ServerRpcTarget.Send(behaviour, ref message, delivery, rpcParams);

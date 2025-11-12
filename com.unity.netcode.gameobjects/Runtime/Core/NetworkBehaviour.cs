@@ -40,7 +40,7 @@ namespace Unity.Netcode
         internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
         internal static readonly Dictionary<Type, Dictionary<uint, RpcInvokePermission>> __rpc_permission_table = new Dictionary<Type, Dictionary<uint, RpcInvokePermission>>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, string>> __rpc_name_table = new Dictionary<Type, Dictionary<uint, string>>();
 #endif
@@ -142,16 +142,9 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
-            {
-                networkManager.NetworkMetrics.TrackRpcSent(
-                    NetworkManager.ServerClientId,
-                    m_NetworkObject,
-                    rpcMethodName,
-                    __getTypeName(),
-                    rpcWriteSize);
-            }
+
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            TrackRpcMetricsSend(ref serverRpcMessage, rpcMethodId, rpcWriteSize);
 #endif
         }
 
@@ -275,7 +268,11 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            if (!ValidateRpcMessageMetrics(GetType()))
+            {
+                return;
+            }
             if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 if (clientRpcParams.Send.TargetClientIds != null)
@@ -962,12 +959,90 @@ namespace Unity.Netcode
         internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            __rpc_func_table[GetType()][hash] = handler;
-            __rpc_permission_table[GetType()][hash] = permission;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            __rpc_name_table[GetType()][hash] = rpcMethodName;
+            var rpcType = GetType();
+            __rpc_func_table[rpcType][hash] = handler;
+            __rpc_permission_table[rpcType][hash] = permission;
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            __rpc_name_table[rpcType][hash] = rpcMethodName;
 #endif
         }
+
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+        private bool ValidateRpcMessageMetrics(Type type)
+        {
+            if (m_NetworkManager == null)
+            {
+                Debug.LogError($"[{type.Name}] Attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized within this {nameof(NetworkBehaviour)}!");
+                // error and exit
+                return false;
+            }
+
+            if (!__rpc_name_table.ContainsKey(type))
+            {
+                __initializeRpcs();
+                if (!__rpc_name_table.ContainsKey(type))
+                {
+                    Debug.LogError($"[{nameof(TrackRpcMetricsSend)}] Rpc table does not contain an entry for {type.Name}! Failed to initialize RPCs for {type.Name}.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        internal void TrackRpcMetricsSend(ref ServerRpcMessage message, uint rpcMethodId, int rpcWriteSize)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(rpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ServerClientId,
+                    m_NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    rpcWriteSize);
+            }
+        }
+
+        internal void TrackRpcMetricsSend(ref RpcMessage message, int length)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcSent(
+                    m_NetworkManager.LocalClientId,
+                    NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    length);
+            }
+        }
+
+        internal void TrackRpcMetricsReceive(ref RpcMetadata metadata, ref NetworkContext context, int length)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcReceived(
+                    context.SenderId,
+                    NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    length);
+            }
+        }
+#endif
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
