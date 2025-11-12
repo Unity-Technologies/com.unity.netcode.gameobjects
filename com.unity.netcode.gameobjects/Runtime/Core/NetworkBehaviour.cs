@@ -1086,7 +1086,7 @@ namespace Unity.Netcode
             {
                 __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
                 __rpc_permission_table[GetType()] = new Dictionary<uint, RpcInvokePermission>();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 __rpc_name_table[GetType()] = new Dictionary<uint, string>();
 #endif
                 __initializeRpcs();
