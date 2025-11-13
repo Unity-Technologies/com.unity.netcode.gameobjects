@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 
@@ -977,23 +978,25 @@ namespace Unity.Netcode
         }
 
 #if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ValidateRpcMessageMetrics(Type type)
         {
             if (m_NetworkManager == null)
             {
-                Debug.LogError($"[{type.Name}] Attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized within this {nameof(NetworkBehaviour)}!");
+                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}][{type.Name}] {nameof(NetworkBehaviour)} is attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized!");
                 // error and exit
                 return false;
             }
 
             if (!__rpc_name_table.ContainsKey(type))
             {
-                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}] Rpc table does not contain an entry for {type.Name}! Failed to initialize RPCs for {type.Name}.");
+                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}][{type.Name}][{nameof(__rpc_name_table)}] RPC table initialization failure: Table does not contain an entry for {type.Name}!");
                 return false;
             }
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TrackRpcMetricsSend(ref ServerRpcMessage message, uint rpcMethodId, int rpcWriteSize)
         {
             var type = GetType();
@@ -1012,6 +1015,7 @@ namespace Unity.Netcode
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TrackRpcMetricsSend(ref RpcMessage message, int length)
         {
             var type = GetType();
@@ -1030,6 +1034,7 @@ namespace Unity.Netcode
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TrackRpcMetricsReceive(ref RpcMetadata metadata, ref NetworkContext context, int length)
         {
             var type = GetType();
