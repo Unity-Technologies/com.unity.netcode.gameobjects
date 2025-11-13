@@ -753,6 +753,11 @@ namespace Unity.Netcode
 
         internal virtual void InternalOnNetworkPreSpawn(ref NetworkManager networkManager) { }
 
+        /// <summary>
+        /// Handles pre-spawn related initializations.
+        /// Invokes any <see cref="InternalOnNetworkPreSpawn"/> subscriptions.
+        /// Finally invokes <see cref="OnNetworkPreSpawn(ref NetworkManager)"/>.
+        /// </summary>
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
@@ -781,13 +786,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles the initialization of all child <see cref="NetworkBehaviour"/>s.
+        /// Initializes the:
+        /// - <see cref="IsSpawned"/> state.
+        /// - <see cref="NetworkVariableBase"/> instances.
+        /// - Spawned related properties are applied.
+        /// !! Note !!:
+        /// This also populates RPC related tables based on this <see cref="NetworkBehaviour"/>'s RPCs (if any).
         /// </summary>
         internal void InternalOnNetworkSpawn()
         {
             IsSpawned = true;
-            // Initialize the NetworkVariables so they are accessible in OnNetworkSpawn;
+            // Initialize the NetworkVariables and **RPC tables** so they are accessible in OnNetworkSpawn
             InitializeVariables();
+            // Apply the spawned state/properties to this instance
             UpdateNetworkProperties();
         }
 
@@ -817,6 +828,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkPostSpawn"/>.
+        /// </summary>
         internal void NetworkPostSpawn()
         {
             try
@@ -830,6 +844,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkSessionSynchronized"/>.
+        /// </summary>
         internal void NetworkSessionSynchronized()
         {
             try
@@ -843,6 +860,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnInSceneObjectsSpawned"/>.
+        /// </summary>
         internal void InSceneNetworkObjectsSpawned()
         {
             try
@@ -855,6 +875,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkPreDespawn"/>.
+        /// </summary>
         internal void InternalOnNetworkPreDespawn()
         {
             try
@@ -867,6 +890,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkDespawn"/>.
+        /// </summary>
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
