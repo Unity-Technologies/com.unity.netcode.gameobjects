@@ -779,13 +779,22 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles the initialization of all child <see cref="NetworkBehaviour"/>s.
+        /// </summary>
         internal void InternalOnNetworkSpawn()
         {
             IsSpawned = true;
             // Initialize the NetworkVariables so they are accessible in OnNetworkSpawn;
             InitializeVariables();
             UpdateNetworkProperties();
+        }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkSpawn"/>.
+        /// </summary>
+        internal void NetworkSpawn()
+        {
             try
             {
                 OnNetworkSpawn();
@@ -979,12 +988,8 @@ namespace Unity.Netcode
 
             if (!__rpc_name_table.ContainsKey(type))
             {
-                __initializeRpcs();
-                if (!__rpc_name_table.ContainsKey(type))
-                {
-                    Debug.LogError($"[{nameof(TrackRpcMetricsSend)}] Rpc table does not contain an entry for {type.Name}! Failed to initialize RPCs for {type.Name}.");
-                    return false;
-                }
+                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}] Rpc table does not contain an entry for {type.Name}! Failed to initialize RPCs for {type.Name}.");
+                return false;
             }
             return true;
         }

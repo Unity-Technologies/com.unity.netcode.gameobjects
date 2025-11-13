@@ -2556,6 +2556,8 @@ namespace Unity.Netcode
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
+            // Always invoke all internal network spawn methods on each child NetworkBehaviour
+            // ** before ** invoking OnNetworkSpawn.
             foreach (var childBehaviour in ChildNetworkBehaviours)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
@@ -2564,6 +2566,17 @@ namespace Unity.Netcode
                     continue;
                 }
                 childBehaviour.InternalOnNetworkSpawn();
+            }
+
+            // Invoke OnNetworkSpawn on each child NetworkBehaviour
+            foreach (var childBehaviour in ChildNetworkBehaviours)
+            {
+                if (!childBehaviour.gameObject.activeInHierarchy)
+                {
+                    Debug.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
+                    continue;
+                }
+                childBehaviour.NetworkSpawn();
             }
         }
 
