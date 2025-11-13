@@ -1009,14 +1009,13 @@ namespace Unity.Netcode
         {
             if (m_NetworkManager == null)
             {
-                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}][{type.Name}] {nameof(NetworkBehaviour)} is attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized!");
-                // error and exit
+                Debug.LogError($"[{nameof(ValidateRpcMessageMetrics)}][{type.Name}] {nameof(NetworkBehaviour)} is attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized!");
                 return false;
             }
 
             if (!__rpc_name_table.ContainsKey(type))
             {
-                Debug.LogError($"[{nameof(TrackRpcMetricsSend)}][{type.Name}][{nameof(__rpc_name_table)}] RPC table initialization failure: Table does not contain an entry for {type.Name}!");
+                Debug.LogError($"[{nameof(ValidateRpcMessageMetrics)}][{type.Name}][{nameof(__rpc_name_table)}] RPC table initialization failure: Table does not contain an entry for {type.Name}!");
                 return false;
             }
             return true;
