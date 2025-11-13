@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Enables or disables scene management when the <see cref="NetworkManager"/>s 
+        /// Enables or disables scene management when the <see cref="NetworkManager"/>s
         /// are created.
         /// </summary>
         protected override void OnServerAndClientsCreated()
