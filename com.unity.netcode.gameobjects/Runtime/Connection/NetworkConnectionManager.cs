@@ -362,11 +362,6 @@ namespace Unity.Netcode
                 return (clientId, true);
             }
 
-            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
-            {
-                NetworkLog.LogWarning($"Trying to get the NGO client ID map for the transport ID ({transportId}) but did not find the map entry! Returning default transport ID value.");
-            }
-
             return (default, false);
         }
 
@@ -489,6 +484,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client's save their assigned transport id.
+        /// </summary>
+        /// <remarks>
+        /// Added to be able to appropriately log the client's transport
+        /// id when it is shutdown or disconnected.
+        /// </remarks>
+        private ulong m_LocalClientTransportId;
+
+        /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
         internal void ConnectEventHandler(ulong transportClientId)
@@ -508,6 +512,8 @@ namespace Unity.Netcode
             }
             else
             {
+                // Cache the local client's transport id.
+                m_LocalClientTransportId = transportClientId;
                 clientId = NetworkManager.ServerClientId;
             }
 
@@ -585,9 +591,12 @@ namespace Unity.Netcode
         /// </summary>
         internal void DisconnectEventHandler(ulong transportClientId)
         {
-            var (clientId, wasConnectedClient) = TransportIdCleanUp(transportClientId);
-            if (!wasConnectedClient)
+            // Check to see if the client has already been removed from the table but
+            // do not remove it just yet.
+            var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
+            if (!isConnectedClient)
             {
+                // If so, exit early
                 return;
             }
 
@@ -623,7 +632,8 @@ namespace Unity.Netcode
                 // We need to process the disconnection before notifying
                 OnClientDisconnectFromServer(clientId);
 
-                // Now notify the client has disconnected
+                // Now notify the client has disconnected.
+                // (transport id cleanup is handled within)
                 InvokeOnClientDisconnectCallback(clientId);
 
                 if (LocalClient.IsHost)
@@ -633,6 +643,9 @@ namespace Unity.Netcode
             }
             else
             {
+                // Client's clean up their transport id separately from the server.
+                TransportIdCleanUp(transportClientId);
+
                 // Notify local client of disconnection
                 InvokeOnClientDisconnectCallback(clientId);
 
@@ -1392,8 +1405,20 @@ namespace Unity.Netcode
                 }
 
                 ConnectedClientIds.Remove(clientId);
-                var message = new ClientDisconnectedMessage { ClientId = clientId };
-                MessageManager?.SendMessage(ref message, MessageDeliveryType<ClientDisconnectedMessage>.DefaultDelivery, ConnectedClientIds);
+
+                if (MessageManager != null)
+                {
+                    var message = new ClientDisconnectedMessage { ClientId = clientId };
+                    foreach (var sendToId in ConnectedClientIds)
+                    {
+                        // Do not send a disconnect message to ourself
+                        if (sendToId == NetworkManager.LocalClientId)
+                        {
+                            continue;
+                        }
+                        MessageManager.SendMessage(ref message, MessageDeliveryType<ClientDisconnectedMessage>.DefaultDelivery, sendToId);
+                    }
+                }
 
                 // Used for testing/validation purposes only
                 // Promote a new session owner when the ENABLE_DAHOST_AUTOPROMOTE_SESSION_OWNER scripting define is set
@@ -1491,6 +1516,7 @@ namespace Unity.Netcode
         internal void Initialize(NetworkManager networkManager)
         {
             // Prepare for a new session
+            m_LocalClientTransportId = 0;
             LocalClient.IsApproved = false;
             m_PendingClients.Clear();
             ConnectedClients.Clear();
@@ -1524,8 +1550,9 @@ namespace Unity.Netcode
             {
                 Transport.ShuttingDown();
                 var clientId = NetworkManager ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
-                var transportId = ClientIdToTransportId(clientId);
-                GenerateDisconnectInformation(clientId, transportId.Item1, $"{nameof(NetworkConnectionManager)} was shutdown.");
+                // Server and host just log 0 for their transport id while clients will log their cached m_LocalClientTransportId
+                var transportId = clientId == NetworkManager.ServerClientId ? 0 : m_LocalClientTransportId;
+                GenerateDisconnectInformation(clientId, transportId, $"{nameof(NetworkConnectionManager)} was shutdown.");
             }
 
             if (LocalClient.IsServer)
