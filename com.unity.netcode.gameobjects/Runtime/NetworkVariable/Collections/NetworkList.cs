@@ -58,6 +58,21 @@ namespace Unity.Netcode
             Dispose();
         }
 
+        internal override void OnSpawned()
+        {
+            // If we are dirty and have write permissions by the time the NetworkObject
+            // is finished spawning (same frame), then go ahead and reset the dirty related
+            // properties for NetworkList in the event user script has made changes when
+            // spawning to prevent duplicate entries.
+            if (IsDirty() && CanSend())
+            {
+                UpdateLastSentTime();
+                ResetDirty();
+                SetDirty(false);
+            }
+            base.OnSpawned();
+        }
+
         /// <inheritdoc cref="NetworkVariable{T}.ResetDirty"/>
         public override void ResetDirty()
         {
