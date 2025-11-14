@@ -669,7 +669,11 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected virtual bool OnIsServerAuthoritative()
         {
-            return m_LocalNetworkManager && m_LocalNetworkManager.DistributedAuthorityMode ? true : AuthorityMode == AuthorityModes.Server;
+            if (m_LocalNetworkManager && m_LocalNetworkManager.DistributedAuthorityMode)
+            {
+                return true;
+            }
+            return AuthorityMode == AuthorityModes.Server;
         }
 
         private int[] m_TransitionHash;
@@ -760,10 +764,7 @@ namespace Unity.Netcode.Components
 
             foreach (var parameterEntry in AnimatorParameterEntries.ParameterEntries)
             {
-                if (!AnimatorParameterEntryTable.ContainsKey(parameterEntry.NameHash))
-                {
-                    AnimatorParameterEntryTable.Add(parameterEntry.NameHash, parameterEntry);
-                }
+                AnimatorParameterEntryTable.TryAdd(parameterEntry.NameHash, parameterEntry);
             }
 
             int layers = m_Animator.layerCount;
@@ -1692,8 +1693,8 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Distributed Authority: Internally-called RPC client receiving function to update a trigger when the server wants to forward
-        ///  a trigger to a client
+        /// Distributed Authority: Internally-called RPC client receiving function to update a trigger when the authority wants
+        /// to forward a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
         [Rpc(SendTo.NotAuthority, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
