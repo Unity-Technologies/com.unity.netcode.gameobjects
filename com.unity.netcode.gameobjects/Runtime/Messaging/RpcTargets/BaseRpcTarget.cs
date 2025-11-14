@@ -54,7 +54,8 @@ namespace Unity.Netcode
         {
             var size = behaviour.NetworkManager.MessageManager.SendMessage(ref message, delivery, clientId);
 #if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
-            behaviour.TrackRpcMetricsSend(ref message, size);
+            // Send to a specific client
+            behaviour.TrackRpcMetricsSend(clientId, ref message, size);
 #endif
         }
     }

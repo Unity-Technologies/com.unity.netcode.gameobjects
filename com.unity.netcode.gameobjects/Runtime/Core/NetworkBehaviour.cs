@@ -1040,8 +1040,7 @@ namespace Unity.Netcode
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void TrackRpcMetricsSend(ref RpcMessage message, int length)
+        internal void TrackRpcMetricsSend(ulong clientId, ref RpcMessage message, int length)
         {
             var type = GetType();
             if (!ValidateRpcMessageMetrics(type))

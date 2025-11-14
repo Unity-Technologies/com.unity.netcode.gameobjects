@@ -47,7 +47,8 @@ namespace Unity.Netcode
                 length = tempBuffer.Length;
             }
 #if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
-            behaviour.TrackRpcMetricsSend(ref message, length);
+            // Local invocation sends to self
+            behaviour.TrackRpcMetricsSend(m_NetworkManager.LocalClientId, ref message, length);
 #endif
         }
 
