@@ -18,7 +18,7 @@
     * [Connection approval](basics/connection-approval.md)
     * [Max players](basics/maxnumberplayers.md)
   * [Transports](advanced-topics/transports.md)
-  * [Relay](relay/relay.md)
+  * [Unity Relay](relay/relay.md)
 * [Network components](network-components.md)
   * [Core components](components/core/corecomponents.md)
     * [NetworkObject](components/core/networkobject.md)
