@@ -140,6 +140,28 @@ namespace Unity.Netcode
             }
         }
 
+        /// TODO-API: After further vetting and alignment on these, we might make them part of the public API.
+        /// Could actually be like an interface that gets automatically registered for these kinds of notifications
+        /// without having to be a NetworkBehaviour.
+        #region OnSpawn and OnPreDespawn (ETC)
+
+        /// <summary>
+        /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPostSpawn"/> has been invoked.
+        /// </summary>
+        internal virtual void OnSpawned()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPreDespawn"/> has been invoked.
+        /// </summary>
+        internal virtual void OnPreDespawn()
+        {
+
+        }
+        #endregion
+
         /// <summary>
         /// Deinitialize is invoked when a NetworkObject is despawned.
         /// This allows for a recyled NetworkObject (in-scene or pooled)
