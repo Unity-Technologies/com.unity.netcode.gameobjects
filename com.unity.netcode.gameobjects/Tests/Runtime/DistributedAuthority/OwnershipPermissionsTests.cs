@@ -67,7 +67,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     approvedClients++;
                 }
-                else if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress)
+                else if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress || helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied)
                 {
                     requestInProgressClients++;
                 }
@@ -279,8 +279,16 @@ namespace Unity.Netcode.RuntimeTests
             var fourthInstance = fourthClient.SpawnManager.SpawnedObjects[networkObjectId];
             var fourthInstanceHelper = fourthInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
+            // Mock race condition scenario where the second instance request arrives before the rest of the requests.
+            // This could be on the same frame all requests are received or where they stagger over several frames.
+            // Until we resolve the CMB service issue where the order in which messages are received does not always
+            // reflect the order in which they are forwarded to their destination (relative to other messages received from
+            // other clients).
+            firstInstanceHelper.OnlyAllowTargetClientId = true;
+            firstInstanceHelper.ClientToAllowOwnership = secondClient.LocalClientId;
+
             // Send out a request from three clients at the same time
-            // The first one sent (and received for this test) gets ownership
+            // The first one received gets ownership
             requestStatus = secondInstance.RequestOwnership();
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{secondClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
             requestStatus = thirdInstance.RequestOwnership();
@@ -291,7 +299,7 @@ namespace Unity.Netcode.RuntimeTests
             // The 2nd and 3rd client should be denied and the 4th client should be approved
             yield return WaitForConditionOrTimeOut(() => WaitForOneClientToBeApproved(new[] { secondInstanceHelper, thirdInstanceHelper, fourthInstanceHelper }));
             AssertOnTimeout("[Targeted Owner] A client received an incorrect response. " +
-                            $"Expected one client to have {NetworkObject.OwnershipRequestResponseStatus.Approved} and the others to have {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress}!."
+                            $"Expected one client to have {NetworkObject.OwnershipRequestResponseStatus.Approved} and the others to have {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress} or {NetworkObject.OwnershipRequestResponseStatus.Denied}!."
                             + $"\n Client-{fourthClient.LocalClientId}: has {fourthInstanceHelper.OwnershipRequestResponseStatus}!"
                             + $"\n Client-{thirdClient.LocalClientId}: has {thirdInstanceHelper.OwnershipRequestResponseStatus}!"
                             + $"\n Client-{secondClient.LocalClientId}: has {secondInstanceHelper.OwnershipRequestResponseStatus}!");
@@ -304,6 +312,9 @@ namespace Unity.Netcode.RuntimeTests
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
             AssertOnTimeout($"[Multiple request race condition][Permissions Mismatch] {secondInstance.name}");
+
+            // Reset this value once this part of the test is complete
+            firstInstanceHelper.OnlyAllowTargetClientId = false;
 
             ///////////////////////////////////////////////
             // Test for targeted ownership request:
