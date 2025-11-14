@@ -1,5 +1,8 @@
 # Boss Room actions walkthrough
 
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
+
 Boss Room's actions each use a different pattern for good multiplayer quality. This doc walks you through each of them and goes into details about how we implemented each and what lessons you can learn from each. You can get their implementations [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/tree/main/Assets/Scripts/Gameplay/Action).
 
 <figure>

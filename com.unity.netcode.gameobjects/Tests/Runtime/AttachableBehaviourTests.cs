@@ -118,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
                 else
                 {
                     var attachable = networkManager.SpawnManager.SpawnedObjects[currentAttachableRoot.NetworkObjectId].GetComponentInChildren<TestAttachable>();
-                    attachable.ResetStates();
+                    attachable?.ResetStates();
                 }
 
                 // Target
@@ -129,7 +129,7 @@ namespace Unity.Netcode.RuntimeTests
                 else
                 {
                     var node = networkManager.SpawnManager.SpawnedObjects[m_TargetInstance.NetworkObjectId].GetComponentInChildren<TestNode>();
-                    node.ResetStates();
+                    node?.ResetStates();
                 }
 
                 // Target B
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
                 else
                 {
                     var node = networkManager.SpawnManager.SpawnedObjects[m_TargetInstanceB.NetworkObjectId].GetComponentInChildren<TestNode>();
-                    node.ResetStates();
+                    node?.ResetStates();
                 }
             }
             return m_ErrorLog.Length == 0;

@@ -1,8 +1,7 @@
 # NetworkRigidbody inside Boss Room
 
-:::note
-Required reading: [Physics](../..//advanced-topics/physics.md)
-:::
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
 
 Boss Room leverages NetworkRigidBody to simulate physics-based projectiles. See the Vandal Imp's tossed projectile, the [`ImpTossedItem` prefab](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Prefabs/Game/ImpTossedItem.prefab). At its root, this Prefab has a NetworkObject, a NetworkTransform, a `Rigidbody`, and a NetworkRigidBody component. Refer to [`TossAction.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/Action/ConcreteActions/TossAction.cs) for more implementation details.
 

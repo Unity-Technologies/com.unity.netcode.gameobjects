@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -7,10 +8,6 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    // This is a bit of a quirky test.
-    // Addresses MTT-4386 #2109
-    // Where the NetworkVariable updates would be repeated on some clients.
-    // The twist comes fom the updates needing to happens very specifically for the issue to repro in tests
 
     internal class OwnerModifiedObject : NetworkBehaviour, INetworkUpdateSystem
     {
@@ -74,17 +71,36 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    internal class ChangeValueOnAuthority : NetworkBehaviour
+    {
+        public NetworkVariable<int> SomeIntValue = new NetworkVariable<int>();
+
+        public override void OnNetworkSpawn()
+        {
+            if (HasAuthority)
+            {
+                SomeIntValue.Value++;
+            }
+            base.OnNetworkSpawn();
+        }
+
+        protected override void OnNetworkPostSpawn()
+        {
+            if (HasAuthority)
+            {
+                SomeIntValue.Value++;
+            }
+            base.OnNetworkPostSpawn();
+        }
+    }
+
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     internal class OwnerModifiedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
+        private GameObject m_SpawnObject;
 
         public OwnerModifiedTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -93,13 +109,34 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<OwnerModifiedObject>();
         }
 
-        [UnityTest]
-        public IEnumerator OwnerModifiedTest()
+        protected override void OnServerAndClientsCreated()
         {
+            m_SpawnObject = CreateNetworkObjectPrefab("SpawnObj");
+            m_SpawnObject.AddComponent<ChangeValueOnAuthority>();
+            base.OnServerAndClientsCreated();
+        }
+
+        private NetworkManager m_LastClient;
+
+        protected override void OnNewClientStartedAndConnected(NetworkManager networkManager)
+        {
+            m_LastClient = networkManager;
+            base.OnNewClientStartedAndConnected(networkManager);
+        }
+
+        /// <summary>
+        /// Addresses MTT-4386 #2109
+        /// Verify NetworkVariable updates are not repeated on some clients.
+        /// TODO: This test needs to be re-written/overhauled.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator VerifyDoesNotRepeatOnSomeClients()
+        {
+            var authority = GetAuthorityNetworkManager();
             OwnerModifiedObject.EnableVerbose = m_EnableVerboseDebug;
             // We use this to assure we are the "last client" connected.
             yield return CreateAndStartNewClient();
-            var ownerModLastClient = m_ClientNetworkManagers[2].LocalClient.PlayerObject.GetComponent<OwnerModifiedObject>();
+            var ownerModLastClient = m_LastClient.LocalClient.PlayerObject.GetComponent<OwnerModifiedObject>();
             ownerModLastClient.InitializeLastCient();
 
             // Run through all update loops setting the value once every 5 frames
@@ -108,13 +145,59 @@ namespace Unity.Netcode.RuntimeTests
                 ownerModLastClient.NetworkUpdateStageToCheck = (NetworkUpdateStage)updateLoopType;
                 VerboseDebug($"Testing Update Stage: {ownerModLastClient.NetworkUpdateStageToCheck}");
                 ownerModLastClient.AddValues = true;
-                yield return WaitForTicks(m_ServerNetworkManager, 5);
+                yield return WaitForTicks(authority, 5);
             }
 
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return WaitForTicks(authority, 5);
 
             // We'll have at least one update per stage per client, if all goes well.
             Assert.True(OwnerModifiedObject.Updates > 20);
+        }
+
+
+        private ChangeValueOnAuthority m_SessionAuthorityInstance;
+        private ChangeValueOnAuthority m_InstanceAuthority;
+
+        private bool NetworkVariablesMatch(StringBuilder errorLog)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager == m_InstanceAuthority.NetworkManager)
+                {
+                    continue;
+                }
+
+                var changeValue = networkManager.SpawnManager.SpawnedObjects[m_InstanceAuthority.NetworkObjectId].GetComponent<ChangeValueOnAuthority>();
+                if (changeValue.SomeIntValue.Value != m_InstanceAuthority.SomeIntValue.Value)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {changeValue.name} value is {changeValue.SomeIntValue.Value} but was expecting {m_InstanceAuthority.SomeIntValue.Value}!");
+                }
+            }
+
+            return errorLog.Length == 0;
+        }
+
+        /// <summary>
+        /// Verifies that when running a distributed authority network topology
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OwnershipSpawnedAndUpdatedDuringSpawn()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            m_SessionAuthorityInstance = Object.Instantiate(m_SpawnObject).GetComponent<ChangeValueOnAuthority>();
+
+            SpawnInstanceWithOwnership(m_SessionAuthorityInstance.GetComponent<NetworkObject>(), authority, nonAuthority.LocalClientId);
+            yield return WaitForSpawnedOnAllOrTimeOut(m_SessionAuthorityInstance.NetworkObjectId);
+            AssertOnTimeout($"Failed to spawn {m_SessionAuthorityInstance.name} on all clients!");
+
+            m_InstanceAuthority = nonAuthority.SpawnManager.SpawnedObjects[m_SessionAuthorityInstance.NetworkObjectId].GetComponent<ChangeValueOnAuthority>();
+
+            yield return WaitForConditionOrTimeOut(NetworkVariablesMatch);
+            AssertOnTimeout($"The {nameof(ChangeValueOnAuthority.SomeIntValue)} failed to synchronize on all clients!");
+
+            Assert.IsTrue(m_SessionAuthorityInstance.SomeIntValue.Value == 2, "No values were updated on the spawn authority instance!");
+            Assert.IsTrue(m_InstanceAuthority.SomeIntValue.Value == 2, "No values were updated on the owner's instance!");
         }
     }
 }

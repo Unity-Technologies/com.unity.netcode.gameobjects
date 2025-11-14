@@ -1,5 +1,8 @@
 # Optimizing Boss Room performance
 
+> [!WARNING]
+> Boss Room is no longer being actively maintained as of 2026. While it remains available as a learning resource, it may not be compatible with the latest versions of Netcode for GameObjects or Unity.
+
 Optimization is critical for networked and non-networked games. However, you have more limitations and constraints to consider when building a networked game. For example, networked games must account for latency, packet loss, reliability, and bandwidth limitations.
 
 One of the more critical optimizations of a networked game is how much bandwidth it consumes. The following issues can occur with networked games that have high bandwidth usage:
