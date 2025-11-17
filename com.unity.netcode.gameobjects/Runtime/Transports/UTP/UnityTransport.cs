@@ -807,8 +807,9 @@ namespace Unity.Netcode.Transports.UTP
 
         // Command line options
         private const string k_OverridePortArg = "-port";
+        private const string k_OverrideIpAddressArg = "-ip";
 
-        private bool ParseCommandLineOptions(out ushort port)
+        private bool ParseCommandLineOptionsPort(out ushort port)
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
             if (UnityEngine.DedicatedServer.Arguments.Port != null)
@@ -827,6 +828,17 @@ namespace Unity.Netcode.Transports.UTP
             return false;
         }
 
+        private bool ParseCommandLineOptionsAddress(out string ipValue)
+        {
+            if (CommandLineOptions.Instance.GetArg(k_OverrideIpAddressArg) is string argValue)
+            {
+                ipValue = argValue;
+                return true;
+            }
+            ipValue = default;
+            return false;
+        }
+
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
@@ -837,9 +849,14 @@ namespace Unity.Netcode.Transports.UTP
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool forceOverrideCommandLineArgs = false)
         {
             m_HasForcedConnectionData = forceOverrideCommandLineArgs;
-            if (!forceOverrideCommandLineArgs && ParseCommandLineOptions(out var commandLinePort))
+            if (!forceOverrideCommandLineArgs && ParseCommandLineOptionsPort(out var commandLinePort))
             {
                 port = commandLinePort;
+            }
+
+            if (ParseCommandLineOptionsAddress(out var commandLineIp))
+            {
+                ipv4Address = commandLineIp;
             }
 
             ConnectionData = new ConnectionAddressData
@@ -1616,7 +1633,7 @@ namespace Unity.Netcode.Transports.UTP
             m_NetworkManager = networkManager;
 
             //If the port doesn't have a forced value and is set by a command line option, override it.
-            if (!m_HasForcedConnectionData && ParseCommandLineOptions(out var port))
+            if (!m_HasForcedConnectionData && ParseCommandLineOptionsAddress(out var port))
             {
                 if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
                 {
