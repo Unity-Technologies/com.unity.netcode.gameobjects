@@ -78,7 +78,7 @@ namespace Unity.Netcode.Components
         private bool HasAuthority()
         {
             var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
-            return (!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && m_NetworkAnimator.IsServer);
+            return (!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && (m_NetworkAnimator.IsServer || m_NetworkAnimator.IsOwner));
         }
 
         /// <inheritdoc />
