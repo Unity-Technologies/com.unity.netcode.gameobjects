@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 
@@ -40,7 +41,7 @@ namespace Unity.Netcode
         internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
         internal static readonly Dictionary<Type, Dictionary<uint, RpcInvokePermission>> __rpc_permission_table = new Dictionary<Type, Dictionary<uint, RpcInvokePermission>>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, string>> __rpc_name_table = new Dictionary<Type, Dictionary<uint, string>>();
 #endif
@@ -142,16 +143,9 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
-            {
-                networkManager.NetworkMetrics.TrackRpcSent(
-                    NetworkManager.ServerClientId,
-                    m_NetworkObject,
-                    rpcMethodName,
-                    __getTypeName(),
-                    rpcWriteSize);
-            }
+
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            TrackRpcMetricsSend(ref serverRpcMessage, rpcMethodId, rpcWriteSize);
 #endif
         }
 
@@ -275,7 +269,11 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            if (!ValidateRpcMessageMetrics(GetType()))
+            {
+                return;
+            }
             if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 if (clientRpcParams.Send.TargetClientIds != null)
@@ -755,6 +753,11 @@ namespace Unity.Netcode
 
         internal virtual void InternalOnNetworkPreSpawn(ref NetworkManager networkManager) { }
 
+        /// <summary>
+        /// Handles pre-spawn related initializations.
+        /// Invokes any <see cref="InternalOnNetworkPreSpawn"/> subscriptions.
+        /// Finally invokes <see cref="OnNetworkPreSpawn(ref NetworkManager)"/>.
+        /// </summary>
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
@@ -782,13 +785,28 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Initializes the:
+        /// - <see cref="IsSpawned"/> state.
+        /// - <see cref="NetworkVariableBase"/> instances.
+        /// - Spawned related properties are applied.
+        /// !! Note !!:
+        /// This also populates RPC related tables based on this <see cref="NetworkBehaviour"/>'s RPCs (if any).
+        /// </summary>
         internal void InternalOnNetworkSpawn()
         {
             IsSpawned = true;
-            // Initialize the NetworkVariables so they are accessible in OnNetworkSpawn;
+            // Initialize the NetworkVariables and **RPC tables** so they are accessible in OnNetworkSpawn
             InitializeVariables();
+            // Apply the spawned state/properties to this instance
             UpdateNetworkProperties();
+        }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkSpawn"/>.
+        /// </summary>
+        internal void NetworkSpawn()
+        {
             try
             {
                 OnNetworkSpawn();
@@ -797,19 +815,11 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
-
-            // Initialize again in case the user's OnNetworkSpawn changed something
-            InitializeVariables();
-
-            if (m_NetworkObject.HasAuthority)
-            {
-                // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
-                // NetworkList, we need to mark the object as free of updates.
-                // This should happen for all objects on the machine triggering the spawn.
-                PostNetworkVariableWrite(true);
-            }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkPostSpawn"/>.
+        /// </summary>
         internal void NetworkPostSpawn()
         {
             try
@@ -821,8 +831,18 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
+
+            // Let each NetworkVariableBase derived instance know that
+            // all spawn related methods have been invoked.
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].OnSpawned();
+            }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkSessionSynchronized"/>.
+        /// </summary>
         internal void NetworkSessionSynchronized()
         {
             try
@@ -836,6 +856,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnInSceneObjectsSpawned"/>.
+        /// </summary>
         internal void InSceneNetworkObjectsSpawned()
         {
             try
@@ -848,6 +871,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkPreDespawn"/>.
+        /// </summary>
         internal void InternalOnNetworkPreDespawn()
         {
             try
@@ -858,8 +884,18 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
+
+            // Let each NetworkVariableBase derived instance know that
+            // all spawn related methods have been invoked.
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].OnPreDespawn();
+            }
         }
 
+        /// <summary>
+        /// Handles invoking <see cref="OnNetworkDespawn"/>.
+        /// </summary>
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
@@ -962,12 +998,89 @@ namespace Unity.Netcode
         internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            __rpc_func_table[GetType()][hash] = handler;
-            __rpc_permission_table[GetType()][hash] = permission;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            __rpc_name_table[GetType()][hash] = rpcMethodName;
+            var rpcType = GetType();
+            __rpc_func_table[rpcType][hash] = handler;
+            __rpc_permission_table[rpcType][hash] = permission;
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            __rpc_name_table[rpcType][hash] = rpcMethodName;
 #endif
         }
+
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool ValidateRpcMessageMetrics(Type type)
+        {
+            if (m_NetworkManager == null)
+            {
+                Debug.LogError($"[{nameof(ValidateRpcMessageMetrics)}][{type.Name}] {nameof(NetworkBehaviour)} is attempting to invoking an RPC before {nameof(NetworkManager)} has been initialized!");
+                return false;
+            }
+
+            if (!__rpc_name_table.ContainsKey(type))
+            {
+                Debug.LogError($"[{nameof(ValidateRpcMessageMetrics)}][{type.Name}][{nameof(__rpc_name_table)}] RPC table initialization failure: Table does not contain an entry for {type.Name}!");
+                return false;
+            }
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void TrackRpcMetricsSend(ref ServerRpcMessage message, uint rpcMethodId, int rpcWriteSize)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(rpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ServerClientId,
+                    m_NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    rpcWriteSize);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void TrackRpcMetricsSend(ulong clientId, ref RpcMessage message, int length)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcSent(
+                    m_NetworkManager.LocalClientId,
+                    NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    length);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void TrackRpcMetricsReceive(ref RpcMetadata metadata, ref NetworkContext context, int length)
+        {
+            var type = GetType();
+            if (!ValidateRpcMessageMetrics(type))
+            {
+                return;
+            }
+            if (__rpc_name_table[type].TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
+            {
+                m_NetworkManager.NetworkMetrics.TrackRpcReceived(
+                    context.SenderId,
+                    NetworkObject,
+                    rpcMethodName,
+                    __getTypeName(),
+                    length);
+            }
+        }
+#endif
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -1011,7 +1124,7 @@ namespace Unity.Netcode
             {
                 __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
                 __rpc_permission_table[GetType()] = new Dictionary<uint, RpcInvokePermission>();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 __rpc_name_table[GetType()] = new Dictionary<uint, string>();
 #endif
                 __initializeRpcs();
