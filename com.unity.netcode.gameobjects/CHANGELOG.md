@@ -26,8 +26,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue with authority animator instance sending itself RPCs. (#3586)
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
+- Fixed issue with authority animator instance sending itself RPCs. (#3586)
 
 
 ### Security
