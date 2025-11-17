@@ -1,24 +1,64 @@
 # WORK IN PROGRESS
 # Command line arguments
 
-You can use [command line arguments](https://docs.unity3d.com/Documentation/Manual/CommandLineArguments.html) to configure some aspects of your game. With dedicated server you can use command line arguments to override default ip address and port. 
+You can use [command line arguments](https://docs.unity3d.com/Documentation/Manual/CommandLineArguments.html) to configure certain aspects of your game at launch. This is especially useful for dedicated server builds, where arguments let you override default network settings such as the IP address and port.
 
+## Using Command Line Arguments
 
+When launching a standalone build (for example, a headless dedicated server), you can supply custom arguments to modify runtime behavior.
 
-Something you can use if you want to launch a standalone build (particulary usefull for dedicated server builds)
-(include all known command line )
--port
--ip (TODO) check where is the endpoint, I may only need to assign it with no convert
+Available arguments:
+- -port
+- -ip
 
+Unity provides built-in parsing for standard arguments, and you can extend this behavior by adding your own.
 
-we provided port and ip and you can add your own command line args and retieve them in the CommanLineOptions class and grab them in your project by using GetArgs
+---
 
-[!Note]
-Adding a command line argument requires that you retrieve and set that command line argument
+## Custom Arguments
 
+You can define additional custom command line arguments and retrieve them through the `CommandLineOptions` class.
+Use `GetArgs()` in your project code to collect and process these values.
 
+[!NOTE]
+Adding a custom command line argument requires you to explicitly retrieve and handle it in your implementation.
 
+---
 
-You can force override the command line arguments by using the optional boolean argument in SetConnectionData(string, ushort, string, bool) from UnityTransport.
+## Example: Reading Command Line Arguments
+```
+private const string k_OverrideArg = "-argName";
 
-~~~~
+private bool ParseCommandLineOptions(out string command)
+{
+    if (CommandLineOptions.Instance.GetArg(k_OverrideArg) is string argValue)
+    {
+        command = argValue;
+        return true;
+    }
+    command = default;
+    return false;
+}
+```
+
+Usage example:
+
+```
+if (ParseCommandLineOptions(out var command))
+{
+    // Your logic here
+}
+```
+
+---
+
+## Overriding Connection Data
+
+If you want to ignore the connection **port** provided through command line arguments, you can override it by using the optional `forceOverride` parameter in:
+
+```
+UnityTransport.SetConnectionData(string ip, ushort port, string listenAddress, bool forceOverride);
+```
+
+Setting `forceOverride` to `true` ensures that the values you pass to `SetConnectionData` override any values specified via command line arguments.
+
