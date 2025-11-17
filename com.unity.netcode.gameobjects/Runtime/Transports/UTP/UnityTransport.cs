@@ -854,7 +854,7 @@ namespace Unity.Netcode.Transports.UTP
                 port = commandLinePort;
             }
 
-            if (ParseCommandLineOptionsAddress(out var commandLineIp))
+            if (!forceOverrideCommandLineArgs && ParseCommandLineOptionsAddress(out var commandLineIp))
             {
                 ipv4Address = commandLineIp;
             }
