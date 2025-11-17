@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -513,3 +514,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
