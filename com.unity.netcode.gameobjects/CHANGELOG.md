@@ -11,6 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
+- Added a flag to override command-line arguments (port and ip) in `SetConnectionData` (#3760)
+- Added a command-line singleton to parse environment command-line arguments (#3760)
 
 
 ### Changed

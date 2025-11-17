@@ -1,4 +1,3 @@
-# WORK IN PROGRESS
 # Command line arguments
 
 You can use [command line arguments](https://docs.unity3d.com/Documentation/Manual/CommandLineArguments.html) to configure certain aspects of your game at launch. This is especially useful for dedicated server builds, where arguments let you override default network settings such as the IP address and port.
@@ -7,7 +6,7 @@ You can use [command line arguments](https://docs.unity3d.com/Documentation/Manu
 
 When launching a standalone build (for example, a headless dedicated server), you can supply custom arguments to modify runtime behavior.
 
-Available arguments:
+Reserved arguments:
 - -port
 - -ip
 
