@@ -40,17 +40,8 @@ namespace Unity.Netcode
             }
 
             payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
-            if (NetworkBehaviour.__rpc_name_table[networkBehaviour.GetType()].TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
-            {
-                networkManager.NetworkMetrics.TrackRpcReceived(
-                    context.SenderId,
-                    networkObject,
-                    rpcMethodName,
-                    networkBehaviour.__getTypeName(),
-                    reader.Length);
-            }
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            networkBehaviour.TrackRpcMetricsReceive(ref metadata, ref context, reader.Length);
 #endif
             return true;
         }

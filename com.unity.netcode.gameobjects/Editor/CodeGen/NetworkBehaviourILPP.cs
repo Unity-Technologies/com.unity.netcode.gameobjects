@@ -595,9 +595,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private const string k_NetworkManager_IsServer = nameof(NetworkManager.IsServer);
         private const string k_NetworkManager_IsClient = nameof(NetworkManager.IsClient);
         private const string k_NetworkManager_LogLevel = nameof(NetworkManager.LogLevel);
-
         private const string k_NetworkBehaviour_rpc_func_table = nameof(NetworkBehaviour.__rpc_func_table);
-        private const string k_NetworkBehaviour_rpc_name_table = nameof(NetworkBehaviour.__rpc_name_table);
         private const string k_NetworkBehaviour_rpc_exec_stage = nameof(NetworkBehaviour.__rpc_exec_stage);
         private const string k_NetworkBehaviour_NetworkVariableFields = nameof(NetworkBehaviour.NetworkVariableFields);
         private const string k_NetworkBehaviour_beginSendServerRpc = nameof(NetworkBehaviour.__beginSendServerRpc);

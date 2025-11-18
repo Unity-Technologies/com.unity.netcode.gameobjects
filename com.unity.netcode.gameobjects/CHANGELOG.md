@@ -26,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
 - Fixed issue where the server or host would no longer have access to the transport id to client id table when processing a transport level client disconnect event. (#3786)
+- Fixed issue where invoking an RPC, on another `NetworkBehaviour` associated with the same `NetworkObject` that is ordered before the `NetworkBehaviour` invoking the RPC, during `OnNetworkSpawn` could throw an exception if scene management is disabled. (#3782)
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
 
 

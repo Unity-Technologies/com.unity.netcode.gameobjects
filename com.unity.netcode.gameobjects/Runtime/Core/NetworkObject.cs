@@ -2556,6 +2556,12 @@ namespace Unity.Netcode
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
+            // Always invoke all InternalOnNetworkSpawn methods on each child NetworkBehaviour
+            // ** before ** invoking OnNetworkSpawn.
+            // This assures all NetworkVariables and RPC related tables have been initialized
+            // prior to invoking OnNetworkSpawn so cross NetworkBehaviour:
+            // - accessing of NetworkVariables will work correctly.
+            // - invocation of RPCs will work properly (and not throw exception under certain scenarios)
             foreach (var childBehaviour in ChildNetworkBehaviours)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
@@ -2564,6 +2570,17 @@ namespace Unity.Netcode
                     continue;
                 }
                 childBehaviour.InternalOnNetworkSpawn();
+            }
+
+            // After initialization, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
+            foreach (var childBehaviour in ChildNetworkBehaviours)
+            {
+                if (!childBehaviour.gameObject.activeInHierarchy)
+                {
+                    Debug.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
+                    continue;
+                }
+                childBehaviour.NetworkSpawn();
             }
         }
 
@@ -2577,7 +2594,6 @@ namespace Unity.Netcode
                 }
             }
         }
-
 
         internal void InternalNetworkSessionSynchronized()
         {
