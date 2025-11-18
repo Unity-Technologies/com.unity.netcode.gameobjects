@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed when a server is disconnecting a client with a reason it now defers the complete transport disconnect sequence until the end of the frame after the server's transport has sent all pending outbound messages. (#3786)
 
 ### Deprecated
 
