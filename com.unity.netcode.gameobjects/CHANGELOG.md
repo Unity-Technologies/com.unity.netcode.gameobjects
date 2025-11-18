@@ -26,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
 - Fixed issue where invoking an RPC, on another `NetworkBehaviour` associated with the same `NetworkObject` that is ordered before the `NetworkBehaviour` invoking the RPC, during `OnNetworkSpawn` could throw an exception if scene management is disabled. (#3782)
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
 - Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
