@@ -669,9 +669,9 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected virtual bool OnIsServerAuthoritative()
         {
-            if (m_LocalNetworkManager && m_LocalNetworkManager.DistributedAuthorityMode)
+            if (DistributedAuthorityMode)
             {
-                return true;
+                return false;
             }
             return AuthorityMode == AuthorityModes.Server;
         }
