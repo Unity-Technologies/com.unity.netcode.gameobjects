@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     errorLog.AppendLine($"{nameof(m_ClientDisconnectReasonValidated)} is false!");
                 }
-                
+
                 return m_ClientDisconnectReasonValidated;
             }
             else
