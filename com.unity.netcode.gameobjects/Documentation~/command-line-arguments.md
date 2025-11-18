@@ -4,7 +4,7 @@ Use [command-line arguments](https://docs.unity3d.com/Documentation/Manual/Comma
 
 ## Using command-line arguments
 
-When launching a standalone build (for example, a headless dedicated server), you can supply custom arguments to modify runtime behavior.
+When launching a standalone build (such as a headless dedicated server), you can supply custom arguments to modify runtime behavior.
 
 Reserved arguments:
 - -port
