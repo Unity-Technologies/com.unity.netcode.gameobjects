@@ -845,7 +845,18 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
         /// <param name="port">The remote port to connect to.</param>
         /// <param name="listenAddress">The address the server is going to listen on.</param>
-        /// <param name="forceOverrideCommandLineArgs">When true, any command line arguments will be ignored.</param>
+        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
+        {
+            SetConnectionData(ipv4Address, port, listenAddress, false);
+        }
+
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
+        /// <param name="port">The remote port to connect to.</param>
+        /// <param name="listenAddress">The address the server is going to listen on.</param>
+        /// <param name="forceOverrideCommandLineArgs">When true, -port and -ip command line arguments will be ignored.</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool forceOverrideCommandLineArgs = false)
         {
             m_HasForcedConnectionData = forceOverrideCommandLineArgs;
