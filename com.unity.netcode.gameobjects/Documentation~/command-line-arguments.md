@@ -7,24 +7,22 @@ Use [command-line arguments](https://docs.unity3d.com/Documentation/Manual/Comma
 When launching a standalone build (such as a headless dedicated server), you can supply custom arguments to modify runtime behavior.
 
 Reserved arguments:
-- -port
-- -ip
+
+- `-port`
+- `-ip`
 
 Unity provides built-in parsing for standard arguments, and you can extend this behavior by adding your own.
 
----
+## Custom arguments
 
-## Custom Arguments
+You can define additional custom command-line arguments and retrieve them through the `CommandLineOptions` class. Use `GetArgs()` in your project code to collect and process these values.
 
-You can define additional custom command line arguments and retrieve them through the `CommandLineOptions` class.
-Use `GetArgs()` in your project code to collect and process these values.
+> [!NOTE]
+> Adding a custom command-line argument requires you to explicitly retrieve and handle it in your implementation.
 
-[!NOTE]
-Adding a custom command line argument requires you to explicitly retrieve and handle it in your implementation.
+## Example
 
----
-
-## Example: Reading Command Line Arguments
+The following code shows you an example of defining and then reading a custom command-line argument.
 ```
 private const string k_OverrideArg = "-argName";
 
@@ -48,8 +46,6 @@ if (ParseCommandLineOptions(out var command))
     // Your logic here
 }
 ```
-
----
 
 ## Override connection data
 
