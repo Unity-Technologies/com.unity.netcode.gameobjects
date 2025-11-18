@@ -51,7 +51,7 @@ if (ParseCommandLineOptions(out var command))
 
 ---
 
-## Overriding Connection Data
+## Override connection data
 
 If you want to ignore the connection port provided through command-line arguments, you can override it by using the optional `forceOverride` parameter in:
 
