@@ -348,7 +348,6 @@ namespace Unity.Netcode
                         AnticipationSystem.SetupForUpdate();
                         MessageManager.ProcessIncomingMessageQueue();
 
-                        MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
@@ -479,6 +478,18 @@ namespace Unity.Netcode
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
+
+                        if (IsServer)
+                        {
+                            // Process any pending clients that need to be disconnected.
+                            // This is typically a disconnect with reason scenario where
+                            // we want the disconnect reason message to be sent prior to
+                            // completely shutting down the endpoint.
+                            ConnectionManager.ProcessClientsToDisconnect();
+                        }
+
+                        // Clean up disconnected clients last
+                        MessageManager.CleanupDisconnectedClients();
 
                         if (m_ShuttingDown)
                         {

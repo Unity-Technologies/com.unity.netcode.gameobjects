@@ -594,9 +594,11 @@ namespace Unity.Netcode
             // Check to see if the client has already been removed from the table but
             // do not remove it just yet.
             var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
-            if (!isConnectedClient)
+
+            // If the client is not registered and we are the server
+            if (!isConnectedClient && NetworkManager.IsServer)
             {
-                // If so, exit early
+                // Then exit early
                 return;
             }
 
@@ -631,15 +633,6 @@ namespace Unity.Netcode
             {
                 // We need to process the disconnection before notifying
                 OnClientDisconnectFromServer(clientId);
-
-                // Now notify the client has disconnected.
-                // (transport id cleanup is handled within)
-                InvokeOnClientDisconnectCallback(clientId);
-
-                if (LocalClient.IsHost)
-                {
-                    InvokeOnPeerDisconnectedCallback(clientId);
-                }
             }
             else
             {
@@ -806,12 +799,15 @@ namespace Unity.Netcode
         /// </summary>
         internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
         {
+            if (ConnectionApprovalCallback == null)
+            {
+                return;
+            }
             // Note: Delegate creation allocates.
             // Note: ToArray() also allocates. :(
             var response = new NetworkManager.ConnectionApprovalResponse();
             ClientsToApprove[context.SenderId] = response;
-
-            ConnectionApprovalCallback(
+            ConnectionApprovalCallback?.Invoke(
                 new NetworkManager.ConnectionApprovalRequest
                 {
                     Payload = connectionRequestMessage.ConnectionData,
@@ -866,13 +862,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Adding this because message hooks cannot happen fast enough under certain scenarios
-        /// where the message is sent and responded to before the hook is in place.
-        /// </summary>
-        internal bool MockSkippingApproval;
-
-
-        /// <summary>
         /// Server Side: Handles the denial of a client who sent a connection request
         /// </summary>
         /// <remarks>
@@ -886,10 +875,34 @@ namespace Unity.Netcode
                 {
                     Reason = reason
                 };
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+                SendMessage(ref disconnectReason, MessageDeliveryType<DisconnectReasonMessage>.DefaultDelivery, ownerClientId);
+                m_ClientsToDisconnect.Add(ownerClientId);
+                return;
             }
 
             DisconnectRemoteClient(ownerClientId);
+        }
+
+        private List<ulong> m_ClientsToDisconnect = new List<ulong>();
+
+        internal void ProcessClientsToDisconnect()
+        {
+            if (m_ClientsToDisconnect.Count == 0)
+            {
+                return;
+            }
+            foreach (var clientId in m_ClientsToDisconnect)
+            {
+                try
+                {
+                    DisconnectRemoteClient(clientId);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+            m_ClientsToDisconnect.Clear();
         }
 
         /// <summary>
@@ -952,12 +965,6 @@ namespace Unity.Netcode
             // Server doesn't send itself the connection approved message
             if (ownerClientId != NetworkManager.ServerClientId)
             {
-                if (MockSkippingApproval)
-                {
-                    NetworkLog.LogInfo("Mocking server not responding with connection approved...");
-                    return;
-                }
-
                 SendConnectionApprovedMessage(ownerClientId);
 
                 // If scene management is disabled, then we are done and notify the local host-server the client is connected
@@ -1053,7 +1060,7 @@ namespace Unity.Netcode
                 }
             }
 
-            SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, approvedClientId);
+            SendMessage(ref message, MessageDeliveryType<ConnectionApprovedMessage>.DefaultDelivery, approvedClientId);
 
             message.MessageVersions.Dispose();
             message.ConnectedClientIds.Dispose();
@@ -1124,13 +1131,9 @@ namespace Unity.Netcode
                 return ConnectedClients[clientId];
             }
 
-            var networkClient = LocalClient;
-
             // If this is not the local client then create a new one
-            if (clientId != NetworkManager.LocalClientId)
-            {
-                networkClient = new NetworkClient();
-            }
+            var networkClient = clientId == NetworkManager.LocalClientId ? LocalClient : new NetworkClient();
+
             networkClient.SetRole(clientId == NetworkManager.ServerClientId, isClient: true, NetworkManager);
             networkClient.ClientId = clientId;
             if (!ConnectedClients.ContainsKey(clientId))
@@ -1237,6 +1240,14 @@ namespace Unity.Netcode
             // clean up as everything that needs to be destroyed will be during shutdown.
             if (NetworkManager.ShutdownInProgress && clientId == NetworkManager.ServerClientId)
             {
+                // Now notify the client has disconnected.
+                // (transport id cleanup is handled within)
+                InvokeOnClientDisconnectCallback(clientId);
+
+                if (LocalClient.IsHost)
+                {
+                    InvokeOnPeerDisconnectedCallback(clientId);
+                }
                 return;
             }
 
@@ -1429,17 +1440,18 @@ namespace Unity.Netcode
             var (transportId, idExists) = ClientIdToTransportId(clientId);
             if (idExists)
             {
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
-
-                InvokeOnClientDisconnectCallback(clientId);
-
-                if (LocalClient.IsHost)
-                {
-                    InvokeOnPeerDisconnectedCallback(clientId);
-                }
-
                 // Clean up the transport to client (and vice versa) mappings
-                TransportIdCleanUp(transportId);
+                var (transportIdDisconnected, wasRemoved) = TransportIdCleanUp(transportId);
+                if (wasRemoved)
+                {
+                    NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+                    InvokeOnClientDisconnectCallback(clientId);
+
+                    if (LocalClient.IsHost)
+                    {
+                        InvokeOnPeerDisconnectedCallback(clientId);
+                    }
+                }
             }
 
             // Assure the client id is no longer in the pending clients list
@@ -1487,16 +1499,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!string.IsNullOrEmpty(reason))
-            {
-                var disconnectReason = new DisconnectReasonMessage
-                {
-                    Reason = reason
-                };
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
-            }
-
-            Transport.ClosingRemoteConnection();
             var transportId = ClientIdToTransportId(clientId);
             if (transportId.Item2)
             {
