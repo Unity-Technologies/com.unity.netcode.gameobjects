@@ -1633,13 +1633,20 @@ namespace Unity.Netcode.Transports.UTP
             m_NetworkManager = networkManager;
 
             //If the port doesn't have a forced value and is set by a command line option, override it.
-            if (!m_HasForcedConnectionData && ParseCommandLineOptionsAddress(out var port))
+            if (!m_HasForcedConnectionData && ParseCommandLineOptionsAddress(out var portAsString))
             {
                 if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
                 {
-                    Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{port}");
+                    Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{portAsString}");
                 }
-                ConnectionData.Port = port;
+                if (UInt16.TryParse(portAsString, out ushort port))
+                {
+                    ConnectionData.Port = port;
+                }
+                else
+                {
+                    Debug.LogError($"The port ({portAsString}) is not a valid unsigned short value!");
+                }
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
