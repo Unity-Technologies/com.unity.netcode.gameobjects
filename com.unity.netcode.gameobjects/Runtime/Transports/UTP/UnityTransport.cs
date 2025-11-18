@@ -1639,7 +1639,7 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{portAsString}");
                 }
-                if (UInt16.TryParse(portAsString, out ushort port))
+                if (ushort.TryParse(portAsString, out ushort port))
                 {
                     ConnectionData.Port = port;
                 }
