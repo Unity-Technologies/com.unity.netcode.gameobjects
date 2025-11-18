@@ -24,6 +24,11 @@
             "name": "com.unity.nuget.mono-cecil",
             "expression": "(0,1.11.4)",
             "define": "CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
         }
     ],
     "noEngineReferences": false
