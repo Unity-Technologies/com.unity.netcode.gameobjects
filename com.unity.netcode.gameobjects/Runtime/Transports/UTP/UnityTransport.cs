@@ -847,7 +847,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="listenAddress">The address the server is going to listen on.</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
-            SetConnectionData(ipv4Address, port, listenAddress, false);
+            SetConnectionData(false, ipv4Address, port, listenAddress);
         }
 
         /// <summary>
@@ -857,7 +857,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="port">The remote port to connect to.</param>
         /// <param name="listenAddress">The address the server is going to listen on.</param>
         /// <param name="forceOverrideCommandLineArgs">When true, -port and -ip command line arguments will be ignored.</param>
-        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null, bool forceOverrideCommandLineArgs = false)
+        public void SetConnectionData(bool forceOverrideCommandLineArgs, string ipv4Address, ushort port, string listenAddress = null)
         {
             m_HasForcedConnectionData = forceOverrideCommandLineArgs;
             if (!forceOverrideCommandLineArgs && ParseCommandLineOptionsPort(out var commandLinePort))
