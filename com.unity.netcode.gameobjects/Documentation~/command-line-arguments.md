@@ -59,7 +59,7 @@ If you want to ignore the connection port provided through command-line argument
 UnityTransport.SetConnectionData(string ip, ushort port, string listenAddress, bool forceOverride);
 ```
 
-Setting `forceOverride` to `true` ensures that the values you pass to `SetConnectionData` override any values specified via command line arguments.
+Setting `forceOverride` to `true` ensures that the values you pass to `SetConnectionData` override any values specified via command-line arguments.
 
 ## Additional resources
 
