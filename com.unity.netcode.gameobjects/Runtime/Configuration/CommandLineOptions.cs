@@ -11,9 +11,24 @@ namespace Unity.Netcode
     public class CommandLineOptions
     {
         /// <summary>
-        /// Command Line Options Singleton
+        /// Command-line options singleton
         /// </summary>
-        public static CommandLineOptions Instance { get; private set; } = null!;
+        public static CommandLineOptions Instance
+        {
+            get
+            {
+                if (s_Instance == null)
+                {
+                    s_Instance = new CommandLineOptions();
+                }
+                return s_Instance;
+            }
+            private set
+            {
+                s_Instance = value;
+            }
+        }
+        private static CommandLineOptions s_Instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void RuntimeInitializeOnLoad() => Instance = new CommandLineOptions();
@@ -21,7 +36,7 @@ namespace Unity.Netcode
         // Contains the current application instance domain's command line arguments
         internal static List<string> CommandLineArguments = new List<string>();
 
-        // Invoked upon application start
+        // Invoked upon application start, after scene load
         [RuntimeInitializeOnLoadMethod]
         private static void ParseCommandLineArguments()
         {
