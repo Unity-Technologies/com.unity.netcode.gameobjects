@@ -61,3 +61,6 @@ UnityTransport.SetConnectionData(string ip, ushort port, string listenAddress, b
 
 Setting `forceOverride` to `true` ensures that the values you pass to `SetConnectionData` override any values specified via command line arguments.
 
+## Additional resources
+
+- [Command-line arguments in the Unity Manual](https://docs.unity3d.com/6000.2/Documentation/Manual/CommandLineArguments.html)
