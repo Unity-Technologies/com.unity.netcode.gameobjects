@@ -130,7 +130,7 @@ private int m_GroundedParameterId;
 private bool m_WasGrounded;
 private Animator m_Animator;
 private CharacterController m_CharacterController;
-        
+
 protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
 {
     // Pre-calculate the hash for quick lookup.
@@ -168,7 +168,7 @@ private bool m_WasGrounded;
 private Animator m_Animator;
 private NetworkAnimator m_NetworkAnimator;
 private CharacterController m_CharacterController;
-        
+
 protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
 {
     // Pre-calculate the hash values for performance purposes.
@@ -269,7 +269,7 @@ protected override void OnNetworkPostSpawn()
         // Register the authority for both the Update and PostLateUpdate player loop stages
         // Update used to handle input and apply motion.
         NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
-        
+
         // PostLateUpdate handles camera rotation adjustments
         NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PostLateUpdate);
         _input.enabled = true;
@@ -299,7 +299,7 @@ public override void OnNetworkPreDespawn()
     base.OnNetworkPreDespawn();
 }
 
-// This class implements INetworkUpdateSystem 
+// This class implements INetworkUpdateSystem
 public void NetworkUpdate(NetworkUpdateStage updateStage)
 {
     if (!IsSpawned)
@@ -325,7 +325,7 @@ public void NetworkUpdate(NetworkUpdateStage updateStage)
                 }
                 else if (m_WasMoving)
                 {
-                    // If synchronizing speed and we were moving, then 
+                    // If synchronizing speed and we were moving, then
                     // reset the fields used to calculate speed
                     m_WasMoving = false;
                     m_UnitsPerSecond = 0.0f;
@@ -349,8 +349,8 @@ private void NonAuthorityUpdate()
     var deltaVector3 = transform.position - m_LastPosition;
     // An approximated calculation of the potential unity world space units per second by getting the quotient of delta time divided into 1. We are only interested in x and z deltas, so use a Vector2, and then obtain the magnitude of the quotient times the Vector2.
     var unitsPerSecond = (new Vector2(deltaVector3.x, deltaVector3.z) * (1.0f / Time.deltaTime)).magnitude;
-    
-    // Only trigger when the delta per frame exceeds the non-authority motion threshold 
+
+    // Only trigger when the delta per frame exceeds the non-authority motion threshold
     if (unitsPerSecond > m_NonAuthorityMotionThreshold)
     {
         // if the new delta is > or < the last value stored
@@ -364,7 +364,7 @@ private void NonAuthorityUpdate()
 
             // round speed to 3 decimal places like it does with player input
             _speed = (float)System.Math.Round(m_UnitsPerSecond, 3);
-                    
+
             // Track that we are now moving
             m_WasMoving = true;
         }
@@ -389,7 +389,7 @@ private void NonAuthorityUpdate()
         }
         // Apply the calculated speed value
         _animator.SetFloat(_animIDSpeed, _speed);
-        
+
     }
     else if (m_WasMoving)
     {
