@@ -21,7 +21,7 @@ if( m_Portal.NetManager.ConnectedClientsIds.Count >= CharSelectData.k_MaxLobbyPl
 }
 ```
 
-> [!NOTE]​
+> [!NOTE]
 > In connection approval delegate, Netcode for GameObjects doesn't support sending anything more than a Boolean back.
 
 <!-- Commenting this out until we can get external code references working
