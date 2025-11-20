@@ -805,6 +805,40 @@ namespace Unity.Netcode.Transports.UTP
             SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
 
+        // Command line options
+        private const string k_OverridePortArg = "-port";
+        private const string k_OverrideIpAddressArg = "-ip";
+
+        private bool ParseCommandLineOptionsPort(out ushort port)
+        {
+#if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
+            if (UnityEngine.DedicatedServer.Arguments.Port != null)
+            {
+                port = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
+                return true;
+            }
+#else
+            if (CommandLineOptions.Instance.GetArg(k_OverridePortArg) is string argValue)
+            {
+                port = (ushort)Convert.ChangeType(argValue, typeof(ushort));
+                return true;
+            }
+#endif
+            port = default;
+            return false;
+        }
+
+        private bool ParseCommandLineOptionsAddress(out string ipValue)
+        {
+            if (CommandLineOptions.Instance.GetArg(k_OverrideIpAddressArg) is string argValue)
+            {
+                ipValue = argValue;
+                return true;
+            }
+            ipValue = default;
+            return false;
+        }
+
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
@@ -813,6 +847,29 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="listenAddress">The address the server is going to listen on.</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
+            SetConnectionData(false, ipv4Address, port, listenAddress);
+        }
+
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name).</param>
+        /// <param name="port">The remote port to connect to.</param>
+        /// <param name="listenAddress">The address the server is going to listen on.</param>
+        /// <param name="forceOverrideCommandLineArgs">When true, -port and -ip command line arguments will be ignored.</param>
+        public void SetConnectionData(bool forceOverrideCommandLineArgs, string ipv4Address, ushort port, string listenAddress = null)
+        {
+            m_HasForcedConnectionData = forceOverrideCommandLineArgs;
+            if (!forceOverrideCommandLineArgs && ParseCommandLineOptionsPort(out var commandLinePort))
+            {
+                port = commandLinePort;
+            }
+
+            if (!forceOverrideCommandLineArgs && ParseCommandLineOptionsAddress(out var commandLineIp))
+            {
+                ipv4Address = commandLineIp;
+            }
+
             ConnectionData = new ConnectionAddressData
             {
                 Address = ipv4Address,
@@ -1567,6 +1624,11 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>
+        /// This is set in <see cref="SetConnectionData(string, ushort, string, bool)"/>
+        /// </summary>
+        private bool m_HasForcedConnectionData;
+
+        /// <summary>
         /// Initializes the transport
         /// </summary>
         /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
@@ -1579,12 +1641,23 @@ namespace Unity.Netcode.Transports.UTP
                 return;
             }
 #endif
-
             m_NetworkManager = networkManager;
 
-            if (m_NetworkManager && m_NetworkManager.PortOverride.Overidden)
+            //If the port doesn't have a forced value and is set by a command line option, override it.
+            if (!m_HasForcedConnectionData && ParseCommandLineOptionsAddress(out var portAsString))
             {
-                ConnectionData.Port = m_NetworkManager.PortOverride.Value;
+                if (m_NetworkManager?.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log($"The port is set by a command line option. Using following connection data: {ConnectionData.Address}:{portAsString}");
+                }
+                if (ushort.TryParse(portAsString, out ushort port))
+                {
+                    ConnectionData.Port = port;
+                }
+                else
+                {
+                    Debug.LogError($"The port ({portAsString}) is not a valid unsigned short value!");
+                }
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();

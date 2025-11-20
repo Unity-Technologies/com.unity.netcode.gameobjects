@@ -11,7 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
-
+- Added a flag to override command-line arguments (port and ip) in `SetConnectionData`. (#3760)
+- Added a command-line singleton to parse environment command-line arguments. (#3760)
 
 ### Changed
 
@@ -25,11 +26,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
 - Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
 - Fixed issue where the server or host would no longer have access to the transport id to client id table when processing a transport level client disconnect event. (#3786)
 - Fixed issue where invoking an RPC, on another `NetworkBehaviour` associated with the same `NetworkObject` that is ordered before the `NetworkBehaviour` invoking the RPC, during `OnNetworkSpawn` could throw an exception if scene management is disabled. (#3782)
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
-
+- Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
 
 ### Security
 

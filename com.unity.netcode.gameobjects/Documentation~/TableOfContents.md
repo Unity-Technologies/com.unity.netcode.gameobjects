@@ -19,6 +19,7 @@
     * [Max players](basics/maxnumberplayers.md)
   * [Transports](advanced-topics/transports.md)
   * [Unity Relay](relay/relay.md)
+  * [Command-line arguments](command-line-arguments.md)
 * [Network components](network-components.md)
   * [Core components](components/core/corecomponents.md)
     * [NetworkObject](components/core/networkobject.md)
