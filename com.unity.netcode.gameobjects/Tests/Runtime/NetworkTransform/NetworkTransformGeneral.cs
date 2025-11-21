@@ -55,10 +55,10 @@ namespace Unity.Netcode.RuntimeTests
             var localState = m_NonAuthoritativeTransform.LocalAuthoritativeNetworkState;
 
             // Assure this is not set to avoid a false positive result with teleporting
-            localState.IsTeleportingNextFrame = false;
+            localState.FlagStates.IsTeleportingNextFrame = false;
 
             // Simulate a state update
-            localState.UseInterpolation = false;
+            localState.FlagStates.UseInterpolation = false;
             localState.CurrentPosition = new Vector3(5.0f, 0.0f, 0.0f);
             localState.SetHasPosition(NetworkTransform.Axis.X, true);
             localState.PositionX = 5.0f;

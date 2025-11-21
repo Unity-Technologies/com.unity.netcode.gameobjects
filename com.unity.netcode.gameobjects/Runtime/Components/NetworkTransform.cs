@@ -1719,7 +1719,7 @@ namespace Unity.Netcode.Components
         {
             if (!getCurrentState || CanCommitToTransform)
             {
-                return InLocalSpace ? transform.localRotation : transform.rotation;
+                return InLocalSpace ? CachedTransform.localRotation : CachedTransform.rotation;
             }
             else
             {
@@ -1750,7 +1750,7 @@ namespace Unity.Netcode.Components
         {
             if (!getCurrentState || CanCommitToTransform)
             {
-                return transform.localScale;
+                return CachedTransform.localScale;
             }
             else
             {
@@ -1904,10 +1904,9 @@ namespace Unity.Netcode.Components
             if (serializer.IsWriter)
             {
                 SynchronizeState.FlagStates.IsTeleportingNextFrame = true;
-                var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
-                CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
+                CheckForStateChange(ref SynchronizeState, true, targetClientId);
                 SynchronizeState.NetworkSerialize(serializer);
                 LastTickSync = SynchronizeState.GetNetworkTick();
                 OnAuthorityPushTransformState(ref SynchronizeState);
@@ -1972,7 +1971,7 @@ namespace Unity.Netcode.Components
             // If we are authority, update the authoritative state
             if (CanCommitToTransform)
             {
-                OnUpdateAuthoritativeState(ref transformToCommit);
+                OnUpdateAuthoritativeState();
             }
             else // Non-Authority
             {
@@ -2012,7 +2011,7 @@ namespace Unity.Netcode.Components
         /// If there are any transform delta states, this method will synchronize the
         /// state with all non-authority instances.
         /// </summary>
-        private void TryCommitTransform(ref Transform transformToCommit, bool synchronize = false, bool settingState = false)
+        private void TryCommitTransform(bool synchronize = false, bool settingState = false)
         {
             // Only the server or the owner is allowed to commit a transform
             if (!IsServer && !IsOwner)
@@ -2029,7 +2028,7 @@ namespace Unity.Netcode.Components
             }
 #endif
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
-            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: settingState))
+            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, synchronize, forceState: settingState))
             {
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
@@ -2041,7 +2040,7 @@ namespace Unity.Netcode.Components
                     if (SwitchTransformSpaceWhenParented && m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && transform.parent != null && !m_LocalAuthoritativeNetworkState.InLocalSpace)
                     {
                         InLocalSpace = true;
-                        CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: true);
+                        CheckForStateChange(ref m_LocalAuthoritativeNetworkState, synchronize, forceState: true);
                     }
                 }
 
@@ -2139,7 +2138,7 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
 
             // Now check the transform for any threshold value changes
-            CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transform);
+            CheckForStateChange(ref m_LocalAuthoritativeNetworkState);
 
             // Return the entire state to be used by the integration test
             return m_LocalAuthoritativeNetworkState;
@@ -2150,6 +2149,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
+            CachedTransform = transformToUse;
             m_CachedNetworkManager = NetworkManager;
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
             networkState.FlagStates.UseInterpolation = Interpolate;
@@ -2159,14 +2159,14 @@ namespace Unity.Netcode.Components
             networkState.UseUnreliableDeltas = UseUnreliableDeltas;
             m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
-            return CheckForStateChange(ref networkState, ref transformToUse);
+            return CheckForStateChange(ref networkState);
         }
 
         /// <summary>
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CheckForStateChange(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
+        private bool CheckForStateChange(ref NetworkTransformState networkState, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
             // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
@@ -2235,8 +2235,8 @@ namespace Unity.Netcode.Components
 
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? CachedTransform.localPosition : CachedTransform.position;
+            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? CachedTransform.localRotation : CachedTransform.rotation;
 
             var positionThreshold = Vector3.one * PositionThreshold;
             var rotationThreshold = Vector3.one * RotAngleThreshold;
@@ -2255,7 +2255,7 @@ namespace Unity.Netcode.Components
             var rotationThreshold = Vector3.one * RotAngleThreshold;
 #endif
             var rotAngles = rotation.eulerAngles;
-            var scale = transformToUse.localScale;
+            var scale = CachedTransform.localScale;
             flagStates.IsSynchronizing = isSynchronization;
 
             // Check for parenting when synchronizing and/or teleporting
@@ -2636,9 +2636,8 @@ namespace Unity.Netcode.Components
                 }
 #endif
 
-                // Update any changes to the transform
-                var transformSource = transform;
-                OnUpdateAuthoritativeState(ref transformSource, isCalledFromParent);
+                // Update any changes to the transform based on the current state
+                OnUpdateAuthoritativeState(isCalledFromParent);
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 m_InternalCurrentPosition = m_LastStateTargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
                 m_InternalCurrentRotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
@@ -3497,7 +3496,7 @@ namespace Unity.Netcode.Components
         /// Called by authority to check for deltas and update non-authoritative instances
         /// if any are found.
         /// </summary>
-        internal void OnUpdateAuthoritativeState(ref Transform transformSource, bool settingState = false)
+        internal void OnUpdateAuthoritativeState(bool settingState = false)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
@@ -3517,7 +3516,7 @@ namespace Unity.Netcode.Components
 
             AxisChangedDeltaPositionCheck();
 
-            TryCommitTransform(ref transformSource, settingState: settingState);
+            TryCommitTransform(settingState: settingState);
         }
         #endregion
 
@@ -3633,6 +3632,8 @@ namespace Unity.Netcode.Components
         internal static bool AssignDefaultInterpolationType;
         internal static InterpolationTypes DefaultInterpolationType;
 
+        internal Transform CachedTransform;
+
         /// <summary>
         /// Create interpolators when first instantiated to avoid memory allocations if the
         /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
@@ -3655,6 +3656,8 @@ namespace Unity.Netcode.Components
             {
                 InLocalSpace = false;
             }
+
+            CachedTransform = transform;
         }
 
         /// <inheritdoc/>
@@ -4142,8 +4145,6 @@ namespace Unity.Netcode.Components
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = shouldTeleport;
 
-            var transformToCommit = transform;
-
             // Explicit set states are cumulative during a fractional tick period of time (i.e. each SetState invocation will
             // update the axial deltas to whatever changes are applied). As such, we need to preserve the dirty and explicit
             // state flags.
@@ -4151,7 +4152,7 @@ namespace Unity.Netcode.Components
             var explicitState = m_LocalAuthoritativeNetworkState.ExplicitSet;
 
             // Apply any delta states to the m_LocalAuthoritativeNetworkState
-            var isDirty = CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit);
+            var isDirty = CheckForStateChange(ref m_LocalAuthoritativeNetworkState);
 
             // If we were dirty and the explicit state was set (prior to checking for deltas) or the current explicit state is dirty,
             // then we set the explicit state flag.
