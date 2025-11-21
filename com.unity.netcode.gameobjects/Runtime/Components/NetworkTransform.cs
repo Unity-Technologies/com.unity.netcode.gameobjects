@@ -35,6 +35,32 @@ namespace Unity.Netcode.Components
             Scale
         }
         #region NETWORK TRANSFORM STATE
+
+        internal struct PublicFlagStates
+        {
+            internal bool InLocalSpace;
+            internal bool HasPositionX;
+            internal bool HasPositionY;
+            internal bool HasPositionZ;
+            internal bool HasPositionChange;
+            internal bool HasRotAngleX;
+            internal bool HasRotAngleY;
+            internal bool HasRotAngleZ;
+            internal bool HasRotAngleChange;
+            internal bool HasScaleX;
+            internal bool HasScaleY;
+            internal bool HasScaleZ;
+            internal bool HasScaleChange;
+            internal bool IsTeleportingNextFrame;
+            internal bool WasTeleported;
+            internal bool UseInterpolation;
+            internal bool QuaternionSync;
+            internal bool QuaternionCompression;
+            internal bool UseHalfFloatPrecision;
+            internal bool IsSynchronizing;
+            internal bool UsePositionSlerp;
+        }
+
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
         /// </summary>
@@ -70,6 +96,7 @@ namespace Unity.Netcode.Components
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
             private const int k_SwitchTransformSpaceWhenParented = 0x00400000;
+
             // (Internal Debugging) When set each state update will contain a state identifier
             private const int k_TrackStateId = 0x10000000;
 
@@ -126,6 +153,8 @@ namespace Unity.Netcode.Components
             private FastBufferReader m_Reader;
             private FastBufferWriter m_Writer;
 
+            internal PublicFlagStates FlagStates;
+
             /// <summary>
             /// When set, non-authority instances will smoothly transition between
             /// world and local space.
@@ -136,28 +165,48 @@ namespace Unity.Netcode.Components
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> is operates in local space
             /// </summary>
-            public bool InLocalSpace { get; internal set; }
+            public bool InLocalSpace
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.InLocalSpace; }
+            }
 
             // Position
             /// <summary>
             /// When set, the X-Axis position value has changed
             /// </summary>
-            public bool HasPositionX { get; internal set; }
+            public bool HasPositionX
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasPositionX; }
+            }
 
             /// <summary>
             /// When set, the Y-Axis position value has changed
             /// </summary>
-            public bool HasPositionY { get; internal set; }
+            public bool HasPositionY
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasPositionY; }
+            }
 
             /// <summary>
             /// When set, the Z-Axis position value has changed
             /// </summary>
-            public bool HasPositionZ { get; internal set; }
+            public bool HasPositionZ
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasPositionZ; }
+            }
 
             /// <summary>
             /// When set, at least one of the position axis values has changed.
             /// </summary>
-            public bool HasPositionChange { get; internal set; }
+            public bool HasPositionChange
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasPositionChange; }
+            }
 
             // RotAngles
             /// <summary>
@@ -166,7 +215,11 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleX { get; internal set; }
+            public bool HasRotAngleX
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasRotAngleX; }
+            }
 
             /// <summary>
             /// When set, the Euler rotation Y-Axis value has changed.
@@ -174,7 +227,11 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleY { get; internal set; }
+            public bool HasRotAngleY
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasRotAngleY; }
+            }
 
             /// <summary>
             /// When set, the Euler rotation Z-Axis value has changed.
@@ -182,7 +239,11 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleZ { get; internal set; }
+            public bool HasRotAngleZ
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasRotAngleZ; }
+            }
 
             /// <summary>
             /// When set, at least one of the rotation axis values has changed.
@@ -190,50 +251,70 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleChange { get; internal set; }
+            public bool HasRotAngleChange
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasRotAngleChange; }
+            }
 
             // Scale
             /// <summary>
             /// When set, the X-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleX { get; internal set; }
+            public bool HasScaleX
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasScaleX; }
+            }
 
             /// <summary>
             /// When set, the Y-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleY { get; internal set; }
+            public bool HasScaleY
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasScaleY; }
+            }
 
             /// <summary>
             /// When set, the Z-Axis scale value has changed.
             /// </summary>
-            public bool HasScaleZ { get; internal set; }
+            public bool HasScaleZ
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasScaleZ; }
+            }
 
             /// <summary>
             /// When set, at least one of the scale axis values has changed.
             /// </summary>
-            public bool HasScaleChange { get; internal set; }
+            public bool HasScaleChange
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.HasScaleChange; }
+            }
 
             internal void MarkChanged(AxialType axialType, bool changed)
             {
                 switch (axialType)
                 {
                     case AxialType.Position:
-                        HasPositionX = changed;
-                        HasPositionY = changed;
-                        HasPositionZ = changed;
-                        HasPositionChange = changed;
+                        FlagStates.HasPositionX = changed;
+                        FlagStates.HasPositionY = changed;
+                        FlagStates.HasPositionZ = changed;
+                        FlagStates.HasPositionChange = changed;
                         break;
                     case AxialType.Rotation:
-                        HasRotAngleX = changed;
-                        HasRotAngleY = changed;
-                        HasRotAngleZ = changed;
-                        HasRotAngleChange = changed;
+                        FlagStates.HasRotAngleX = changed;
+                        FlagStates.HasRotAngleY = changed;
+                        FlagStates.HasRotAngleZ = changed;
+                        FlagStates.HasRotAngleChange = changed;
                         break;
                     case AxialType.Scale:
-                        HasScaleX = changed;
-                        HasScaleY = changed;
-                        HasScaleZ = changed;
-                        HasScaleChange = changed;
+                        FlagStates.HasScaleX = changed;
+                        FlagStates.HasScaleY = changed;
+                        FlagStates.HasScaleZ = changed;
+                        FlagStates.HasScaleChange = changed;
                         break;
                 }
             }
@@ -242,16 +323,16 @@ namespace Unity.Netcode.Components
                 switch (axis)
                 {
                     case Axis.X:
-                        HasPositionX = changed;
+                        FlagStates.HasPositionX = changed;
                         break;
                     case Axis.Y:
-                        HasPositionY = changed;
+                        FlagStates.HasPositionY = changed;
                         break;
                     case Axis.Z:
-                        HasPositionZ = changed;
+                        FlagStates.HasPositionZ = changed;
                         break;
                 }
-                HasPositionChange = HasPositionX || HasPositionY || HasPositionZ;
+                FlagStates.HasPositionChange = HasPositionX || HasPositionY || HasPositionZ;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -260,16 +341,16 @@ namespace Unity.Netcode.Components
                 switch (axis)
                 {
                     case Axis.X:
-                        HasRotAngleX = changed;
+                        FlagStates.HasRotAngleX = changed;
                         break;
                     case Axis.Y:
-                        HasRotAngleY = changed;
+                        FlagStates.HasRotAngleY = changed;
                         break;
                     case Axis.Z:
-                        HasRotAngleZ = changed;
+                        FlagStates.HasRotAngleZ = changed;
                         break;
                 }
-                HasRotAngleChange = HasRotAngleX || HasRotAngleY || HasRotAngleZ;
+                FlagStates.HasRotAngleChange = HasRotAngleX || HasRotAngleY || HasRotAngleZ;
             }
 
             internal void SetHasScale(Axis axis, bool changed)
@@ -277,16 +358,16 @@ namespace Unity.Netcode.Components
                 switch (axis)
                 {
                     case Axis.X:
-                        HasScaleX = changed;
+                        FlagStates.HasScaleX = changed;
                         break;
                     case Axis.Y:
-                        HasScaleY = changed;
+                        FlagStates.HasScaleY = changed;
                         break;
                     case Axis.Z:
-                        HasScaleZ = changed;
+                        FlagStates.HasScaleZ = changed;
                         break;
                 }
-                HasScaleChange = HasScaleX || HasScaleY || HasScaleZ;
+                FlagStates.HasScaleChange = HasScaleX || HasScaleY || HasScaleZ;
             }
 
             internal bool HasScale(Axis axis)
@@ -303,7 +384,11 @@ namespace Unity.Netcode.Components
             /// - If using half precision, full precision values are used.
             /// - All axis marked to be synchronized will be updated.
             /// </remarks>
-            public bool IsTeleportingNextFrame { get; internal set; }
+            public bool IsTeleportingNextFrame
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.IsTeleportingNextFrame; }
+            }
 
             /// <summary>
             /// When overriding <see cref="OnAuthorityPushTransformState(ref NetworkTransformState)"/>, if the state that was pushed was a teleport then this will be set to true.
@@ -311,7 +396,11 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// Note that <see cref="IsTeleportingNextFrame"/> will be reset in the event you need to do multiple teleports spread out accoss multiple ticks.
             /// </remarks>
-            public bool WasTeleported { get; internal set; }
+            public bool WasTeleported
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.WasTeleported; }
+            }
 
             /// <summary>
             /// When set the <see cref="NetworkTransform"/> is uses interpolation.
@@ -320,7 +409,11 @@ namespace Unity.Netcode.Components
             /// Authority does not apply interpolation via <see cref="NetworkTransform"/>.
             /// Authority should handle its own motion/rotation/scale smoothing locally.
             /// </remarks>
-            public bool UseInterpolation { get; internal set; }
+            public bool UseInterpolation
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.UseInterpolation; }
+            }
 
             /// <summary>
             /// When enabled, this <see cref="NetworkTransform"/> instance uses <see cref="Quaternion"/> synchronization.
@@ -330,7 +423,11 @@ namespace Unity.Netcode.Components
             /// When quaternion synchronization is enabled, the entire quaternion is updated when there are any changes to any axial values.
             /// You can use half float precision or quaternion compression to reduce the bandwidth cost.
             /// </remarks>
-            public bool QuaternionSync { get; internal set; }
+            public bool QuaternionSync
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.QuaternionSync; }
+            }
 
             /// <summary>
             /// When set <see cref="Quaternion"/>s will be compressed down to 4 bytes using a smallest three implementation.
@@ -341,7 +438,11 @@ namespace Unity.Netcode.Components
             /// - Quaternion Compression: 4 bytes per delta update
             /// - Half float precision: 8 bytes per delta update
             /// </remarks>
-            public bool QuaternionCompression { get; internal set; }
+            public bool QuaternionCompression
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.QuaternionCompression; }
+            }
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> will use half float precision for position, rotation, and scale.
@@ -350,19 +451,31 @@ namespace Unity.Netcode.Components
             /// Postion is synchronized through delta position updates in order to reduce precision loss/drift and to extend to positions beyond the limitation of half float maximum values.
             /// Rotation and scale both use half float precision (<see cref="HalfVector4"/> and <see cref="HalfVector3"/>)
             /// </remarks>
-            public bool UseHalfFloatPrecision { get; internal set; }
+            public bool UseHalfFloatPrecision
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.UseHalfFloatPrecision; }
+            }
 
             /// <summary>
             /// When set, this indicates it is the first state being synchronized.
             /// Typically when the associate <see cref="NetworkObject"/> is spawned or a client is being synchronized after connecting to a network session in progress.
             /// </summary>
-            public bool IsSynchronizing { get; internal set; }
+            public bool IsSynchronizing
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.IsSynchronizing; }
+            }
 
             /// <summary>
             /// Determines if position interpolation will Slerp towards its target position.
             /// This is only really useful if you are moving around a point in a circular pattern.
             /// </summary>
-            public bool UsePositionSlerp { get; internal set; }
+            public bool UsePositionSlerp
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return FlagStates.UsePositionSlerp; }
+            }
 
             /// <summary>
             /// Returns whether this state update was a frame synchronization when
@@ -410,8 +523,8 @@ namespace Unity.Netcode.Components
                 MarkChanged(AxialType.Position, false);
                 MarkChanged(AxialType.Rotation, false);
                 MarkChanged(AxialType.Scale, false);
-                IsTeleportingNextFrame = false;
-                IsSynchronizing = false;
+                FlagStates.IsTeleportingNextFrame = false;
+                FlagStates.IsSynchronizing = false;
                 IsParented = false;
                 SynchronizeBaseHalfFloat = false;
                 ReliableSequenced = false;
@@ -885,24 +998,25 @@ namespace Unity.Netcode.Components
             internal void SerializeBitset(ref FastBufferWriter writer)
             {
                 uint bitset = 0;
+                var flagStates = FlagStates;
 
-                if (InLocalSpace) { bitset |= k_InLocalSpaceBit; }
-                if (HasPositionX) { bitset |= k_PositionXBit; }
-                if (HasPositionY) { bitset |= k_PositionYBit; }
-                if (HasPositionZ) { bitset |= k_PositionZBit; }
-                if (HasRotAngleX) { bitset |= k_RotAngleXBit; }
-                if (HasRotAngleY) { bitset |= k_RotAngleYBit; }
-                if (HasRotAngleZ) { bitset |= k_RotAngleZBit; }
-                if (HasScaleX) { bitset |= k_ScaleXBit; }
-                if (HasScaleY) { bitset |= k_ScaleYBit; }
-                if (HasScaleZ) { bitset |= k_ScaleZBit; }
-                if (IsTeleportingNextFrame) { bitset |= k_TeleportingBit; }
-                if (UseInterpolation) { bitset |= k_Interpolate; }
-                if (QuaternionSync) { bitset |= k_QuaternionSync; }
-                if (QuaternionCompression) { bitset |= k_QuaternionCompress; }
-                if (UseHalfFloatPrecision) { bitset |= k_UseHalfFloats; }
-                if (IsSynchronizing) { bitset |= k_Synchronization; }
-                if (UsePositionSlerp) { bitset |= k_PositionSlerp; }
+                if (flagStates.InLocalSpace) { bitset |= k_InLocalSpaceBit; }
+                if (flagStates.HasPositionX) { bitset |= k_PositionXBit; }
+                if (flagStates.HasPositionY) { bitset |= k_PositionYBit; }
+                if (flagStates.HasPositionZ) { bitset |= k_PositionZBit; }
+                if (flagStates.HasRotAngleX) { bitset |= k_RotAngleXBit; }
+                if (flagStates.HasRotAngleY) { bitset |= k_RotAngleYBit; }
+                if (flagStates.HasRotAngleZ) { bitset |= k_RotAngleZBit; }
+                if (flagStates.HasScaleX) { bitset |= k_ScaleXBit; }
+                if (flagStates.HasScaleY) { bitset |= k_ScaleYBit; }
+                if (flagStates.HasScaleZ) { bitset |= k_ScaleZBit; }
+                if (flagStates.IsTeleportingNextFrame) { bitset |= k_TeleportingBit; }
+                if (flagStates.UseInterpolation) { bitset |= k_Interpolate; }
+                if (flagStates.QuaternionSync) { bitset |= k_QuaternionSync; }
+                if (flagStates.QuaternionCompression) { bitset |= k_QuaternionCompress; }
+                if (flagStates.UseHalfFloatPrecision) { bitset |= k_UseHalfFloats; }
+                if (flagStates.IsSynchronizing) { bitset |= k_Synchronization; }
+                if (flagStates.UsePositionSlerp) { bitset |= k_PositionSlerp; }
                 if (IsParented) { bitset |= k_IsParented; }
                 if (SynchronizeBaseHalfFloat) { bitset |= k_SynchBaseHalfFloat; }
                 if (ReliableSequenced) { bitset |= k_ReliableSequenced; }
@@ -918,8 +1032,7 @@ namespace Unity.Netcode.Components
             internal void DeserializeBitset(ref FastBufferReader reader)
             {
                 ByteUnpacker.ReadValueBitPacked(reader, out uint bitset);
-
-                InLocalSpace = (bitset & k_InLocalSpaceBit) != 0;
+                FlagStates.InLocalSpace = (bitset & k_InLocalSpaceBit) != 0;
                 SetHasPosition(Axis.X, (bitset & k_PositionXBit) != 0);
                 SetHasPosition(Axis.Y, (bitset & k_PositionYBit) != 0);
                 SetHasPosition(Axis.Z, (bitset & k_PositionZBit) != 0);
@@ -929,13 +1042,13 @@ namespace Unity.Netcode.Components
                 SetHasScale(Axis.X, (bitset & k_ScaleXBit) != 0);
                 SetHasScale(Axis.Y, (bitset & k_ScaleYBit) != 0);
                 SetHasScale(Axis.Z, (bitset & k_ScaleZBit) != 0);
-                IsTeleportingNextFrame = (bitset & k_TeleportingBit) != 0;
-                UseInterpolation = (bitset & k_Interpolate) != 0;
-                QuaternionSync = (bitset & k_QuaternionSync) != 0;
-                QuaternionCompression = (bitset & k_QuaternionCompress) != 0;
-                UseHalfFloatPrecision = (bitset & k_UseHalfFloats) != 0;
-                IsSynchronizing = (bitset & k_Synchronization) != 0;
-                UsePositionSlerp = (bitset & k_PositionSlerp) != 0;
+                FlagStates.IsTeleportingNextFrame = (bitset & k_TeleportingBit) != 0;
+                FlagStates.UseInterpolation = (bitset & k_Interpolate) != 0;
+                FlagStates.QuaternionSync = (bitset & k_QuaternionSync) != 0;
+                FlagStates.QuaternionCompression = (bitset & k_QuaternionCompress) != 0;
+                FlagStates.UseHalfFloatPrecision = (bitset & k_UseHalfFloats) != 0;
+                FlagStates.IsSynchronizing = (bitset & k_Synchronization) != 0;
+                FlagStates.UsePositionSlerp = (bitset & k_PositionSlerp) != 0;
                 IsParented = (bitset & k_IsParented) != 0;
                 SynchronizeBaseHalfFloat = (bitset & k_SynchBaseHalfFloat) != 0;
                 ReliableSequenced = (bitset & k_ReliableSequenced) != 0;
@@ -1780,7 +1893,7 @@ namespace Unity.Netcode.Components
 
             if (serializer.IsWriter)
             {
-                SynchronizeState.IsTeleportingNextFrame = true;
+                SynchronizeState.FlagStates.IsTeleportingNextFrame = true;
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
@@ -1813,9 +1926,9 @@ namespace Unity.Netcode.Components
             // Teleport/Fully Initialize based on the state
             ApplyTeleportingState(SynchronizeState);
             m_LocalAuthoritativeNetworkState = SynchronizeState;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-            m_LocalAuthoritativeNetworkState.IsSynchronizing = false;
-            SynchronizeState.IsSynchronizing = false;
+            m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = false;
+            m_LocalAuthoritativeNetworkState.FlagStates.IsSynchronizing = false;
+            SynchronizeState.FlagStates.IsSynchronizing = false;
         }
         #endregion
 
@@ -1929,11 +2042,11 @@ namespace Unity.Netcode.Components
                 m_OldState = m_LocalAuthoritativeNetworkState;
 
                 // Preserve our teleporting flag in order to know if the state pushed was a teleport
-                m_LocalAuthoritativeNetworkState.WasTeleported = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame;
+                m_LocalAuthoritativeNetworkState.FlagStates.WasTeleported = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame;
 
                 // Reset the teleport and explicit state flags after we have sent the state update.
                 // These could be set again in the below OnAuthorityPushTransformState virtual method
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+                m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = false;
                 m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 try
@@ -2029,10 +2142,10 @@ namespace Unity.Netcode.Components
         {
             m_CachedNetworkManager = NetworkManager;
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
-            networkState.UseInterpolation = Interpolate;
-            networkState.QuaternionSync = UseQuaternionSynchronization;
-            networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
-            networkState.QuaternionCompression = UseQuaternionCompression;
+            networkState.FlagStates.UseInterpolation = Interpolate;
+            networkState.FlagStates.QuaternionSync = UseQuaternionSynchronization;
+            networkState.FlagStates.UseHalfFloatPrecision = UseHalfFloatPrecision;
+            networkState.FlagStates.QuaternionCompression = UseQuaternionCompression;
             networkState.UseUnreliableDeltas = UseUnreliableDeltas;
             m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
@@ -2066,27 +2179,33 @@ namespace Unity.Netcode.Components
                 // send at least 1 unreliable state update after this fame synch or teleport
                 m_DeltaSynch = false;
             }
+
+            var flagStates = networkState.FlagStates;
+
             // This is used to determine if we need to send the state update reliably (if we are doing an axial sync)
             networkState.UnreliableFrameSync = isAxisSync;
 
-            var isTeleportingAndNotSynchronizing = networkState.IsTeleportingNextFrame && !isSynchronization;
+            var isTeleportingAndNotSynchronizing = flagStates.IsTeleportingNextFrame && !isSynchronization;
             var isDirty = false;
-            var isPositionDirty = isTeleportingAndNotSynchronizing ? networkState.HasPositionChange : false;
-            var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
-            var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
+            var isPositionDirty = isTeleportingAndNotSynchronizing ? flagStates.HasPositionChange : false;
+            var isRotationDirty = isTeleportingAndNotSynchronizing ? flagStates.HasRotAngleChange : false;
+            var isScaleDirty = isTeleportingAndNotSynchronizing ? flagStates.HasScaleChange : false;
+
             networkState.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
+
+
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
             // authority changed a property during runtime that requires a full synchronizing.
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            if ((InLocalSpace != networkState.InLocalSpace || isSynchronization) && !m_UseRigidbodyForMotion)
+            if ((InLocalSpace != flagStates.InLocalSpace || isSynchronization) && !m_UseRigidbodyForMotion)
 #else
             if (InLocalSpace != networkState.InLocalSpace)
 #endif
             {
                 // When SwitchTransformSpaceWhenParented is set we automatically set our local space based on whether
                 // we are parented or not.
-                networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
+                flagStates.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
                 if (SwitchTransformSpaceWhenParented)
                 {
                     InLocalSpace = networkState.InLocalSpace;
@@ -2096,7 +2215,7 @@ namespace Unity.Netcode.Components
                 // If we are already teleporting preserve the teleport flag.
                 // If we don't have SwitchTransformSpaceWhenParented set or we are synchronizing,
                 // then set the teleport flag.
-                networkState.IsTeleportingNextFrame |= !SwitchTransformSpaceWhenParented || isSynchronization;
+                flagStates.IsTeleportingNextFrame |= !SwitchTransformSpaceWhenParented || isSynchronization;
 
                 // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
                 // If interpolation is enabled, then any non-authority instance will update any pending
@@ -2127,7 +2246,7 @@ namespace Unity.Netcode.Components
 #endif
             var rotAngles = rotation.eulerAngles;
             var scale = transformToUse.localScale;
-            networkState.IsSynchronizing = isSynchronization;
+            flagStates.IsSynchronizing = isSynchronization;
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame || forceState)
@@ -2162,67 +2281,67 @@ namespace Unity.Netcode.Components
                 networkState.IsParented = hasParentNetworkObject;
             }
 
-            if (Interpolate != networkState.UseInterpolation)
+            if (Interpolate != flagStates.UseInterpolation)
             {
-                networkState.UseInterpolation = Interpolate;
+                flagStates.UseInterpolation = Interpolate;
                 isDirty = true;
                 // When we change from interpolating to not interpolating (or vice versa) we need to synchronize/reset everything
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
-            if (UseQuaternionSynchronization != networkState.QuaternionSync)
+            if (UseQuaternionSynchronization != flagStates.QuaternionSync)
             {
-                networkState.QuaternionSync = UseQuaternionSynchronization;
+                flagStates.QuaternionSync = UseQuaternionSynchronization;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
-            if (UseQuaternionCompression != networkState.QuaternionCompression)
+            if (UseQuaternionCompression != flagStates.QuaternionCompression)
             {
-                networkState.QuaternionCompression = UseQuaternionCompression;
+                flagStates.QuaternionCompression = UseQuaternionCompression;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
-            if (UseHalfFloatPrecision != networkState.UseHalfFloatPrecision)
+            if (UseHalfFloatPrecision != flagStates.UseHalfFloatPrecision)
             {
-                networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
+                flagStates.UseHalfFloatPrecision = UseHalfFloatPrecision;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
-            if (SlerpPosition != networkState.UsePositionSlerp)
+            if (SlerpPosition != flagStates.UsePositionSlerp)
             {
-                networkState.UsePositionSlerp = SlerpPosition;
+                flagStates.UsePositionSlerp = SlerpPosition;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
             if (UseUnreliableDeltas != networkState.UseUnreliableDeltas)
             {
                 networkState.UseUnreliableDeltas = UseUnreliableDeltas;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                flagStates.IsTeleportingNextFrame = true;
             }
 
             // Begin delta checks against last sent state update
             if (!UseHalfFloatPrecision)
             {
-                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionX = position.x;
                     networkState.SetHasPosition(Axis.X, true);
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionY = position.y;
                     networkState.SetHasPosition(Axis.Y, true);
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionZ = position.z;
                     networkState.SetHasPosition(Axis.Z, true);
@@ -2232,7 +2351,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizePosition)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
+                isPositionDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
                 if (m_HalfFloatTargetTickOwnership > CurrentTick)
                 {
                     isPositionDirty = true;
@@ -2265,7 +2384,7 @@ namespace Unity.Netcode.Components
                         // With global teleporting (broadcast to all non-authority instances)
                         // we re-initialize authority's NetworkDeltaPosition and synchronize all
                         // non-authority instances with the new full precision position
-                        if (networkState.IsTeleportingNextFrame)
+                        if (flagStates.IsTeleportingNextFrame)
                         {
                             m_HalfPositionState = new NetworkDeltaPosition(position, networkState.NetworkTick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                             networkState.CurrentPosition = position;
@@ -2279,7 +2398,7 @@ namespace Unity.Netcode.Components
                         networkState.NetworkDeltaPosition = m_HalfPositionState;
 
                         // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position
-                        if ((m_HalfFloatTargetTickOwnership > CurrentTick || isAxisSync) && !networkState.IsTeleportingNextFrame)
+                        if ((m_HalfFloatTargetTickOwnership > CurrentTick || isAxisSync) && !flagStates.IsTeleportingNextFrame)
                         {
                             networkState.SynchronizeBaseHalfFloat = true;
                         }
@@ -2330,30 +2449,30 @@ namespace Unity.Netcode.Components
                         // Add log entry for this update relative to the client being synchronized
                         AddLogEntry(ref networkState, targetClientId, true);
                     }
-                    networkState.HasPositionX = SyncPositionX;
-                    networkState.HasPositionY = SyncPositionY;
-                    networkState.HasPositionZ = SyncPositionZ;
-                    networkState.HasPositionChange = SyncPositionX || SyncPositionY || SyncPositionZ;
+                    flagStates.HasPositionX = SyncPositionX;
+                    flagStates.HasPositionY = SyncPositionY;
+                    flagStates.HasPositionZ = SyncPositionZ;
+                    flagStates.HasPositionChange = SyncPositionX || SyncPositionY || SyncPositionZ;
                 }
             }
 
             if (!UseQuaternionSynchronization)
             {
-                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleX = rotAngles.x;
                     networkState.SetHasRotation(Axis.X, true);
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleY = rotAngles.y;
                     networkState.SetHasRotation(Axis.Y, true);
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleZ = rotAngles.z;
                     networkState.SetHasRotation(Axis.Z, true);
@@ -2363,7 +2482,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizeRotation)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isRotationDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
+                isRotationDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
                 // For quaternion synchronization, if one angle is dirty we send a full update
                 if (!isRotationDirty)
                 {
@@ -2385,7 +2504,7 @@ namespace Unity.Netcode.Components
             }
 
             // For scale, we need to check for parenting when synchronizing and/or teleporting (synchronization is always teleporting)
-            if (networkState.IsTeleportingNextFrame)
+            if (flagStates.IsTeleportingNextFrame)
             {
                 // If we are synchronizing and the associated NetworkObject has a parent then we want to send the
                 // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not guaranteed
@@ -2400,21 +2519,21 @@ namespace Unity.Netcode.Components
             {
                 if (!UseHalfFloatPrecision)
                 {
-                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleX = scale.x;
                         networkState.SetHasScale(Axis.X, true);
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleY = scale.y;
                         networkState.SetHasScale(Axis.Y, true);
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleZ = scale.z;
                         networkState.SetHasScale(Axis.Z, true);
@@ -2426,7 +2545,7 @@ namespace Unity.Netcode.Components
                     var previousScale = networkState.Scale;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState)
+                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState)
                         {
                             isScaleDirty = true;
                             networkState.Scale[i] = scale[i];
@@ -2466,6 +2585,9 @@ namespace Unity.Netcode.Components
 
             // Mark the state dirty for the next network tick update to clear out the bitset values
             networkState.IsDirty |= isDirty;
+
+            // Apply any changes to the flag states once
+            networkState.FlagStates = flagStates;
             return isDirty;
         }
 
@@ -3356,7 +3478,7 @@ namespace Unity.Netcode.Components
                         needsToTeleport = Mathf.Abs(relativePosition.z - positionState.z) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
                     // If needed, force a teleport as the delta is outside of the valid delta boundary
-                    m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = needsToTeleport;
+                    m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = needsToTeleport;
                 }
             }
         }
@@ -3436,12 +3558,12 @@ namespace Unity.Netcode.Components
 
         private void ApplyPlayerTransformState()
         {
-            SynchronizeState.InLocalSpace = InLocalSpace;
-            SynchronizeState.UseInterpolation = Interpolate;
-            SynchronizeState.QuaternionSync = UseQuaternionSynchronization;
-            SynchronizeState.UseHalfFloatPrecision = UseHalfFloatPrecision;
-            SynchronizeState.QuaternionCompression = UseQuaternionCompression;
-            SynchronizeState.UsePositionSlerp = SlerpPosition;
+            SynchronizeState.FlagStates.InLocalSpace = InLocalSpace;
+            SynchronizeState.FlagStates.UseInterpolation = Interpolate;
+            SynchronizeState.FlagStates.QuaternionSync = UseQuaternionSynchronization;
+            SynchronizeState.FlagStates.UseHalfFloatPrecision = UseHalfFloatPrecision;
+            SynchronizeState.FlagStates.QuaternionCompression = UseQuaternionCompression;
+            SynchronizeState.FlagStates.UsePositionSlerp = SlerpPosition;
         }
 
         /// <summary>
@@ -3465,7 +3587,7 @@ namespace Unity.Netcode.Components
                 if (m_IsFirstNetworkTransform)
                 {
                     // Assure the NetworkTransform has the synchronizing flag set so the server runs through the final post initialization steps
-                    SynchronizeState.IsSynchronizing = true;
+                    SynchronizeState.FlagStates.IsSynchronizing = true;
 
                     // Assure the SynchronizeState matches the initial prefab's values for each associated NetworkTransfrom (this includes root + all children)
                     foreach (var child in NetworkObject.NetworkTransforms)
@@ -4008,7 +4130,7 @@ namespace Unity.Netcode.Components
             }
 
             transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+            m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = shouldTeleport;
 
             var transformToCommit = transform;
 
