@@ -5,6 +5,9 @@ using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using UnityEngine.Assemblies;
+#endif
 
 namespace Unity.Netcode.Editor
 {
@@ -60,7 +63,11 @@ namespace Unity.Netcode.Editor
         {
             m_TransportTypes.Clear();
 
+#if UNITY_6000_5_OR_NEWER
+            var assemblies = CurrentAssemblies.GetLoadedAssemblies();
+#else
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
 
             foreach (var assembly in assemblies)
             {
