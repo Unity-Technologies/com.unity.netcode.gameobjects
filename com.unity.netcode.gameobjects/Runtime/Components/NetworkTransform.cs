@@ -36,6 +36,12 @@ namespace Unity.Netcode.Components
         }
         #region NETWORK TRANSFORM STATE
 
+        /// <summary>
+        /// Any <see cref="NetworkTransformState"/> public facing bool value is
+        /// represented in this struct.
+        /// This is what is used internally to get and set the current state's
+        /// public flags/bools.
+        /// </summary>
         internal struct PublicFlagStates
         {
             internal bool InLocalSpace;
@@ -294,6 +300,7 @@ namespace Unity.Netcode.Components
                 get { return FlagStates.HasScaleChange; }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void MarkChanged(AxialType axialType, bool changed)
             {
                 switch (axialType)
@@ -318,6 +325,8 @@ namespace Unity.Netcode.Components
                         break;
                 }
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void SetHasPosition(Axis axis, bool changed)
             {
                 switch (axis)
@@ -353,6 +362,7 @@ namespace Unity.Netcode.Components
                 FlagStates.HasRotAngleChange = HasRotAngleX || HasRotAngleY || HasRotAngleZ;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void SetHasScale(Axis axis, bool changed)
             {
                 switch (axis)
