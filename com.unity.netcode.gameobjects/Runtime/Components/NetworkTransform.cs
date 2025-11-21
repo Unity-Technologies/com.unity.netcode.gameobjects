@@ -190,7 +190,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
-            public bool HasRotAngleChange  { get; internal set; }
+            public bool HasRotAngleChange { get; internal set; }
 
             // Scale
             /// <summary>
@@ -221,16 +221,19 @@ namespace Unity.Netcode.Components
                         HasPositionX = changed;
                         HasPositionY = changed;
                         HasPositionZ = changed;
+                        HasPositionChange = changed;
                         break;
                     case AxialType.Rotation:
                         HasRotAngleX = changed;
                         HasRotAngleY = changed;
                         HasRotAngleZ = changed;
+                        HasRotAngleChange = changed;
                         break;
                     case AxialType.Scale:
                         HasScaleX = changed;
                         HasScaleY = changed;
                         HasScaleZ = changed;
+                        HasScaleChange = changed;
                         break;
                 }
             }
@@ -587,11 +590,6 @@ namespace Unity.Netcode.Components
                     bitSetAndTickSize = m_Writer.Position - positionStart;
                     lastPosition = m_Writer.Position;
                 }
-                else
-                {
-                    bitSetAndTickSize = m_Reader.Position - positionStart;
-                    lastPosition = m_Reader.Position;
-                }
 #endif
 
                 // If debugging states and track by state identifier is enabled, serialize the current state identifier
@@ -668,13 +666,6 @@ namespace Unity.Netcode.Components
                 {
                     positionSize = m_Writer.Position - lastPosition;
                     lastPosition = m_Writer.Position;
-                    Debug.Log($"[Write][bitsAndTick={bitSetAndTickSize}][position={positionSize}]");
-                }
-                else
-                {
-                    positionSize = m_Reader.Position - lastPosition;
-                    lastPosition = m_Reader.Position;
-                    Debug.Log($"[Read][bitsAndTick={bitSetAndTickSize}][position={positionSize}]");
                 }
 #endif
 
@@ -794,11 +785,6 @@ namespace Unity.Netcode.Components
                     rotationSize = m_Writer.Position - lastPosition;
                     lastPosition = m_Writer.Position;
                 }
-                else
-                {
-                    rotationSize = m_Reader.Position - lastPosition;
-                    lastPosition = m_Reader.Position;
-                }
 #endif
 
                 // Synchronize Scale
@@ -877,11 +863,6 @@ namespace Unity.Netcode.Components
                     scaleSize = m_Writer.Position - lastPosition;
                     lastPosition = m_Writer.Position;
                 }
-                else
-                {
-                    scaleSize = m_Reader.Position - lastPosition;
-                    lastPosition = m_Reader.Position;
-                }
 #endif
 
                 // Only if we are receiving state
@@ -894,12 +875,10 @@ namespace Unity.Netcode.Components
                 else
                 {
                     LastSerializedSize = m_Writer.Position - positionStart;
-                }
-
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
-                var type = isWriting ? "Write" : "Read";
-                Debug.Log($"[NT-{type}][BitsAndTick: {bitSetAndTickSize}][position: {positionSize}][rotation: {rotationSize}][scale: {scaleSize}]");
+                    Debug.Log($"[NT-WriteSize][BitsAndTick: {bitSetAndTickSize}][position: {positionSize}][rotation: {rotationSize}][scale: {scaleSize}]");
 #endif
+                }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -907,33 +886,16 @@ namespace Unity.Netcode.Components
             {
                 uint bitset = 0;
 
-                Debug.Log($"[NT] Serializing has changes: HasPositionChange: {HasPositionChange}, HasRotAngleChange: {HasRotAngleChange}, HasScaleChange: {HasScaleChange}");
-                Debug.Log($"[NT] Serializing: HasRotAngleX: {HasRotAngleX}, HasRotAngleY: {HasRotAngleY}, HasRotAngleZ: {HasRotAngleZ}");
-
                 if (InLocalSpace) { bitset |= k_InLocalSpaceBit; }
-
-                // if (HasPositionChange)
-                // {
-                    if (HasPositionX) { bitset |= k_PositionXBit; }
-                    if (HasPositionY) { bitset |= k_PositionYBit; }
-                    if (HasPositionZ) { bitset |= k_PositionZBit; }
-                // }
-                //
-                // if (HasRotAngleChange)
-                // {
-                    if (HasRotAngleX) { bitset |= k_RotAngleXBit; }
-                    if (HasRotAngleY) { bitset |= k_RotAngleYBit; }
-                    if (HasRotAngleZ) { bitset |= k_RotAngleZBit; }
-                // }
-                //
-                // if (HasScaleChange)
-                // {
-                    if (HasScaleX) { bitset |= k_ScaleXBit; }
-                    if (HasScaleY) { bitset |= k_ScaleYBit; }
-                    if (HasScaleZ) { bitset |= k_ScaleZBit; }
-
-                // }
-
+                if (HasPositionX) { bitset |= k_PositionXBit; }
+                if (HasPositionY) { bitset |= k_PositionYBit; }
+                if (HasPositionZ) { bitset |= k_PositionZBit; }
+                if (HasRotAngleX) { bitset |= k_RotAngleXBit; }
+                if (HasRotAngleY) { bitset |= k_RotAngleYBit; }
+                if (HasRotAngleZ) { bitset |= k_RotAngleZBit; }
+                if (HasScaleX) { bitset |= k_ScaleXBit; }
+                if (HasScaleY) { bitset |= k_ScaleYBit; }
+                if (HasScaleZ) { bitset |= k_ScaleZBit; }
                 if (IsTeleportingNextFrame) { bitset |= k_TeleportingBit; }
                 if (UseInterpolation) { bitset |= k_Interpolate; }
                 if (QuaternionSync) { bitset |= k_QuaternionSync; }
@@ -981,9 +943,6 @@ namespace Unity.Netcode.Components
                 UnreliableFrameSync = (bitset & k_UnreliableFrameSync) != 0;
                 SwitchTransformSpaceWhenParented = (bitset & k_SwitchTransformSpaceWhenParented) != 0;
                 TrackByStateId = (bitset & k_TrackStateId) != 0;
-
-                Debug.Log($"Deserialized has changes: HasPositionChange: {HasPositionChange}, HasRotAngleChange: {HasRotAngleChange}, HasScaleChange: {HasScaleChange}");
-
             }
         }
         #endregion
@@ -1825,7 +1784,6 @@ namespace Unity.Netcode.Components
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
-                Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][OnSynchronize] HasRotAngleX: {SynchronizeState.HasRotAngleX}, HasRotAngleChange: {SynchronizeState.HasRotAngleChange}");
                 CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
                 SynchronizeState.NetworkSerialize(serializer);
                 LastTickSync = SynchronizeState.GetNetworkTick();
@@ -1948,7 +1906,6 @@ namespace Unity.Netcode.Components
             }
 #endif
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
-            Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][TryCommitTransform][#1] HasRotAngleX: {m_LocalAuthoritativeNetworkState.HasRotAngleX}, HasRotAngleChange: {m_LocalAuthoritativeNetworkState.HasRotAngleChange}");
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: settingState))
             {
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
@@ -1961,7 +1918,6 @@ namespace Unity.Netcode.Components
                     if (SwitchTransformSpaceWhenParented && m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && transform.parent != null && !m_LocalAuthoritativeNetworkState.InLocalSpace)
                     {
                         InLocalSpace = true;
-                        Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][TryCommitTransform][#2] HasRotAngleX: {m_LocalAuthoritativeNetworkState.HasRotAngleX}, HasRotAngleChange: {m_LocalAuthoritativeNetworkState.HasRotAngleChange}");
                         CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: true);
                     }
                 }
@@ -2060,7 +2016,6 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
 
             // Now check the transform for any threshold value changes
-            Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][ApplyLocalNetworkState] HasRotAngleX: {m_LocalAuthoritativeNetworkState.HasRotAngleX}, HasRotAngleChange: {m_LocalAuthoritativeNetworkState.HasRotAngleChange}");
             CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transform);
 
             // Return the entire state to be used by the integration test
@@ -2081,7 +2036,6 @@ namespace Unity.Netcode.Components
             networkState.UseUnreliableDeltas = UseUnreliableDeltas;
             m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
-            Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][ApplyTransformToNetworkState] HasRotAngleX: {networkState.HasRotAngleX}, HasRotAngleChange: {networkState.HasRotAngleChange}");
             return CheckForStateChange(ref networkState, ref transformToUse);
         }
 
@@ -2117,19 +2071,9 @@ namespace Unity.Netcode.Components
 
             var isTeleportingAndNotSynchronizing = networkState.IsTeleportingNextFrame && !isSynchronization;
             var isDirty = false;
-
-            var isPositionDirty = networkState.HasPositionChange;
-            var isRotationDirty = networkState.HasRotAngleChange;
-            var isScaleDirty = networkState.HasScaleChange;
-            if (!isTeleportingAndNotSynchronizing)
-            {
-                isPositionDirty = false;
-                isRotationDirty = false;
-                isScaleDirty = false;
-                networkState.MarkChanged(AxialType.Position,false);
-                networkState.MarkChanged(AxialType.Rotation,false);
-                networkState.MarkChanged(AxialType.Scale,false);
-            }
+            var isPositionDirty = isTeleportingAndNotSynchronizing ? networkState.HasPositionChange : false;
+            var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
+            var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
             networkState.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
@@ -4075,10 +4019,7 @@ namespace Unity.Netcode.Components
             var explicitState = m_LocalAuthoritativeNetworkState.ExplicitSet;
 
             // Apply any delta states to the m_LocalAuthoritativeNetworkState
-            Debug.Log($"[Object-{NetworkObjectId}][CheckForStateChange][SetStateInternal] HasRotAngleX: {m_LocalAuthoritativeNetworkState.HasRotAngleX}, HasRotAngleChange: {m_LocalAuthoritativeNetworkState.HasRotAngleChange}");
             var isDirty = CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit);
-            Debug.Log($"[After][Object-{NetworkObjectId}][CheckForStateChange][SetStateInternal] HasRotAngleX: {m_LocalAuthoritativeNetworkState.HasRotAngleX}, HasRotAngleChange: {m_LocalAuthoritativeNetworkState.HasRotAngleChange}");
-
 
             // If we were dirty and the explicit state was set (prior to checking for deltas) or the current explicit state is dirty,
             // then we set the explicit state flag.
