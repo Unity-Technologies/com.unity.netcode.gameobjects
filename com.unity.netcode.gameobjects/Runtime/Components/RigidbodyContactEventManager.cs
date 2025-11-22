@@ -80,8 +80,13 @@ namespace Unity.Netcode.Components
         private struct JobResultStruct
         {
             public bool HasCollisionStay;
+#if UNITY_6000_2_OR_NEWER
+            public EntityId ThisInstanceID;
+            public EntityId OtherInstanceID;
+#else
             public int ThisInstanceID;
             public int OtherInstanceID;
+#endif
             public Vector3 AverageNormal;
             public Vector3 AverageCollisionStayNormal;
             public Vector3 ContactPoint;
