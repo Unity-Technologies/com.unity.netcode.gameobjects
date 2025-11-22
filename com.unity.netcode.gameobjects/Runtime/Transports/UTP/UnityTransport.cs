@@ -439,7 +439,6 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 #if UNITY_6000_2_OR_NEWER
-            // TODO-FIXME: This is to work around the 
             TransportInitialized?.Invoke(GetEntityId(), m_Driver);
 #else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
