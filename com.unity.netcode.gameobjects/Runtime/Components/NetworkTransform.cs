@@ -2171,6 +2171,8 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CheckForStateChange(ref NetworkTransformState networkState, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
+            var flagStates = networkState.FlagStates;
+
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
             // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
             // assigned tick slot (m_TickSync).
@@ -2183,17 +2185,16 @@ namespace Unity.Netcode.Components
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
             if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
             {
+                // TODO-CACHE: m_CachedNetworkManager.NetworkConfig.TickRate value
                 // Increment to the next frame synch tick position for this instance
                 m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
                 // If we are teleporting, we do not need to send a frame synch for this tick slot
                 // as a "frame synch" really is effectively just a teleport.
-                isAxisSync = !networkState.IsTeleportingNextFrame;
+                isAxisSync = !flagStates.IsTeleportingNextFrame;
                 // Reset our delta synch trigger so we don't send another frame synch until we
                 // send at least 1 unreliable state update after this fame synch or teleport
                 m_DeltaSynch = false;
             }
-
-            var flagStates = networkState.FlagStates;
 
             // This is used to determine if we need to send the state update reliably (if we are doing an axial sync)
             flagStates.UnreliableFrameSync = isAxisSync;
@@ -2213,7 +2214,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             if ((InLocalSpace != flagStates.InLocalSpace || isSynchronization) && !m_UseRigidbodyForMotion)
 #else
-            if (InLocalSpace != networkState.InLocalSpace)
+            if (InLocalSpace != flagStates.InLocalSpace)
 #endif
             {
                 // When SwitchTransformSpaceWhenParented is set we automatically set our local space based on whether
@@ -2221,7 +2222,7 @@ namespace Unity.Netcode.Components
                 flagStates.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
                 if (SwitchTransformSpaceWhenParented)
                 {
-                    InLocalSpace = networkState.InLocalSpace;
+                    InLocalSpace = flagStates.InLocalSpace;
                 }
                 isDirty = true;
 
@@ -2252,8 +2253,8 @@ namespace Unity.Netcode.Components
             //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
             //}
 #else
-            var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            var position = InLocalSpace ? CachedTransform.localPosition : CachedTransform.position;
+            var rotation = InLocalSpace ? CachedTransform.localRotation : CachedTransform.rotation;
             var positionThreshold = Vector3.one * PositionThreshold;
             var rotationThreshold = Vector3.one * RotAngleThreshold;
 #endif
@@ -2521,9 +2522,9 @@ namespace Unity.Netcode.Components
             {
                 // If we are synchronizing and the associated NetworkObject has a parent then we want to send the
                 // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not guaranteed
-                if (networkState.FlagStates.IsParented)
+                if (flagStates.IsParented)
                 {
-                    networkState.LossyScale = transform.lossyScale;
+                    networkState.LossyScale = CachedTransform.lossyScale;
                 }
             }
 
@@ -2570,15 +2571,17 @@ namespace Unity.Netcode.Components
             else // Just apply the full local scale when synchronizing
             if (SynchronizeScale)
             {
+                var localScale = CachedTransform.localScale;
                 if (!UseHalfFloatPrecision)
                 {
-                    networkState.ScaleX = transform.localScale.x;
-                    networkState.ScaleY = transform.localScale.y;
-                    networkState.ScaleZ = transform.localScale.z;
+
+                    networkState.ScaleX = localScale.x;
+                    networkState.ScaleY = localScale.y;
+                    networkState.ScaleZ = localScale.z;
                 }
                 else
                 {
-                    networkState.Scale = transform.localScale;
+                    networkState.Scale = localScale;
                 }
                 flagStates.MarkChanged(AxialType.Scale, true);
                 isScaleDirty = true;
@@ -2599,7 +2602,7 @@ namespace Unity.Netcode.Components
             // Mark the state dirty for the next network tick update to clear out the bitset values
             flagStates.IsDirty |= isDirty;
 
-            // Apply any changes to the flag states once
+            // Apply any flag state changes
             networkState.FlagStates = flagStates;
             return isDirty;
         }
