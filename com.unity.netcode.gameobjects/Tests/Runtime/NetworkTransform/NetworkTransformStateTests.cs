@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using static Unity.Netcode.Components.NetworkTransform;
 using Object = UnityEngine.Object;
 
 
@@ -39,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void InlinedBitmathSerialization(ref int numFlags, ref uint[] indexValues, ref bool[] boolSet)
         {
-            NetworkTransform.NetworkTransformState transformState;
+            NetworkTransformState transformState;
             FastBufferWriter writer;
             FastBufferReader reader;
             // Test setting one at a time.
@@ -53,9 +54,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 boolSet[j] = true;
 
-                transformState = new NetworkTransform.NetworkTransformState()
+                transformState = new NetworkTransformState()
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = boolSet[0],
                         HasPositionX = boolSet[1],
@@ -74,18 +75,18 @@ namespace Unity.Netcode.RuntimeTests
                         UseHalfFloatPrecision = boolSet[14],
                         IsSynchronizing = boolSet[15],
                         UsePositionSlerp = boolSet[16],
+                        IsParented = boolSet[17],
+                        SynchronizeBaseHalfFloat = boolSet[18],
+                        ReliableSequenced = boolSet[19],
+                        UseUnreliableDeltas = boolSet[20],
+                        UnreliableFrameSync = boolSet[21],
+                        SwitchTransformSpaceWhenParented = boolSet[22],
+                        TrackByStateId = boolSet[23],
                     },
-                    IsParented = boolSet[17],
-                    SynchronizeBaseHalfFloat = boolSet[18],
-                    ReliableSequenced = boolSet[19],
-                    UseUnreliableDeltas = boolSet[20],
-                    UnreliableFrameSync = boolSet[21],
-                    SwitchTransformSpaceWhenParented = boolSet[22],
-                    TrackByStateId = boolSet[23],
                 };
 
                 writer = new FastBufferWriter(64, Allocator.Temp);
-                transformState.SerializeBitset(ref writer);
+                BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetFlags());
 
                 // Test the bitset representation of the serialization matches the pre-refactor serialization
                 reader = new FastBufferReader(writer, Allocator.None);
@@ -96,17 +97,19 @@ namespace Unity.Netcode.RuntimeTests
                 // reset the reader to the beginning of the buffer
                 reader.Seek(0);
 
+                ByteUnpacker.ReadValueBitPacked(reader, out uint bitFlags);
                 // Test the deserialized values match the original values
-                var deserialized = new NetworkTransform.NetworkTransformState();
-                deserialized.DeserializeBitset(ref reader);
+                var deserialized = new NetworkTransformState();
+                // Set the flags
+                deserialized.FlagStates.SetFlags(bitFlags);
 
                 AssertTransformStateEquals(boolSet, deserialized, "Flag serialization");
             }
 
             // Test setting all flag values
-            transformState = new NetworkTransform.NetworkTransformState()
+            transformState = new NetworkTransformState()
             {
-                FlagStates = new NetworkTransform.PublicFlagStates()
+                FlagStates = new FlagStates()
                 {
                     InLocalSpace = true,
                     HasPositionX = true,
@@ -125,18 +128,19 @@ namespace Unity.Netcode.RuntimeTests
                     UseHalfFloatPrecision = true,
                     IsSynchronizing = true,
                     UsePositionSlerp = true,
+                    IsParented = true,
+                    SynchronizeBaseHalfFloat = true,
+                    ReliableSequenced = true,
+                    UseUnreliableDeltas = true,
+                    UnreliableFrameSync = true,
+                    SwitchTransformSpaceWhenParented = true,
+                    TrackByStateId = true,
                 },
-                IsParented = true,
-                SynchronizeBaseHalfFloat = true,
-                ReliableSequenced = true,
-                UseUnreliableDeltas = true,
-                UnreliableFrameSync = true,
-                SwitchTransformSpaceWhenParented = true,
-                TrackByStateId = true,
             };
 
             writer = new FastBufferWriter(64, Allocator.Temp);
-            transformState.SerializeBitset(ref writer);
+            BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetFlags());
+
             var serializedBuffer = writer.ToArray();
 
             // Use a uint to set all bits to true in a legacy style bitset
@@ -152,42 +156,43 @@ namespace Unity.Netcode.RuntimeTests
             // Test refactored serialization matches pre-refactor flag serialization
             Assert.AreEqual(legacyBitsetWriter.ToArray(), serializedBuffer, "[Flag serialization] Serialized NetworkTransformState doesn't match original serialization!");
 
-
-            var deserializedState = new NetworkTransform.NetworkTransformState();
-
             reader = new FastBufferReader(legacyBitsetWriter, Allocator.None);
-            deserializedState.DeserializeBitset(ref reader);
+            ByteUnpacker.ReadValueBitPacked(reader, out uint bitFlagsState);
+            // Test the deserialized values match the original values
+            var deserializedState = new NetworkTransformState();
+            // Set the flags
+            deserializedState.FlagStates.SetFlags(bitFlagsState);
 
             Array.Fill(boolSet, true);
             AssertTransformStateEquals(boolSet, deserializedState, "Read bitset");
         }
 
-        private void AssertTransformStateEquals(bool[] expected, NetworkTransform.NetworkTransformState actual, string testName)
+        private void AssertTransformStateEquals(bool[] expected, NetworkTransformState actual, string testName)
         {
-            Assert.AreEqual(expected[0], actual.InLocalSpace, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.InLocalSpace)} is incorrect!");
-            Assert.AreEqual(expected[1], actual.HasPositionX, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasPositionX)} is incorrect!");
-            Assert.AreEqual(expected[2], actual.HasPositionY, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasPositionY)} is incorrect!");
-            Assert.AreEqual(expected[3], actual.HasPositionZ, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasPositionZ)} is incorrect!");
-            Assert.AreEqual(expected[4], actual.HasRotAngleX, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasRotAngleX)} is incorrect!");
-            Assert.AreEqual(expected[5], actual.HasRotAngleY, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasRotAngleY)} is incorrect!");
-            Assert.AreEqual(expected[6], actual.HasRotAngleZ, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasRotAngleZ)} is incorrect!");
-            Assert.AreEqual(expected[7], actual.HasScaleX, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasScaleX)} is incorrect!");
-            Assert.AreEqual(expected[8], actual.HasScaleY, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasScaleY)} is incorrect!");
-            Assert.AreEqual(expected[9], actual.HasScaleZ, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.HasScaleZ)} is incorrect!");
-            Assert.AreEqual(expected[10], actual.IsTeleportingNextFrame, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.IsTeleportingNextFrame)} is incorrect!");
-            Assert.AreEqual(expected[11], actual.UseInterpolation, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UseInterpolation)} is incorrect!");
-            Assert.AreEqual(expected[12], actual.QuaternionSync, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.QuaternionSync)} is incorrect!");
-            Assert.AreEqual(expected[13], actual.QuaternionCompression, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.QuaternionCompression)} is incorrect!");
-            Assert.AreEqual(expected[14], actual.UseHalfFloatPrecision, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UseHalfFloatPrecision)} is incorrect!");
-            Assert.AreEqual(expected[15], actual.IsSynchronizing, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.IsSynchronizing)} is incorrect!");
-            Assert.AreEqual(expected[16], actual.UsePositionSlerp, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UsePositionSlerp)} is incorrect!");
-            Assert.AreEqual(expected[17], actual.IsParented, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.IsParented)} is incorrect!");
-            Assert.AreEqual(expected[18], actual.SynchronizeBaseHalfFloat, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.SynchronizeBaseHalfFloat)} is incorrect!");
-            Assert.AreEqual(expected[19], actual.ReliableSequenced, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.ReliableSequenced)} is incorrect!");
-            Assert.AreEqual(expected[20], actual.UseUnreliableDeltas, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UseUnreliableDeltas)} is incorrect!");
-            Assert.AreEqual(expected[21], actual.UnreliableFrameSync, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.UnreliableFrameSync)} is incorrect!");
-            Assert.AreEqual(expected[22], actual.SwitchTransformSpaceWhenParented, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.SwitchTransformSpaceWhenParented)} is incorrect!");
-            Assert.AreEqual(expected[23], actual.TrackByStateId, $"{testName} Flag {nameof(NetworkTransform.NetworkTransformState.TrackByStateId)} is incorrect!");
+            Assert.AreEqual(expected[0], actual.FlagStates.InLocalSpace, $"{testName} Flag {nameof(FlagStates.InLocalSpace)} is incorrect!");
+            Assert.AreEqual(expected[1], actual.FlagStates.HasPositionX, $"{testName} Flag {nameof(FlagStates.HasPositionX)} is incorrect!");
+            Assert.AreEqual(expected[2], actual.FlagStates.HasPositionY, $"{testName} Flag {nameof(FlagStates.HasPositionY)} is incorrect!");
+            Assert.AreEqual(expected[3], actual.FlagStates.HasPositionZ, $"{testName} Flag {nameof(FlagStates.HasPositionZ)} is incorrect!");
+            Assert.AreEqual(expected[4], actual.FlagStates.HasRotAngleX, $"{testName} Flag {nameof(FlagStates.HasRotAngleX)} is incorrect!");
+            Assert.AreEqual(expected[5], actual.FlagStates.HasRotAngleY, $"{testName} Flag {nameof(FlagStates.HasRotAngleY)} is incorrect!");
+            Assert.AreEqual(expected[6], actual.FlagStates.HasRotAngleZ, $"{testName} Flag {nameof(FlagStates.HasRotAngleZ)} is incorrect!");
+            Assert.AreEqual(expected[7], actual.FlagStates.HasScaleX, $"{testName} Flag {nameof(FlagStates.HasScaleX)} is incorrect!");
+            Assert.AreEqual(expected[8], actual.FlagStates.HasScaleY, $"{testName} Flag {nameof(FlagStates.HasScaleY)} is incorrect!");
+            Assert.AreEqual(expected[9], actual.FlagStates.HasScaleZ, $"{testName} Flag {nameof(FlagStates.HasScaleZ)} is incorrect!");
+            Assert.AreEqual(expected[10], actual.FlagStates.IsTeleportingNextFrame, $"{testName} Flag {nameof(FlagStates.IsTeleportingNextFrame)} is incorrect!");
+            Assert.AreEqual(expected[11], actual.FlagStates.UseInterpolation, $"{testName} Flag {nameof(FlagStates.UseInterpolation)} is incorrect!");
+            Assert.AreEqual(expected[12], actual.FlagStates.QuaternionSync, $"{testName} Flag {nameof(FlagStates.QuaternionSync)} is incorrect!");
+            Assert.AreEqual(expected[13], actual.FlagStates.QuaternionCompression, $"{testName} Flag {nameof(FlagStates.QuaternionCompression)} is incorrect!");
+            Assert.AreEqual(expected[14], actual.FlagStates.UseHalfFloatPrecision, $"{testName} Flag {nameof(FlagStates.UseHalfFloatPrecision)} is incorrect!");
+            Assert.AreEqual(expected[15], actual.FlagStates.IsSynchronizing, $"{testName} Flag {nameof(FlagStates.IsSynchronizing)} is incorrect!");
+            Assert.AreEqual(expected[16], actual.FlagStates.UsePositionSlerp, $"{testName} Flag {nameof(FlagStates.UsePositionSlerp)} is incorrect!");
+            Assert.AreEqual(expected[17], actual.FlagStates.IsParented, $"{testName} Flag {nameof(FlagStates.IsParented)} is incorrect!");
+            Assert.AreEqual(expected[18], actual.FlagStates.SynchronizeBaseHalfFloat, $"{testName} Flag {nameof(FlagStates.SynchronizeBaseHalfFloat)} is incorrect!");
+            Assert.AreEqual(expected[19], actual.FlagStates.ReliableSequenced, $"{testName} Flag {nameof(FlagStates.ReliableSequenced)} is incorrect!");
+            Assert.AreEqual(expected[20], actual.FlagStates.UseUnreliableDeltas, $"{testName} Flag {nameof(FlagStates.UseUnreliableDeltas)} is incorrect!");
+            Assert.AreEqual(expected[21], actual.FlagStates.UnreliableFrameSync, $"{testName} Flag {nameof(FlagStates.UnreliableFrameSync)} is incorrect!");
+            Assert.AreEqual(expected[22], actual.FlagStates.SwitchTransformSpaceWhenParented, $"{testName} Flag {nameof(FlagStates.SwitchTransformSpaceWhenParented)} is incorrect!");
+            Assert.AreEqual(expected[23], actual.FlagStates.TrackByStateId, $"{testName} Flag {nameof(FlagStates.TrackByStateId)} is incorrect!");
         }
 
     }
@@ -330,9 +335,9 @@ namespace Unity.Netcode.RuntimeTests
             // We want a relatively clean networkTransform state before we try to apply the transform to it
             // We only preserve InLocalSpace and IsTeleportingNextFrame properties as they are the only things
             // needed when applying a transform to a NetworkTransformState
-            var networkTransformState = new NetworkTransform.NetworkTransformState
+            var networkTransformState = new NetworkTransformState
             {
-                FlagStates = new NetworkTransform.PublicFlagStates()
+                FlagStates = new FlagStates()
                 {
                     InLocalSpace = inLocalSpace,
                     IsTeleportingNextFrame = isTeleporting,
@@ -355,9 +360,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // We want to start with a fresh NetworkTransformState since it could have other state
             // information from the last time we applied the transform
-            networkTransformState = new NetworkTransform.NetworkTransformState
+            networkTransformState = new NetworkTransformState
             {
-                FlagStates = new NetworkTransform.PublicFlagStates()
+                FlagStates = new FlagStates()
                 {
                     InLocalSpace = inLocalSpace,
                     IsTeleportingNextFrame = isTeleporting,
@@ -372,9 +377,9 @@ namespace Unity.Netcode.RuntimeTests
             // axis deltas that happened over a tick as a collection instead of collapsing them
             // as the changes are detected.
             {
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -509,9 +514,9 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -546,9 +551,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -565,9 +570,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -584,9 +589,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -603,9 +608,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -622,9 +627,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -641,9 +646,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -660,9 +665,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -679,9 +684,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -698,9 +703,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -717,9 +722,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -736,9 +741,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -755,9 +760,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -774,9 +779,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -793,9 +798,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -812,9 +817,9 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Reset the NetworkTransformState since teleporting will preserve
                 // any dirty values
-                networkTransformState = new NetworkTransform.NetworkTransformState
+                networkTransformState = new NetworkTransformState
                 {
-                    FlagStates = new NetworkTransform.PublicFlagStates()
+                    FlagStates = new FlagStates()
                     {
                         InLocalSpace = inLocalSpace,
                         IsTeleportingNextFrame = isTeleporting,
@@ -831,9 +836,9 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // We want to start with a fresh NetworkTransformState since it could have other state
                         // information from the last time we applied the transform
-                        networkTransformState = new NetworkTransform.NetworkTransformState
+                        networkTransformState = new NetworkTransformState
                         {
-                            FlagStates = new NetworkTransform.PublicFlagStates()
+                            FlagStates = new FlagStates()
                             {
                                 InLocalSpace = inLocalSpace,
                                 IsTeleportingNextFrame = isTeleporting,
@@ -857,9 +862,9 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         public void TestThresholds(
-            [Values(NetworkTransform.PositionThresholdDefault, 1.0f)] float positionThreshold,
-            [Values(NetworkTransform.RotAngleThresholdDefault, 1.0f)] float rotAngleThreshold,
-            [Values(NetworkTransform.ScaleThresholdDefault, 0.5f)] float scaleThreshold)
+            [Values(PositionThresholdDefault, 1.0f)] float positionThreshold,
+            [Values(RotAngleThresholdDefault, 1.0f)] float rotAngleThreshold,
+            [Values(ScaleThresholdDefault, 0.5f)] float scaleThreshold)
         {
             var inLocalSpace = m_TransformSpace == TransformSpace.Local;
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestThresholds)}");
@@ -887,7 +892,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.RotAngleThreshold = rotAngleThreshold;
             networkTransform.ScaleThreshold = scaleThreshold;
 
-            var networkTransformState = new NetworkTransform.NetworkTransformState
+            var networkTransformState = new NetworkTransformState
             {
                 PositionX = initialPosition.x,
                 PositionY = initialPosition.y,
@@ -898,7 +903,7 @@ namespace Unity.Netcode.RuntimeTests
                 ScaleX = initialScale.x,
                 ScaleY = initialScale.y,
                 ScaleZ = initialScale.z,
-                FlagStates = new NetworkTransform.PublicFlagStates()
+                FlagStates = new FlagStates()
                 {
                     InLocalSpace = inLocalSpace,
                 },

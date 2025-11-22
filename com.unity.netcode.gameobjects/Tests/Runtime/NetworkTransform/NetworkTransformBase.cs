@@ -824,7 +824,7 @@ namespace Unity.Netcode.RuntimeTests
         public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
         {
             var transformState = ApplyLocalNetworkState(transform);
-            return (transformState.IsDirty, transformState.HasPositionChange, transformState.HasRotAngleChange, transformState.HasScaleChange);
+            return (transformState.FlagStates.IsDirty, transformState.FlagStates.HasPositionChange, transformState.FlagStates.HasRotAngleChange, transformState.FlagStates.HasScaleChange);
         }
     }
 
@@ -986,7 +986,7 @@ namespace Unity.Netcode.RuntimeTests
                 tick = NetworkManager.ServerTime.Tick;
             }
 
-            m_ChildStateLog.AppendLine($"[{state.NetworkTick}][{tick}] Tele:{state.IsTeleportingNextFrame} Sync: {state.IsSynchronizing} Reliable: {state.IsReliableStateUpdate()} IsParented: {state.IsParented} HasPos: {state.HasPositionChange} Pos: {state.GetPosition()}");
+            m_ChildStateLog.AppendLine($"[{state.NetworkTick}][{tick}] Tele:{state.FlagStates.IsTeleportingNextFrame} Sync: {state.FlagStates.IsSynchronizing} Reliable: {state.IsReliableStateUpdate()} IsParented: {state.FlagStates.IsParented} HasPos: {state.FlagStates.HasPositionChange} Pos: {state.GetPosition()}");
             m_ChildStateLog.AppendLine($"Lossy:{state.LossyScale} Scale: {state.GetScale()} Rotation: {state.GetRotation()}");
         }
 

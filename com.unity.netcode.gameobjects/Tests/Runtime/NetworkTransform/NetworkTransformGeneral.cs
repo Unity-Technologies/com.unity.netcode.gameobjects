@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             // Simulate a state update
             localState.FlagStates.UseInterpolation = false;
             localState.CurrentPosition = new Vector3(5.0f, 0.0f, 0.0f);
-            localState.SetHasPosition(NetworkTransform.Axis.X, true);
+            localState.FlagStates.SetHasPosition(NetworkTransform.Axis.X, true);
             localState.PositionX = 5.0f;
             localState.NetworkTick++;
 
@@ -85,8 +85,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(localState.NetworkTick == lastStateTick, $"Previous Non-authority state tick was {lastStateTick} but is now {localState.NetworkTick}. Authority pushed a state update.");
 
             // Simualate a 2nd state update on a different position axis
-            localState.SetHasPosition(NetworkTransform.Axis.X, false);
-            localState.SetHasPosition(NetworkTransform.Axis.Z, true);
+            localState.FlagStates.SetHasPosition(NetworkTransform.Axis.X, false);
+            localState.FlagStates.SetHasPosition(NetworkTransform.Axis.Z, true);
             localState.PositionZ = -5.0f;
             localState.NetworkTick++;
             m_NonAuthoritativeTransform.ApplyUpdatedState(localState);
@@ -355,6 +355,7 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation, [Values] SmoothLerpSettings smoothLerp)
         {
+            m_EnableVerboseDebug = true;
             var interpolate = interpolation == Interpolation.EnableInterpolate;
             var usingSmoothLerp = (smoothLerp == SmoothLerpSettings.SmoothLerp) && interpolate;
             var waitForDelay = usingSmoothLerp ? 1000 : 500;
