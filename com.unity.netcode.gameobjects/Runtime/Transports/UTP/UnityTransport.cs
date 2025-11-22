@@ -355,9 +355,13 @@ namespace Unity.Netcode.Transports.UTP
             public int PacketsDropped;
             public float PacketLoss;
         };
-
+#if UNITY_6000_2_OR_NEWER
+        internal static event Action<EntityId, NetworkDriver> TransportInitialized;
+        internal static event Action<EntityId> TransportDisposed;
+#else
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
+#endif
 
         /// <summary>
         /// Provides access to the <see cref="NetworkDriver"/> for this instance.
@@ -435,6 +439,7 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 #if UNITY_6000_2_OR_NEWER
+            // TODO-FIXME: This is to work around the 
             TransportInitialized?.Invoke(GetEntityId(), m_Driver);
 #else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
