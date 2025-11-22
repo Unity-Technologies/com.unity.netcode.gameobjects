@@ -104,6 +104,11 @@ namespace Unity.Netcode.Components
             internal bool ReliableSequenced;
             internal bool UseUnreliableDeltas;
             internal bool UnreliableFrameSync;
+            /// <summary>
+            /// When set, non-authority instances will smoothly transition between
+            /// world and local space.
+            /// <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
+            /// </summary>
             internal bool SwitchTransformSpaceWhenParented;
             internal bool TrackByStateId;
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
@@ -341,13 +346,6 @@ namespace Unity.Netcode.Components
             private FastBufferWriter m_Writer;
 
             internal FlagStates FlagStates;
-
-            /// <summary>
-            /// When set, non-authority instances will smoothly transition between
-            /// world and local space.
-            /// <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
-            /// </summary>
-            internal bool SwitchTransformSpaceWhenParented;
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> is operates in local space
@@ -2206,7 +2204,7 @@ namespace Unity.Netcode.Components
             var isRotationDirty = isTeleportingAndNotSynchronizing ? flagStates.HasRotAngleChange : false;
             var isScaleDirty = isTeleportingAndNotSynchronizing ? flagStates.HasScaleChange : false;
 
-            networkState.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
+            flagStates.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
 
 
 
