@@ -97,7 +97,6 @@ namespace Unity.Netcode.RuntimeTests
         public enum OverrideState
         {
             Update,
-            CommitToTransform,
             SetState
         }
 
@@ -304,7 +303,7 @@ namespace Unity.Netcode.RuntimeTests
             OnClientsAndServerConnectedSetup();
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate == true);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate);
             Assert.True(success, "Timed out waiting for client-side to notify it is ready!");
 
             Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
@@ -527,8 +526,6 @@ namespace Unity.Netcode.RuntimeTests
             return success;
         }
 
-
-
         /// <summary>
         /// Validates that moving, rotating, and scaling the authority side with a single
         /// tick will properly synchronize the non-authoritative side with the same values.
@@ -718,7 +715,7 @@ namespace Unity.Netcode.RuntimeTests
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        protected bool PositionsMatch(bool printDeltas = false)
+        protected bool PositionsMatch()
         {
             m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
             var authorityPosition = m_AuthoritativeTransform.GetSpaceRelativePosition();
@@ -733,7 +730,7 @@ namespace Unity.Netcode.RuntimeTests
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        protected bool ScaleValuesMatch(bool printDeltas = false)
+        protected bool ScaleValuesMatch()
         {
             m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
             var authorityScale = m_AuthoritativeTransform.transform.localScale;
@@ -746,13 +743,6 @@ namespace Unity.Netcode.RuntimeTests
                 VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}] Authority scale {authorityScale} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
             }
             return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        private void PrintPositionRotationScaleDeltas()
-        {
-            RotationsMatch(true);
-            PositionsMatch(true);
-            ScaleValuesMatch(true);
         }
     }
 
@@ -816,14 +806,9 @@ namespace Unity.Netcode.RuntimeTests
             ReadyToReceivePositionUpdate = true;
         }
 
-        public void CommitToTransform()
-        {
-            TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-        }
-
         public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
         {
-            var transformState = ApplyLocalNetworkState(transform);
+            var transformState = ApplyLocalNetworkState();
             return (transformState.FlagStates.IsDirty, transformState.FlagStates.HasPositionChange, transformState.FlagStates.HasRotAngleChange, transformState.FlagStates.HasScaleChange);
         }
     }
@@ -940,20 +925,20 @@ namespace Unity.Netcode.RuntimeTests
         {
             base.OnAuthorityPushTransformState(ref networkTransformState);
 
-            LogState(ref networkTransformState, true);
+            LogState(ref networkTransformState);
         }
 
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
-            LogState(ref newState, false);
+            LogState(ref newState);
         }
 
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             base.OnSynchronize(ref serializer);
             var localState = SynchronizeState;
-            LogState(ref localState, serializer.IsWriter);
+            LogState(ref localState);
         }
 
         private void LogTransform()
@@ -970,7 +955,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ChildTransformLog.AppendLine($"SCA-SR:{GetScale()} SCA-LS: {transform.lossyScale} SCA-L: {transform.localScale}");
         }
 
-        private void LogState(ref NetworkTransformState state, bool isPush)
+        private void LogState(ref NetworkTransformState state)
         {
             if (!EnableChildLog)
             {

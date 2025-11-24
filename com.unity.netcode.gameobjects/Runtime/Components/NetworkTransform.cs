@@ -104,7 +104,6 @@ namespace Unity.Netcode.Components
             internal bool ReliableSequenced;
             internal bool UseUnreliableDeltas;
             internal bool UnreliableFrameSync;
-
             /// <summary>
             /// When set, non-authority instances will smoothly transition between
             /// world and local space.
@@ -1362,7 +1361,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// When set each state update will contain a state identifier
         /// </summary>
-        internal static bool TrackByStateId = false;
+        internal static bool TrackStateUpdateId = false;
 
         /// <summary>
         /// Enabled by default.
@@ -1414,10 +1413,8 @@ namespace Unity.Netcode.Components
 
         internal bool SynchronizePosition
         {
-            get
-            {
-                return SyncPositionX || SyncPositionY || SyncPositionZ;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => SyncPositionX || SyncPositionY || SyncPositionZ;
         }
 
         /// <summary>
@@ -1449,10 +1446,8 @@ namespace Unity.Netcode.Components
 
         internal bool SynchronizeRotation
         {
-            get
-            {
-                return SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ;
         }
 
         /// <summary>
@@ -1481,10 +1476,8 @@ namespace Unity.Netcode.Components
 
         internal bool SynchronizeScale
         {
-            get
-            {
-                return SyncScaleX || SyncScaleY || SyncScaleZ;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => SyncScaleX || SyncScaleY || SyncScaleZ;
         }
 
         /// <summary>
@@ -1746,10 +1739,8 @@ namespace Unity.Netcode.Components
             {
                 return CachedTransform.localScale;
             }
-            else
-            {
-                return m_InternalCurrentScale;
-            }
+
+            return m_InternalCurrentScale;
         }
 
         // Used by both authoritative and non-authoritative instances.
@@ -1758,18 +1749,11 @@ namespace Unity.Netcode.Components
 
         internal NetworkTransformState LocalAuthoritativeNetworkState
         {
-            get
-            {
-                return m_LocalAuthoritativeNetworkState;
-            }
-            set
-            {
-                m_LocalAuthoritativeNetworkState = value;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_LocalAuthoritativeNetworkState;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => m_LocalAuthoritativeNetworkState = value;
         }
-
-        private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
-        private List<ulong> m_ClientIds = new List<ulong>() { 0 };
 
         private BufferedLinearInterpolatorVector3 m_PositionInterpolator;
         private BufferedLinearInterpolatorVector3 m_ScaleInterpolator;
@@ -1937,53 +1921,6 @@ namespace Unity.Netcode.Components
 
         #region AUTHORITY STATE UPDATE
         /// <summary>
-        /// This will try to send/commit the current transform delta states (if any)
-        /// </summary>
-        /// <remarks>
-        /// Only client owners or the server should invoke this method
-        /// </remarks>
-        /// <param name="transformToCommit">the transform to be committed</param>
-        /// <param name="dirtyTime">time it was marked dirty</param>
-        internal void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
-        {
-            if (!IsSpawned)
-            {
-                NetworkLog.LogError($"Cannot commit transform when not spawned!");
-                return;
-            }
-
-            // Only the server or the owner is allowed to commit a transform
-            if (!IsServer && !IsOwner)
-            {
-                var errorMessage = gameObject != NetworkObject.gameObject ?
-                    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform on {gameObject.name}!" :
-                    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform!";
-                NetworkLog.LogError(errorMessage);
-                return;
-            }
-
-            // If we are authority, update the authoritative state
-            if (CanCommitToTransform)
-            {
-                OnUpdateAuthoritativeState();
-            }
-            else // Non-Authority
-            {
-                var position = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
-                var rotation = InLocalSpace ? transformToCommit.localRotation : transformToCommit.rotation;
-                // We are an owner requesting to update our state
-                if (!IsServer)
-                {
-                    SetStateServerRpc(position, rotation, transformToCommit.localScale, false);
-                }
-                else // Server is always authoritative (including owner authoritative)
-                {
-                    SetStateClientRpc(position, rotation, transformToCommit.localScale, false);
-                }
-            }
-        }
-
-        /// <summary>
         /// Invoked just prior to being pushed to non-authority instances.
         /// </summary>
         /// <remarks>
@@ -2123,9 +2060,8 @@ namespace Unity.Netcode.Components
         /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed dirty information returned
         /// in the <see cref="NetworkTransformState"/> returned.
         /// </summary>
-        /// <param name="transform">transform to apply</param>
         /// <returns>NetworkTransformState</returns>
-        internal NetworkTransformState ApplyLocalNetworkState(Transform transform)
+        internal NetworkTransformState ApplyLocalNetworkState()
         {
             // Since we never commit these changes, we need to simulate that any changes were committed previously and the bitset
             // value would already be reset prior to having the state applied
@@ -2600,7 +2536,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Authority subscribes to network tick events and will invoke
-        /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
+        /// <see cref="OnUpdateAuthoritativeState"/> each network tick.
         /// </summary>
         private void OnNetworkTick(bool isCalledFromParent = false)
         {
@@ -3503,7 +3439,7 @@ namespace Unity.Netcode.Components
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.FlagStates.ClearForNextTick();
-                if (TrackByStateId)
+                if (TrackStateUpdateId)
                 {
                     m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = true;
                     m_LocalAuthoritativeNetworkState.StateId++;
@@ -3803,7 +3739,6 @@ namespace Unity.Netcode.Components
             if (NetworkManager.DistributedAuthorityMode)
             {
                 RegisterNetworkManagerForTickUpdate(NetworkManager);
-                m_NetworkTransformTickRegistration = s_NetworkTickRegistration[m_CachedNetworkManager];
             }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -3882,18 +3817,6 @@ namespace Unity.Netcode.Components
 
         #region PARENTING AND OWNERSHIP
         /// <inheritdoc/>
-        public override void OnLostOwnership()
-        {
-            base.OnLostOwnership();
-        }
-
-        /// <inheritdoc/>
-        public override void OnGainedOwnership()
-        {
-            base.OnGainedOwnership();
-        }
-
-        /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             // If we were the previous owner or the newly assigned owner then reinitialize
@@ -3946,7 +3869,7 @@ namespace Unity.Netcode.Components
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
 
-        private void DefaultParentChanged(NetworkObject parentNetworkObject)
+        private void DefaultParentChanged()
         {
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
@@ -3974,11 +3897,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal bool IsFirstTransform()
-        {
-            return m_IsFirstNetworkTransform;
-        }
-
         internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
             if (!SwitchTransformSpaceWhenParented)
@@ -3989,75 +3907,74 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 // Keep the same legacy behaviour for compatibility purposes
-                DefaultParentChanged(parentNetworkObject);
+                DefaultParentChanged();
+                return;
             }
-            else
+
+            InLocalSpace = parentNetworkObject != null;
+
+            if (SynchronizePosition)
             {
-                InLocalSpace = parentNetworkObject != null;
+                m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
+                m_PositionInterpolator.InLocalSpace = InLocalSpace;
+                m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
 
-                if (SynchronizePosition)
+                if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
                 {
-                    m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
-                    m_PositionInterpolator.InLocalSpace = InLocalSpace;
-                    m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
-
-                    if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                    m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
+                    m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                    if (InLocalSpace)
                     {
-                        m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
-                        m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
-                        if (InLocalSpace)
-                        {
-                            transform.localPosition = m_InternalCurrentPosition;
-                        }
-                        else
-                        {
-                            transform.position = m_InternalCurrentPosition;
-                        }
+                        transform.localPosition = m_InternalCurrentPosition;
                     }
                     else
                     {
-                        if (CanCommitToTransform)
-                        {
-                            m_InternalCurrentPosition = GetSpaceRelativePosition();
-                        }
-                        else
-                        {
-                            m_InternalCurrentPosition = m_LastStateTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
-                        }
+                        transform.position = m_InternalCurrentPosition;
                     }
                 }
-
-                if (SynchronizeRotation)
+                else
                 {
-                    m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
-                    m_RotationInterpolator.InLocalSpace = InLocalSpace;
-                    m_RotationInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
-                    if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                    if (CanCommitToTransform)
                     {
-                        m_InternalCurrentRotation = GetSpaceRelativeRotation();
-                        m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
-                        m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
-                        if (InLocalSpace)
-                        {
-                            transform.localRotation = m_InternalCurrentRotation;
-                        }
-                        else
-                        {
-                            transform.rotation = m_InternalCurrentRotation;
-                        }
+                        m_InternalCurrentPosition = GetSpaceRelativePosition();
                     }
                     else
                     {
-                        if (CanCommitToTransform)
-                        {
-                            m_InternalCurrentRotation = GetSpaceRelativeRotation();
-                        }
-                        else
-                        {
-                            m_InternalCurrentRotation = Interpolate ? m_RotationInterpolator.GetInterpolatedValue() : GetSpaceRelativeRotation();
-                        }
-                        m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
+                        m_InternalCurrentPosition = m_LastStateTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
                     }
+                }
+            }
+
+            if (SynchronizeRotation)
+            {
+                m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
+                m_RotationInterpolator.InLocalSpace = InLocalSpace;
+                m_RotationInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
+                if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                {
+                    m_InternalCurrentRotation = GetSpaceRelativeRotation();
+                    m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
+                    m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                    if (InLocalSpace)
+                    {
+                        transform.localRotation = m_InternalCurrentRotation;
+                    }
+                    else
+                    {
+                        transform.rotation = m_InternalCurrentRotation;
+                    }
+                }
+                else
+                {
+                    if (CanCommitToTransform)
+                    {
+                        m_InternalCurrentRotation = GetSpaceRelativeRotation();
+                    }
+                    else
+                    {
+                        m_InternalCurrentRotation = Interpolate ? m_RotationInterpolator.GetInterpolatedValue() : GetSpaceRelativeRotation();
+                    }
+                    m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
                 }
             }
             base.InternalOnNetworkObjectParentChanged(parentNetworkObject);
@@ -4100,18 +4017,16 @@ namespace Unity.Netcode.Components
             var position = GetSpaceRelativePosition();
             var rotation = GetSpaceRelativeRotation();
 #endif
-            Vector3 pos = posIn == null ? position : posIn.Value;
-            Quaternion rot = rotIn == null ? rotation : rotIn.Value;
-            Vector3 scale = scaleIn == null ? CachedTransform.localScale : scaleIn.Value;
+            Vector3 pos = posIn ?? position;
+            Quaternion rot = rotIn ?? rotation;
+            Vector3 scale = scaleIn ?? CachedTransform.localScale;
 
             if (!CanCommitToTransform)
             {
                 // Preserving the ability for owner authoritative mode to accept state changes from server
                 if (IsServer)
                 {
-                    m_ClientIds[0] = OwnerClientId;
-                    m_ClientRpcParams.Send.TargetClientIds = m_ClientIds;
-                    SetStateClientRpc(pos, rot, scale, !teleportDisabled, m_ClientRpcParams);
+                    SetStateClientRpc(pos, rot, scale, !teleportDisabled);
                 }
                 else // Preserving the ability for server authoritative mode to accept state changes from owner
                 {
@@ -4177,8 +4092,8 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Continued support for client-driven server authority model
         /// </remarks>
-        [ClientRpc]
-        private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
+        [Rpc(SendTo.Owner)]
+        private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
             // Server dictated state is always applied
             SetStateInternal(pos, rot, scale, shouldTeleport);
@@ -4190,7 +4105,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Continued support for client-driven server authority model
         /// </remarks>
-        [ServerRpc]
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
             // server has received this RPC request to move change transform. give the server a chance to modify or even reject the move
@@ -4227,7 +4142,6 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region UPDATES AND AUTHORITY CHECKS
-        private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
 #if DEBUG_LINEARBUFFER
 #if UNITY_EDITOR
@@ -4429,7 +4343,6 @@ namespace Unity.Netcode.Components
                 }
                 // When using half precision Lerp towards the target rotation.
                 // When using full precision Slerp towards the target rotation.
-                /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                 m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
                 if (RotationInterpolationType == InterpolationTypes.LegacyLerp)
                 {
@@ -4518,7 +4431,7 @@ namespace Unity.Netcode.Components
 #endif
         }
 
-        /// <inheritdoc cref="INetworkUpdateSystem.OnUpdate"/>
+        /// <inheritdoc cref="INetworkUpdateSystem.NetworkUpdate"/>
         /// <remarks>
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.
@@ -4584,7 +4497,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
-        /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
+        /// this will be invoked during <see cref="NetworkRigidbody.OnFixedUpdate"/>.
         /// </summary>
         public virtual void OnFixedUpdate()
         {
@@ -4620,7 +4533,7 @@ namespace Unity.Netcode.Components
         /// Determines whether the <see cref="NetworkTransform"/> is <see cref="AuthorityModes.Server"/> or <see cref="AuthorityModes.Owner"/> based on the <see cref="AuthorityMode"/> property.
         /// You can override this method to control this logic.
         /// </summary>
-        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        /// <returns>True if this NetworkTransform should be server authoritative, false otherwise</returns>
         protected virtual bool OnIsServerAuthoritative()
         {
             return AuthorityMode == AuthorityModes.Server;
@@ -4632,17 +4545,15 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> <see cref="NetworkConfig.NetworkTopology"/>, this will always be viewed as a <see cref="AuthorityModes.Owner"/> authoritative motion model.
         /// </remarks>
-        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        /// <returns>True if this NetworkTransform is server authoritative, false otherwise</returns>
         public bool IsServerAuthoritative()
         {
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 return false;
             }
-            else
-            {
-                return OnIsServerAuthoritative();
-            }
+
+            return OnIsServerAuthoritative();
         }
         #endregion
 
@@ -4660,8 +4571,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
-        /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ulong senderId)
+        internal void TransformStateUpdate()
         {
             if (!IsSpawned || CanCommitToTransform)
             {
@@ -4702,7 +4612,6 @@ namespace Unity.Netcode.Components
             {
                 Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
             }
-            var customMessageManager = m_CachedNetworkManager.CustomMessagingManager;
             m_OutboundMessage.NetworkTransform = this;
 
             // Determine what network delivery method to use:
