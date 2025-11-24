@@ -268,10 +268,10 @@ namespace Unity.Netcode.RuntimeTests
                 TimeTravelAdvanceTick();
 
                 // This validates each child instance has preserved their local space values
-                AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
+                AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
 
                 // This validates each sub-child instance has preserved their local space values
-                AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
+                AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
                 // Parent while in motion
                 if (i == 5)
                 {
@@ -307,10 +307,10 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
                     // This validates each child instance has preserved their local space values
-                    AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
+                    AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
 
                     // This validates each sub-child instance has preserved their local space values
-                    AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
+                    AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
                 }
 
                 if (i == 20)
@@ -452,10 +452,10 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelAdvanceTick();
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -469,10 +469,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
         }
 
         /// <summary>

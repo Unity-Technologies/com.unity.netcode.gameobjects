@@ -86,7 +86,7 @@ namespace Unity.Netcode.RuntimeTests
                 };
 
                 writer = new FastBufferWriter(64, Allocator.Temp);
-                BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetFlags());
+                BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetBitsetRepresentation());
 
                 // Test the bitset representation of the serialization matches the pre-refactor serialization
                 reader = new FastBufferReader(writer, Allocator.None);
@@ -101,7 +101,7 @@ namespace Unity.Netcode.RuntimeTests
                 // Test the deserialized values match the original values
                 var deserialized = new NetworkTransformState();
                 // Set the flags
-                deserialized.FlagStates.SetFlags(bitFlags);
+                deserialized.FlagStates.SetStateFromBitset(bitFlags);
 
                 AssertTransformStateEquals(boolSet, deserialized, "Flag serialization");
             }
@@ -139,7 +139,7 @@ namespace Unity.Netcode.RuntimeTests
             };
 
             writer = new FastBufferWriter(64, Allocator.Temp);
-            BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetFlags());
+            BytePacker.WriteValueBitPacked(writer, transformState.FlagStates.GetBitsetRepresentation());
 
             var serializedBuffer = writer.ToArray();
 
@@ -161,7 +161,7 @@ namespace Unity.Netcode.RuntimeTests
             // Test the deserialized values match the original values
             var deserializedState = new NetworkTransformState();
             // Set the flags
-            deserializedState.FlagStates.SetFlags(bitFlagsState);
+            deserializedState.FlagStates.SetStateFromBitset(bitFlagsState);
 
             Array.Fill(boolSet, true);
             AssertTransformStateEquals(boolSet, deserializedState, "Read bitset");

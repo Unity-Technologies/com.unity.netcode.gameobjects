@@ -104,6 +104,7 @@ namespace Unity.Netcode.Components
             internal bool ReliableSequenced;
             internal bool UseUnreliableDeltas;
             internal bool UnreliableFrameSync;
+
             /// <summary>
             /// When set, non-authority instances will smoothly transition between
             /// world and local space.
@@ -202,7 +203,7 @@ namespace Unity.Netcode.Components
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal uint GetFlags()
+            internal uint GetBitsetRepresentation()
             {
                 uint bitset = 0;
                 if (InLocalSpace) { bitset |= k_InLocalSpaceBit; }
@@ -233,7 +234,7 @@ namespace Unity.Netcode.Components
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal void SetFlags(uint bitset)
+            internal void SetStateFromBitset(uint bitset)
             {
                 InLocalSpace = (bitset & k_InLocalSpaceBit) != 0;
                 SetHasPosition(Axis.X, (bitset & k_PositionXBit) != 0);
@@ -263,10 +264,10 @@ namespace Unity.Netcode.Components
 
             /// <summary>
             /// Clear everything but flags that should persist between state updates until changed by authority.
-            /// Persistent (non-cleared) flags are <see cref="InLocalSpace"/>, <see cref="UseInterpolation"/>, <see cref="QuaternionSync"/>, <see cref="QuaternionCompressed"/>,
+            /// Persistent (non-cleared) flags are <see cref="InLocalSpace"/>, <see cref="UseInterpolation"/>, <see cref="QuaternionSync"/>, <see cref="QuaternionCompression"/>,
             /// <see cref="UseHalfFloatPrecision"/> <see cref="UsePositionSlerp"/>, <see cref="UseUnreliableDeltas"/>, <see cref="SwitchTransformSpaceWhenParented"/>
             /// </summary>
-            internal void ClearBitSetForNextTick()
+            internal void ClearForNextTick()
             {
                 HasPositionX = false;
                 HasPositionY = false;
@@ -353,7 +354,7 @@ namespace Unity.Netcode.Components
             public bool InLocalSpace
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.InLocalSpace; }
+                get => FlagStates.InLocalSpace;
             }
 
             // Position
@@ -363,7 +364,7 @@ namespace Unity.Netcode.Components
             public bool HasPositionX
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasPositionX; }
+                get => FlagStates.HasPositionX;
             }
 
             /// <summary>
@@ -372,7 +373,7 @@ namespace Unity.Netcode.Components
             public bool HasPositionY
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasPositionY; }
+                get => FlagStates.HasPositionY;
             }
 
             /// <summary>
@@ -381,7 +382,7 @@ namespace Unity.Netcode.Components
             public bool HasPositionZ
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasPositionZ; }
+                get => FlagStates.HasPositionZ;
             }
 
             /// <summary>
@@ -390,7 +391,7 @@ namespace Unity.Netcode.Components
             public bool HasPositionChange
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasPositionChange; }
+                get => FlagStates.HasPositionChange;
             }
 
             // RotAngles
@@ -403,7 +404,7 @@ namespace Unity.Netcode.Components
             public bool HasRotAngleX
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasRotAngleX; }
+                get => FlagStates.HasRotAngleX;
             }
 
             /// <summary>
@@ -415,7 +416,7 @@ namespace Unity.Netcode.Components
             public bool HasRotAngleY
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasRotAngleY; }
+                get => FlagStates.HasRotAngleY;
             }
 
             /// <summary>
@@ -427,7 +428,7 @@ namespace Unity.Netcode.Components
             public bool HasRotAngleZ
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasRotAngleZ; }
+                get => FlagStates.HasRotAngleZ;
             }
 
             /// <summary>
@@ -439,7 +440,7 @@ namespace Unity.Netcode.Components
             public bool HasRotAngleChange
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasRotAngleChange; }
+                get => FlagStates.HasRotAngleChange;
             }
 
             // Scale
@@ -449,7 +450,7 @@ namespace Unity.Netcode.Components
             public bool HasScaleX
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasScaleX; }
+                get => FlagStates.HasScaleX;
             }
 
             /// <summary>
@@ -458,7 +459,7 @@ namespace Unity.Netcode.Components
             public bool HasScaleY
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasScaleY; }
+                get => FlagStates.HasScaleY;
             }
 
             /// <summary>
@@ -467,7 +468,7 @@ namespace Unity.Netcode.Components
             public bool HasScaleZ
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasScaleZ; }
+                get => FlagStates.HasScaleZ;
             }
 
             /// <summary>
@@ -476,7 +477,7 @@ namespace Unity.Netcode.Components
             public bool HasScaleChange
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.HasScaleChange; }
+                get => FlagStates.HasScaleChange;
             }
 
             /// <summary>
@@ -491,7 +492,7 @@ namespace Unity.Netcode.Components
             public bool IsTeleportingNextFrame
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.IsTeleportingNextFrame; }
+                get => FlagStates.IsTeleportingNextFrame;
             }
 
             /// <summary>
@@ -503,7 +504,7 @@ namespace Unity.Netcode.Components
             public bool WasTeleported
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.WasTeleported; }
+                get => FlagStates.WasTeleported;
             }
 
             /// <summary>
@@ -516,7 +517,7 @@ namespace Unity.Netcode.Components
             public bool UseInterpolation
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.UseInterpolation; }
+                get => FlagStates.UseInterpolation;
             }
 
             /// <summary>
@@ -530,7 +531,7 @@ namespace Unity.Netcode.Components
             public bool QuaternionSync
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.QuaternionSync; }
+                get => FlagStates.QuaternionSync;
             }
 
             /// <summary>
@@ -545,7 +546,7 @@ namespace Unity.Netcode.Components
             public bool QuaternionCompression
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.QuaternionCompression; }
+                get => FlagStates.QuaternionCompression;
             }
 
             /// <summary>
@@ -558,7 +559,7 @@ namespace Unity.Netcode.Components
             public bool UseHalfFloatPrecision
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.UseHalfFloatPrecision; }
+                get => FlagStates.UseHalfFloatPrecision;
             }
 
             /// <summary>
@@ -568,7 +569,7 @@ namespace Unity.Netcode.Components
             public bool IsSynchronizing
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.IsSynchronizing; }
+                get => FlagStates.IsSynchronizing;
             }
 
             /// <summary>
@@ -578,7 +579,7 @@ namespace Unity.Netcode.Components
             public bool UsePositionSlerp
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return FlagStates.UsePositionSlerp; }
+                get => FlagStates.UsePositionSlerp;
             }
 
             /// <summary>
@@ -619,10 +620,8 @@ namespace Unity.Netcode.Components
                     {
                         return Rotation;
                     }
-                    else
-                    {
-                        return Quaternion.Euler(RotAngleX, RotAngleY, RotAngleZ);
-                    }
+
+                    return Quaternion.Euler(RotAngleX, RotAngleY, RotAngleZ);
                 }
                 return Quaternion.identity;
             }
@@ -650,15 +649,11 @@ namespace Unity.Netcode.Components
                         {
                             return CurrentPosition;
                         }
-                        else
-                        {
-                            return NetworkDeltaPosition.GetFullPosition();
-                        }
+
+                        return NetworkDeltaPosition.GetFullPosition();
                     }
-                    else
-                    {
-                        return new Vector3(PositionX, PositionY, PositionZ);
-                    }
+
+                    return new Vector3(PositionX, PositionY, PositionZ);
                 }
                 return Vector3.zero;
             }
@@ -682,15 +677,11 @@ namespace Unity.Netcode.Components
                         {
                             return Scale;
                         }
-                        else
-                        {
-                            return HalfVectorScale.ToVector3();
-                        }
+
+                        return HalfVectorScale.ToVector3();
                     }
-                    else
-                    {
-                        return new Vector3(ScaleX, ScaleY, ScaleZ);
-                    }
+
+                    return new Vector3(ScaleX, ScaleY, ScaleZ);
                 }
                 return Vector3.zero;
             }
@@ -754,7 +745,7 @@ namespace Unity.Netcode.Components
                         }
 
                         // Serialize the flags as an unsigned int
-                        BytePacker.WriteValueBitPacked(m_Writer, FlagStates.GetFlags());
+                        BytePacker.WriteValueBitPacked(m_Writer, FlagStates.GetBitsetRepresentation());
 
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
@@ -765,7 +756,7 @@ namespace Unity.Netcode.Components
                         // Deserialize the flags
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out uint bitset);
                         // Set the flags
-                        FlagStates.SetFlags(bitset);
+                        FlagStates.SetStateFromBitset(bitset);
 
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
@@ -1645,8 +1636,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><description>If InLocalSpace is <see cref="true"/> then it returns the transform.localPosition.</description></item>
-        /// <item><description>If InLocalSpace is <see cref="false"/> then it returns the transform.position.</description></item>
+        /// <item><description>If InLocalSpace is true then it returns the transform.localPosition.</description></item>
+        /// <item><description>If InLocalSpace is false then it returns the transform.position.</description></item>
         /// </list>
         /// <list type="bullet">
         /// <item>
@@ -1695,8 +1686,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><description>If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation.</description></item>
-        /// <item><description>If InLocalSpace is <see cref="false"/> then it returns the transform.rotation.</description></item>
+        /// <item><description>If InLocalSpace is true then it returns the transform.localRotation.</description></item>
+        /// <item><description>If InLocalSpace is false then it returns the transform.rotation.</description></item>
         /// </list>
         /// <list type="bullet">
         /// <item>
@@ -2138,7 +2129,7 @@ namespace Unity.Netcode.Components
         {
             // Since we never commit these changes, we need to simulate that any changes were committed previously and the bitset
             // value would already be reset prior to having the state applied
-            m_LocalAuthoritativeNetworkState.FlagStates.ClearBitSetForNextTick();
+            m_LocalAuthoritativeNetworkState.FlagStates.ClearForNextTick();
 
             // Now check the transform for any threshold value changes
             CheckForStateChange(ref m_LocalAuthoritativeNetworkState);
@@ -3511,7 +3502,7 @@ namespace Unity.Netcode.Components
             if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.FlagStates.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
                 // Now clear our bitset and prepare for next network tick state update
-                m_LocalAuthoritativeNetworkState.FlagStates.ClearBitSetForNextTick();
+                m_LocalAuthoritativeNetworkState.FlagStates.ClearForNextTick();
                 if (TrackByStateId)
                 {
                     m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = true;

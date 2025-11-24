@@ -114,8 +114,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected enum ChildrenTransformCheckType
         {
-            Connected_Clients,
-            Late_Join_Client
+            ConnectedClients,
+            LateJoinClient
         }
 
         protected override int NumberOfClients => OnNumberOfClients();
