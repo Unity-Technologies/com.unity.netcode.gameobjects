@@ -28,6 +28,8 @@ namespace Unity.Netcode
         // to clients that already have the NetworkObject spawned
         internal ulong NetworkObjectId;
 
+
+        //TODO Replace all bytes by boolean field
         private const byte k_IncludesSerializedObject = 0x01;
         private const byte k_UpdateObservers = 0x02;
         private const byte k_UpdateNewObservers = 0x04;
@@ -87,6 +89,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
+            // TODO Create a byte, see Landed PR, set all the values and then write
             writer.WriteValueSafe(m_CreateObjectMessageTypeFlags);
 
             if (UpdateObservers)
@@ -125,6 +128,7 @@ namespace Unity.Netcode
                 return false;
             }
 
+            // TODO Read a byte, if bool returned
             reader.ReadValueSafe(out m_CreateObjectMessageTypeFlags);
             if (UpdateObservers)
             {
