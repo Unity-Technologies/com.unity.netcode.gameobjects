@@ -86,8 +86,6 @@ namespace Unity.Netcode.Components
 
         private bool m_OutstandingAuthorityChange = false;
 
-        private NetworkManager m_NetworkManager;
-
 #if UNITY_EDITOR
         private void Reset()
         {
@@ -159,7 +157,7 @@ namespace Unity.Netcode.Components
         /// <param name="newPosition">The anticipated position</param>
         public void AnticipateMove(Vector3 newPosition)
         {
-            if (m_NetworkManager == null || m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.ShutdownInProgress || !m_CachedNetworkManager.IsListening)
             {
                 return;
             }
@@ -172,7 +170,7 @@ namespace Unity.Netcode.Components
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
-            m_LastAnticipaionCounter = m_NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipaionCounter = m_CachedNetworkManager.AnticipationSystem.AnticipationCounter;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -185,7 +183,7 @@ namespace Unity.Netcode.Components
         /// <param name="newRotation">The anticipated rotation</param>
         public void AnticipateRotate(Quaternion newRotation)
         {
-            if (m_NetworkManager == null || m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.ShutdownInProgress || !m_CachedNetworkManager.IsListening)
             {
                 return;
             }
@@ -198,7 +196,7 @@ namespace Unity.Netcode.Components
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
-            m_LastAnticipaionCounter = m_NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipaionCounter = m_CachedNetworkManager.AnticipationSystem.AnticipationCounter;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -211,7 +209,7 @@ namespace Unity.Netcode.Components
         /// <param name="newScale">The anticipated scale</param>
         public void AnticipateScale(Vector3 newScale)
         {
-            if (m_NetworkManager == null || m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.ShutdownInProgress || !m_CachedNetworkManager.IsListening)
             {
                 return;
             }
@@ -224,7 +222,7 @@ namespace Unity.Netcode.Components
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
-            m_LastAnticipaionCounter = m_NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipaionCounter = m_CachedNetworkManager.AnticipationSystem.AnticipationCounter;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -237,7 +235,7 @@ namespace Unity.Netcode.Components
         /// <param name="newState">The anticipated transform state</param>
         public void AnticipateState(TransformState newState)
         {
-            if (m_NetworkManager == null || m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.ShutdownInProgress || !m_CachedNetworkManager.IsListening)
             {
                 return;
             }
@@ -266,7 +264,7 @@ namespace Unity.Netcode.Components
 
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
-                m_CurrentSmoothTime += m_NetworkManager.RealTimeProvider.DeltaTime;
+                m_CurrentSmoothTime += m_CachedNetworkManager.RealTimeProvider.DeltaTime;
                 var transform_ = transform;
                 var pct = math.min(m_CurrentSmoothTime / m_SmoothDuration, 1f);
 
@@ -399,8 +397,8 @@ namespace Unity.Netcode.Components
                 ResetAnticipatedState();
 
                 m_AnticipatedObject = new AnticipatedObject { Transform = this };
-                m_NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
             }
         }
 
@@ -412,23 +410,23 @@ namespace Unity.Netcode.Components
         protected internal override void InternalOnNetworkPostSpawn()
         {
             base.InternalOnNetworkPostSpawn();
-            if (!CanCommitToTransform && m_NetworkManager.IsConnectedClient && !SynchronizeState.IsSynchronizing)
+            if (!CanCommitToTransform && m_CachedNetworkManager.IsConnectedClient && !SynchronizeState.IsSynchronizing)
             {
                 m_OutstandingAuthorityChange = true;
                 ApplyAuthoritativeState();
                 ResetAnticipatedState();
                 m_AnticipatedObject = new AnticipatedObject { Transform = this };
-                m_NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
             }
         }
 
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            m_NetworkManager = NetworkManager;
+            m_CachedNetworkManager = NetworkManager;
 
-            if (m_NetworkManager.DistributedAuthorityMode)
+            if (m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 Debug.LogWarning($"This component is not currently supported in distributed authority.");
             }
@@ -445,8 +443,8 @@ namespace Unity.Netcode.Components
             ResetAnticipatedState();
 
             m_AnticipatedObject = new AnticipatedObject { Transform = this };
-            m_NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
-            m_NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
+            m_CachedNetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+            m_CachedNetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
         }
 
         /// <inheritdoc/>
@@ -454,9 +452,9 @@ namespace Unity.Netcode.Components
         {
             if (m_AnticipatedObject != null)
             {
-                m_NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
                 m_AnticipatedObject = null;
             }
             ResetAnticipatedState();
@@ -469,9 +467,9 @@ namespace Unity.Netcode.Components
         {
             if (m_AnticipatedObject != null)
             {
-                m_NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
-                m_NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
+                m_CachedNetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
                 m_AnticipatedObject = null;
             }
 
@@ -518,7 +516,7 @@ namespace Unity.Netcode.Components
         protected override void OnBeforeUpdateTransformState()
         {
             // this is called when new data comes from the server
-            m_LastAuthorityUpdateCounter = m_NetworkManager.AnticipationSystem.LastAnticipationAck;
+            m_LastAuthorityUpdateCounter = m_CachedNetworkManager.AnticipationSystem.LastAnticipationAck;
             m_OutstandingAuthorityChange = true;
         }
 
@@ -571,7 +569,7 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform = m_AuthoritativeTransform;
 
             ShouldReanticipate = true;
-            m_NetworkManager.AnticipationSystem.ObjectsToReanticipate.Add(m_AnticipatedObject);
+            m_CachedNetworkManager.AnticipationSystem.ObjectsToReanticipate.Add(m_AnticipatedObject);
         }
     }
 }
