@@ -377,6 +377,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &2033189052978358381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -389,6 +391,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a3556fb5f3bee4e8a0fb88acff87ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
   TransitionStateInfoList:
   - IsCrossFadeExit: 0
     Layer: 0
@@ -404,6 +409,15 @@ MonoBehaviour:
     TransitionDuration: 0.25
     TriggerNameHash: 2081823275
     TransitionIndex: 0
+  AnimatorParameterEntries:
+  - Synchronize: 1
+    NameHash: -813790127
+    Name: Cheer
+    ParameterType: 9
+  - Synchronize: 1
+    NameHash: 2081823275
+    Name: Idle
+    ParameterType: 9
   m_Animator: {fileID: 4217478864398958195}
 --- !u!114 &6813822210364307126
 MonoBehaviour:
@@ -417,6 +431,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77114a4761fbbf04ebafd6a884d3d312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &-126005763244726388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,6 +444,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a915cfb2e4f748e4f9526a8bf5ee84f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &8698027682878108555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -441,3 +457,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48b31fae64dc3c14c98e3c5d09cb1269, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
