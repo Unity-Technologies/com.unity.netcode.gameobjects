@@ -28,39 +28,22 @@ namespace Unity.Netcode
         // to clients that already have the NetworkObject spawned
         internal ulong NetworkObjectId;
 
-
         private const byte k_IncludesSerializedObject = 0x01;
         private const byte k_UpdateObservers = 0x02;
         private const byte k_UpdateNewObservers = 0x04;
-
-        private byte m_CreateObjectMessageTypeFlags;
 
         internal bool IncludesSerializedObject;
         internal bool UpdateObservers;
         internal bool UpdateNewObservers;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal uint GetBitsetRepresentation()
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             uint bitset = 0;
             if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
             if (UpdateObservers) { bitset |= k_UpdateObservers; }
             if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
-            return bitset;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SetStateFromBitset(uint bitset)
-        {
-            IncludesSerializedObject = (bitset & k_IncludesSerializedObject) != 0;
-            UpdateObservers = (bitset & k_UpdateObservers) != 0;
-            UpdateNewObservers = (bitset & k_UpdateNewObservers) != 0;
-        }
-
-        public void Serialize(FastBufferWriter writer, int targetVersion)
-        {
-            uint getBitsetRepresentation = GetBitsetRepresentation();
-            writer.WriteValueSafe(getBitsetRepresentation);
+            writer.WriteValueSafe(bitset);
 
             if (UpdateObservers)
             {
@@ -98,8 +81,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            reader.ReadValueSafe(out m_CreateObjectMessageTypeFlags);
-            SetStateFromBitset(m_CreateObjectMessageTypeFlags);
+            reader.ReadValueSafe(out byte bitset);
+            IncludesSerializedObject = (bitset & k_IncludesSerializedObject) != 0;
+            UpdateObservers = (bitset & k_UpdateObservers) != 0;
+            UpdateNewObservers = (bitset & k_UpdateNewObservers) != 0;
 
             if (UpdateObservers)
             {
