@@ -24,7 +24,6 @@ namespace Unity.Netcode
         private const byte k_DestroyGameObject = 0x04;
 
         internal bool IsTargetedDestroy;
-        private bool m_IsDeferredDespawn;
 
         /// <summary>
         /// Used to communicate whether to destroy the associated game object.
@@ -35,11 +34,11 @@ namespace Unity.Netcode
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             // Set deferred despawn flag
-            m_IsDeferredDespawn = DeferredDespawnTick > 0;
+            var isDeferredDespawn = DeferredDespawnTick > 0;
 
             uint bitset = 0;
             if (IsTargetedDestroy) { bitset |= k_IsTargetedDestroy; }
-            if (m_IsDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
+            if (isDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
             if (DestroyGameObject) { bitset |= k_DestroyGameObject; }
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
@@ -53,7 +52,7 @@ namespace Unity.Netcode
                     BytePacker.WriteValueBitPacked(writer, TargetClientId);
                 }
 
-                if (targetVersion < k_OptimizeDestroyObjectMessage || m_IsDeferredDespawn)
+                if (targetVersion < k_OptimizeDestroyObjectMessage || isDeferredDespawn)
                 {
                     BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
                 }
@@ -82,7 +81,7 @@ namespace Unity.Netcode
             {
                 reader.ReadByteSafe(out byte bitset);
                 IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
-                m_IsDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
+                var isDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
                 DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
 
                 if (IsTargetedDestroy)
@@ -90,7 +89,7 @@ namespace Unity.Netcode
                     ByteUnpacker.ReadValueBitPacked(reader, out TargetClientId);
                 }
 
-                if (receivedMessageVersion < k_OptimizeDestroyObjectMessage || m_IsDeferredDespawn)
+                if (receivedMessageVersion < k_OptimizeDestroyObjectMessage || isDeferredDespawn)
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
                 }
