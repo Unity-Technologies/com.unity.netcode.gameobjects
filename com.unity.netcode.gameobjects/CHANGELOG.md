@@ -17,7 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Improve performance of `NetworkTransformState`. (#3801)
+- Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `NetworkTransformState`. (#3770)
 
 
