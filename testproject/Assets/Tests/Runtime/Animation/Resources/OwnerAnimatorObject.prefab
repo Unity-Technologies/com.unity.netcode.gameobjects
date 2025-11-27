@@ -386,6 +386,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!95 &6515743261518512780
 Animator:
   serializedVersion: 7
@@ -420,6 +422,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a3556fb5f3bee4e8a0fb88acff87ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 1
+  m_Animator: {fileID: 6515743261518512780}
   TransitionStateInfoList:
   - IsCrossFadeExit: 0
     Layer: 0
@@ -463,7 +469,53 @@ MonoBehaviour:
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 2
-  m_Animator: {fileID: 6515743261518512780}
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Rotate
+      NameHash: 807753530
+      Synchronize: 1
+      ParameterType: 4
+    - name: Pulse
+      NameHash: -623385122
+      Synchronize: 1
+      ParameterType: 9
+    - name: TestFloat
+      NameHash: -758535706
+      Synchronize: 1
+      ParameterType: 1
+    - name: TestInt
+      NameHash: -1682086748
+      Synchronize: 1
+      ParameterType: 3
+    - name: TestBool
+      NameHash: 953368263
+      Synchronize: 1
+      ParameterType: 4
+    - name: TestTrigger
+      NameHash: 1033918907
+      Synchronize: 1
+      ParameterType: 9
+    - name: LateJoinTest
+      NameHash: -1545343146
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 9
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Weapon
+      NameHash: 1855955664
+      Synchronize: 1
+      ParameterType: 3
+    - name: ExcludeFromSync
+      NameHash: -1993481368
+      Synchronize: 0
+      ParameterType: 1
+  AnimatorParametersExpanded: 0
 --- !u!114 &-8876216387850298050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -476,6 +528,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48b31fae64dc3c14c98e3c5d09cb1269, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &5194088446451573146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -488,3 +541,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a915cfb2e4f748e4f9526a8bf5ee84f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1

@@ -112,9 +112,9 @@ Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchroniz
 
 `NetworkObject.ActiveSceneSynchronization` can be used with `NetworkObject.SceneMigrationSynchronization` as long as you take into consideration that if you migrate a NetworkObject into a non-active scene via `SceneManager.MoveGameObjectToScene` and later change the active scene, then the NetworkObject instance will be automatically migrated to the newly set active scene.
 
-:::warning
-Scene migration synchronization is enabled by default. For NetworkObjects that don't require it, such as those that generate static environmental objects like trees, it's recommended to disable scene migration synchronization to avoid additional processing overheads.
-:::
+> [!NOTE]
+> The `NetworkObject.SceneMigrationSynchronization` field is enabled by default. If your project can have many (600-1000+) spawned objects at any given time, this setting can cause performance issues. Scene migration synchronization only provides the ability to automatically synchronize the scene a NetworkObject is migrated to while it is spawned. If your NetworkObject doesn't change scenes and you have no need for automatic scene migration synchronization (_only applies when the integration scene management is enabled_), then it's recommended to disable this property to avoid additional processing overheads.
+
 
 ## Additional resources
 
