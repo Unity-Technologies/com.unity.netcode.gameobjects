@@ -13,7 +13,6 @@ namespace Unity.Netcode
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;
-        private byte m_DestroyFlags; // TO DO check naming
 
         internal int DeferredDespawnTick;
         // Temporary until we make this a list
@@ -34,36 +33,21 @@ namespace Unity.Netcode
         /// </summary>
         public bool DestroyGameObject;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal uint GetBitsetRepresentation()
-        {
-            uint bitset = 0;
-            if (IsTargetedDestroy) { bitset |= k_IsTargetedDestroy; }
-            if (m_IsDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
-            if (DestroyGameObject) { bitset |= k_DestroyGameObject; }
-            return bitset;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SetStateFromBitset(uint bitset)
-        {
-            IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
-            m_IsDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
-            DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
-        }
-
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             // Set deferred despawn flag
             m_IsDeferredDespawn = DeferredDespawnTick > 0;
 
-            uint bitsetRepresentation = GetBitsetRepresentation();
+            uint bitset = 0;
+            if (IsTargetedDestroy) { bitset |= k_IsTargetedDestroy; }
+            if (m_IsDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
+            if (DestroyGameObject) { bitset |= k_DestroyGameObject; }
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
 
             if (IsDistributedAuthority)
             {
-                writer.WriteValueSafe(bitsetRepresentation);
+                writer.WriteValueSafe(bitset);
 
                 if (IsTargetedDestroy)
                 {
@@ -77,7 +61,7 @@ namespace Unity.Netcode
             }
             else if (targetVersion >= k_AllowDestroyGameInPlaced)
             {
-                writer.WriteValueSafe(bitsetRepresentation);
+                writer.WriteValueSafe(bitset);
             }
 
             if (targetVersion < k_OptimizeDestroyObjectMessage)
@@ -97,8 +81,10 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             if (networkManager.DistributedAuthorityMode)
             {
-                reader.ReadByteSafe(out m_DestroyFlags);
-                SetStateFromBitset(m_DestroyFlags);
+                reader.ReadByteSafe(out byte bitset);
+                IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
+                m_IsDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
+                DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
 
                 if (IsTargetedDestroy)
                 {
@@ -112,8 +98,10 @@ namespace Unity.Netcode
             }
             else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
             {
-                reader.ReadByteSafe(out m_DestroyFlags);
-                SetStateFromBitset(m_DestroyFlags);
+                reader.ReadByteSafe(out byte bitset);
+                IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
+                m_IsDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
+                DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
             }
 
             if (receivedMessageVersion < k_OptimizeDestroyObjectMessage)
