@@ -13,7 +13,7 @@ namespace Unity.Netcode
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;
-        private byte m_DestroyFlags;
+        private byte m_DestroyFlags; // TO DO check naming
 
         internal int DeferredDespawnTick;
         // Temporary until we make this a list
@@ -25,15 +25,14 @@ namespace Unity.Netcode
         private const byte k_IsDeferredDespawn = 0x02;
         private const byte k_DestroyGameObject = 0x04;
 
-        internal bool IsTargetedDestroy; // Get bit [(bitField & (1 << bitPosition)) != 0;] with  bitPosition= 0
-        // set (byte)((bitField & ~(1 << bitPosition)) | (ToByte(value) << bitPosition))
-        private bool m_IsDeferredDespawn; // 1
+        internal bool IsTargetedDestroy;
+        private bool m_IsDeferredDespawn;
 
         /// <summary>
         /// Used to communicate whether to destroy the associated game object.
         /// Should be false if the object is InScenePlaced and true otherwise
         /// </summary>
-        public bool DestroyGameObject; // 2
+        public bool DestroyGameObject;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal uint GetBitsetRepresentation()
@@ -58,13 +57,13 @@ namespace Unity.Netcode
             // Set deferred despawn flag
             m_IsDeferredDespawn = DeferredDespawnTick > 0;
 
-            uint getBitsetRepresentation = GetBitsetRepresentation();
+            uint bitsetRepresentation = GetBitsetRepresentation();
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
 
             if (IsDistributedAuthority)
             {
-                writer.WriteValueSafe(getBitsetRepresentation);
+                writer.WriteValueSafe(bitsetRepresentation);
 
                 if (IsTargetedDestroy)
                 {
@@ -78,7 +77,7 @@ namespace Unity.Netcode
             }
             else if (targetVersion >= k_AllowDestroyGameInPlaced)
             {
-                writer.WriteValueSafe(getBitsetRepresentation);
+                writer.WriteValueSafe(bitsetRepresentation);
             }
 
             if (targetVersion < k_OptimizeDestroyObjectMessage)
