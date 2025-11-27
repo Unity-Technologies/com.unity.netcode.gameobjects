@@ -17,8 +17,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Improve performance of `NetworkTransformState`. (#3770)
 - Improve performance of `CreateObjectMessage`. (#3800)
+- Improve performance of `NetworkTransformState`. (#3770)
 
 
 ### Deprecated
