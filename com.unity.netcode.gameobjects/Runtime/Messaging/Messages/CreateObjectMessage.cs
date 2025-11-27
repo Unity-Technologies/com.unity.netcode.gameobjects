@@ -29,68 +29,38 @@ namespace Unity.Netcode
         internal ulong NetworkObjectId;
 
 
-        //TODO Replace all bytes by boolean field
         private const byte k_IncludesSerializedObject = 0x01;
         private const byte k_UpdateObservers = 0x02;
         private const byte k_UpdateNewObservers = 0x04;
 
-
         private byte m_CreateObjectMessageTypeFlags;
 
-        internal bool IncludesSerializedObject
-        {
-            get
-            {
-                return GetFlag(k_IncludesSerializedObject);
-            }
+        internal bool IncludesSerializedObject;
+        internal bool UpdateObservers;
+        internal bool UpdateNewObservers;
 
-            set
-            {
-                SetFlag(value, k_IncludesSerializedObject);
-            }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal uint GetBitsetRepresentation()
+        {
+            uint bitset = 0;
+            if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
+            if (UpdateObservers) { bitset |= k_UpdateObservers; }
+            if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
+            return bitset;
         }
 
-        internal bool UpdateObservers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void SetStateFromBitset(uint bitset)
         {
-            get
-            {
-                return GetFlag(k_UpdateObservers);
-            }
-
-            set
-            {
-                SetFlag(value, k_UpdateObservers);
-            }
-        }
-
-        internal bool UpdateNewObservers
-        {
-            get
-            {
-                return GetFlag(k_UpdateNewObservers);
-            }
-
-            set
-            {
-                SetFlag(value, k_UpdateNewObservers);
-            }
-        }
-
-        private bool GetFlag(int flag)
-        {
-            return (m_CreateObjectMessageTypeFlags & flag) != 0;
-        }
-
-        private void SetFlag(bool set, byte flag)
-        {
-            if (set) { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags | flag); }
-            else { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags & ~flag); }
+            IncludesSerializedObject = (bitset & k_IncludesSerializedObject) != 0;
+            UpdateObservers = (bitset & k_UpdateObservers) != 0;
+            UpdateNewObservers = (bitset & k_UpdateNewObservers) != 0;
         }
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            // TODO Create a byte, see Landed PR, set all the values and then write
-            writer.WriteValueSafe(m_CreateObjectMessageTypeFlags);
+            uint getBitsetRepresentation = GetBitsetRepresentation();
+            writer.WriteValueSafe(getBitsetRepresentation);
 
             if (UpdateObservers)
             {
@@ -128,8 +98,9 @@ namespace Unity.Netcode
                 return false;
             }
 
-            // TODO Read a byte, if bool returned
             reader.ReadValueSafe(out m_CreateObjectMessageTypeFlags);
+            SetStateFromBitset(m_CreateObjectMessageTypeFlags);
+
             if (UpdateObservers)
             {
                 var length = 0;
