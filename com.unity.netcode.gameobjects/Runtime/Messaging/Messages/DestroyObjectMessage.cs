@@ -7,7 +7,6 @@ namespace Unity.Netcode
     {
         private const int k_OptimizeDestroyObjectMessage = 1;
         private const int k_AllowDestroyGameInPlaced = 2;
-
         public int Version => k_AllowDestroyGameInPlaced;
 
         private const string k_Name = "DestroyObjectMessage";
@@ -99,8 +98,6 @@ namespace Unity.Netcode
             else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
             {
                 reader.ReadByteSafe(out byte bitset);
-                IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
-                m_IsDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
                 DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
             }
 
