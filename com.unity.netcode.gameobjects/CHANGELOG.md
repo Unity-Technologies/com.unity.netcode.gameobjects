@@ -17,6 +17,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `NetworkTransformState`. (#3770)
+
 
 ### Deprecated
 
