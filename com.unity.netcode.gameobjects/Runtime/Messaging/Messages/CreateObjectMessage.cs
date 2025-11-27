@@ -42,7 +42,6 @@ namespace Unity.Netcode
             if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
             if (UpdateObservers) { bitset |= k_UpdateObservers; }
             if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
-
             writer.WriteValueSafe(bitset);
 
             if (UpdateObservers)
