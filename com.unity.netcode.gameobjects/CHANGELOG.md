@@ -17,6 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- First pass of CoreCLR engine API changes. (#3799)
 - Improve performance of `NetworkTransformState`. (#3770)
 
 
