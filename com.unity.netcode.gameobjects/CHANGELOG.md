@@ -13,10 +13,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
 - Added a flag to override command-line arguments (port and ip) in `SetConnectionData`. (#3760)
 - Added a command-line singleton to parse environment command-line arguments. (#3760)
+- Added `NetworkAnimator.AuthorityMode` which allows you to select whether the `NetworkAnimator` will use a server or owner authority model for state updates (like `NetworkTransform`). (#3586)
+- Added the ability to select which `Animator` parameters the authority `NetworkAnimator` instance should synchronize. This can be done via the inspector view interface or during runtime via `NetworkAnimator.EnableParameterSynchronization`. (#3586)
 
 ### Changed
 
+- First pass of CoreCLR engine API changes. (#3799)
 - Changed when a server is disconnecting a client with a reason it now defers the complete transport disconnect sequence until the end of the frame after the server's transport has sent all pending outbound messages. (#3786)
+- Improve performance of `NetworkTransformState`. (#3770)
+- Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 
 ### Deprecated
 
@@ -32,6 +37,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where invoking an RPC, on another `NetworkBehaviour` associated with the same `NetworkObject` that is ordered before the `NetworkBehaviour` invoking the RPC, during `OnNetworkSpawn` could throw an exception if scene management is disabled. (#3782)
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
 - Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
+- Fixed issue with authority animator instance sending itself RPCs. (#3586)
 
 ### Security
 

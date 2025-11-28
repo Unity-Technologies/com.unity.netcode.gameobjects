@@ -80,8 +80,13 @@ namespace Unity.Netcode.Components
         private struct JobResultStruct
         {
             public bool HasCollisionStay;
+#if UNITY_6000_2_OR_NEWER
+            public EntityId ThisInstanceID;
+            public EntityId OtherInstanceID;
+#else
             public int ThisInstanceID;
             public int OtherInstanceID;
+#endif
             public Vector3 AverageNormal;
             public Vector3 AverageCollisionStayNormal;
             public Vector3 ContactPoint;
@@ -90,10 +95,15 @@ namespace Unity.Netcode.Components
         private NativeArray<JobResultStruct> m_ResultsArray;
         private int m_Count = 0;
         private JobHandle m_JobHandle;
-
+#if UNITY_6000_2_OR_NEWER
+        private readonly Dictionary<EntityId, Rigidbody> m_RigidbodyMapping = new Dictionary<EntityId, Rigidbody>();
+        private readonly Dictionary<EntityId, IContactEventHandler> m_HandlerMapping = new Dictionary<EntityId, IContactEventHandler>();
+        private readonly Dictionary<EntityId, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<EntityId, ContactEventHandlerInfo>();
+#else
         private readonly Dictionary<int, Rigidbody> m_RigidbodyMapping = new Dictionary<int, Rigidbody>();
         private readonly Dictionary<int, IContactEventHandler> m_HandlerMapping = new Dictionary<int, IContactEventHandler>();
         private readonly Dictionary<int, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<int, ContactEventHandlerInfo>();
+#endif
 
         private void OnEnable()
         {
