@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- First pass of CoreCLR engine API changes. (#3799)
 - Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 - Improve performance of `NetworkTransformState`. (#3770)
 
