@@ -361,13 +361,12 @@ namespace Unity.Netcode.Transports.UTP
         /// Multiplayer Tools subscribes to this event and does not have the EntityId udpate.
         /// </summary>
 
-#if UNITY_6000_2_OR_NEWER && MP_TOOLS_2_2_8_OR_HIGHER
-        internal static event Action<EntityId, NetworkDriver> TransportInitialized;
-        internal static event Action<EntityId> TransportDisposed;
-#else
+#if UNITY_6000_2_OR_NEWER
+        internal static event Action<EntityId, NetworkDriver> OnDriverInitialized;
+        internal static event Action<EntityId> OnDisposingDriver;
+#endif
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
-#endif
 
         /// <summary>
         /// Provides access to the <see cref="NetworkDriver"/> for this instance.
@@ -445,12 +444,9 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 #if UNITY_6000_2_OR_NEWER
-#if MP_TOOLS_2_2_8_OR_HIGHER
             var entityId = GetEntityId();
-#else
-            var entityId = GetEntityId().GetHashCode();
-#endif
-            TransportInitialized?.Invoke(entityId, m_Driver);
+            OnDriverInitialized?.Invoke(entityId, m_Driver);
+            TransportInitialized?.Invoke(entityId.GetHashCode(), m_Driver);
 #else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
 #endif
@@ -471,12 +467,9 @@ namespace Unity.Netcode.Transports.UTP
             m_SendQueue.Clear();
 
 #if UNITY_6000_2_OR_NEWER
-#if MP_TOOLS_2_2_8_OR_HIGHER
             var entityId = GetEntityId();
-#else
-            var entityId = GetEntityId().GetHashCode();
-#endif
-            TransportDisposed?.Invoke(entityId);
+            OnDisposingDriver?.Invoke(entityId);
+            TransportDisposed?.Invoke(entityId.GetHashCode());
 #else
             TransportDisposed?.Invoke(GetInstanceID());
 #endif
