@@ -38,7 +38,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            uint bitset = 0;
+            byte bitset = 0x00;
             if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
             if (UpdateObservers) { bitset |= k_UpdateObservers; }
             if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
