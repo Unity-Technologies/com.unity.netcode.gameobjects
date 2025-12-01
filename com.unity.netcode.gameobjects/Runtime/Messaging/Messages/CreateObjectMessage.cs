@@ -42,7 +42,7 @@ namespace Unity.Netcode
             if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
             if (UpdateObservers) { bitset |= k_UpdateObservers; }
             if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
-            writer.WriteValueSafe(bitset);
+            writer.WriteByteSafe(bitset);
 
             if (UpdateObservers)
             {
@@ -80,7 +80,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            reader.ReadValueSafe(out byte bitset);
+            reader.ReadByteSafe(out byte bitset);
             IncludesSerializedObject = (bitset & k_IncludesSerializedObject) != 0;
             UpdateObservers = (bitset & k_UpdateObservers) != 0;
             UpdateNewObservers = (bitset & k_UpdateNewObservers) != 0;
