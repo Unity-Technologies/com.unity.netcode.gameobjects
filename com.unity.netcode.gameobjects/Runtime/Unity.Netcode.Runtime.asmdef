@@ -34,6 +34,11 @@
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
         },
         {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "2.2.8",
+            "define": "MP_TOOLS_2_2_8_OR_HIGHER"
+        },
+        {
             "name": "Unity",
             "expression": "2023",
             "define": "UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT"
