@@ -11,6 +11,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 using Unity.Netcode.Runtime;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Error;
@@ -1535,7 +1536,12 @@ namespace Unity.Netcode.Transports.UTP
                 // the only case where a full send queue causes a connection loss. Full unreliable
                 // send queues are dealt with by flushing it out to the network or simply dropping
                 // new messages if that fails.
-                var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * k_MaxReliableThroughput;
+                var maxCapacity = m_MaxSendQueueSize;
+                if (maxCapacity <= 0)
+                {
+                    var fullCalculation = Math.BigMul(m_DisconnectTimeoutMS, k_MaxReliableThroughput);
+                    maxCapacity = (int)Math.Max(fullCalculation, int.MaxValue);
+                }
 
                 queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
