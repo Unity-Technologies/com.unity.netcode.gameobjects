@@ -36,7 +36,7 @@ namespace Unity.Netcode
             // Set deferred despawn flag
             var isDeferredDespawn = DeferredDespawnTick > 0;
 
-            uint bitset = 0;
+            byte bitset = 0x00;
             if (IsTargetedDestroy) { bitset |= k_IsTargetedDestroy; }
             if (isDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
             if (DestroyGameObject) { bitset |= k_DestroyGameObject; }
