@@ -45,7 +45,7 @@ namespace Unity.Netcode
 
             if (IsDistributedAuthority)
             {
-                writer.WriteValueSafe(bitset);
+                writer.WriteByteSafe(bitset);
 
                 if (IsTargetedDestroy)
                 {
