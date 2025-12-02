@@ -31,6 +31,9 @@ namespace Unity.Netcode
         /// </summary>
         public static event Action<NetworkManager> OnDestroying;
 
+        /// <summary>
+        /// This is a temporary thing
+        /// </summary>
         public bool TestBool;
 
 #if UNITY_EDITOR
