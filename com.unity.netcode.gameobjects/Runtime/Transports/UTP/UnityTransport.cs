@@ -356,11 +356,6 @@ namespace Unity.Netcode.Transports.UTP
             public float PacketLoss;
         };
 
-        /// <summary>
-        /// TODO-FIXME:
-        /// Multiplayer Tools subscribes to this event and does not have the EntityId udpate.
-        /// </summary>
-
 #if UNITY_6000_2_OR_NEWER
         internal static event Action<EntityId, NetworkDriver> OnDriverInitialized;
         internal static event Action<EntityId> OnDisposingDriver;
