@@ -31,6 +31,7 @@ namespace Unity.Netcode
         /// </summary>
         public static event Action<NetworkManager> OnDestroying;
 
+        public bool TestBool;
 
 #if UNITY_EDITOR
         // Inspector view expand/collapse settings for this derived child class
