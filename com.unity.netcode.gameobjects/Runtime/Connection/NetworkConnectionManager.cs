@@ -362,11 +362,6 @@ namespace Unity.Netcode
                 return (clientId, true);
             }
 
-            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
-            {
-                NetworkLog.LogWarning($"Trying to get the NGO client ID map for the transport ID ({transportId}) but did not find the map entry! Returning default transport ID value.");
-            }
-
             return (default, false);
         }
 
@@ -489,6 +484,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client's save their assigned transport id.
+        /// </summary>
+        /// <remarks>
+        /// Added to be able to appropriately log the client's transport
+        /// id when it is shutdown or disconnected.
+        /// </remarks>
+        private ulong m_LocalClientTransportId;
+
+        /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
         internal void ConnectEventHandler(ulong transportClientId)
@@ -508,6 +512,8 @@ namespace Unity.Netcode
             }
             else
             {
+                // Cache the local client's transport id.
+                m_LocalClientTransportId = transportClientId;
                 clientId = NetworkManager.ServerClientId;
             }
 
@@ -585,9 +591,14 @@ namespace Unity.Netcode
         /// </summary>
         internal void DisconnectEventHandler(ulong transportClientId)
         {
-            var (clientId, wasConnectedClient) = TransportIdCleanUp(transportClientId);
-            if (!wasConnectedClient)
+            // Check to see if the client has already been removed from the table but
+            // do not remove it just yet.
+            var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
+
+            // If the client is not registered and we are the server
+            if (!isConnectedClient && NetworkManager.IsServer)
             {
+                // Then exit early
                 return;
             }
 
@@ -622,17 +633,12 @@ namespace Unity.Netcode
             {
                 // We need to process the disconnection before notifying
                 OnClientDisconnectFromServer(clientId);
-
-                // Now notify the client has disconnected
-                InvokeOnClientDisconnectCallback(clientId);
-
-                if (LocalClient.IsHost)
-                {
-                    InvokeOnPeerDisconnectedCallback(clientId);
-                }
             }
             else
             {
+                // Client's clean up their transport id separately from the server.
+                TransportIdCleanUp(transportClientId);
+
                 // Notify local client of disconnection
                 InvokeOnClientDisconnectCallback(clientId);
 
@@ -793,12 +799,15 @@ namespace Unity.Netcode
         /// </summary>
         internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
         {
+            if (ConnectionApprovalCallback == null)
+            {
+                return;
+            }
             // Note: Delegate creation allocates.
             // Note: ToArray() also allocates. :(
             var response = new NetworkManager.ConnectionApprovalResponse();
             ClientsToApprove[context.SenderId] = response;
-
-            ConnectionApprovalCallback(
+            ConnectionApprovalCallback?.Invoke(
                 new NetworkManager.ConnectionApprovalRequest
                 {
                     Payload = connectionRequestMessage.ConnectionData,
@@ -853,13 +862,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Adding this because message hooks cannot happen fast enough under certain scenarios
-        /// where the message is sent and responded to before the hook is in place.
-        /// </summary>
-        internal bool MockSkippingApproval;
-
-
-        /// <summary>
         /// Server Side: Handles the denial of a client who sent a connection request
         /// </summary>
         /// <remarks>
@@ -873,10 +875,34 @@ namespace Unity.Netcode
                 {
                     Reason = reason
                 };
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+                SendMessage(ref disconnectReason, MessageDeliveryType<DisconnectReasonMessage>.DefaultDelivery, ownerClientId);
+                m_ClientsToDisconnect.Add(ownerClientId);
+                return;
             }
 
             DisconnectRemoteClient(ownerClientId);
+        }
+
+        private List<ulong> m_ClientsToDisconnect = new List<ulong>();
+
+        internal void ProcessClientsToDisconnect()
+        {
+            if (m_ClientsToDisconnect.Count == 0)
+            {
+                return;
+            }
+            foreach (var clientId in m_ClientsToDisconnect)
+            {
+                try
+                {
+                    DisconnectRemoteClient(clientId);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+            m_ClientsToDisconnect.Clear();
         }
 
         /// <summary>
@@ -939,12 +965,6 @@ namespace Unity.Netcode
             // Server doesn't send itself the connection approved message
             if (ownerClientId != NetworkManager.ServerClientId)
             {
-                if (MockSkippingApproval)
-                {
-                    NetworkLog.LogInfo("Mocking server not responding with connection approved...");
-                    return;
-                }
-
                 SendConnectionApprovedMessage(ownerClientId);
 
                 // If scene management is disabled, then we are done and notify the local host-server the client is connected
@@ -1040,7 +1060,7 @@ namespace Unity.Netcode
                 }
             }
 
-            SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, approvedClientId);
+            SendMessage(ref message, MessageDeliveryType<ConnectionApprovedMessage>.DefaultDelivery, approvedClientId);
 
             message.MessageVersions.Dispose();
             message.ConnectedClientIds.Dispose();
@@ -1111,13 +1131,9 @@ namespace Unity.Netcode
                 return ConnectedClients[clientId];
             }
 
-            var networkClient = LocalClient;
-
             // If this is not the local client then create a new one
-            if (clientId != NetworkManager.LocalClientId)
-            {
-                networkClient = new NetworkClient();
-            }
+            var networkClient = clientId == NetworkManager.LocalClientId ? LocalClient : new NetworkClient();
+
             networkClient.SetRole(clientId == NetworkManager.ServerClientId, isClient: true, NetworkManager);
             networkClient.ClientId = clientId;
             if (!ConnectedClients.ContainsKey(clientId))
@@ -1224,6 +1240,14 @@ namespace Unity.Netcode
             // clean up as everything that needs to be destroyed will be during shutdown.
             if (NetworkManager.ShutdownInProgress && clientId == NetworkManager.ServerClientId)
             {
+                // Now notify the client has disconnected.
+                // (transport id cleanup is handled within)
+                InvokeOnClientDisconnectCallback(clientId);
+
+                if (LocalClient.IsHost)
+                {
+                    InvokeOnPeerDisconnectedCallback(clientId);
+                }
                 return;
             }
 
@@ -1392,8 +1416,20 @@ namespace Unity.Netcode
                 }
 
                 ConnectedClientIds.Remove(clientId);
-                var message = new ClientDisconnectedMessage { ClientId = clientId };
-                MessageManager?.SendMessage(ref message, MessageDeliveryType<ClientDisconnectedMessage>.DefaultDelivery, ConnectedClientIds);
+
+                if (MessageManager != null)
+                {
+                    var message = new ClientDisconnectedMessage { ClientId = clientId };
+                    foreach (var sendToId in ConnectedClientIds)
+                    {
+                        // Do not send a disconnect message to ourself
+                        if (sendToId == NetworkManager.LocalClientId)
+                        {
+                            continue;
+                        }
+                        MessageManager.SendMessage(ref message, MessageDeliveryType<ClientDisconnectedMessage>.DefaultDelivery, sendToId);
+                    }
+                }
 
                 // Used for testing/validation purposes only
                 // Promote a new session owner when the ENABLE_DAHOST_AUTOPROMOTE_SESSION_OWNER scripting define is set
@@ -1404,17 +1440,18 @@ namespace Unity.Netcode
             var (transportId, idExists) = ClientIdToTransportId(clientId);
             if (idExists)
             {
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
-
-                InvokeOnClientDisconnectCallback(clientId);
-
-                if (LocalClient.IsHost)
-                {
-                    InvokeOnPeerDisconnectedCallback(clientId);
-                }
-
                 // Clean up the transport to client (and vice versa) mappings
-                TransportIdCleanUp(transportId);
+                var (transportIdDisconnected, wasRemoved) = TransportIdCleanUp(transportId);
+                if (wasRemoved)
+                {
+                    NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+                    InvokeOnClientDisconnectCallback(clientId);
+
+                    if (LocalClient.IsHost)
+                    {
+                        InvokeOnPeerDisconnectedCallback(clientId);
+                    }
+                }
             }
 
             // Assure the client id is no longer in the pending clients list
@@ -1462,16 +1499,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!string.IsNullOrEmpty(reason))
-            {
-                var disconnectReason = new DisconnectReasonMessage
-                {
-                    Reason = reason
-                };
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
-            }
-
-            Transport.ClosingRemoteConnection();
             var transportId = ClientIdToTransportId(clientId);
             if (transportId.Item2)
             {
@@ -1491,6 +1518,7 @@ namespace Unity.Netcode
         internal void Initialize(NetworkManager networkManager)
         {
             // Prepare for a new session
+            m_LocalClientTransportId = 0;
             LocalClient.IsApproved = false;
             m_PendingClients.Clear();
             ConnectedClients.Clear();
@@ -1524,8 +1552,9 @@ namespace Unity.Netcode
             {
                 Transport.ShuttingDown();
                 var clientId = NetworkManager ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
-                var transportId = ClientIdToTransportId(clientId);
-                GenerateDisconnectInformation(clientId, transportId.Item1, $"{nameof(NetworkConnectionManager)} was shutdown.");
+                // Server and host just log 0 for their transport id while clients will log their cached m_LocalClientTransportId
+                var transportId = clientId == NetworkManager.ServerClientId ? 0 : m_LocalClientTransportId;
+                GenerateDisconnectInformation(clientId, transportId, $"{nameof(NetworkConnectionManager)} was shutdown.");
             }
 
             if (LocalClient.IsServer)

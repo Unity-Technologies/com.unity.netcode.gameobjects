@@ -92,17 +92,23 @@ namespace Unity.Netcode.RuntimeTests
         private void Client_OnClientDisconnectCallback(ulong clientId)
         {
             m_ClientNetworkManagers[0].OnClientDisconnectCallback -= Client_OnClientDisconnectCallback;
-            m_ClientDisconnectReasonValidated = m_ClientNetworkManagers[0].LocalClientId == clientId && m_ClientNetworkManagers[0].DisconnectReason.Contains(k_InvalidToken);
+            m_ClientDisconnectReasonValidated = m_ClientNetworkManagers[0].LocalClientId == clientId && m_ClientNetworkManagers[0].ConnectionManager.ServerDisconnectReason.Contains(k_InvalidToken);
         }
 
-        private bool ClientAndHostValidated()
+        private bool ClientAndHostValidated(StringBuilder errorLog)
         {
             if (!m_Validated.ContainsKey(m_ServerNetworkManager.LocalClientId) || !m_Validated[m_ServerNetworkManager.LocalClientId])
             {
+                errorLog.AppendLine($"Server does not contain a validation for Client-{m_ServerNetworkManager.LocalClientId}!");
                 return false;
             }
             if (m_PlayerCreation == PlayerCreation.FailValidation)
             {
+                if (!m_ClientDisconnectReasonValidated)
+                {
+                    errorLog.AppendLine($"{nameof(m_ClientDisconnectReasonValidated)} is false!");
+                }
+
                 return m_ClientDisconnectReasonValidated;
             }
             else
@@ -111,6 +117,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     if (!m_Validated.ContainsKey(client.LocalClientId) || !m_Validated[client.LocalClientId])
                     {
+                        errorLog.AppendLine($"Client-{client.LocalClientId} was not in the validated list!");
                         return false;
                     }
                 }
@@ -163,6 +170,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 response.Approved = false;
                 response.Reason = "Invalid validation token!";
+                return;
             }
 
             response.CreatePlayerObject = ShouldCheckForSpawnedPlayers();
