@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
@@ -46,16 +47,15 @@ namespace Unity.Netcode.RuntimeTests
             // Adjusting client and server timeout periods to reduce test time
             // Get the tick frequency in milliseconds and triple it for the heartbeat timeout
             var heartBeatTimeout = (int)(300 * (1.0f / m_ServerNetworkManager.NetworkConfig.TickRate));
-            var unityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
-            if (unityTransport != null)
-            {
-                unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
-            }
 
-            unityTransport = m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
-            if (unityTransport != null)
+            foreach (var networkManager in m_NetworkManagers)
             {
-                unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
+                var unityTransport = networkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
+                if (unityTransport != null)
+                {
+                    unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
+                }
+                networkManager.OnConnectionEvent += OnConnectionEventCallback;
             }
 
             base.OnServerAndClientsCreated();
@@ -73,18 +73,29 @@ namespace Unity.Netcode.RuntimeTests
             switch (data.EventType)
             {
                 case ConnectionEvent.ClientDisconnected:
-                    Assert.IsFalse(data.PeerClientIds.IsCreated);
-                    ++m_ClientDisconnectCount;
-                    break;
+                    {
+                        Assert.IsFalse(data.PeerClientIds.IsCreated);
+                        if (data.ClientId == m_TargetClientId)
+                        {
+                            ++m_ClientDisconnectCount;
+                        }
+                        break;
+                    }
                 case ConnectionEvent.PeerDisconnected:
-                    Assert.IsFalse(data.PeerClientIds.IsCreated);
-                    ++m_PeerDisconnectCount;
-                    break;
+                    {
+                        if (data.ClientId == m_TargetClientId)
+                        {
+                            Assert.IsFalse(data.PeerClientIds.IsCreated);
+                            ++m_PeerDisconnectCount;
+                        }
+                        break;
+                    }
             }
         }
 
         private bool m_TargetClientShutdown;
         private NetworkManager m_TargetClient;
+        private ulong m_TargetClientId;
 
         private void ClientToDisconnect_OnClientStopped(bool wasHost)
         {
@@ -97,10 +108,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_TargetClientShutdown = false;
             m_TargetClient = m_ClientNetworkManagers[disconnectedClient - 1];
+            m_TargetClientId = m_TargetClient.LocalClientId;
             m_TargetClient.OnClientStopped += ClientToDisconnect_OnClientStopped;
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
-                client.OnConnectionEvent += OnConnectionEventCallback;
                 if (m_UseHost)
                 {
                     Assert.IsTrue(client.ConnectedClientsIds.Contains(0ul));
@@ -110,15 +121,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(client.ConnectedClientsIds.Contains(3ul));
                 Assert.AreEqual(client.ServerIsHost, m_UseHost);
             }
-            m_ServerNetworkManager.OnConnectionEvent += OnConnectionEventCallback;
-            if (m_UseHost)
-            {
-                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(0ul));
-            }
-            Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(1ul));
-            Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(2ul));
-            Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(3ul));
-            Assert.AreEqual(m_ServerNetworkManager.ServerIsHost, m_UseHost);
 
             // Set up a WaitForMessageReceived hook.
             // In some cases the message will be received during StopOneClient, but it is not guaranteed
@@ -134,6 +136,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+
 
             if (clientDisconnectType == ClientDisconnectType.ServerDisconnectsClient)
             {
@@ -151,46 +154,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_TargetClientShutdown);
             AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} to shutdown!");
 
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                if (!client.IsConnectedClient)
-                {
-                    Assert.IsEmpty(client.ConnectedClientsIds);
-                    continue;
-                }
-                if (m_UseHost)
-                {
-                    Assert.IsTrue(client.ConnectedClientsIds.Contains(0ul), $"[Client-{client.LocalClientId}][Connected ({client.IsConnectedClient})] Still has client identifier 0!");
-                }
-
-                for (var i = 1ul; i < 3ul; ++i)
-                {
-                    if (i == disconnectedClient)
-                    {
-                        Assert.IsFalse(client.ConnectedClientsIds.Contains(i), $"[Client-{client.LocalClientId}][Connected ({client.IsConnectedClient})] Still has client identifier {i}!");
-                    }
-                    else
-                    {
-                        Assert.IsTrue(client.ConnectedClientsIds.Contains(i), $"[Client-{client.LocalClientId}][Connected ({client.IsConnectedClient})] Still has client identifier {i}!");
-                    }
-                }
-            }
-            if (m_UseHost)
-            {
-                Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(0ul));
-            }
-
-            for (var i = 1ul; i < 3ul; ++i)
-            {
-                if (i == disconnectedClient)
-                {
-                    Assert.IsFalse(m_ServerNetworkManager.ConnectedClientsIds.Contains(i));
-                }
-                else
-                {
-                    Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Contains(i));
-                }
-            }
+            // Check that the client is disconnected and all NetworkManagers have registered this
+            yield return WaitForConditionOrTimeOut(CheckClientDisconnected);
+            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} to register as having shutdown!");
 
             // If disconnected, the server and the client that disconnected will be notified
             Assert.AreEqual(2, m_ClientDisconnectCount);
@@ -198,5 +164,34 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(m_UseHost ? 3 : 2, m_PeerDisconnectCount);
         }
 
+        /// <summary>
+        /// Conditional method to verify the <see cref="m_TargetClientId"/> is disconnected
+        /// and that identifier is not contained on any <see cref="NetworkManager"/> instance's
+        /// <see cref="NetworkManager.ConnectedClientsIds"/>.
+        /// </summary>
+        private bool CheckClientDisconnected(StringBuilder errorLog)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (!networkManager.IsConnectedClient)
+                {
+
+                    continue;
+                }
+                if (networkManager.LocalClientId == m_TargetClientId && ((networkManager.IsConnectedClient) || (networkManager.IsListening)))
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Is either still connected or still listening!");
+                    return false;
+                }
+                if (networkManager.ConnectedClientsIds.Contains(m_TargetClientId))
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Is still has {m_TargetClientId} registered as a connected client!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
 }
+
