@@ -10,8 +10,8 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host)]
-    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     public class SceneObjectsNotDestroyedOnShutdownTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
@@ -21,7 +21,7 @@ namespace TestProject.RuntimeTests
         private Scene m_TestScene;
         private WaitForSeconds m_DefaultWaitForTick = new(1.0f / 30);
 
-        public SceneObjectsNotDestroyedOnShutdownTest(HostOrServer hostOrServer) : base(hostOrServer) {}
+        public SceneObjectsNotDestroyedOnShutdownTest(NetworkTopologyTypes topology) : base(topology) { }
 
         [UnityTest]
         public IEnumerator SceneObjectsNotDestroyedOnShutdown()
