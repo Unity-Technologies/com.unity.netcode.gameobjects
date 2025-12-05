@@ -492,6 +492,8 @@ namespace Unity.Netcode
         /// </remarks>
         private ulong m_LocalClientTransportId;
 
+        internal ulong LocalClientTransportId => m_LocalClientTransportId;
+
         /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
@@ -596,7 +598,7 @@ namespace Unity.Netcode
             var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
 
             // If the client is not registered and we are the server
-            if (!isConnectedClient && NetworkManager.IsServer)
+            if (!isConnectedClient)
             {
                 // Then exit early
                 return;
