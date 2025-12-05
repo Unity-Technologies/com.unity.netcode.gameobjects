@@ -357,18 +357,9 @@ namespace Unity.Netcode.Transports.UTP
             public float PacketLoss;
         };
 
-        /// <summary>
-        /// TODO-FIXME:
-        /// Multiplayer Tools subscribes to this event and does not have the EntityId udpate.
-        /// </summary>
-#if FIXED
 #if UNITY_6000_2_OR_NEWER
-        internal static event Action<EntityId, NetworkDriver> TransportInitialized;
-        internal static event Action<EntityId> TransportDisposed;
-#else
-        internal static event Action<int, NetworkDriver> TransportInitialized;
-        internal static event Action<int> TransportDisposed;
-#endif
+        internal static event Action<EntityId, NetworkDriver> OnDriverInitialized;
+        internal static event Action<EntityId> OnDisposingDriver;
 #endif
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
@@ -450,13 +441,8 @@ namespace Unity.Netcode.Transports.UTP
                 out m_ReliableSequencedPipeline);
 #if UNITY_6000_2_OR_NEWER
             var entityId = GetEntityId();
-#if UNITY_6000_3_0A6_OR_HIGHER
-            // TODO-FIXME: Since multiplayer tools subscribes to this and we have to validate against any package that
-            // might use this action, we have to cast it down temporarily to avoid being blocked from getting these fixes in place.
-            TransportInitialized?.Invoke((int)entityId.GetRawData(), m_Driver);
-#else
-            TransportInitialized?.Invoke(entityId, m_Driver);
-#endif
+            OnDriverInitialized?.Invoke(entityId, m_Driver);
+            TransportInitialized?.Invoke(entityId.GetHashCode(), m_Driver);
 #else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
 #endif
@@ -478,14 +464,8 @@ namespace Unity.Netcode.Transports.UTP
 
 #if UNITY_6000_2_OR_NEWER
             var entityId = GetEntityId();
-#if UNITY_6000_3_0A6_OR_HIGHER
-            // TODO-FIXME: Since multiplayer tools subscribes to this and we have to validate against any package that
-            // might use this action, we have to cast it down temporarily to avoid being blocked from getting these fixes in place.
-            TransportDisposed?.Invoke((int)entityId.GetRawData());
-#else
-            TransportDisposed?.Invoke(entityId, m_Driver);
-#endif
-
+            OnDisposingDriver?.Invoke(entityId);
+            TransportDisposed?.Invoke(entityId.GetHashCode());
 #else
             TransportDisposed?.Invoke(GetInstanceID());
 #endif
