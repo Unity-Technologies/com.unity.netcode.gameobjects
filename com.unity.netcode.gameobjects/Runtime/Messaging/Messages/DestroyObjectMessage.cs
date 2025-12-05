@@ -59,7 +59,7 @@ namespace Unity.Netcode
             }
             else if (targetVersion >= k_AllowDestroyGameInPlaced)
             {
-                writer.WriteValueSafe(bitset);
+                writer.WriteByteSafe(bitset);
             }
 
             if (targetVersion < k_OptimizeDestroyObjectMessage)
