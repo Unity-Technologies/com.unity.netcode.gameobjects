@@ -189,6 +189,34 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator VeryLargeDisconnectTimeout()
+        {
+            // We want something that's over the old limit of ~44KB for reliable payloads.
+            var payloadSize = 64 * 1024;
+
+            var disconnectTimeout = int.MaxValue;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, payloadSize, disconnectTimeout: disconnectTimeout);
+            InitializeTransport(out m_Client1, out m_Client1Events, payloadSize, disconnectTimeout: disconnectTimeout);
+            Assert.That(m_Server.DisconnectTimeoutMS, Is.EqualTo(disconnectTimeout));
+            Assert.That(m_Client1.DisconnectTimeoutMS, Is.EqualTo(disconnectTimeout));
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var payload = new ArraySegment<byte>(Encoding.ASCII.GetBytes("Some message"));
+            m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.Reliable);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 4);
+
+            Assert.That(m_ServerEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("Some message")));
+
+            yield return null;
+        }
+
         // Check making multiple sends to a client in a single frame.
         [UnityTest]
         public IEnumerator MultipleSendsSingleFrame(

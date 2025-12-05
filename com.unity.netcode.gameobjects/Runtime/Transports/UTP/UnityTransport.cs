@@ -1520,7 +1520,7 @@ namespace Unity.Netcode.Transports.UTP
                 if (maxCapacity <= 0)
                 {
                     var fullCalculation = Math.BigMul(m_DisconnectTimeoutMS, k_MaxReliableThroughput);
-                    maxCapacity = (int)Math.Max(fullCalculation, int.MaxValue);
+                    maxCapacity = (int)Math.Min(fullCalculation, BatchedSendQueue.MaximumMaximumCapacity);
                 }
 
                 queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));

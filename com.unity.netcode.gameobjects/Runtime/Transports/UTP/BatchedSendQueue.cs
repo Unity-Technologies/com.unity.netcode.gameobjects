@@ -31,6 +31,8 @@ namespace Unity.Netcode.Transports.UTP
         public const int PerMessageOverhead = sizeof(int);
 
         internal const int MinimumMinimumCapacity = 4096;
+        // int.MaxValue is odd and maximum must be even.
+        internal const int MaximumMaximumCapacity = int.MaxValue - 1;
 
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;
