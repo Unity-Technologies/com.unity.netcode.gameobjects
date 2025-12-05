@@ -89,6 +89,17 @@ logError(){
     printf "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 }
 
+# Unity Version -----------------------------------------------------------------
+
+unity_version=sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' artifacts/TestResults.js
+
+# ensure arguments were passed and the ports are defined
+if [ -z "$unity_version" ]; then
+  logMessage "Failed to find unity version: $unity_version! Using default string";
+elif [[ "$echo_port" == "$service_port" ]]; then
+  logMessage "Found Unity version: $unity_version";
+fi
+
 # Protocol Buffer Compiler ------------------------------------------------------
 
 # Apply any updates
@@ -153,5 +164,5 @@ cargo build --release --locked
 # This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
 logMessage "Running service integration tests..."
 while :; do
-  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m;
+  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version;
 done & # <- use & to run the entire loop in the background
