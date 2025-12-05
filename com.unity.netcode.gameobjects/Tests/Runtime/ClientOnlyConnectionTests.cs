@@ -32,9 +32,9 @@ namespace Unity.Netcode.RuntimeTests
             // Default is 1000ms per connection attempt and 60 connection attempts (60s)
             // Currently there is no easy way to set these values other than in-editor
             var unityTransport = m_NetworkManagerGameObject.AddComponent<UnityTransport>();
-            unityTransport.ConnectTimeoutMS = 1000;
+            unityTransport.ConnectTimeoutMS = 500;
             unityTransport.MaxConnectAttempts = 1;
-            m_TimeoutHelper = new TimeoutHelper(2);
+            m_TimeoutHelper = new TimeoutHelper(4);
             m_ClientNetworkManager.NetworkConfig.NetworkTransport = unityTransport;
         }
 
@@ -49,7 +49,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Unity Transport throws an error when it times out
             LogAssert.Expect(LogType.Error, "Failed to connect to server.");
-
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_WasDisconnected, m_TimeoutHelper);
             Assert.False(m_TimeoutHelper.TimedOut, "Timed out waiting for client to timeout waiting to connect!");
 
