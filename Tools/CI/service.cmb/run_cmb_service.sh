@@ -91,6 +91,20 @@ logError(){
 
 # Unity Version -----------------------------------------------------------------
 
+DIR="./artifacts"
+if [[ -d "$DIR" ]]; then
+  echo "Artifacts directory exists"
+else
+  echo "Artifacts directory does not exist"
+fi
+
+FILE="artifacts/TestResults.js"
+if [[ -f "$FILE" ]]; then
+  echo "TestResults File exists and is a regular file"
+else
+  echo "TestResults File missing"
+fi
+
 unity_version=sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' artifacts/TestResults.js
 
 # ensure arguments were passed and the ports are defined
@@ -100,69 +114,69 @@ elif [[ "$echo_port" == "$service_port" ]]; then
   logMessage "Found Unity version: $unity_version";
 fi
 
-# Protocol Buffer Compiler ------------------------------------------------------
+# # Protocol Buffer Compiler ------------------------------------------------------
 
-# Apply any updates
-logMessage "Updating modules..."
-sudo apt-get update
+# # Apply any updates
+# logMessage "Updating modules..."
+# sudo apt-get update
 
-# Install Protocol Buffer Compiler (using apt-get)
-logMessage "Installing protocol buffer compiler as SUDO..."
-try sudo apt-get install -y protobuf-compiler
+# # Install Protocol Buffer Compiler (using apt-get)
+# logMessage "Installing protocol buffer compiler as SUDO..."
+# try sudo apt-get install -y protobuf-compiler
 
-# If the previous command failed, try without sudo
-if $ThrewError; then
-logMessage "Installing protocol buffer compiler as shell assigned account..."
-apt-get install -y protobuf-compiler
-else
-logMessage "Protocol buffer compiler was installed as sudo!"
-fi
+# # If the previous command failed, try without sudo
+# if $ThrewError; then
+# logMessage "Installing protocol buffer compiler as shell assigned account..."
+# apt-get install -y protobuf-compiler
+# else
+# logMessage "Protocol buffer compiler was installed as sudo!"
+# fi
 
-# Add the PROTOC environment variable that points to the Protocol Buffer Compiler binary
-export PROTOC="/usr/bin/protoc"
+# # Add the PROTOC environment variable that points to the Protocol Buffer Compiler binary
+# export PROTOC="/usr/bin/protoc"
 
-# Validate the PROTOC env var by getting the protoc version
-try $PROTOC --version
+# # Validate the PROTOC env var by getting the protoc version
+# try $PROTOC --version
 
-if $ThrewError; then
-logError "Failed to properly run protoc!"
-exit -1
-else
-logMessage "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
-fi
+# if $ThrewError; then
+# logError "Failed to properly run protoc!"
+# exit -1
+# else
+# logMessage "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
+# fi
 
-# clone the cmb service repo
-git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+# # clone the cmb service repo
+# git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
 
-# navigate to the cmb service directory
-cd ./mps-common-multiplayer-backend/runtime
+# # navigate to the cmb service directory
+# cd ./mps-common-multiplayer-backend/runtime
 
-# Install rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# # Install rust
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-# Add the cargo bin directory to the PATH
-export PATH="$HOME/.cargo/bin:$PATH"
+# # Add the cargo bin directory to the PATH
+# export PATH="$HOME/.cargo/bin:$PATH"
 
-# Echo server -------------------------------------------------------------------
+# # Echo server -------------------------------------------------------------------
 
-# Build the echo server
-logMessage "Beginning echo server build..."
-cargo build --example ngo_echo_server
+# # Build the echo server
+# logMessage "Beginning echo server build..."
+# cargo build --example ngo_echo_server
 
-# Run the echo server in the background
-logMessage "Running echo server tests..."
-cargo run --example ngo_echo_server -- --port $echo_port &
+# # Run the echo server in the background
+# logMessage "Running echo server tests..."
+# cargo run --example ngo_echo_server -- --port $echo_port &
 
-# CMB Service -------------------------------------------------------------------
+# # CMB Service -------------------------------------------------------------------
 
-# Build a release version of the standalone cmb service
-logMessage "Beginning service release build..."
-cargo build --release --locked
+# # Build a release version of the standalone cmb service
+# logMessage "Beginning service release build..."
+# cargo build --release --locked
 
-# Run the standalone service on an infinite loop in the background.
-# The infinite loop is required as the service will exit each time all connected clients disconnect.
-# This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
-logMessage "Running service integration tests..."
-while :; do
-  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version;
-done & # <- use & to run the entire loop in the background
+# # Run the standalone service on an infinite loop in the background.
+# # The infinite loop is required as the service will exit each time all connected clients disconnect.
+# # This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
+# logMessage "Running service integration tests..."
+# while :; do
+#   ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version;
+# done & # <- use & to run the entire loop in the background
