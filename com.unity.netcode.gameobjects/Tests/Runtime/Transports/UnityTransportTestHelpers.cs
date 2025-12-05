@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Common code to initialize a UnityTransport that logs its events.
-        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, int disconnectTimeout = 0)
+        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, int disconnectTimeout = NetworkParameterConstants.DisconnectTimeoutMS)
         {
             InitializeTransport(out transport, out events, string.Empty, maxPayloadSize, maxSendQueueSize, family, disconnectTimeout);
         }
