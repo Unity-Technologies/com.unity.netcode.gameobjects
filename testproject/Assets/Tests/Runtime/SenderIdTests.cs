@@ -17,8 +17,6 @@ namespace TestProject.RuntimeTests
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
 
-        public SenderIdTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
-
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
         {
