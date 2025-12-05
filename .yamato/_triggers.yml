@@ -53,7 +53,6 @@ pr_minimal_required_checks:
   dependencies:
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     - .yamato/package-pack.yml#package_pack_-_ngo_win
-    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_6000.4
   triggers:
     expression: |-
       (pull_request.comment eq "ngo" OR
