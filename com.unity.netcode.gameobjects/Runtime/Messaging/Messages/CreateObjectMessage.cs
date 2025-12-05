@@ -32,62 +32,17 @@ namespace Unity.Netcode
         private const byte k_UpdateObservers = 0x02;
         private const byte k_UpdateNewObservers = 0x04;
 
-
-        private byte m_CreateObjectMessageTypeFlags;
-
-        internal bool IncludesSerializedObject
-        {
-            get
-            {
-                return GetFlag(k_IncludesSerializedObject);
-            }
-
-            set
-            {
-                SetFlag(value, k_IncludesSerializedObject);
-            }
-        }
-
-        internal bool UpdateObservers
-        {
-            get
-            {
-                return GetFlag(k_UpdateObservers);
-            }
-
-            set
-            {
-                SetFlag(value, k_UpdateObservers);
-            }
-        }
-
-        internal bool UpdateNewObservers
-        {
-            get
-            {
-                return GetFlag(k_UpdateNewObservers);
-            }
-
-            set
-            {
-                SetFlag(value, k_UpdateNewObservers);
-            }
-        }
-
-        private bool GetFlag(int flag)
-        {
-            return (m_CreateObjectMessageTypeFlags & flag) != 0;
-        }
-
-        private void SetFlag(bool set, byte flag)
-        {
-            if (set) { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags | flag); }
-            else { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags & ~flag); }
-        }
+        internal bool IncludesSerializedObject;
+        internal bool UpdateObservers;
+        internal bool UpdateNewObservers;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(m_CreateObjectMessageTypeFlags);
+            byte bitset = 0x00;
+            if (IncludesSerializedObject) { bitset |= k_IncludesSerializedObject; }
+            if (UpdateObservers) { bitset |= k_UpdateObservers; }
+            if (UpdateNewObservers) { bitset |= k_UpdateNewObservers; }
+            writer.WriteByteSafe(bitset);
 
             if (UpdateObservers)
             {
@@ -125,7 +80,11 @@ namespace Unity.Netcode
                 return false;
             }
 
-            reader.ReadValueSafe(out m_CreateObjectMessageTypeFlags);
+            reader.ReadByteSafe(out byte bitset);
+            IncludesSerializedObject = (bitset & k_IncludesSerializedObject) != 0;
+            UpdateObservers = (bitset & k_UpdateObservers) != 0;
+            UpdateNewObservers = (bitset & k_UpdateNewObservers) != 0;
+
             if (UpdateObservers)
             {
                 var length = 0;
