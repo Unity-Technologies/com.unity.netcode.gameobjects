@@ -46,7 +46,6 @@ namespace Unity.Netcode
             // (NetworkConnectionManager.DisconnectReason).
             networkManager.ConnectionManager.ServerDisconnectReason = Reason;
 
-
             if (networkManager.NetworkConfig.UseCMBService)
             {
                 networkManager.StartCoroutine(HandleDisconnectAfterReason(networkManager));
