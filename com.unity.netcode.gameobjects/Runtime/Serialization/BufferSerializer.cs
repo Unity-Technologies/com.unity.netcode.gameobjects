@@ -125,6 +125,25 @@ namespace Unity.Netcode
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Implementation.SerializeValue(ref value);
 
         /// <summary>
+        /// Read or write a NativeArray of struct values implementing ISerializeByMemcpy
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Implementation.SerializeValue(ref value, allocator);
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Read or write a NativeList of struct values implementing ISerializeByMemcpy
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Implementation.SerializeValue(ref value);
+#endif
+
+        /// <summary>
         /// Read or write a struct or class value implementing INetworkSerializable
         /// </summary>
         /// <param name="value">The value to read/write</param>
@@ -213,6 +232,18 @@ namespace Unity.Netcode
         public void SerializeValue(ref Quaternion[] value) => m_Implementation.SerializeValue(ref value);
 
         /// <summary>
+        /// Read or write a Pose value
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValue(ref Pose value) => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
+        /// Read or write an array of Pose values
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        public void SerializeValue(ref Pose[] value) => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
         /// Read or write a Color value
         /// </summary>
         /// <param name="value">The value to read/write</param>
@@ -266,6 +297,7 @@ namespace Unity.Netcode
         // Those two are necessary to serialize FixedStrings efficiently
         // - otherwise we'd just be memcpy'ing the whole thing even if
         // most of it isn't used.
+
         /// <summary>
         /// Read or write a FixedString value
         /// </summary>
@@ -274,6 +306,25 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
+        /// Read or write a NativeArray of FixedString values
+        /// </summary>
+        /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value, allocator);
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Read or write a NativeList of FixedString values
+        /// </summary>
+        /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
+        public void SerializeValue<T>(ref NativeList<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
+#endif
 
         /// <summary>
         /// Read or write a NetworkSerializable value.
@@ -289,8 +340,8 @@ namespace Unity.Netcode
         /// SerializeValuePreChecked methods. But note that the benefit is small and only likely to be
         /// noticeable if serializing a very large number of items.
         /// </summary>
-        /// <param name="amount"></param>
-        /// <returns></returns>
+        /// <param name="amount">The number of values that will need to be read or written</param>
+        /// <returns>True if there is sufficient space available for the specified amount, false otherwise</returns>
         public bool PreCheck(int amount)
         {
             return m_Implementation.PreCheck(amount);
@@ -382,6 +433,31 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
+        /// Serialize a NativeArray of structs, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <typeparam name="T">The network serializable types in an array</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of structs</param>
+        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Implementation.SerializeValuePreChecked(ref value, allocator);
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Serialize a NativeList of structs, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <typeparam name="T">The network serializable types in an array</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of structs</param>
+        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Implementation.SerializeValuePreChecked(ref value);
+#endif
+
+        /// <summary>
         /// Serialize a Vector2, "pre-checked", which skips buffer checks.
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
@@ -463,7 +539,7 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Vector4 value) => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
-        /// Serialize a Vector4Array, "pre-checked", which skips buffer checks.
+        /// Serialize a Vector4 array, "pre-checked", which skips buffer checks.
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
@@ -488,6 +564,24 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         public void SerializeValuePreChecked(ref Quaternion[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        /// <summary>
+        /// Serialize a Pose, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref Pose value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        /// <summary>
+        /// Serialize a Pose array, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref Pose[] value) => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
         /// Serialize a Color, "pre-checked", which skips buffer checks.

@@ -1,0 +1,22 @@
+# https://internaldocs.unity.com/yamato_continuous_integration/usage/templating/
+
+NetcodeProjects:
+    # Note that we are using internal Unity repo. This means that we may test with newest changes that are not yet released to our users (there are also public versions)
+    # The parameters specify repo location, default branch to use (since you can modify it via job variable), path to manifest.json file so we can replace package entry and path to the project root folder since it differs between projects
+    # Note that for BossRoom 'main' branch supports NGOv1.X and 'develop' branch supports NGOv2.X
+    # TODO: For BossRoom correct branch to develop when PR-3736 is merged in their repo
+    BossRoom:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git"
+        defaultBranch: ngo-playtest-update
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+    Asteroids:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/Asteroids-CMB-NGO-Sample.git"
+        defaultBranch: main
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+    SocialHub:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize.git"
+        defaultBranch: main
+        manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
+        projectPath: 'Basic/DistributedAuthoritySocialHub'

@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class MessageSendingTests
+    internal class MessageSendingTests
     {
         private struct TestMessage : INetworkMessage, INetworkSerializeByMemcpy
         {
@@ -157,7 +157,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
+            for (var i = 0; i < (m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -167,11 +167,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
-        public void WhenExceedingBatchSize_NewBatchesAreCreated()
+        public void WhenExceedingBatchSize_NewBatchesAreCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
+            m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -181,11 +182,70 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
-        public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated()
+        public void WhenExceedingPerClientBatchSizeLessThanDefault_NewBatchesAreCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
+            m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize * 5;
+            var clients = new ulong[] { 0, 1, 2 };
+            m_MessageManager.ClientConnected(1);
+            m_MessageManager.ClientConnected(2);
+            m_MessageManager.SetVersion(1, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager.SetVersion(2, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+
+            for (var i = 0; i < clients.Length; ++i)
+            {
+                m_MessageManager.PeerMTUSizes[clients[i]] = maxMessageSize * (i + 1);
+            }
+
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < clients.Length; ++i)
+            {
+                for (var j = 0; j < ((m_MessageManager.PeerMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
+                {
+                    m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clients[i]);
+                }
+            }
+
+            m_MessageManager.ProcessSendQueues();
+            Assert.AreEqual(2 * clients.Length, m_MessageSender.MessageQueue.Count);
+        }
+
+        [Test]
+        public void WhenExceedingPerClientBatchSizeGreaterThanDefault_OnlyOneNewBatcheIsCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
+        {
+            var message = GetMessage();
+            m_MessageManager.NonFragmentedMessageMaxSize = 128;
+            var clients = new ulong[] { 0, 1, 2 };
+            m_MessageManager.ClientConnected(1);
+            m_MessageManager.ClientConnected(2);
+            m_MessageManager.SetVersion(1, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager.SetVersion(2, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+
+            for (var i = 0; i < clients.Length; ++i)
+            {
+                m_MessageManager.PeerMTUSizes[clients[i]] = maxMessageSize * (i + 1);
+            }
+
+            var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
+            for (var i = 0; i < clients.Length; ++i)
+            {
+                for (var j = 0; j < ((m_MessageManager.PeerMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
+                {
+                    m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clients[i]);
+                }
+            }
+
+            m_MessageManager.ProcessSendQueues();
+            Assert.AreEqual(2 * clients.Length, m_MessageSender.MessageQueue.Count);
+        }
+
+        [Test]
+        public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
+        {
+            var message = GetMessage();
+            m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
+            var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
@@ -291,7 +351,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var message = GetMessage();
 
-            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            var writer = new FastBufferWriter(m_MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp);
             using (writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));

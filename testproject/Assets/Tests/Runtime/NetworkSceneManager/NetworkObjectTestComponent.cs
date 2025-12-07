@@ -12,11 +12,13 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class NetworkObjectTestComponent : NetworkBehaviour
     {
+        public static bool VerboseDebug;
         public static bool DisableOnDespawn;
         public static bool DisableOnSpawn;
         public static NetworkObject ServerNetworkObjectInstance;
         public static List<NetworkObjectTestComponent> SpawnedInstances = new List<NetworkObjectTestComponent>();
         public static List<NetworkObjectTestComponent> DespawnedInstances = new List<NetworkObjectTestComponent>();
+        public static List<NetworkObject> SpawnedObjects = new List<NetworkObject>();
 
         public static void Reset()
         {
@@ -25,6 +27,7 @@ namespace TestProject.RuntimeTests
             ServerNetworkObjectInstance = null;
             SpawnedInstances.Clear();
             DespawnedInstances.Clear();
+            SpawnedObjects.Clear();
         }
 
         private Action<NetworkObject, int, bool, bool, bool> m_ActionClientConnected;
@@ -47,6 +50,8 @@ namespace TestProject.RuntimeTests
         public override void OnNetworkSpawn()
         {
             SpawnedInstances.Add(this);
+            SpawnedObjects.Add(NetworkObject);
+
             if (DisableOnDespawn)
             {
                 if (DespawnedInstances.Contains(this))
@@ -55,7 +60,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            if (IsServer)
+            if (IsServer || IsSessionOwner)
             {
                 ServerNetworkObjectInstance = NetworkObject;
                 if (DisableOnSpawn && !ObjectWasDisabledUponSpawn)
@@ -73,7 +78,7 @@ namespace TestProject.RuntimeTests
         {
             OnInSceneObjectDespawned?.Invoke(NetworkObject);
             m_HasNotifiedSpawned = false;
-            Debug.Log($"{NetworkManager.name} de-spawned {gameObject.name}.");
+            LogMessage($"{NetworkManager.name} de-spawned {gameObject.name}.");
             SpawnedInstances.Remove(this);
             if (DisableOnDespawn)
             {
@@ -89,8 +94,16 @@ namespace TestProject.RuntimeTests
             // We do this so the ObjectNameIdentifier has a chance to label it properly
             if (IsSpawned && !m_HasNotifiedSpawned)
             {
-                Debug.Log($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
+                LogMessage($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
                 m_HasNotifiedSpawned = true;
+            }
+        }
+
+        private void LogMessage(string message)
+        {
+            if (VerboseDebug)
+            {
+                Debug.Log(message);
             }
         }
     }

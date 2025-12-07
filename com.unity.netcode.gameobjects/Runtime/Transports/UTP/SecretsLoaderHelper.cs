@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
@@ -13,6 +14,7 @@ namespace Unity.Netcode.Transports.UTP
     /// - SetClientSecrets
     /// directly, instead of relying on this.
     /// </summary>
+    [HelpURL(HelpUrls.SecretsLoaderHelper)]
     public class SecretsLoaderHelper : MonoBehaviour
     {
         internal struct ServerSecrets

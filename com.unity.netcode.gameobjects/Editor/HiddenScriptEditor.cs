@@ -1,6 +1,5 @@
+#if COM_UNITY_MODULES_ANIMATION || COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using Unity.Netcode.Components;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
 #endif
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
@@ -27,16 +26,6 @@ namespace Unity.Netcode.GameObjects.Editor
             EditorGUI.EndChangeCheck();
         }
     }
-#if UNITY_UNET_PRESENT
-    /// <summary>
-    /// Internal use. Hides the script field for UNetTransport.
-    /// </summary>
-    [CustomEditor(typeof(UNetTransport), true)]
-    public class UNetTransportEditor : HiddenScriptEditor
-    {
-
-    }
-#endif
 
     /// <summary>
     /// Internal use. Hides the script field for UnityTransport.
@@ -53,7 +42,6 @@ namespace Unity.Netcode.GameObjects.Editor
 
         private SerializedProperty m_ServerAddressProperty;
         private SerializedProperty m_ServerPortProperty;
-        private SerializedProperty m_OverrideBindIpProperty;
 
         private const string k_LoopbackIpv4 = "127.0.0.1";
         private const string k_LoopbackIpv6 = "::1";
@@ -74,7 +62,6 @@ namespace Unity.Netcode.GameObjects.Editor
 
             m_ServerAddressProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Address));
             m_ServerPortProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Port));
-            m_OverrideBindIpProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.ServerListenAddress));
         }
 
         /// <summary>
@@ -127,7 +114,7 @@ namespace Unity.Netcode.GameObjects.Editor
                 overrideIp = EditorGUILayout.TextField("Override Bind IP (optional)", overrideIp);
                 if (allowRemoteConnections)
                 {
-                    if (overrideIp == "")
+                    if (overrideIp.Length == 0)
                     {
                         if (isIpV6)
                         {

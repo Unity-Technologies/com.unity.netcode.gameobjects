@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// The generic transport class all Netcode for GameObjects network transport implementations
     /// derive from.  Use this class to add a custom transport.
-    /// <seealso cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
+    /// <see cref="Transports.UTP.UnityTransport"/> for an example of how a transport is integrated
     /// </summary>
     public abstract class NetworkTransport : MonoBehaviour
     {
@@ -28,6 +28,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate for transport network events
         /// </summary>
+        /// <param name="eventType">The type of network event that occurred</param>
+        /// <param name="clientId">The ID of the client associated with this event</param>
+        /// <param name="payload">The data payload received with this event</param>
+        /// <param name="receiveTime">The time when this event was received</param>
         public delegate void TransportEventDelegate(NetworkEvent eventType, ulong clientId, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
@@ -104,8 +108,178 @@ namespace Unity.Netcode
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        /// /// <param name="networkManager">optionally pass in NetworkManager</param>
+        /// <param name="networkManager">optionally pass in NetworkManager</param>
         public abstract void Initialize(NetworkManager networkManager = null);
+
+        /// <summary>
+        /// Invoked by NetworkManager at the beginning of its EarlyUpdate.
+        /// For order of operations see: <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>
+        /// </summary>
+        /// <remarks>
+        /// Useful to handle processing any transport-layer events such as processing inbound messages or changes in connection state(s).
+        /// </remarks>
+        protected virtual void OnEarlyUpdate()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager at the beginning of its EarlyUpdate
+        /// </summary>
+        internal void EarlyUpdate()
+        {
+            OnEarlyUpdate();
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager towards the end of the PostLateUpdate.
+        /// For order of operations see: <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>
+        /// </summary>
+        /// <remarks>
+        /// Useful to handle any end of frame transport tasks such as sending queued transport messages.
+        /// </remarks>
+        protected virtual void OnPostLateUpdate()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager towards the end of the PostLateUpdate
+        /// </summary>
+        internal void PostLateUpdate()
+        {
+            OnPostLateUpdate();
+        }
+
+        /// <summary>
+        /// Invoked to acquire the network topology for the current network session.
+        /// </summary>
+        /// <returns><see cref="NetworkTopologyTypes"/></returns>
+        protected virtual NetworkTopologyTypes OnCurrentTopology()
+        {
+            return NetworkTopologyTypes.ClientServer;
+        }
+
+        internal NetworkTopologyTypes CurrentTopology()
+        {
+            return OnCurrentTopology();
+        }
+
+        /// <summary>
+        /// The Netcode for GameObjects standardized disconnection event types.
+        /// </summary>
+        public enum DisconnectEvents
+        {
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport closed the connection due to a locally invoked shutdown.
+            /// </summary>
+            TransportShutdown,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies a graceful disconnect.
+            /// </summary>
+            Disconnected,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport's connection to the endpoint has timed out and the connection was closed.
+            /// </summary>
+            ProtocolTimeout,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the disconnect is due to the maximum number of failed connection attempts has been reached.
+            /// </summary>
+            MaxConnectionAttempts,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the remote endpoint closed the connection.
+            /// </summary>
+            ClosedByRemote,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies the local transport closed the incoming remote endpoint connection.
+            /// </summary>
+            ClosedRemoteConnection,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the connection was closed due to an authentication failure.
+            /// </summary>
+            AuthenticationFailure,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that a lower-level (unkown) transport error occurred.
+            /// </summary>
+            ProtocolError,
+        }
+
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping, then this will be set to the most recent disconnection event.
+        /// </summary>
+        public DisconnectEvents DisconnectEvent { get; private set; }
+
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping and disconnection event message mapping, then this will contain
+        /// the transport specific message associated with the disconnect event type.
+        /// </summary>
+        public string DisconnectEventMessage { get; private set; }
+
+        /// <summary>
+        /// This should be invoked by the <see cref="NetworkTransport"/> derived class when a transport level disconnect event occurs.<br />
+        /// It is up to the <see cref="NetworkTransport"/> derived class to create a map between the transport's disconnect events and the
+        /// pre-defined <see cref="DisconnectEvents"/> enum values.
+        /// </summary>
+        /// <param name="disconnectEvent">The <see cref="DisconnectEvents"/> type to set.</param>
+        /// <param name="message">An optional message override.</param>
+        protected void SetDisconnectEvent(DisconnectEvents disconnectEvent, string message = null)
+        {
+            DisconnectEvent = disconnectEvent;
+            DisconnectEventMessage = string.Empty;
+
+            if (message != null)
+            {
+                DisconnectEventMessage = message;
+            }
+            else
+            {
+                DisconnectEventMessage = GetDisconnectEventMessage(disconnectEvent);
+            }
+        }
+
+        /// <summary>
+        /// Override this method to provide additional information about the disconnection event.
+        /// </summary>
+        /// <param name="disconnectEvent">The disconnect event to get from the <see cref="NetworkTransport"/> derived class.</param>
+        /// <returns><see cref="string.Empty"/> as a default or if overridden the <see cref="string"/> returned.</returns>
+        protected virtual string GetDisconnectEventMessage(DisconnectEvents disconnectEvent)
+        {
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Invoked when the local <see cref="NetworkManager"/> forces the transport to close a remote connection.
+        /// </summary>
+        internal void ClosingRemoteConnection()
+        {
+            SetDisconnectEvent(DisconnectEvents.ClosedRemoteConnection);
+        }
+
+        /// <summary>
+        /// Invoked just before the transport is shutdown.
+        /// </summary>
+        internal void ShuttingDown()
+        {
+            SetDisconnectEvent(DisconnectEvents.TransportShutdown);
+        }
+    }
+
+    /// <summary>
+    /// The two network topology types supported by Netcode for GameObjects.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DistributedAuthority"/> is only supported using <see cref="Transports.UTP.UnityTransport"/>.
+    /// </remarks>
+    public enum NetworkTopologyTypes
+    {
+        /// <summary>
+        /// The traditional client-server network topology.
+        /// </summary>
+        ClientServer,
+        /// <summary>
+        /// The distributed authorityy network topology only supported by <see cref="Transports.UTP.UnityTransport"/>.
+        /// </summary>
+        DistributedAuthority
     }
 
 #if UNITY_INCLUDE_TESTS

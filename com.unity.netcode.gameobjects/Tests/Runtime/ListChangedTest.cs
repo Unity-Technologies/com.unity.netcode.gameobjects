@@ -1,16 +1,17 @@
 using System.Collections;
+using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkListChangedTestComponent : NetworkBehaviour
+    internal class NetworkListChangedTestComponent : NetworkBehaviour
     {
 
     }
 
-    public class ListChangedObject : NetworkBehaviour
+    internal class ListChangedObject : NetworkBehaviour
     {
         public int ExpectedPreviousValue = 0;
         public int ExpectedValue = 0;
@@ -45,14 +46,17 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkListChangedTests : NetcodeIntegrationTest
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    internal class NetworkListChangedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
-        private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_NetSpawnedObject1;
+
+        public NetworkListChangedTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnServerAndClientsCreated()
         {
@@ -63,10 +67,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListChangedTest()
         {
-            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            var authority = GetAuthorityNetworkManager();
 
             // create 3 objects
-            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, authority);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
 
             m_NetSpawnedObject1.GetComponent<ListChangedObject>().MyNetworkList.Add(42);

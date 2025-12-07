@@ -15,7 +15,7 @@ namespace Unity.Netcode.RuntimeTests
     // The only reason it's defined as a MonoBehaviour is that OnDestroy is the only reliable way
     // to get the driver's Dispose method called from a UnityTest. Making it disposable would be
     // the preferred solution, but that doesn't always mesh well with coroutines.
-    public class UnityTransportDriverClient : MonoBehaviour
+    internal class UnityTransportDriverClient : MonoBehaviour
     {
         private NetworkDriver m_Driver;
         public NetworkDriver Driver => m_Driver;
@@ -64,11 +64,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Connect()
         {
-#if UTP_TRANSPORT_2_0_ABOVE
             var endpoint = NetworkEndpoint.LoopbackIpv4;
-#else
-            var endpoint = NetworkEndPoint.LoopbackIpv4;
-#endif
             endpoint.Port = 7777;
 
             m_Connection = m_Driver.Connect(endpoint);

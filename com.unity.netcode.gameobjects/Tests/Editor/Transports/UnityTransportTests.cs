@@ -5,8 +5,20 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class UnityTransportTests
+    internal class UnityTransportTests
     {
+        [SetUp]
+        public void OnSetup()
+        {
+            ILPPMessageProvider.IntegrationTestNoMessages = true;
+        }
+
+        [TearDown]
+        public void OnTearDown()
+        {
+            ILPPMessageProvider.IntegrationTestNoMessages = false;
+        }
+
         // Check that starting an IPv4 server succeeds.
         [Test]
         public void UnityTransport_BasicInitServer_IPv4()
@@ -115,15 +127,11 @@ namespace Unity.Netcode.GameObjects.EditorTests
             UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
-            transport.SetConnectionData("127.0.0.", 4242, "127.0.0.");
+            transport.SetConnectionData("127.0.0.1", 4242, "foobar");
 
             Assert.False(transport.StartServer());
+            LogAssert.Expect(LogType.Error, "Invalid listen endpoint: foobar:4242. Note that the listen endpoint MUST be an IP address (not a hostname).");
 
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
-            LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
-#if UTP_TRANSPORT_2_0_ABOVE
-            LogAssert.Expect(LogType.Error, "Socket creation failed (error Unity.Baselib.LowLevel.Binding+Baselib_ErrorState: Invalid argument (0x01000003) <argument name stripped>");
-#endif
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
             Assert.True(transport.StartServer());
 
@@ -143,23 +151,6 @@ namespace Unity.Netcode.GameObjects.EditorTests
             transport.Shutdown();
         }
 
-        // Check that StartClient returns false with bad connection data.
-        [Test]
-        public void UnityTransport_StartClientFailsWithBadAddress()
-        {
-            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
-            transport.Initialize();
-
-            transport.SetConnectionData("foobar", 4242);
-            Assert.False(transport.StartClient());
-
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: foobar:4242.");
-            LogAssert.Expect(LogType.Error, "Target server network address (foobar) is Invalid!");
-
-            transport.Shutdown();
-        }
-
-#if UTP_TRANSPORT_2_0_ABOVE
         [Test]
         public void UnityTransport_EmptySecurityStringsShouldThrow([Values("", null)] string cert, [Values("", null)] string secret)
         {
@@ -180,7 +171,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
                     networkManager.StartServer();
                 });
                 // Make sure StartServer failed
-                Assert.False(transport.NetworkDriver.IsCreated);
+                Assert.False(transport.GetNetworkDriver().IsCreated);
                 Assert.False(networkManager.IsServer);
                 Assert.False(networkManager.IsListening);
             }
@@ -191,6 +182,51 @@ namespace Unity.Netcode.GameObjects.EditorTests
                     Object.DestroyImmediate(supportingGO);
                 }
             }
+        }
+
+        [Test]
+        public void UnityTransport_BindClientToSpecificPort()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+            transport.SetConnectionData("127.0.0.1", 4242);
+            transport.ConnectionData.ClientBindPort = 14242;
+
+            Assert.True(transport.StartClient());
+            Assert.AreEqual(14242, transport.GetLocalEndpoint().Port);
+
+            transport.Shutdown();
+        }
+
+#if HOSTNAME_RESOLUTION_AVAILABLE
+        private static readonly (string, bool)[] k_HostnameChecks =
+        {
+            ("localhost", true),
+            ("unity3d.com", true),
+            ("unity3d.com.", true),
+            (string.Empty, false),
+            ("unity3d.com/test", false),
+            ("test%123.com", false),
+        };
+
+        [Test]
+        [TestCaseSource(nameof(k_HostnameChecks))]
+        public void UnityTransport_HostnameValidation((string, bool) testCase)
+        {
+            var (hostname, isValid) = testCase;
+
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+
+            if (!isValid)
+            {
+                LogAssert.Expect(LogType.Error, $"Provided connection address \"{hostname}\" is not a valid hostname.");
+            }
+
+            transport.SetConnectionData(hostname, 4242);
+            Assert.AreEqual(isValid, transport.StartClient());
+
+            transport.Shutdown();
         }
 #endif
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -10,6 +11,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost, LoadSceneMode.Single)]
+    [TestFixture(HostOrServer.DAHost, LoadSceneMode.Additive)]
     [TestFixture(HostOrServer.Host, LoadSceneMode.Single)]
     [TestFixture(HostOrServer.Host, LoadSceneMode.Additive)]
     [TestFixture(HostOrServer.Server, LoadSceneMode.Single)]
@@ -20,6 +23,11 @@ namespace TestProject.RuntimeTests
         protected override bool m_EnableTimeTravel => true;
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer, LoadSceneMode loadSceneMode) : base(hostOrServer)
         {
             m_LoadSceneMode = loadSceneMode;
@@ -307,6 +315,8 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+
+        private StringBuilder m_ErrorMsg = new StringBuilder();
         /// <summary>
         /// Small to heavy scene loading scenario to test the dynamically generated SceneEventData objects under a load.
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
@@ -356,11 +366,30 @@ namespace TestProject.RuntimeTests
             }
 
             yield return UnloadAllScenes(true);
+            Assert.IsTrue(CheckNetworkObjectsToSynchronizeSceneChanges(m_ServerNetworkManager), $"{nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)} validation check failure!\n {m_ErrorMsg}");
+            m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+            // Validate that the NetworkObjectsToSynchronizeSceneChanges does not persist entries when scenes are unloaded.
             foreach (var client in m_ClientNetworkManagers)
             {
+                Assert.IsTrue(CheckNetworkObjectsToSynchronizeSceneChanges(client), $"{nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)} validation check failure!\n {m_ErrorMsg}");
                 client.SceneManager.OnUnloadComplete -= SceneManager_OnUnloadComplete;
             }
-            m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+        }
+
+        private bool CheckNetworkObjectsToSynchronizeSceneChanges(NetworkManager networkManager)
+        {
+            m_ErrorMsg.Clear();
+            if (networkManager.SpawnManager.NetworkObjectsToSynchronizeSceneChanges.Count > 0)
+            {
+                foreach (var entry in networkManager.SpawnManager.NetworkObjectsToSynchronizeSceneChanges)
+                {
+                    if (entry.Value.IsSceneObject.HasValue && entry.Value.IsSceneObject.Value)
+                    {
+                        m_ErrorMsg.AppendLine($"{entry.Value.name} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+                    }
+                }
+            }
+            return m_ErrorMsg.Length == 0;
         }
 
         private string m_SceneBeingUnloaded;

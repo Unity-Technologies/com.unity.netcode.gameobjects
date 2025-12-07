@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Directory = UnityEngine.Windows.Directory;
+using File = UnityEngine.Windows.File;
 
 namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
@@ -15,19 +19,69 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Settings window for the Project scope.
-            var provider = new SettingsProvider("Project/NetcodeForGameObjects", SettingsScope.Project)
+            var provider = new SettingsProvider("Project/Multiplayer/NetcodeForGameObjects", SettingsScope.Project)
             {
                 label = "Netcode for GameObjects",
                 keywords = new[] { "netcode", "editor" },
                 guiHandler = OnGuiHandler,
+                deactivateHandler = OnDeactivate
             };
 
             return provider;
         }
 
+        private static void OnDeactivate()
+        {
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            if (settings.TempNetworkPrefabsPath != settings.NetworkPrefabsPath)
+            {
+                var newPath = settings.TempNetworkPrefabsPath;
+                if (newPath.Length == 0)
+                {
+                    newPath = NetcodeForGameObjectsProjectSettings.DefaultNetworkPrefabsPath;
+                    settings.TempNetworkPrefabsPath = newPath;
+                }
+                var oldPath = settings.NetworkPrefabsPath;
+                settings.NetworkPrefabsPath = settings.TempNetworkPrefabsPath;
+                var dirName = Path.GetDirectoryName(newPath);
+                if (!Directory.Exists(dirName))
+                {
+                    var dirs = dirName.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+                    var dirsQueue = new Queue<string>(dirs);
+                    var parent = dirsQueue.Dequeue();
+                    while (dirsQueue.Count != 0)
+                    {
+                        var child = dirsQueue.Dequeue();
+                        var together = Path.Combine(parent, child);
+                        if (!Directory.Exists(together))
+                        {
+                            AssetDatabase.CreateFolder(parent, child);
+                        }
+
+                        parent = together;
+                    }
+                }
+
+                if (Directory.Exists(dirName))
+                {
+                    if (File.Exists(oldPath))
+                    {
+                        AssetDatabase.MoveAsset(oldPath, newPath);
+                        if (File.Exists(oldPath))
+                        {
+                            File.Delete(oldPath);
+                        }
+                        AssetDatabase.Refresh();
+                    }
+                }
+                settings.SaveSettings();
+            }
+        }
+
 
         internal static NetcodeSettingsLabel NetworkObjectsSectionLabel;
         internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle;
+        internal static NetcodeSettingsToggle CheckForNetworkObjectToggle;
         internal static NetcodeSettingsLabel MultiplayerToolsLabel;
         internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle;
 
@@ -50,6 +104,11 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                 AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObject Component", "When enabled, NetworkObject components are automatically added to GameObjects when NetworkBehaviour components are added first.", 20);
             }
 
+            if (CheckForNetworkObjectToggle == null)
+            {
+                CheckForNetworkObjectToggle = new NetcodeSettingsToggle("Check for NetworkObject Component", "When disabled, the automatic check on NetworkBehaviours for an associated NetworkObject component will not be performed and Auto-Add NetworkObject Component will be disabled.", 20);
+            }
+
             if (MultiplayerToolsLabel == null)
             {
                 MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
@@ -67,9 +126,12 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             CheckForInitialize();
 
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetAutoAddNetworkObjectSetting();
+            var checkForNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetCheckForNetworkObjectSetting();
             var multiplayerToolsTipStatus = NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
+
             var settings = NetcodeForGameObjectsProjectSettings.instance;
             var generateDefaultPrefabs = settings.GenerateDefaultNetworkPrefabs;
+            var networkPrefabsPath = settings.TempNetworkPrefabsPath;
 
             EditorGUI.BeginChangeCheck();
 
@@ -80,7 +142,13 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             {
                 GUILayout.BeginVertical("Box");
                 NetworkObjectsSectionLabel.DrawLabel();
-                autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting);
+
+                autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting, checkForNetworkObjectSetting);
+                checkForNetworkObjectSetting = CheckForNetworkObjectToggle.DrawToggle(checkForNetworkObjectSetting);
+                if (autoAddNetworkObjectSetting && !checkForNetworkObjectSetting)
+                {
+                    autoAddNetworkObjectSetting = false;
+                }
                 GUILayout.EndVertical();
 
                 GUILayout.BeginVertical("Box");
@@ -97,6 +165,7 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             {
                 GUILayout.BeginVertical("Box");
                 const string generateNetworkPrefabsString = "Generate Default Network Prefabs List";
+                const string networkPrefabsLocationString = "Default Network Prefabs List path";
 
                 if (s_MaxLabelWidth == 0)
                 {
@@ -114,6 +183,14 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                         "to date with all NetworkObject prefabs."),
                     generateDefaultPrefabs,
                     GUILayout.Width(s_MaxLabelWidth + 20));
+
+                GUI.SetNextControlName("Location");
+                networkPrefabsPath = EditorGUILayout.TextField(
+                    new GUIContent(
+                        networkPrefabsLocationString,
+                        "The path to the asset the default NetworkPrefabList object should be stored in."),
+                    networkPrefabsPath,
+                    GUILayout.Width(s_MaxLabelWidth + 270));
                 GUILayout.EndVertical();
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -121,8 +198,10 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             if (EditorGUI.EndChangeCheck())
             {
                 NetcodeForGameObjectsEditorSettings.SetAutoAddNetworkObjectSetting(autoAddNetworkObjectSetting);
+                NetcodeForGameObjectsEditorSettings.SetCheckForNetworkObjectSetting(checkForNetworkObjectSetting);
                 NetcodeForGameObjectsEditorSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
                 settings.GenerateDefaultNetworkPrefabs = generateDefaultPrefabs;
+                settings.TempNetworkPrefabsPath = networkPrefabsPath;
                 settings.SaveSettings();
             }
         }
@@ -149,10 +228,13 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
     {
         private GUIContent m_ToggleContent;
 
-        public bool DrawToggle(bool currentSetting)
+        public bool DrawToggle(bool currentSetting, bool enabled = true)
         {
             EditorGUIUtility.labelWidth = m_LabelSize;
-            return EditorGUILayout.Toggle(m_ToggleContent, currentSetting, m_LayoutWidth);
+            GUI.enabled = enabled;
+            var returnValue = EditorGUILayout.Toggle(m_ToggleContent, currentSetting, m_LayoutWidth);
+            GUI.enabled = true;
+            return returnValue;
         }
 
         public NetcodeSettingsToggle(string labelText, string toolTip, float layoutOffset)

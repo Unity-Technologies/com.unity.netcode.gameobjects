@@ -10,6 +10,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class NetworkObjectParentingTests
     {
         private const int k_ClientInstanceCount = 1;
@@ -29,6 +31,19 @@ namespace TestProject.RuntimeTests
 
         private Scene m_InitScene;
         private Scene m_TestScene;
+
+        private NetworkTopologyTypes m_NetworkTopologyType;
+        public NetworkObjectParentingTests(NetworkTopologyTypes networkTopologyType)
+        {
+            m_NetworkTopologyType = networkTopologyType;
+        }
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
@@ -62,6 +77,15 @@ namespace TestProject.RuntimeTests
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
+
+            m_ServerNetworkManager.NetworkConfig.NetworkTopology = m_NetworkTopologyType;
+            m_ServerNetworkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.NetworkTopology = m_NetworkTopologyType;
+                client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
+            }
 
             m_Dude_NetObjs = new Transform[setCount];
             m_Dude_LeftArm_NetObjs = new Transform[setCount];
@@ -308,6 +332,49 @@ namespace TestProject.RuntimeTests
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1]));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
+            }
+
+            Transform nullTransform = null;
+            GameObject nullGameObject = null;
+            NetworkObject nullNetworkObject = null;
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullTransform));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+            }
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullGameObject));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+            }
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullNetworkObject));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
             }
         }
     }

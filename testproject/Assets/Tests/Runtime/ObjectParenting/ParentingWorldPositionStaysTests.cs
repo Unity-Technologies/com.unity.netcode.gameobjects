@@ -11,6 +11,8 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ParentingWorldPositionStaysTests : IntegrationTestWithApproximation
     {
         private const int k_NestedChildren = 10;
@@ -18,6 +20,12 @@ namespace TestProject.RuntimeTests
         private const string k_ChildName = "Child";
 
         protected override int NumberOfClients => 2;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         internal class TestComponentHelper : NetworkBehaviour
         {
@@ -156,6 +164,8 @@ namespace TestProject.RuntimeTests
         private Quaternion m_ChildStartRotation = Quaternion.Euler(-35.0f, 0.0f, -180.0f);
         private Vector3 m_ChildStartScale = Vector3.one;
 
+        public ParentingWorldPositionStaysTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+
         protected override IEnumerator OnSetup()
         {
             TestComponentHelper.ClientsRegistered.Clear();
@@ -212,14 +222,6 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.LogLevel = m_EnableVerboseDebug ? LogLevel.Developer : LogLevel.Normal;
 
             base.OnServerAndClientsCreated();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
         }
 
         private bool HaveAllClientsSpawnedObjects()

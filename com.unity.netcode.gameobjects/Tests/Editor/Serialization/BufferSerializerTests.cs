@@ -5,7 +5,7 @@ using Random = System.Random;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class BufferSerializerTests
+    internal class BufferSerializerTests
     {
         [Test]
         public void TestIsReaderIsWriter()

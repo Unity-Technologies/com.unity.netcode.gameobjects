@@ -13,6 +13,11 @@ namespace Unity.Netcode
         public ushort Magic;
 
         /// <summary>
+        /// Total number of messages in the batch.
+        /// </summary>
+        public ushort BatchCount;
+
+        /// <summary>
         /// Total number of bytes in the batch.
         /// </summary>
         public int BatchSize;
@@ -22,9 +27,5 @@ namespace Unity.Netcode
         /// </summary>
         public ulong BatchHash;
 
-        /// <summary>
-        /// Total number of messages in the batch.
-        /// </summary>
-        public ushort BatchCount;
     }
 }

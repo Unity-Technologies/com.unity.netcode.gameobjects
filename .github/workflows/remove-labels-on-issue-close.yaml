@@ -1,0 +1,40 @@
+# This workflow will remove almost all labels from closed issues beside ones that could be relevant for future tracking like: "port:", "type:", "priority:", "regression" and "stat:imported"
+
+name: Remove labels when issue is closed
+
+on:
+  issues:
+    types: [closed] # We want it to run on closed issues
+
+jobs:
+  remove_labels:
+    name: Calculate and remove issue labels
+    if: ${{ !github.event.issue.pull_request  }} # This is needed to distinguish from PRs (which we don't want to affect)
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Find labels to remove
+        id: data
+        run: |
+          # Convert labels to array and filter out type: labels
+          LABELS_TO_REMOVE=($(echo "$EXISTING_LABELS" | jq -r '.[] | select(startswith("type:") or startswith("port:") or startswith("priority:") or . == "regression" or . == "stat:imported" | not)'))
+          
+          # Only proceed if we have labels to remove
+          if [ ${#LABELS_TO_REMOVE[@]} -gt 0 ]; then
+            echo "REMOVE_LABELS=$(IFS=,; echo "${LABELS_TO_REMOVE[*]}")" >> $GITHUB_ENV
+            echo "HAS_LABELS=true" >> $GITHUB_ENV
+          else
+            echo "HAS_LABELS=false" >> $GITHUB_ENV
+          fi
+        env:
+          EXISTING_LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
+
+      - name: Remove labels
+        if: ${{ env.REMOVE_LABELS != '' }}
+        run: gh issue edit "$NUMBER" --remove-label "$REMOVE_LABELS"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}

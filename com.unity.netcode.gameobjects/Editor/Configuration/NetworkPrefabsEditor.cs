@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
+    /// <summary>
+    /// The custom editor for the <see cref="NetworkPrefabsList"/> <see cref="ScriptableObject"/>.
+    /// </summary>
     [CustomEditor(typeof(NetworkPrefabsList), true)]
     [CanEditMultipleObjects]
     public class NetworkPrefabsEditor : UnityEditor.Editor
@@ -82,6 +85,7 @@ namespace Unity.Netcode.GameObjects.Editor
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
         }
 
+        /// <inheritdoc />
         public override void OnInspectorGUI()
         {
             using (new EditorGUI.DisabledScope(true))

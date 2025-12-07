@@ -56,6 +56,12 @@ namespace TestProject.RuntimeTests
             m_ServerPreloadState = serverPreloadStates;
         }
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override IEnumerator OnSetup()
         {
             m_TempClientPreLoadedScenes.Clear();

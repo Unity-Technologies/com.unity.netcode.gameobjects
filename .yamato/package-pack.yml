@@ -1,0 +1,55 @@
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
+---
+
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for packing a specific package. It generates package artifacts (.tgz) required for testing and publishing, ensuring all dependencies are properly bundled and validated before any test execution.
+  # The job itself doesn't test anything specific but rather it prepares project packages that will be consumed by other pipeline jobs.
+  # The job performs additional validation by using Package Verification Pipeline (PVP). It includes x-ray validation for quick package structure verification
+  # Because of that validation we can detect errors at the early stage of testing so not to waste CI resources
+
+# NOTES--------------------------------------------------------------------------------
+  # For NGO we use package_pack everywhere rather than project_pack
+  # This is because only the NGO package is being referenced as a file inside testproject
+  # This means both project_pack and package_pack produce same package artifacts
+
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+    # 1. For all desktop platforms (Windows, Ubuntu, macOS)
+
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # Job does not require Unity Editor in order to perform packing.
+  # Job uses PVP x-ray for lightweight validation
+  # Job generates both packages artifacts and pvp-results file.
+  # In theory, we could just use one platform for packing projects (for example ubuntu) but in order to reduce confusion we are using same platform as the job utilizing project pack as dependency.
+
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # TODO: we should aim to replace target PVP profile from supported to gold
+
+#------------------------------------------------------------------------------------
+
+{% for platform in test_platforms.desktop -%}
+package_pack_-_ngo_{{ platform.name }}:
+  name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.smaller_flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
+  timeout: 0.25
+  variables:
+    XRAY_PROFILE: "gold ./pvpExceptions.json"
+  commands:
+    - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
+    - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
+    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
+  artifacts:
+    logs:
+      paths:
+        - "pvp-results/*"
+    packages:
+      paths:
+        - "upm-ci~/**"
+{% endfor -%}

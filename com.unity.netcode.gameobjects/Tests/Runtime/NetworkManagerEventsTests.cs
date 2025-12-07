@@ -4,13 +4,75 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkManagerEventsTests
+    internal class NetworkManagerEventsTests
     {
         private NetworkManager m_ClientManager;
         private NetworkManager m_ServerManager;
+
+        private NetworkManager m_NetworkManagerInstantiated;
+        private bool m_Instantiated;
+        private bool m_Destroyed;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
+        /// <summary>
+        /// Validates the <see cref="NetworkManager.OnInstantiated"/> and <see cref="NetworkManager.OnDestroying"/> event notifications
+        /// </summary>
+        [UnityTest]
+        public IEnumerator InstantiatedAndDestroyingNotifications()
+        {
+            NetworkManager.OnInstantiated += NetworkManager_OnInstantiated;
+            NetworkManager.OnDestroying += NetworkManager_OnDestroying;
+            var waitPeriod = new WaitForSeconds(0.01f);
+            var prefab = new GameObject("InstantiateDestroy");
+            var networkManagerPrefab = prefab.AddComponent<NetworkManager>();
+
+            Assert.IsTrue(m_Instantiated, $"{nameof(NetworkManager)} prefab did not get instantiated event notification!");
+            Assert.IsTrue(m_NetworkManagerInstantiated == networkManagerPrefab, $"{nameof(NetworkManager)} prefab parameter did not match!");
+
+            m_Instantiated = false;
+            m_NetworkManagerInstantiated = null;
+
+            for (int i = 0; i < 3; i++)
+            {
+                var instance = Object.Instantiate(prefab);
+                var networkManager = instance.GetComponent<NetworkManager>();
+                Assert.IsTrue(m_Instantiated, $"{nameof(NetworkManager)} instance-{i} did not get instantiated event notification!");
+                Assert.IsTrue(m_NetworkManagerInstantiated == networkManager, $"{nameof(NetworkManager)} instance-{i} parameter did not match!");
+                Object.DestroyImmediate(instance);
+                Assert.IsTrue(m_Destroyed, $"{nameof(NetworkManager)} instance-{i} did not get destroying event notification!");
+                m_Instantiated = false;
+                m_NetworkManagerInstantiated = null;
+                m_Destroyed = false;
+            }
+            m_NetworkManagerInstantiated = networkManagerPrefab;
+            Object.Destroy(prefab);
+            yield return null;
+            Assert.IsTrue(m_Destroyed, $"{nameof(NetworkManager)} prefab did not get destroying event notification!");
+            NetworkManager.OnInstantiated -= NetworkManager_OnInstantiated;
+            NetworkManager.OnDestroying -= NetworkManager_OnDestroying;
+        }
+
+        private void NetworkManager_OnInstantiated(NetworkManager networkManager)
+        {
+            m_Instantiated = true;
+            m_NetworkManagerInstantiated = networkManager;
+        }
+
+        private void NetworkManager_OnDestroying(NetworkManager networkManager)
+        {
+            m_Destroyed = true;
+            Assert.True(m_NetworkManagerInstantiated == networkManager, $"Destroying {nameof(NetworkManager)} and current instance is not a match for the one passed into the event!");
+        }
 
         [UnityTest]
         public IEnumerator OnServerStoppedCalledWhenServerStops()
@@ -35,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
@@ -92,7 +154,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.OnClientStopped += onClientStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
@@ -181,6 +243,46 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(2, callbacksInvoked, "either OnServerStarted or OnClientStarted wasn't invoked");
         }
 
+        [UnityTest]
+        public IEnumerator OnPreShutdownCalledWhenShuttingDown()
+        {
+            bool preShutdownInvoked = false;
+            bool shutdownInvoked = false;
+            var gameObject = new GameObject(nameof(OnPreShutdownCalledWhenShuttingDown));
+            m_ServerManager = gameObject.AddComponent<NetworkManager>();
+
+            // Set dummy transport that does nothing
+            var transport = gameObject.AddComponent<DummyTransport>();
+            m_ServerManager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            Action onPreShutdown = () =>
+            {
+                preShutdownInvoked = true;
+                Assert.IsFalse(shutdownInvoked, "OnPreShutdown was invoked after OnServerStopped");
+            };
+
+            Action<bool> onServerStopped = (bool wasAlsoClient) =>
+            {
+                shutdownInvoked = true;
+                Assert.IsTrue(preShutdownInvoked, "OnPreShutdown wasn't invoked before OnServerStopped");
+            };
+
+            // Start server to cause initialization process
+            Assert.True(m_ServerManager.StartServer());
+            Assert.True(m_ServerManager.IsListening);
+
+            m_ServerManager.OnPreShutdown += onPreShutdown;
+            m_ServerManager.OnServerStopped += onServerStopped;
+            m_ServerManager.Shutdown();
+            Object.DestroyImmediate(gameObject);
+
+            yield return WaitUntilManagerShutsdown();
+
+            Assert.False(m_ServerManager.IsListening);
+            Assert.True(preShutdownInvoked, "OnPreShutdown wasn't invoked");
+            Assert.True(shutdownInvoked, "OnServerStopped wasn't invoked");
+        }
+
         private IEnumerator WaitUntilManagerShutsdown()
         {
             /* Need two updates to actually shut down. First one to see the transport failing, which
@@ -228,6 +330,18 @@ namespace Unity.Netcode.RuntimeTests
         public virtual IEnumerator Teardown()
         {
             NetcodeIntegrationTestHelpers.Destroy();
+            if (m_ServerManager != null)
+            {
+                m_ServerManager.ShutdownInternal();
+                Object.DestroyImmediate(m_ServerManager);
+                m_ServerManager = null;
+            }
+            if (m_ClientManager != null)
+            {
+                m_ClientManager.ShutdownInternal();
+                Object.DestroyImmediate(m_ClientManager);
+                m_ClientManager = null;
+            }
             yield return null;
         }
     }

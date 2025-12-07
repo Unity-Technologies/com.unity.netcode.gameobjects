@@ -3,6 +3,10 @@ namespace Unity.Netcode
     /// <summary>
     /// The permission types for reading a var
     /// </summary>
+    /// <remarks>
+    /// Only relevant when using the client/server network topology.
+    /// In distributed authority mode everyone can always read.
+    /// </remarks>
     public enum NetworkVariableReadPermission
     {
         /// <summary>

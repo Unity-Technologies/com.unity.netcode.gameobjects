@@ -1,0 +1,47 @@
+﻿codecov:
+  require_ci_to_pass: false
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "50...70"
+  status:
+    patch:
+      default:
+        if_ci_failed: success
+        informational: true
+    default_rules:
+      flag_coverage_not_uploaded_behavior: exclude
+    project:
+      default:
+        target: auto
+        # Threshold used for the PR Check
+        threshold: 0.5%
+        base: auto
+        if_ci_failed: success
+        informational: true
+        only_pulls: true
+
+# PR Comment configuration
+comment:
+  layout: "diff, flags, files, components"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: false
+  # Set this to the number of coverage jobs run in the PR
+  after_n_builds: 1
+
+flag_management:
+  default_rules:
+    carryforward: true
+
+# Components configuration
+component_management:
+  individual_components:
+    - component_id: "com.unity.netcode.gameobjects"
+      name: "com.unity.netcode.gameobjects"
+      paths:
+        - com.unity.netcode.gameobjects

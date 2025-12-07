@@ -10,10 +10,711 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
+- Added a flag to override command-line arguments (port and ip) in `SetConnectionData`. (#3760)
+- Added a command-line singleton to parse environment command-line arguments. (#3760)
+- Added `NetworkAnimator.AuthorityMode` which allows you to select whether the `NetworkAnimator` will use a server or owner authority model for state updates (like `NetworkTransform`). (#3586)
+- Added the ability to select which `Animator` parameters the authority `NetworkAnimator` instance should synchronize. This can be done via the inspector view interface or during runtime via `NetworkAnimator.EnableParameterSynchronization`. (#3586)
+
+### Changed
+
+- Improve performance of `CreateObjectMessage`. (#3800)
+- First pass of CoreCLR engine API changes. (#3799)
+- Changed when a server is disconnecting a client with a reason it now defers the complete transport disconnect sequence until the end of the frame after the server's transport has sent all pending outbound messages. (#3786)
+- Improve performance of `NetworkTransformState`. (#3770)
+- Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+- Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
+- Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
+- Fixed issue where the server or host would no longer have access to the transport id to client id table when processing a transport level client disconnect event. (#3786)
+- Fixed issue where invoking an RPC, on another `NetworkBehaviour` associated with the same `NetworkObject` that is ordered before the `NetworkBehaviour` invoking the RPC, during `OnNetworkSpawn` could throw an exception if scene management is disabled. (#3782)
+- Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
+- Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
+- Fixed issue with authority animator instance sending itself RPCs. (#3586)
+
+### Security
+
+
+### Obsolete
+
+
+## [2.7.0] - 2025-10-27
+
+### Added
+
+- `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
+- Added NetworkRigidbody documentation section. (#3664)
+- Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
+
+### Changed
+
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround. (#3739)
+- The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
+- Changed NetworkShow to send a message at the end of the frame and force a NetworkVariable synchronization prior to generating the CreateObjectMessage as opposed to waiting until the next network tick to synchronize the show with the update to NetworkVariables. (#3664)
+- Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
+- Changed when NetworkObjects pending to be shown to clients can now occur on partial network ticks. If any pending NetworkObjects pending to be shown to clients happens to be ready on a new network tick they still are shown after network variable deltas have been processed. (#3664)
+- Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
+- Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
+- The first session owner no longer sends two synchronization messages to the service. (#3563)
+- Updated transport dependency of the package to 2.6.0 (#3736)
+
+### Deprecated
+
+- Deprecated all `RequireOwnership` fields around the RPCs in favor of the `RpcInvokePermission`. (#3731)
+- On Unity 6.5 some `SceneMap` fields that use an `int` to represent a `SceneHandle` are deprecated. (#3734)
+
+### Removed
+
+- Removed usage of UNITY_UNET_PRESENT define (#3736)
+
+### Fixed
+
+- CMB service no longer waits for a timeout before disconnecting on an invalid ConnectionRequest. (#3812)
+- Initialization errors with NetworkAnimator. (#3767)
+- Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
+- Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
+- Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
+- Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
+- Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
+
+## [2.6.0] - 2025-10-12
+
+### Added
+
+- `NetworkSceneManager` as an internal wrapper for the `SceneManager.Scene.handle` and swapped all places that use an `int` to represent a `Scene.handle` to instead use the `NetworkSceneManager`. (#3647)
+- Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
+- Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
+
+### Changed
+
+- Improved performance of the NetworkVariable. (#3683)
+- Improved performance around the NetworkBehaviour component. (#3687)
+
+### Fixed
+
+- Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
+- Made a variety of small performance improvements. (#3683)
+
+## [2.5.1] - 2025-09-14
+
+### Added
+
+- Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
+
+### Fixed
+
+- Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
+
+## [2.5.0] - 2025-08-17
+
+### Added
+
+- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
+- Added serializer for `Pose` (#3546)
+- Added `AttachableBehaviour` helper component to provide an alternate approach to parenting items without using the `NetworkObject` parenting. (#3518)
+- Added `AttachableNode` helper component that is used by `AttachableBehaviour` as the target node for parenting. (#3518)
+- Added `ComponentController` helper component that can be used to synchronize the enabling and disabling of components and can be used in conjunction with `AttachableBehaviour`. (#3518)
+- Added `NetworkBehaviour.OnNetworkPreDespawn` that is invoked before running through the despawn sequence for the `NetworkObject` and all NetworkBehaviour children of the `NetworkObject` being despawned. (#3518)
+- Added methods `GetDefaultNetworkSettings` and `GetDefaultPipelineConfigurations` to `UnityTransport`. These can be used to retrieve the default settings and pipeline stages that are used by `UnityTransport`. This is useful when providing a custom driver constructor through `UnityTransport.s_DriverConstructor`, since it allows reusing or tuning the existing configuration instead of trying to recreate it. This means a transport with a custom driver can now easily benefit from most of the features of `UnityTransport`, like integration with the Network Simulator and Network Profiler from the multiplayer tools package. (#3501)
+- Added mappings between `ClientId` and `TransportId`. (#3516)
+- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3497)
+
+### Fixed
+
+- Removed allocation to the heap in NetworkBehaviourUpdate. (#3573)
+- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3564)
+- Fixed regression issue in v2.x where `NetworkObject.GetNetworkBehaviourAtOrderIndex` was converted from public to internal. (#3541)
+- Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3539)
+- Fixed synchronizing the destroyGameObject parameter to clients for InScenePlaced network objects. (#3514)
+- Fixed distributed authority related issue where enabling the `NetworkObject.DestroyWithScene` would cause errors when a destroying non-authority instances due to loading (single mode) or unloading scene events. (#3500)
+- Fixed an issue where `UnityTransport` would not accept single words as valid hostnames (notably "localhost"). (#3591)
+- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
+- Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
+- Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3527)
+
+### Changed
+
+- Marked `UnityTransport.ConnectionAddressData.ServerEndPoint` as obsolete. It can't work when using hostnames as the server address, and its functionality can easily be replicated using `NetworkEndpoint.Parse`. (#3591)
+- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
+
+## [2.4.4] - 2025-07-07
+
+### Added
+
+- Added documentation to package repository.
+
+## [2.4.3] - 2025-06-25
+
+### Fixed
+
+- Fixed issue where spawned objects with `NetworkObject.DontDestroyWithOwner` set to `false` would not be destroyed when using a client-server network topology. (#3522)
+
+
+## [2.4.2] - 2025-06-13
+
+### Fixed
+
+- Fixed `NullReferenceException` on `NetworkList` when used without a NetworkManager in scene. (#3503)
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same NetworkManager instance. (#3491)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
+- Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
+- Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
+
+
+## [2.4.1] - 2025-06-11
+
+### Added
+
+- Added: Full XML API documentation coverage primarily focused around the test helpers API. (#3444)
+
+### Changed
+
+- Changed: Assembly names while keeping the same namespaces. If your project is using the `Unity.Netcode.TestHelpers.Runtime` assembly then you need to switch `asmdef` references to `Unity.Netcode.Runtime.Tests`. (#3444)
+- Changed: Migrated multiplayer metrics tests to Multiplayer Tools repository and removed the multiplayer tools test project. (#3444)
+
+
+## [2.4.0] - 2025-06-02
+
+### Added
+
+- Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3473)
+- When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
+
+
+### Fixed
+
+- Fixed issue where the `NetworkObject.DontDestroyWithOwner` was not being honored. (#3477)
+- Fixed issue where non-authority NetworkTransform instances would not allow non-synchronized axis values to be updated locally. (#3471)
+- Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3468)
+- Fixed issue where `NetworkVariable`s on a NetworkBehaviour could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3466)
+- Fixed issue with the Distributed Authority connection sequence with scene management enabled where the `ClientConnected` event was fired before the client was synchronized. (#3459)
+- Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
+- Fixed issues with the NetworkBehaviour and `NetworkVariable` length safety checks. (#3405)
+- Fixed memory leaks when domain reload is disabled. (#3427)
+- Fixed issue where disabling the physics or physics2D package modules could result in a compilation error. (#3422)
+- Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
+
+## [2.3.2] - 2025-04-22
+
+### Fixed
+
+- Fixed issue where the authority instance of NetworkTransform could check for state updates more than one time in a frame if the frame rate is greater than the tick frequency. (#3413)
+- Fixed issue where the new interpolator types were blocking after the first consumption of a sequence of buffered state updates. (#3413)
+- Fixed issue where root level in-scene placed `NetworkObject`s would only allow the ownership permission to be no less than distributable or sessionowner. (#3407)
+
+
+## [2.3.1] - 2025-04-14
+
+### Fixed
+
+- Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3401)
+
+
+## [2.3.0] - 2025-04-09
+
+### Added
+
+- Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
+- Added `Lerp` interpolation type that still uses a lerp approach but uses the new buffer consumption logic. (#3355)
+- Added property to enable or disable lerp smoothing for position, rotation, and scale interpolators. (#3355)
+- Added `NetworkTransform.InterpolationBufferTickOffset` static property to provide users with a way to increase or decrease the time marker where interpolators will pull state update from the queue. (#3355)
+- Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
+- Added a new smooth dampening interpolator type that provides a nice balance between precision and smoothing results. (#3337)
+- Added `NetworkTimeSystem.TickLatency` property that provides the average latency of a client. (#3337)
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3321)
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3321)
+
+### Fixed
+
+- Fixed issue where in-scene placed `NetworkObjects` could fail to synchronize its transform properly (especially without a NetworkTransform) if their parenting changes from the default when the scene is loaded and if the same scene remains loaded between network sessions while the parenting is completely different from the original hierarchy. (#3387)
+- Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3382)
+- Fixed issue where the time delta that interpolators used would not be properly updated during multiple fixed update invocations within the same player loop frame. (#3355)
+- Fixed issue when using a distributed authority network topology and many clients attempt to connect simultaneously the session owner could max-out the maximum in-flight reliable messages allowed, start dropping packets, and some of the connecting clients would fail to fully synchronize. (#3350)
+- Fixed issue when using a distributed authority network topology and scene management was disabled clients would not be able to spawn any new network prefab instances until synchronization was complete. (#3350)
+- Fixed issue where an owner that changes ownership, when using a distributed authority network topology, could yield identical previous and current owner identifiers. This could also cause NetworkTransform to fail to change ownership which would leave the previous owner still subscribed to network tick events. (#3347)
+- Fixed issue where the `MaximumInterpolationTime` could not be modified from within the inspector view or runtime. (#3337)
+- Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
+- Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
+- Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
+- Fixed issue where the `NetworkObject.Ownership` custom editor did not take the default "Everything" flag into consideration. (#3305)
+- Fixed DestroyObject flow on non-authority game clients. (#3291)
+- Fixed exception being thrown when a `GameObject` with an associated NetworkTransform is disabled. (#3243)
+- Fixed issue where the scene migration synchronization table was not cleaned up if the `GameObject` of a `NetworkObject` is destroyed before it should have been. (#3230)
+- Fixed issue where the scene migration synchronization table was not cleaned up upon NetworkManager shutting down. (#3230)
+- Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
+- Fixed issue where a `NetworkObject` with nested NetworkTransform components of varying authority modes was not being taken into consideration and would break both the initial NetworkTransform synchronization and fail to properly handle synchronized state updates of the nested NetworkTransform components. (#3209)
+- Fixed issue with distributing parented children that have the distributable and/or transferrable permissions set and have the same owner as the root parent, that has the distributable permission set, were not being distributed to the same client upon the owning client disconnecting when using a distributed authority network topology. (#3203)
+- Fixed issue where a spawned `NetworkObject` that was registered with a prefab handler and owned by a client would invoke destroy more than once on the host-server side if the client disconnected while the `NetworkObject` was still spawned. (#3200)
+- Fixed issue where `NetworkVariableBase` derived classes were not being re-initialized if the associated `NetworkObject` instance was not destroyed and re-spawned. (#3181)
+
+### Changed
+
+- Changed the scene loading event serialization order for in-scene placed `NetworkObject`s to be based on their parent-child hierarchy. (#3387)
+- Changed the original `Lerp` interpolation type to `LegacyLerp`. (#3355)
+- Changed `BufferedLinearInterpolator<T>.Update(float deltaTime, NetworkTime serverTime)` as being deprecated since this method is only used for internal testing purposes. (#3337)
+- Changed error thrown when attempting to build a dedicated server with Unity Transport that uses websockets to provide more useful information to the user. (#3336)
+- Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
+- Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
+- Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
+
+## [2.2.0] - 2024-12-12
+
+### Added
+
+- Added `NetworkObject.OwnershipStatus.SessionOwner` to allow Network Objects to be distributable and only owned by the Session Owner. This flag will override all other `OwnershipStatus` flags. (#3175)
+- Added `UnityTransport.GetEndpoint` method to provide a way to obtain `NetworkEndpoint` information of a connection via client identifier. (#3130)
+- Added `NetworkTransport.OnEarlyUpdate` and `NetworkTransport.OnPostLateUpdate` methods to provide more control over handling transport related events at the start and end of each frame. (#3113)
+
+### Fixed
+
+- Fixed issue where the server, host, or session owner would not populate the in-scene place `NetworkObject` table if the scene was loaded prior to starting the NetworkManager. (#3177)
+- Fixed issue where the `NetworkObjectIdHash` value could be incorrect when entering play mode while still in prefab edit mode with pending changes and using MPPM. (#3162)
+- Fixed issue where a sever only NetworkManager instance would spawn the actual `NetworkPrefab`'s `GameObject` as opposed to creating an instance of it. (#3160)
+- Fixed issue where only the session owner (as opposed to all clients) would handle spawning prefab overrides properly when using a distributed authority network topology. (#3160)
+- Fixed issue where an exception was thrown when calling `NetworkManager.Shutdown` after calling `UnityTransport.Shutdown`. (#3118)
+- Fixed issue where `NetworkList` properties on in-scene placed `NetworkObject`s could cause small memory leaks when entering playmode. (#3147)
+- Fixed in-scene `NertworkObject` synchronization issue when loading a scene with currently connected clients connected to a session created by a NetworkManager started as a server (i.e. not as a host). (#3133)
+- Fixed issue where a NetworkManager started as a server would not add itself as an observer to in-scene placed `NetworkObject`s instantiated and spawned by a scene loading event. (#3133)
+- Fixed issue where spawning a player using `NetworkObject.InstantiateAndSpawn` or `NetworkSpawnManager.InstantiateAndSpawn` would not update the `NetworkSpawnManager.PlayerObjects` or assign the newly spawned player to the `NetworkClient.PlayerObject`. (#3122)
+- Fixed issue where queued UnitTransport (NetworkTransport) message batches were being sent on the next frame. They are now sent at the end of the frame during `PostLateUpdate`.  (#3113)
+- Fixed issue where `NotOwnerRpcTarget` or `OwnerRpcTarget` were not using their replacements `NotAuthorityRpcTarget` and `AuthorityRpcTarget` which would invoke a warning. (#3111)
+- Fixed issue where client is removed as an observer from spawned objects when their player instance is despawned. (#3110)
+- Fixed issue where NetworkAnimator would statically allocate write buffer space for `Animator` parameters that could cause a write error if the number of parameters exceeded the space allocated. (#3108)
+
+### Changed
+
+- In-scene placed `NetworkObject`s have been made distributable when balancing object distribution after a connection event. (#3175)
+- Optimised `NetworkVariable` and NetworkTransform related packets when in Distributed Authority mode.
+- The Debug Simulator section of the Unity Transport component was removed. This section was not functional anymore and users are now recommended to use the more featureful [Network Simulator](https://docs-multiplayer.unity3d.com/tools/current/tools-network-simulator/) tool from the Multiplayer Tools package instead. (#3121)
+
+## [2.1.1] - 2024-10-18
+
+### Added
+
+- Added ability to edit the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` within the inspector view. (#3097)
+- Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions. (#3094)
+  - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications. (#3094)
+  - `ContactEventHandlerInfo.HasContactEventPriority`: When set to true, the `Rigidbody` will be prioritized as the instance that generates the event if the `Rigidbody` colliding does not have priority. (#3094)
+- Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new NetworkManager instance has been instantiated. (#3088)
+- Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing NetworkManager instance is being destroyed. (#3088)
+
+### Fixed
+
+- Fixed issue where `NetworkPrefabProcessor` would not mark the prefab list as dirty and prevent saving the `DefaultNetworkPrefabs` asset when only imports or only deletes were detected.(#3103)
+- Fixed an issue where nested NetworkTransform components in owner authoritative mode cleared their initial settings on the server, causing improper synchronization. (#3099)
+- Fixed issue with service not getting synchronized with in-scene placed `NetworkObject` instances when a session owner starts a `SceneEventType.Load` event. (#3096)
+- Fixed issue with the in-scene network prefab instance update menu tool where it was not properly updating scenes when invoked on the root prefab instance. (#3092)
+- Fixed an issue where newly synchronizing clients would always receive current `NetworkVariable` values, potentially causing issues with collections if there were pending updates. Now, pending state updates serialize previous values to avoid duplicates on new clients. (#3081)
+- Fixed issue where changing ownership would mark every `NetworkVariable` dirty. Now, it will only mark any `NetworkVariable` with owner read permissions as dirty and will send/flush any pending updates to all clients prior to sending the change in ownership message. (#3081)
+- Fixed an issue where transferring ownership of `NetworkVariable` collections didn't update the new owner’s previous value, causing the last added value to be detected as a change during additions or removals. (#3081)
+- Fixed issue where a client (or server) with no write permissions for a `NetworkVariable` using a standard .NET collection type could still modify the collection which could cause various issues depending upon the modification and collection type. (#3081)
+- Fixed issue where applying the position and/or rotation to the `NetworkManager.ConnectionApprovalResponse` when connection approval and auto-spawn player prefab were enabled would not apply the position and/or rotation when the player prefab was instantiated. (#3078)
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored when spawning the player prefab. (#3077)
+- Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session. (#3075)
+
+### Changed
+
+- Changed `NetworkConfig.AutoSpawnPlayerPrefabClientSide` is no longer automatically set when starting NetworkManager. (#3097)
+- Updated `NetworkVariableDeltaMessage` so the server now forwards delta state updates from clients immediately, instead of waiting until the end of the frame or the next network tick. (#3081)
+
+## [2.0.0] - 2024-09-12
+
+### Added
+
+- Added tooltips for all of the `NetworkObject` component's properties. (#3052)
+- Added message size validation to named and unnamed message sending functions for better error messages. (#3049)
+- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on NetworkBehaviour components. (#3031)
+- Added `NetworkTransform.SwitchTransformSpaceWhenParented` property that, when enabled, will handle the world to local, local to world, and local to local transform space transitions when interpolation is enabled. (#3013)
+- Added `NetworkTransform.TickSyncChildren` that, when enabled, will tick synchronize nested and/or child NetworkTransform components to eliminate any potential visual jittering that could occur if the NetworkTransform instances get into a state where their state updates are landing on different network ticks. (#3013)
+- Added `NetworkObject.AllowOwnerToParent` property to provide the ability to allow clients to parent owned objects when running in a client-server network topology. (#3013)
+- Added `NetworkObject.SyncOwnerTransformWhenParented` property to provide a way to disable applying the server's transform information in the parenting message on the client owner instance which can be useful for owner authoritative motion models. (#3013)
+- Added `NetcodeEditorBase` editor helper class to provide easier modification and extension of the SDK's components. (#3013)
+
+### Fixed
+
+- Fixed issue where NetworkAnimator would send updates to non-observer clients. (#3057)
+- Fixed issue where an exception could occur when receiving a universal RPC for a `NetworkObject` that has been despawned. (#3052)
+- Fixed issue where a NetworkObject hidden from a client that is then promoted to be session owner was not being synchronized with newly joining clients.(#3051)
+- Fixed issue where clients could have a wrong time delta on `NetworkVariableBase` which could prevent from sending delta state updates. (#3045)
+- Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3042)
+- Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3030)
+- Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3026)
+- Fixed issue with newly/late joined clients and NetworkTransform synchronization of parented `NetworkObject` instances. (#3013)
+- Fixed issue with smooth transitions between transform spaces when interpolation is enabled (requires `NetworkTransform.SwitchTransformSpaceWhenParented` to be enabled). (#3013)
+
+### Changed
+
+- Changed `NetworkTransformEditor` now uses NetworkTransform as the base type class to assure it doesn't display a foldout group when using the base NetworkTransform component class. (#3052)
+- Changed `NetworkAnimator.Awake` is now a protected virtual method. (#3052)
+- Changed  when invoking `NetworkManager.ConnectionManager.DisconnectClient` during a distributed authority session a more appropriate message is logged. (#3052)
+- Changed `NetworkTransformEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+- Changed `NetworkRigidbodyBaseEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+- Changed `NetworkManagerEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+
+
+## [2.0.0-pre.4] - 2024-08-21
+
+### Added
+
+- Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3004)
+
+### Fixed
+
+- Fixed issue where nested NetworkTransform components were not getting updated. (#3016)
+- Fixed issue by adding null checks in `NetworkVariableBase.CanClientRead` and `NetworkVariableBase.CanClientWrite` methods to ensure safe access to NetworkBehaviour. (#3012)
+- Fixed issue where `FixedStringSerializer<T>` was using `NetworkVariableSerialization<byte>.AreEqual` to determine if two bytes were equal causes an exception to be thrown due to no byte serializer having been defined. (#3009)
+- Fixed Issue where a state with dual triggers, inbound and outbound, could cause a false layer to layer state transition message to be sent to non-authority NetworkAnimator instances and cause a warning message to be logged. (#3008)
+- Fixed issue using collections within `NetworkVariable` where the collection would not detect changes to items or nested items. (#3004)
+- Fixed issue where `List`, `Dictionary`, and `HashSet` collections would not uniquely duplicate nested collections. (#3004)
+- Fixed issue where `NotAuthorityTarget` would include the service observer in the list of targets to send the RPC to as opposed to excluding the service observer as it should. (#3000)
+- Fixed issue where `ProxyRpcTargetGroup` could attempt to send a message if there were no targets to send to. (#3000)
+
+### Changed
+
+- Changed NetworkAnimator to automatically switch to owner authoritative mode when using a distributed authority network topology. (#3021)
+- Changed permissions exception thrown in `NetworkList` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
+- Changed permissions exception thrown in `NetworkVariable.Value` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
+
+
+## [2.0.0-pre.3] - 2024-07-23
+
+### Added
+- Added: `UnityTransport.GetNetworkDriver` and `UnityTransport.GetLocalEndpoint` methods to expose the driver and local endpoint being used. (#2978)
+
+### Fixed
+
+- Fixed issue where deferred despawn was causing GC allocations when converting an `IEnumerable` to a list. (#2983)
+- Fixed issue where the realtime network stats monitor was not able to display RPC traffic in release builds due to those stats being only available in development builds or the editor. (#2979)
+- Fixed issue where `NetworkManager.ScenesLoaded` was not being updated if `PostSynchronizationSceneUnloading` was set and any loaded scenes not used during synchronization were unloaded. (#2971)
+- Fixed issue where `Rigidbody2d` under Unity 6000.0.11f1 has breaking changes where `velocity` is now `linearVelocity` and `isKinematic` is replaced by `bodyType`. (#2971)
+- Fixed issue where `NetworkSpawnManager.InstantiateAndSpawn` and `NetworkObject.InstantiateAndSpawn` were not honoring the ownerClientId parameter when using a client-server network topology. (#2968)
+- Fixed issue where internal delta serialization could not have a byte serializer defined when serializing deltas for other types. Added `[GenerateSerializationForType(typeof(byte))]` to both the `NetworkVariable` and `AnticipatedNetworkVariable` classes to assure a byte serializer is defined.(#2962)
+- Fixed issue when scene management was disabled and the session owner would still try to synchronize a late joining client. (#2962)
+- Fixed issue when using a distributed authority network topology where it would allow a session owner to spawn a `NetworkObject` prior to being approved. Now, an error message is logged and the `NetworkObject` will not be spawned prior to the client being approved.  (#2962)
+- Fixed issue where attempting to spawn during `NetworkBehaviour.OnInSceneObjectsSpawned` and `NetworkBehaviour.OnNetworkSessionSynchronized` notifications would throw a collection modified exception.  (#2962)
+
+### Changed
+
+- Changed logic where clients can now set the `NetworkSceneManager` client synchronization mode when using a distributed authority network topology. (#2985)
+
+
+## [2.0.0-pre.2] - 2024-06-17
+
+### Added
+
+- Added `AnticipatedNetworkVariable<T>`, which adds support for client anticipation of `NetworkVariable` values, allowing for more responsive gameplay. (#2957)
+- Added `AnticipatedNetworkTransform`, which adds support for client anticipation of NetworkTransforms. (#2957)
+- Added `NetworkVariableBase.ExceedsDirtinessThreshold` to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in `NetworkVariable<T>` with the callback `NetworkVariable<T>.CheckExceedsDirtinessThreshold`). (#2957)
+- Added `NetworkVariableUpdateTraits`, which add additional throttling support: `MinSecondsBetweenUpdates` will prevent the `NetworkVariable` from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while `MaxSecondsBetweenUpdates` will force a dirty `NetworkVariable` to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2957)
+- Added virtual method `NetworkVariableBase.OnInitialize` which can be used by `NetworkVariable` subclasses to add initialization code. (#2957)
+- Added `NetworkTime.TickWithPartial`, which represents the current tick as a double that includes the fractional/partial tick value. (#2957)
+- Added `NetworkTickSystem.AnticipationTick`, which can be helpful with implementation of client anticipation. This value represents the tick the current local client was at at the beginning of the most recent network round trip, which enables it to correlate server update ticks with the client tick that may have triggered them. (#2957)
+- Added event `NetworkManager.OnSessionOwnerPromoted` that is invoked when a new session owner promotion occurs. (#2948)
+- Added `NetworkRigidBodyBase.GetLinearVelocity` and `NetworkRigidBodyBase.SetLinearVelocity` convenience/helper methods. (#2948)
+- Added `NetworkRigidBodyBase.GetAngularVelocity` and `NetworkRigidBodyBase.SetAngularVelocity` convenience/helper methods. (#2948)
+
+### Fixed
+
+- Fixed issue when NetworkTransform half float precision is enabled and ownership changes the current base position was not being synchronized. (#2948)
+- Fixed issue where `OnClientConnected` not being invoked on the session owner when connecting to a new distributed authority session. (#2948)
+- Fixed issue where Rigidbody micro-motion (i.e. relatively small velocities) would result in non-authority instances slightly stuttering as the body would come to a rest (i.e. no motion). Now, the threshold value can increase at higher velocities and can decrease slightly below the provided threshold to account for this. (#2948)
+
+### Changed
+
+- Changed NetworkAnimator no longer requires the `Animator` component to exist on the same `GameObject`. (#2957)
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2957)
+- Changed the client's owned objects is now returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes. (#2948)
+- Changed `NetworkTransfrom.TryCommitTransformToServer` to be internal as it will be removed by the final 2.0.0 release. (#2948)
+- Changed `NetworkTransformEditor.OnEnable` to a virtual method to be able to customize a NetworkTransform derived class by creating a derived editor control from `NetworkTransformEditor`. (#2948)
+
+
+## [2.0.0-exp.5] - 2024-06-03
+
+### Fixed
+
+- Fixed issue where SessionOwner message was being treated as a new entry for the new message indexing when it should have been ordinally sorted with the legacy message indices. (#2942)
+
+### Changed
+- Changed `FastBufferReader` and `FastBufferWriter` so that they always ensure the length of items serialized is always serialized as an `uint` and added a check before casting for safe reading and writing.(#2946)
+
+
+## [2.0.0-exp.4] - 2024-05-31
+
+### Added
+
+- Added `NetworkRigidbodyBase.AttachToFixedJoint` and `NetworkRigidbodyBase.DetachFromFixedJoint` to replace parenting for rigid bodies that have `NetworkRigidbodyBase.UseRigidBodyForMotion` enabled. (#2933)
+- Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2912)
+- Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all NetworkBehaviours after a newly joined client has finished synchronizing with the network session in progress. (#2912)
+- Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2912)
+
+### Fixed
+
+- Fixed issue where non-authoritative rigid bodies with `NetworkRigidbodyBase.UseRigidBodyForMotion` enabled would constantly log errors about the renderTime being before `StartTimeConsumed`. (#2933)
+- Fixed issue where in-scene placed NetworkObjects could be destroyed if a client disconnects early and/or before approval. (#2924)
+- Fixed issue where a `NetworkObject` component's associated NetworkBehaviour components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2912)
+- Fixed issue where an in-scene placed `NetworkObject` with NetworkTransform that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2898)
+
+### Changed
+
+- Change all the access modifiers of test class from Public to Internal (#2930)
+- Changed messages are now sorted by enum values as opposed to ordinally sorting the messages by their type name. (#2929)
+- Changed `NetworkClient.SessionModeTypes` to `NetworkClient.NetworkTopologyTypes`. (#2875)
+- Changed `NetworkClient.SessionModeType` to `NetworkClient.NetworkTopologyType`. (#2875)
+- Changed `NetworkConfig.SessionMode` to `NeworkConfig.NetworkTopology`. (#2875)
+
+## [2.0.0-exp.2] - 2024-04-02
+
+### Added
+- Added updates to all internal messages to account for a distributed authority network session connection. (#2863)
+- Added `NetworkRigidbodyBase` that provides users with a more customizable network rigidbody, handles both `Rigidbody` and `Rigidbody2D`, and provides an option to make NetworkTransform use the rigid body for motion. (#2863)
+  - For a customized `NetworkRigidbodyBase` class:
+    - `NetworkRigidbodyBase.AutoUpdateKinematicState` provides control on whether the kinematic setting will be automatically set or not when ownership changes.
+    - `NetworkRigidbodyBase.AutoSetKinematicOnDespawn` provides control on whether isKinematic will automatically be set to true when the associated `NetworkObject` is despawned.
+    - `NetworkRigidbodyBase.Initialize` is a protected method that, when invoked, will initialize the instance. This includes options to:
+      - Set whether using a `RigidbodyTypes.Rigidbody` or `RigidbodyTypes.Rigidbody2D`.
+      - Includes additional optional parameters to set the NetworkTransform, `Rigidbody`, and `Rigidbody2d` to use.
+  - Provides additional public methods:
+    - `NetworkRigidbodyBase.GetPosition` to return the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.GetRotation` to return the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.MovePosition` to move to the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.MoveRotation` to move to the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.Move` to move to the position and rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.Move` to move to the position and rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.SetPosition` to set the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.SetRotation` to set the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.ApplyCurrentTransform` to set the position and rotation of the `Rigidbody` or `Rigidbody2d` based on the associated `GameObject` transform (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.WakeIfSleeping` to wake up the rigid body if sleeping.
+    - `NetworkRigidbodyBase.SleepRigidbody` to put the rigid body to sleep.
+    - `NetworkRigidbodyBase.IsKinematic` to determine if the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) is currently kinematic.
+    - `NetworkRigidbodyBase.SetIsKinematic` to set the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) current kinematic state.
+    - `NetworkRigidbodyBase.ResetInterpolation` to reset the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) back to its original interpolation value when initialized.
+  - Now includes a `MonoBehaviour.FixedUpdate` implementation that will update the assigned NetworkTransform when `NetworkRigidbodyBase.UseRigidBodyForMotion` is true. (#2863)
+- Added `RigidbodyContactEventManager` that provides a more optimized way to process collision enter and collision stay events as opposed to the `Monobehaviour` approach. (#2863)
+  - Can be used in client-server and distributed authority modes, but is particularly useful in distributed authority.
+- Added rigid body motion updates to NetworkTransform which allows users to set interolation on rigid bodies. (#2863)
+  - Extrapolation is only allowed on authoritative instances, but custom class derived from `NetworkRigidbodyBase` or NetworkRigidBody or `NetworkRigidbody2D` automatically switches non-authoritative instances to interpolation if set to extrapolation.
+- Added distributed authority mode support to NetworkAnimator. (#2863)
+- Added session mode selection to NetworkManager inspector view. (#2863)
+- Added distributed authority permissions feature. (#2863)
+- Added distributed authority mode specific `NetworkObject` permissions flags (Distributable, Transferable, and RequestRequired). (#2863)
+- Added distributed authority mode specific `NetworkObject.SetOwnershipStatus` method that applies one or more `NetworkObject` instance's ownership flags. If updated when spawned, the ownership permission changes are synchronized with the other connected clients. (#2863)
+- Added distributed authority mode specific `NetworkObject.RemoveOwnershipStatus` method that removes one or more `NetworkObject` instance's ownership flags. If updated when spawned, the ownership permission changes are synchronized with the other connected clients. (#2863)
+- Added distributed authority mode specific `NetworkObject.HasOwnershipStatus` method that will return (true or false) whether one or more ownership flags is set. (#2863)
+- Added distributed authority mode specific `NetworkObject.SetOwnershipLock` method that locks ownership of a `NetworkObject` to prevent ownership from changing until the current owner releases the lock. (#2863)
+- Added distributed authority mode specific `NetworkObject.RequestOwnership` method that sends an ownership request to the current owner of a spawned `NetworkObject` instance. (#2863)
+- Added distributed authority mode specific `NetworkObject.OnOwnershipRequested` callback handler that is invoked on the owner/authoritative side when a non-owner requests ownership. Depending upon the boolean returned value depends upon whether the request is approved or denied. (#2863)
+- Added distributed authority mode specific `NetworkObject.OnOwnershipRequestResponse` callback handler that is invoked when a non-owner's request has been processed. This callback includes a `NetworkObjet.OwnershipRequestResponseStatus` response parameter that describes whether the request was approved or the reason why it was not approved. (#2863)
+- Added distributed authority mode specific `NetworkObject.DeferDespawn` method that defers the despawning of `NetworkObject` instances on non-authoritative clients based on the tick offset parameter. (#2863)
+- Added distributed authority mode specific `NetworkObject.OnDeferredDespawnComplete` callback handler that can be used to further control when deferring the despawning of a `NetworkObject` on non-authoritative instances. (#2863)
+- Added `NetworkClient.SessionModeType` as one way to determine the current session mode of the network session a client is connected to. (#2863)
+- Added distributed authority mode specific `NetworkClient.IsSessionOwner` property to determine if the current local client is the current session owner of a distributed authority session. (#2863)
+- Added distributed authority mode specific client side spawning capabilities. When running in distributed authority mode, clients can instantiate and spawn `NetworkObject` instances (the local client is automatically the owner of the spawned object). (#2863)
+  - This is useful to better visually synchronize owner authoritative motion models and newly spawned `NetworkObject` instances (i.e. projectiles for example).
+- Added distributed authority mode specific client side player spawning capabilities. Clients will automatically spawn their associated player object locally. (#2863)
+- Added distributed authority mode specific `NetworkConfig.AutoSpawnPlayerPrefabClientSide` property (default is true) to provide control over the automatic spawning of player prefabs on the local client side. (#2863)
+- Added distributed authority mode specific `NetworkManager.OnFetchLocalPlayerPrefabToSpawn` callback that, when assigned, will allow the local client to provide the player prefab to be spawned for the local client. (#2863)
+  - This is only invoked if the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` property is set to true.
+- Added distributed authority mode specific `NetworkBehaviour.HasAuthority` property that determines if the local client has authority over the associated `NetworkObject` instance (typical use case is within a NetworkBehaviour script much like that of `IsServer` or `IsClient`). (#2863)
+- Added distributed authority mode specific `NetworkBehaviour.IsSessionOwner` property that determines if the local client is the session owner (typical use case would be to determine if the local client can has scene management authority within a NetworkBehaviour script). (#2863)
+- Added support for distributed authority mode scene management where the currently assigned session owner can start scene events (i.e. scene loading and scene unloading). (#2863)
+
+### Fixed
+
+- Fixed issue where the host was not invoking `OnClientDisconnectCallback` for its own local client when internally shutting down. (#2822)
+- Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
+- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
+
+### Changed
+- Changed client side awareness of other clients is now the same as a server or host. (#2863)
+- Changed `NetworkManager.ConnectedClients` can now be accessed by both server and clients. (#2863)
+- Changed `NetworkManager.ConnectedClientsList` can now be accessed by both server and clients. (#2863)
+- Changed NetworkTransform defaults to owner authoritative when connected to a distributed authority session. (#2863)
+- Changed `NetworkVariable` defaults to owner write and everyone read permissions when connected to a distributed authority session (even if declared with server read or write permissions).  (#2863)
+- Changed `NetworkObject` no longer implements the `MonoBehaviour.Update` method in order to determine whether a `NetworkObject` instance has been migrated to a different scene. Instead, only `NetworkObjects` with the `SceneMigrationSynchronization` property set will be updated internally during the `NetworkUpdateStage.PostLateUpdate` by NetworkManager. (#2863)
+- Changed NetworkManager inspector view layout where properties are now organized by category. (#2863)
+- Changed NetworkTransform to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+- Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
+## [1.9.1] - 2024-04-18
+
+### Added
+- Added `AnticipatedNetworkVariable<T>`, which adds support for client anticipation of NetworkVariable values, allowing for more responsive game play (#2820)
+- Added `AnticipatedNetworkTransform`, which adds support for client anticipation of NetworkTransforms (#2820)
+- Added `NetworkVariableBase.ExceedsDirtinessThreshold` to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in NetworkVariable<T> with the callback NetworkVariable<T>.CheckExceedsDirtinessThreshold) (#2820)
+- Added `NetworkVariableUpdateTraits`, which add additional throttling support: `MinSecondsBetweenUpdates` will prevent the `NetworkVariable` from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while `MaxSecondsBetweenUpdates` will force a dirty `NetworkVariable` to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2820)
+- Added virtual method `NetworkVariableBase.OnInitialize()` which can be used by `NetworkVariable` subclasses to add initialization code (#2820)
+- Added virtual method `NetworkVariableBase.Update()`, which is called once per frame to support behaviors such as interpolation between an anticipated value and an authoritative one. (#2820)
+- Added `NetworkTime.TickWithPartial`, which represents the current tick as a double that includes the fractional/partial tick value. (#2820)
+- `NetworkVariable` now includes built-in support for `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, and `Dictionary` (#2813)
+- `NetworkVariable` now includes delta compression for collection values (`NativeList`, `NativeArray`, `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, `Dictionary`, and `FixedString` types) to save bandwidth by only sending the values that changed. (Note: For `NativeList`, `NativeArray`, and `List`, this algorithm works differently than that used in `NetworkList`. This algorithm will use less bandwidth for "set" and "add" operations, but `NetworkList` is more bandwidth-efficient if you are performing frequent "insert" operations.) (#2813)
+- `UserNetworkVariableSerialization` now has optional callbacks for `WriteDelta` and `ReadDelta`. If both are provided, they will be used for all serialization operations on NetworkVariables of that type except for the first one for each client. If either is missing, the existing `Write` and `Read` will always be used. (#2813)
+- Network variables wrapping `INetworkSerializable` types can perform delta serialization by setting `UserNetworkVariableSerialization<T>.WriteDelta` and `UserNetworkVariableSerialization<T>.ReadDelta` for those types. The built-in `INetworkSerializable` serializer will continue to be used for all other serialization operations, but if those callbacks are set, it will call into them on all but the initial serialization to perform delta serialization. (This could be useful if you have a large struct where most values do not change regularly and you want to send only the fields that did change.) (#2813)
+
+### Fixed
+
+- Fixed issue where `NetworkTransformEditor` would throw and exception if you excluded the physics package. (#2871)
+- Fixed issue where NetworkTransform could not properly synchronize its base position when using half float precision. (#2845)
+- Fixed issue where the host was not invoking `OnClientDisconnectCallback` for its own local client when internally shutting down. (#2822)
+- Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
+- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
+
+### Changed
+
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2874)
+- Changed NetworkAnimator no longer requires the `Animator` component to exist on the same `GameObject`. (#2872)
+- Changed NetworkTransform to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+- Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
+## [1.8.1] - 2024-02-05
+
+### Fixed
+
+- Fixed a compile error when compiling for IL2CPP targets when using the new `[Rpc]` attribute. (#2824)
+
+## [1.8.0] - 2023-12-12
+
+### Added
+
+- Added a new RPC attribute, which is simply `Rpc`. (#2762)
+  - This is a generic attribute that can perform the functions of both Server and Client RPCs, as well as enabling client-to-client RPCs. Includes several default targets: `Server`, `NotServer`, `Owner`, `NotOwner`, `Me`, `NotMe`, `ClientsAndHost`, and `Everyone`. Runtime overrides are available for any of these targets, as well as for sending to a specific ID or groups of IDs.
+  - This attribute also includes the ability to defer RPCs that are sent to the local process to the start of the next frame instead of executing them immediately, treating them as if they had gone across the network. The default behavior is to execute immediately.
+  - This attribute effectively replaces `ServerRpc` and `ClientRpc`. `ServerRpc` and `ClientRpc` remain in their existing forms for backward compatibility, but `Rpc` will be the recommended and most supported option.
+- Added `NetworkManager.OnConnectionEvent` as a unified connection event callback to notify clients and servers of all client connections and disconnections within the session (#2762)
+- Added `NetworkManager.ServerIsHost` and `NetworkBehaviour.ServerIsHost` to allow a client to tell if it is connected to a host or to a dedicated server (#2762)
+- Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
+- Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+- Added `NetworkObject.InstantiateAndSpawn` and `NetworkSpawnManager.InstantiateAndSpawn` methods to simplify prefab spawning by assuring that the prefab is valid and applies any override prior to instantiating the `GameObject` and spawning the `NetworkObject` instance. (#2710)
+
+### Fixed
+
+- Fixed issue where a client disconnected by a server-host would not receive a local notification. (#2789)
+- Fixed issue where a server-host could shutdown during a relay connection but periodically the transport disconnect message sent to any connected clients could be dropped. (#2789)
+- Fixed issue where a host could disconnect its local client but remain running as a server. (#2789)
+- Fixed issue where `OnClientDisconnectedCallback` was not being invoked under certain conditions. (#2789)
+- Fixed issue where `OnClientDisconnectedCallback` was always returning 0 as the client identifier. (#2789)
+- Fixed issue where if a host or server shutdown while a client owned NetworkObjects (other than the player) it would throw an exception. (#2789)
+- Fixed issue where setting values on a `NetworkVariable` or `NetworkList` within `OnNetworkDespawn` during a shutdown sequence would throw an exception. (#2789)
+- Fixed issue where a teleport state could potentially be overridden by a previous unreliable delta state. (#2777)
+- Fixed issue where NetworkTransform was using the `NetworkManager.ServerTime.Tick` as opposed to `NetworkManager.NetworkTickSystem.ServerTime.Tick` during the authoritative side's tick update where it performed a delta state check. (#2777)
+- Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
+- Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
+- Fixed issue where a NetworkTransform instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
+- Fixed issue where  you could not have multiple source network prefab overrides targeting the same network prefab as their override. (#2710)
+
+### Changed
+
+- Changed the server or host shutdown so it will now perform a "soft shutdown" when `NetworkManager.Shutdown` is invoked. This will send a disconnect notification to all connected clients and the server-host will wait for all connected clients to disconnect or timeout after a 5 second period before completing the shutdown process. (#2789)
+- Changed `OnClientDisconnectedCallback` will now return the assigned client identifier on the local client side if the client was approved and assigned one prior to being disconnected. (#2789)
+- Changed `NetworkTransform.SetState` (and related methods) now are cumulative during a fractional tick period and sent on the next pending tick. (#2777)
+- `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
+- Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
+- Changed NetworkTransform authoritative instance tick registration so a single NetworkTransform specific tick event update will update all authoritative instances to improve perofmance. (#2713)
+- Changed `NetworkPrefabs.OverrideToNetworkPrefab` dictionary is no longer used/populated due to it ending up being related to a regression bug and not allowing more than one override to be assigned to a network prefab asset. (#2710)
+- Changed in-scene placed `NetworkObject`s now store their source network prefab asset's `GlobalObjectIdHash` internally that is used, when scene management is disabled, by clients to spawn the correct prefab even if the `NetworkPrefab` entry has an override. This does not impact dynamically spawning the same prefab which will yield the override on both host and client. (#2710)
+- Changed in-scene placed `NetworkObject`s no longer require a `NetworkPrefab` entry with `GlobalObjectIdHash` override in order for clients to properly synchronize. (#2710)
+- Changed in-scene placed `NetworkObject`s now set their `IsSceneObject` value when generating their `GlobalObjectIdHash` value. (#2710)
+- Changed the default `NetworkConfig.SpawnTimeout` value from 1.0s to 10.0s. (#2710)
+
+
+## [1.7.1] - 2023-11-15
+
+### Added
+
+### Fixed
+
+- Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
+- Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per NetworkBehaviour component instance. (#2749)
+
+## [1.7.0] - 2023-10-11
+
+### Added
+
+- exposed NetworkObject.GetNetworkBehaviourAtOrderIndex as a public API (#2724)
+- Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
+- Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
+- Added `GenerateSerializationForGenericParameterAttribute`, which can be applied to user-created Network Variable types to ensure the codegen generates serialization for the generic types they wrap. (#2694)
+- Added `GenerateSerializationForTypeAttribute`, which can be applied to any class or method to ensure the codegen generates serialization for the specific provided type. (#2694)
+- Exposed `NetworkVariableSerialization<T>.Read`, `NetworkVariableSerialization<T>.Write`, `NetworkVariableSerialization<T>.AreEqual`, and `NetworkVariableSerialization<T>.Duplicate` to further support the creation of user-created network variables by allowing users to access the generated serialization methods and serialize generic types efficiently without boxing. (#2694)
+- Added `NetworkVariableBase.MarkNetworkBehaviourDirty` so that user-created network variable types can mark their containing NetworkBehaviour to be processed by the update loop. (#2694)
+
+### Fixed
+
+- Fixed issue where the server side `NetworkSceneManager` instance was not adding the currently active scene to its list of scenes loaded. (#2723)
+- Generic NetworkBehaviour types no longer result in compile errors or runtime errors (#2720)
+- Rpcs within Generic NetworkBehaviour types can now serialize parameters of the class's generic types (but may not have generic types of their own) (#2720)
+- Errors are no longer thrown when entering play mode with domain reload disabled (#2720)
+- NetworkSpawn is now correctly called each time when entering play mode with scene reload disabled (#2720)
+- NetworkVariables of non-integer types will no longer break the inspector (#2714)
+- NetworkVariables with NonSerializedAttribute will not appear in the inspector (#2714)
+- Fixed issue where `UnityTransport` would attempt to establish WebSocket connections even if using UDP/DTLS Relay allocations when the build target was WebGL. This only applied to working in the editor since UDP/DTLS can't work in the browser. (#2695)
+- Fixed issue where a NetworkBehaviour component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the NetworkBehaviour component was positioned/ordered before the `NetworkObject` component. (#2685)
+- Fixed issue where `SpawnWithObservers` was not being honored when `NetworkConfig.EnableSceneManagement` was disabled. (#2682)
+- Fixed issue where NetworkAnimator was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
+- Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
+- Fixed issue where generation of the `DefaultNetworkPrefabs` asset was not enabled by default. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value could be updated but the asset not marked as dirty. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value of a (network) prefab asset could be assigned an incorrect value when editing the prefab in a temporary scene. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value generated after creating a (network) prefab from an object constructed within the scene would not be the correct final value in a stand alone build. (#2662)
+
+### Changed
+
+- Updated dependency on `com.unity.transport` to version 1.4.0. (#2716)
+
+## [1.6.0] - 2023-08-09
+
+### Added
+
+- Added a protected virtual method `NetworkTransform.OnInitialize(ref NetworkTransformState replicatedState)` that just returns the replicated state reference.
+
+### Fixed
+
+- Fixed issue where invoking `NetworkManager.Shutdown` within `NetworkManager.OnClientStopped` or `NetworkManager.OnServerStopped` would force `NetworkManager.ShutdownInProgress` to remain true after completing the shutdown process. (#2661)
+- Fixed issue where ARMv7 Android builds would crash when trying to validate the batch header. (#2654)
+- Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
+- Fixed issue with scale not synchronizing properly depending upon the spawn order of NetworkObjects. (#2636)
+- Fixed issue position was not properly transitioning between ownership changes with an owner authoritative NetworkTransform. (#2636)
+- Fixed issue where a late joining non-owner client could update an owner authoritative NetworkTransform if ownership changed without any updates to position prior to the non-owner client joining. (#2636)
+
+### Changed
+
+## [1.5.2] - 2023-07-24
+
+### Added
+
+### Fixed
+- Bumped minimum Unity version supported to 2021.3 LTS
+- Fixed issue where `NetworkClient.OwnedObjects` was not returning any owned objects due to the `NetworkClient.IsConnected` not being properly set. (#2631)
+- Fixed a crash when calling TrySetParent with a null Transform (#2625)
+- Fixed issue where a NetworkTransform using full precision state updates was losing transform state updates when interpolation was enabled. (#2624)
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
+- Fixed issue where invoking `NetworkManager.Shutdown` multiple times, depending upon the timing, could cause an exception. (#2622)
+- Fixed issue where removing ownership would not notify the server that it gained ownership. This also resolves the issue where an owner authoritative NetworkTransform would not properly initialize upon removing ownership from a remote client. (#2618)
+- Fixed ILPP issues when using CoreCLR and for certain dedicated server builds. (#2614)
+- Fixed an ILPP compile error when creating a generic NetworkBehaviour singleton with a static T instance. (#2603)
+
+### Changed
+
+## [1.5.1] - 2023-06-07
+
+### Added
+
+- Added support for serializing `NativeArray<>` and `NativeList<>` in `FastBufferReader`/`FastBufferWriter`, `BufferSerializer`, `NetworkVariable`, and RPCs. (To use `NativeList<>`, add `UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT` to your Scripting Define Symbols in `Project Settings > Player`) (#2375)
+- The location of the automatically-created default network prefab list can now be configured (#2544)
+- Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.MaximumTransmissionUnitSize and NetworkManager.MaximumFragmentedMessageSize for transports that don't work with the default values (#2530)
 - Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
 
 ### Fixed
 
+- Fixed: Fixed a null reference in codegen in some projects (#2581)
+- Fixed issue where the `OnClientDisconnected` client identifier was incorrect after a pending client connection was denied. (#2569)
 - Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
 - Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
@@ -30,7 +731,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where invalid endpoint addresses were not being detected and returning false from NGO UnityTransport. (#2496)
 - Fixed some errors that could occur if a connection is lost and the loss is detected when attempting to write to the socket. (#2495)
 
-## Changed
+### Changed
 
 - Adding network prefabs before NetworkManager initialization is now supported. (#2565)
 - Connecting clients being synchronized now switch to the server's active scene before spawning and synchronizing NetworkObjects. (#2532)
@@ -48,14 +749,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
 - Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
 - Added `NetworkTransform.SlerpPosition` property that, when enabled along with interpolation being enabled, will interpolate using `Vector3.Slerp`. (#2388)
-- Added `BufferedLinearInterpolatorVector3` that replaces the float version, is now used by `NetworkTransform`, and provides the ability to enable or disable `Slerp`. (#2388)
+- Added `BufferedLinearInterpolatorVector3` that replaces the float version, is now used by NetworkTransform, and provides the ability to enable or disable `Slerp`. (#2388)
 - Added `HalfVector3` used for scale when half float precision is enabled. (#2388)
 - Added `HalfVector4` used for rotation when half float precision and quaternion synchronization is enabled. (#2388)
 - Added `HalfVector3DeltaPosition` used for position when half float precision is enabled. This handles loss in position precision by updating only the delta position as opposed to the full position. (#2388)
 - Added `NetworkTransform.GetSpaceRelativePosition` and `NetworkTransform.GetSpaceRelativeRotation` helper methods to return the proper values depending upon whether local or world space. (#2388)
 - Added `NetworkTransform.OnAuthorityPushTransformState` virtual method that is invoked just prior to sending the `NetworkTransformState` to non-authoritative instances. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
 - Added `NetworkTransform.OnNetworkTransformStateUpdated` virtual method that is invoked just after the authoritative `NetworkTransformState` is applied. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
-- Added `NetworkTransform.OnInitialize`virtual method that is invoked after the `NetworkTransform` has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when `NetworkTransform` is initialized (i.e. resetting client prediction etc) (#2388)
+- Added `NetworkTransform.OnInitialize`virtual method that is invoked after the NetworkTransform has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when NetworkTransform is initialized (i.e. resetting client prediction etc) (#2388)
 - Added `NetworkObject.SynchronizeTransform` property (default is true) that provides users with another way to help with bandwidth optimizations where, when set to false, the `NetworkObject`'s associated transform will not be included when spawning and/or synchronizing late joining players. (#2388)
 - Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
 - Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
@@ -64,25 +765,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Made sure the `CheckObjectVisibility` delegate is checked and applied, upon `NetworkShow` attempt. Found while supporting (#2454), although this is not a fix for this (already fixed) issue. (#2463)
-- Changed `NetworkTransform` authority handles delta checks on each new network tick and no longer consumes processing cycles checking for deltas for all frames in-between ticks. (#2388)
+- Changed NetworkTransform authority handles delta checks on each new network tick and no longer consumes processing cycles checking for deltas for all frames in-between ticks. (#2388)
 - Changed the `NetworkTransformState` structure is now public and now has public methods that provide access to key properties of the `NetworkTransformState` structure. (#2388)
-- Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
+- Changed NetworkTransform interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
 - Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
 - Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
 
 ### Fixed
 
 - Fixed issue where during client synchronization the synchronizing client could receive a ObjectSceneChanged message before the client-side NetworkObject instance had been instantiated and spawned. (#2502)
-- Fixed issue where `NetworkAnimator` was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters. (#2492)
-- Fixed issue where `NetworkAnimator` was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
-- Fixed issue where `NetworkAnimator` was not properly synchronizing animation state updates. (#2481)
+- Fixed issue where NetworkAnimator was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters. (#2492)
+- Fixed issue where NetworkAnimator was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
+- Fixed issue where NetworkAnimator was not properly synchronizing animation state updates. (#2481)
 - Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 - Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
-- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
-- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
-- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
-- Fixed issue with a child's rotation rolling over when interpolation is enabled on a `NetworkTransform`. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
-- Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
+- Fixed registry of public `NetworkVariable`s in derived NetworkBehaviours (#2423)
+- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause NetworkAnimator to attempt to update those changes. (#2416)
+- Fixed issue where NetworkAnimator would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
+- Fixed issue with a child's rotation rolling over when interpolation is enabled on a NetworkTransform. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
+- Fixed issue where NetworkTransform was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted NetworkTransform when interpolation was enabled. (#2388)
 - Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 
@@ -112,20 +813,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
 - Fixed a case where data corruption could occur when using UnityTransport when reaching a certain level of send throughput. (#2332)
 - Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server). (#2321)
-- Fixed `NetworkAnimator` issue where it was not checking for `AnimatorStateTtansition.destinationStateMachine` and any possible sub-states defined within it. (#2309)
-- Fixed `NetworkAnimator` issue where the host client was receiving the ClientRpc animation updates when the host was the owner.(#2309)
-- Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
-- Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
+- Fixed NetworkAnimator issue where it was not checking for `AnimatorStateTtansition.destinationStateMachine` and any possible sub-states defined within it. (#2309)
+- Fixed NetworkAnimator issue where the host client was receiving the ClientRpc animation updates when the host was the owner.(#2309)
+- Fixed NetworkAnimator issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
+- Fixed issue where NetworkAnimator was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
 - Corrected an issue with the documentation for BufferSerializer (#2401)
 
 ## [1.2.0] - 2022-11-21
 
 ### Added
 
-- Added protected method `NetworkBehaviour.OnSynchronize` which is invoked during the initial `NetworkObject` synchronization process. This provides users the ability to include custom serialization information that will be applied to the `NetworkBehaviour` prior to the `NetworkObject` being spawned. (#2298)
+- Added protected method `NetworkBehaviour.OnSynchronize` which is invoked during the initial `NetworkObject` synchronization process. This provides users the ability to include custom serialization information that will be applied to the NetworkBehaviour prior to the `NetworkObject` being spawned. (#2298)
 - Added support for different versions of the SDK to talk to each other in circumstances where changes permit it. Starting with this version and into future versions, patch versions should be compatible as long as the minor version is the same. (#2290)
 - Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings. (#2285)
-- Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. (#2280)
+- Added `public string DisconnectReason` getter to NetworkManager and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. (#2280)
 
 ### Changed
 
@@ -135,14 +836,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 - Fixed `IsSpawnedObjectsPendingInDontDestroyOnLoad` is only set to true when loading a scene using `LoadSceneMode.Singleonly`. (#2330)
-- Fixed issue where `NetworkTransform` components nested under a parent with a `NetworkObject` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)
+- Fixed issue where NetworkTransform components nested under a parent with a `NetworkObject` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)
 - Fixed issue where `NetworkObject`s that failed to instantiate could cause the entire synchronization pipeline to be disrupted/halted for a connecting client. (#2298)
 - Fixed issue where in-scene placed `NetworkObject`s nested under a `GameObject` would be added to the orphaned children list causing continual console warning log messages. (#2298)
 - Custom messages are now properly received by the local client when they're sent while running in host mode. (#2296)
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)
 - Fixed an issue in `UnityTransport` where an error would be logged if the 'Use Encryption' flag was enabled with a Relay configuration that used a secure protocol. (#2289)
 - Fixed issue where in-scene placed `NetworkObjects` were not honoring the `AutoObjectParentSync` property. (#2281)
-- Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
+- Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting NetworkManager as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
 
 ### Removed
@@ -156,7 +857,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkManager.IsApproved` flag that is set to `true` a client has been approved.(#2261)
 - `UnityTransport` now provides a way to set the Relay server data directly from the `RelayServerData` structure (provided by the Unity Transport package) throuh its `SetRelayServerData` method. This allows making use of the new APIs in UTP 1.3 that simplify integration of the Relay SDK. (#2235)
 - IPv6 is now supported for direct connections when using `UnityTransport`. (#2232)
-- Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
+- Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the NetworkManager allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
 - Added position, rotation, and scale to the `ParentSyncMessage` which provides users the ability to specify the final values on the server-side when `OnNetworkObjectParentChanged` is invoked just before the message is created (when the `Transform` values are applied to the message). (#2146)
 - Added `NetworkObject.TryRemoveParent` method for convenience purposes opposed to having to cast null to either `GameObject` or `NetworkObject`. (#2146)
 
@@ -203,9 +904,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where `NetworkTransform` was not honoring the InLocalSpace property on the authority side during OnNetworkSpawn. (#2170)
-- Fixed issue where `NetworkTransform` was not ending extrapolation for the previous state causing non-authoritative instances to become out of synch. (#2170)
-- Fixed issue where `NetworkTransform` was not continuing to interpolate for the remainder of the associated tick period. (#2170)
+- Fixed issue where NetworkTransform was not honoring the InLocalSpace property on the authority side during OnNetworkSpawn. (#2170)
+- Fixed issue where NetworkTransform was not ending extrapolation for the previous state causing non-authoritative instances to become out of synch. (#2170)
+- Fixed issue where NetworkTransform was not continuing to interpolate for the remainder of the associated tick period. (#2170)
 - Fixed issue during `NetworkTransform.OnNetworkSpawn` for non-authoritative instances where it was initializing interpolators with the replicated network state which now only contains the transform deltas that occurred during a network tick and not the entire transform state. (#2170)
 
 ## [1.0.1] - 2022-08-23
@@ -226,12 +927,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed Owner-written NetworkVariable infinitely write themselves (#2109)
 - Fixed NetworkList issue that showed when inserting at the very end of a NetworkList (#2099)
 - Fixed issue where a client owner of a `NetworkVariable` with both owner read and write permissions would not update the server side when changed. (#2097)
-- Fixed issue when attempting to spawn a parent `GameObject`, with `NetworkObject` component attached, that has one or more child `GameObject`s, that are inactive in the hierarchy, with `NetworkBehaviour` components it will no longer attempt to spawn the associated `NetworkBehaviour`(s) or invoke ownership changed notifications but will log a warning message. (#2096)
+- Fixed issue when attempting to spawn a parent `GameObject`, with `NetworkObject` component attached, that has one or more child `GameObject`s, that are inactive in the hierarchy, with NetworkBehaviour components it will no longer attempt to spawn the associated NetworkBehaviour(s) or invoke ownership changed notifications but will log a warning message. (#2096)
 - Fixed an issue where destroying a NetworkBehaviour would not deregister it from the parent NetworkObject, leading to exceptions when the parent was later destroyed. (#2091)
 - Fixed issue where `NetworkObject.NetworkHide` was despawning and destroying, as opposed to only despawning, in-scene placed `NetworkObject`s. (#2086)
-- Fixed `NetworkAnimator` synchronizing transitions twice due to it detecting the change in animation state once a transition is started by a trigger. (#2084)
-- Fixed issue where `NetworkAnimator` would not synchronize a looping animation for late joining clients if it was at the very end of its loop. (#2076)
-- Fixed issue where `NetworkAnimator` was not removing its subscription from `OnClientConnectedCallback` when despawned during the shutdown sequence. (#2074)
+- Fixed NetworkAnimator synchronizing transitions twice due to it detecting the change in animation state once a transition is started by a trigger. (#2084)
+- Fixed issue where NetworkAnimator would not synchronize a looping animation for late joining clients if it was at the very end of its loop. (#2076)
+- Fixed issue where NetworkAnimator was not removing its subscription from `OnClientConnectedCallback` when despawned during the shutdown sequence. (#2074)
 - Fixed IsServer and IsClient being set to false before object despawn during the shutdown sequence. (#2074)
 - Fixed NetworkList Value event on the server. PreviousValue is now set correctly when a new value is set through property setter. (#2067)
 - Fixed NetworkLists not populating on client. NetworkList now uses the most recent list as opposed to the list at the end of previous frame, when sending full updates to dynamically spawned NetworkObject. The difference in behaviour is required as scene management spawns those objects at a different time in the frame, relative to updates. (#2062)
@@ -246,8 +947,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added a new `OnTransportFailure` callback to `NetworkManager`. This callback is invoked when the manager's `NetworkTransport` encounters an unrecoverable error. Transport failures also cause the `NetworkManager` to shut down. Currently, this is only used by `UnityTransport` to signal a timeout of its connection to the Unity Relay servers. (#1994)
-- Added `NetworkEvent.TransportFailure`, which can be used by implementations of `NetworkTransport` to signal to `NetworkManager` that an unrecoverable error was encountered. (#1994)
+- Added a new `OnTransportFailure` callback to NetworkManager. This callback is invoked when the manager's `NetworkTransport` encounters an unrecoverable error. Transport failures also cause the NetworkManager to shut down. Currently, this is only used by `UnityTransport` to signal a timeout of its connection to the Unity Relay servers. (#1994)
+- Added `NetworkEvent.TransportFailure`, which can be used by implementations of `NetworkTransport` to signal to NetworkManager that an unrecoverable error was encountered. (#1994)
 - Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab (#1969)
 - Added `NetworkManager.RemoveNetworkPrefab(...)` to remove a prefab from the prefabs list (#1950)
 
@@ -261,7 +962,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 - Fixed issue where dynamically spawned `NetworkObject`s could throw an exception if the scene of origin handle was zero (0) and the `NetworkObject` was already spawned. (#2017)
 - Fixed issue where `NetworkObject.Observers` was not being cleared when despawned. (#2009)
-- Fixed `NetworkAnimator` could not run in the server authoritative mode. (#2003)
+- Fixed NetworkAnimator could not run in the server authoritative mode. (#2003)
 - Fixed issue where late joining clients would get a soft synchronization error if any in-scene placed NetworkObjects were parented under another `NetworkObject`. (#1985)
 - Fixed issue where `NetworkBehaviourReference` would throw a type cast exception if using `NetworkBehaviourReference.TryGet` and the component type was not found. (#1984)
 - Fixed `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a new scene in `LoadSceneMode.Single` mode. (#1975)
@@ -269,13 +970,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - Fixed a regression in serialization support: `FixedString`, `Vector2Int`, and `Vector3Int` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper. (#1961)
 - Fixed generic types that inherit from NetworkBehaviour causing crashes at compile time. (#1976)
-- Fixed endless dialog boxes when adding a `NetworkBehaviour` to a `NetworkManager` or vice-versa. (#1947)
-- Fixed `NetworkAnimator` issue where it was only synchronizing parameters if the layer or state changed or was transitioning between states. (#1946)
-- Fixed `NetworkAnimator` issue where when it did detect a parameter had changed it would send all parameters as opposed to only the parameters that changed. (#1946)
-- Fixed `NetworkAnimator` issue where it was not always disposing the `NativeArray` that is allocated when spawned. (#1946)
-- Fixed `NetworkAnimator` issue where it was not taking the animation speed or state speed multiplier into consideration. (#1946)
-- Fixed `NetworkAnimator` issue where it was not properly synchronizing late joining clients if they joined while `Animator` was transitioning between states. (#1946)
-- Fixed `NetworkAnimator` issue where the server was not relaying changes to non-owner clients when a client was the owner. (#1946)
+- Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa. (#1947)
+- Fixed NetworkAnimator issue where it was only synchronizing parameters if the layer or state changed or was transitioning between states. (#1946)
+- Fixed NetworkAnimator issue where when it did detect a parameter had changed it would send all parameters as opposed to only the parameters that changed. (#1946)
+- Fixed NetworkAnimator issue where it was not always disposing the `NativeArray` that is allocated when spawned. (#1946)
+- Fixed NetworkAnimator issue where it was not taking the animation speed or state speed multiplier into consideration. (#1946)
+- Fixed NetworkAnimator issue where it was not properly synchronizing late joining clients if they joined while `Animator` was transitioning between states. (#1946)
+- Fixed NetworkAnimator issue where the server was not relaying changes to non-owner clients when a client was the owner. (#1946)
 - Fixed issue where the `PacketLoss` metric for tools would return the packet loss over a connection lifetime instead of a single frame. (#2004)
 
 ## [1.0.0-pre.9] - 2022-05-10
@@ -291,7 +992,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
-- Changed requirement to register in-scene placed NetworkObjects with `NetworkManager` in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
+- Changed requirement to register in-scene placed NetworkObjects with NetworkManager in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
 
 ### Removed
 
@@ -301,13 +1002,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where `NetworkSceneManager` did not synchronize despawned in-scene placed NetworkObjects. (#1898)
-- Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
+- Fixed NetworkTransform generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
 - Passing generic types to RPCs no longer causes a native crash (#1901)
 - Fixed a compile failure when compiling against com.unity.nuget.mono-cecil >= 1.11.4 (#1920)
-- Fixed an issue where calling `Shutdown` on a `NetworkManager` that was already shut down would cause an immediate shutdown the next time it was started (basically the fix makes `Shutdown` idempotent). (#1877)
+- Fixed an issue where calling `Shutdown` on a NetworkManager that was already shut down would cause an immediate shutdown the next time it was started (basically the fix makes `Shutdown` idempotent). (#1877)
 
 ## [1.0.0-pre.7] - 2022-04-06
 
@@ -463,8 +1164,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `Bootstrap` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons
-- Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
-- Added a jitter-resistent `BufferedLinearInterpolator<T>` for `NetworkTransform` (#1060)
+- Enhanced NetworkTransform implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
+- Added a jitter-resistent `BufferedLinearInterpolator<T>` for NetworkTransform (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
@@ -474,12 +1175,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `SnapshotSystem` that would allow variables and spawn/despawn messages to be sent in blocks (#805, #852, #862, #963, #1012, #1013, #1021, #1040, #1062, #1064, #1083, #1091, #1111, #1129, #1166, #1192)
   - Disabled by default for now, except spawn/despawn messages
   - Will leverage unreliable messages with eventual consistency
-- `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
+- NetworkBehaviour and `NetworkObject`'s NetworkManager instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
 - `NetworkBehaviour.IsSpawned` a quick (and stable) way to determine if the associated NetworkObject is spawned (#1190)
-- Added `NetworkRigidbody` and `NetworkRigidbody2D` components to support networking `Rigidbody` and `Rigidbody2D` components (#1202, #1175)
+- Added NetworkRigidBody and `NetworkRigidbody2D` components to support networking `Rigidbody` and `Rigidbody2D` components (#1202, #1175)
 - Added `NetworkObjectReference` and `NetworkBehaviourReference` structs which allow to sending `NetworkObject/Behaviours` over RPCs/`NetworkVariable`s (#1173)
-- Added `NetworkAnimator` component to support networking `Animator` component (#1281, #872)
+- Added NetworkAnimator component to support networking `Animator` component (#1281, #872)
 
 ### Changed
 
@@ -502,13 +1203,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
 - Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
-- Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
+- Scene registration in NetworkManager is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
 - `NetworkManager, NetworkConfig, and NetworkSceneManager` scene registration replaced with scenes in build list (#1080)
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
 - Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
-- `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
+- NetworkManager and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
 - Changed `INetworkSerializable.NetworkSerialize` method signature to use `BufferSerializer<T>` instead of `NetworkSerializer` (#1187)
 - Changed `CustomMessagingManager`'s methods to use `FastBufferWriter` and `FastBufferReader` instead of `Stream` (#1187)
 - Reduced internal runtime allocations by removing LINQ calls and replacing managed lists/arrays with native collections (#1196)
@@ -531,8 +1232,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
 - Removed `EnableNetworkVariable` in `NetworkConfig`, it is always enabled now (#1179)
-- Removed `NetworkTransform`'s FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
-- Removed `NetworkManager`'s `StopServer()`, `StopClient()` and `StopHost()` methods and replaced with single `NetworkManager.Shutdown()` method for all (#1108)
+- Removed NetworkTransform's FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
+- Removed NetworkManager's `StopServer()`, `StopClient()` and `StopHost()` methods and replaced with single `NetworkManager.Shutdown()` method for all (#1108)
 
 ### Fixed
 
@@ -540,22 +1241,22 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkObject.OwnerClientId` property changing before `NetworkBehaviour.OnGainedOwnership()` callback (#1092)
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
-- Fixed `NetworkManager` shutdown when quitting the application or switching scenes (#1011)
-  - Now `NetworkManager` shutdowns correctly and despawns existing `NetworkObject`s
-- Fixed Only one `PlayerPrefab` can be selected on `NetworkManager` inspector UI in the editor (#676)
+- Fixed NetworkManager shutdown when quitting the application or switching scenes (#1011)
+  - Now NetworkManager shutdowns correctly and despawns existing `NetworkObject`s
+- Fixed Only one `PlayerPrefab` can be selected on NetworkManager inspector UI in the editor (#676)
 - Fixed connection approval not being triggered for host (#675)
 - Fixed various situations where messages could be processed in an invalid order, resulting in errors (#948, #1187, #1218)
 - Fixed `NetworkVariable`s being default-initialized on the client instead of being initialized with the desired value (#1266)
 - Improved runtime performance and reduced GC pressure (#1187)
 - Fixed #915 - clients are receiving data from objects not visible to them (#1099)
-- Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
+- Fixed NetworkTransform's "late join" issues, NetworkTransform now uses `NetworkVariable`s instead of RPCs (#826)
 - Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
 
 ### Known Issues
 
 - `NetworkVariable` does not serialize `INetworkSerializable` types through their `NetworkSerialize` implementation
 - `NetworkObjects` marked as `DontDestroyOnLoad` are disabled during some network scene transitions
-- `NetworkTransform` interpolates from the origin when switching Local Space synchronization
+- NetworkTransform interpolates from the origin when switching Local Space synchronization
 - Exceptions thrown in `OnNetworkSpawn` user code for an object will prevent the callback in other objects
 - Cannot send an array of `INetworkSerializable` in RPCs
 - ILPP generation fails with special characters in project path
@@ -598,21 +1299,21 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): MLAPI now uses the Unity Package Manager for installation management.
 - Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s.
-- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented `NetworkAnimator`, which synchronizes animation states for networked objects.
+- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented NetworkAnimator, which synchronizes animation states for networked objects.
 - GitHub [444](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/444) and [455](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/455): Channels are now represented as bytes instead of strings.
 
 For users of previous versions of MLAPI, this release renames APIs due to refactoring. All obsolete marked APIs have been removed as per [GitHub 513](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/513) and [GitHub 514](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/514).
 
 | Previous MLAPI Versions | V 0.1.0 Name |
 | -- | -- |
-| `NetworkingManager` | `NetworkManager` |
+| `NetworkingManager` | NetworkManager |
 | `NetworkedObject` | `NetworkObject` |
-| `NetworkedBehaviour` | `NetworkBehaviour` |
+| `NetworkedBehaviour` | NetworkBehaviour |
 | `NetworkedClient` | `NetworkClient` |
 | `NetworkedPrefab` | `NetworkPrefab` |
 | `NetworkedVar` | `NetworkVariable` |
-| `NetworkedTransform` | `NetworkTransform` |
-| `NetworkedAnimator` | `NetworkAnimator` |
+| `NetworkedTransform` | NetworkTransform |
+| `NetworkedAnimator` | NetworkAnimator |
 | `NetworkedAnimatorEditor` | `NetworkAnimatorEditor` |
 | `NetworkedNavMeshAgent` | `NetworkNavMeshAgent` |
 | `SpawnManager` | `NetworkSpawnManager` |
@@ -647,8 +1348,8 @@ With a new release of MLAPI in Unity, some features have been removed:
 - [GitHub 527](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/527): Lag compensation systems and `TrackedObject` have moved to the new [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) repo.
 - [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
   - Removed `SecuritySendFlags` from all APIs.
-  - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
-  - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
+  - Removed encryption, cryptography, and certificate configurations from APIs including NetworkManager and `NetworkConfig`.
+  - Removed "hail handshake", including NetworkManager implementation and `NetworkConstants` entries.
   - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 - Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
 - Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
@@ -658,16 +1359,16 @@ With a new release of MLAPI in Unity, some features have been removed:
 
 - `NetworkNavMeshAgent` does not synchronize mesh data, Agent Size, Steering, Obstacle Avoidance, or Path Finding settings. It only synchronizes the destination and velocity, not the path to the destination.
 - For `RPC`, methods with a `ClientRpc` or `ServerRpc` suffix which are not marked with [ServerRpc] or [ClientRpc] will cause a compiler error.
-- For `NetworkAnimator`, Animator Overrides are not supported. Triggers do not work.
+- For NetworkAnimator, Animator Overrides are not supported. Triggers do not work.
 - For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
 - `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
-- `NetworkTransform` have the following issues:
+- NetworkTransform have the following issues:
   - Replicated objects may have jitter.
   - The owner is always authoritative about the object's position.
   - Scale is not synchronized.
 - Connection Approval is not called on the host client.
 - For `NamedMessages`, always use `NetworkBuffer` as the underlying stream for sending named and unnamed messages.
-- For `NetworkManager`, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
+- For NetworkManager, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
 
 ## [0.0.1-preview.1] - 2020-12-20
 

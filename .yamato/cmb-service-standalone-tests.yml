@@ -1,0 +1,70 @@
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
+---
+
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible test validation against the CMB Service.
+  # This job runs on the default test_platform which is Ubuntu.
+  # This job runs the standalone desktop tests and ignores all tests that are not related to the CMB Service.
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies.
+  # This is only needed in NGOv2.X since NGOv1.X does not use the CMB Service.
+
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all desktop platform (Windows, macOS, Ubuntu)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
+    # 3. For the default project.
+    # 4. For all scripting backends (mono, il2cpp)
+
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # For desktop devices a split is into two phases is not required but we use it for consistency with setup of others standalone platforms:
+    # 1. Build Phase: Creates standalone players for desktop platforms
+    # 2. Run Phase: Executes runtime tests on actual desktop devices
+  # The Run phase uses build job as dependency
+
+  # Note: The build phase for this test is imported from the desktop standalone tests as the CMB Service test is a subset of the desktop standalone tests.
+
+#-----------------------------------------------------------------------------------
+
+
+# CMB SERVICE RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.all -%}
+{% for backend in scripting_backends -%}
+cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
+  name : CMB Service Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+
+  variables:
+    # The echo server is a "mock" server that is only used to test encoding/decoding of messages.
+    # It is used by the DistributedAuthorityCodecTests. These are tests that are built and maintained by the CMB service team.
+    ECHO_SERVER_PORT: "7788"
+    # Set this to ensure the DistributedAuthorityCodecTests will fail if they cannot connect to the echo server.
+    # The default is to ignore the codec tests if the echo server fails to connect
+    ENSURE_CODEC_TESTS: "true"
+
+    # When USE_CMB_SERVICE is set to true, any C# tests configured to use the DA host will instead use the CMB service.
+    USE_CMB_SERVICE: "true"
+    # This is the port on which to run the full standalone CMB service.
+    # The port needs to be different from the echo server port as two processes cannot bind to same port.
+    CMB_SERVICE_PORT: "7799"
+
+  commands:
+    # run_cmb_service.sh builds and starts a release version of the full CMB service (along with the limited echo server)
+    - ./Tools/CI/service.cmb/run_cmb_service.sh -e $ECHO_SERVER_PORT -s $CMB_SERVICE_PORT
+
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+  artifacts:
+    logs:
+      paths:
+        - "test-results/**/*"
+  dependencies:
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}

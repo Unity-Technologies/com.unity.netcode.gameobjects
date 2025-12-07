@@ -30,9 +30,18 @@ namespace Unity.Netcode
         [NonSerialized]
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
+        /// <summary>
+        /// This is used for the legacy way of spawning NetworkPrefabs with an override when manually instantiating and spawning.
+        /// To handle multiple source NetworkPrefab overrides that all point to the same target NetworkPrefab use
+        /// <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// or <see cref="NetworkObject.InstantiateAndSpawn(NetworkManager, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// </summary>
         [NonSerialized]
         public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
 
+        /// <summary>
+        /// Gets the read-only list of all registered network prefabs
+        /// </summary>
         public IReadOnlyList<NetworkPrefab> Prefabs => m_Prefabs;
 
         [NonSerialized]
@@ -56,6 +65,9 @@ namespace Unity.Netcode
             m_Prefabs.Remove(networkPrefab);
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network prefab resources
+        /// </summary>
         ~NetworkPrefabs()
         {
             Shutdown();
@@ -78,9 +90,11 @@ namespace Unity.Netcode
         /// Processes the <see cref="NetworkPrefabsList"/> if one is present for use during runtime execution,
         /// else processes <see cref="Prefabs"/>.
         /// </summary>
+        /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization</param>
         public void Initialize(bool warnInvalid = true)
         {
             m_Prefabs.Clear();
+            NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
@@ -96,10 +110,7 @@ namespace Unity.Netcode
             {
                 foreach (var list in NetworkPrefabsLists)
                 {
-                    foreach (var networkPrefab in list.PrefabList)
-                    {
-                        prefabs.Add(networkPrefab);
-                    }
+                    prefabs.AddRange(list.PrefabList);
                 }
             }
 
@@ -141,7 +152,7 @@ namespace Unity.Netcode
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
                     var sb = new StringBuilder("Removing invalid prefabs from Network Prefab registration: ");
-                    sb.Append(string.Join(", ", removeList));
+                    sb.AppendJoin(", ", removeList);
                     NetworkLog.LogWarning(sb.ToString());
                 }
             }
@@ -150,6 +161,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Add a new NetworkPrefab instance to the list
         /// </summary>
+        /// <param name="networkPrefab">The NetworkPrefab to add</param>
+        /// <returns>True if the prefab was successfully added, false if it was invalid or already registered</returns>
         /// <remarks>
         /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
         ///
@@ -171,6 +184,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Remove a NetworkPrefab instance from the list
         /// </summary>
+        /// <param name="prefab">The NetworkPrefab to remove</param>
         /// <remarks>
         /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
         ///
@@ -193,6 +207,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Remove a NetworkPrefab instance with matching <see cref="NetworkPrefab.Prefab"/> from the list
         /// </summary>
+        /// <param name="prefab">The GameObject to match against for removal</param>
         /// <remarks>
         /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
         ///
@@ -234,7 +249,8 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < m_Prefabs.Count; i++)
             {
-                if (m_Prefabs[i].Prefab == prefab)
+                // Check both values as Prefab and be different than SourcePrefabToOverride
+                if (m_Prefabs[i].Prefab == prefab || m_Prefabs[i].SourcePrefabToOverride == prefab)
                 {
                     return true;
                 }
@@ -262,7 +278,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Configures <see cref="NetworkPrefabOverrideLinks"/> and <see cref="OverrideToNetworkPrefab"/> for the given <see cref="NetworkPrefab"/>
+        /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
         /// </summary>
         private bool AddPrefabRegistration(NetworkPrefab networkPrefab)
         {
@@ -296,28 +312,16 @@ namespace Unity.Netcode
                 return true;
             }
 
-            // Make sure we don't have several overrides targeting the same prefab. Apparently we don't support that... shame.
-            if (OverrideToNetworkPrefab.ContainsKey(target))
-            {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
-                // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {target}!");
-                return false;
-            }
-
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
-                    {
-                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
-                    }
-                    break;
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
+                        if (!OverrideToNetworkPrefab.ContainsKey(target))
+                        {
+                            OverrideToNetworkPrefab.Add(target, source);
+                        }
                     }
                     break;
             }

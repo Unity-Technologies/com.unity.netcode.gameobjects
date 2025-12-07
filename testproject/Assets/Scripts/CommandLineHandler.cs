@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Provides basic command line handling capabilities
@@ -216,12 +213,6 @@ public class CommandLineProcessor
         {
             AddUnityTransport(NetworkManager.Singleton);
         }
-#if UNITY_UNET_PRESENT
-        else if (transportName.Equals("unet", StringComparison.CurrentCultureIgnoreCase))
-        {
-            // Do nothing, this is the default
-        }
-#endif
 
     }
 
@@ -251,11 +242,6 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
-#if UNITY_UNET_PRESENT
-            case UNetTransport unetTransport:
-                unetTransport.ConnectAddress = address;
-                break;
-#endif
             case UnityTransport utpTransport:
                 {
                     utpTransport.ConnectionData.Address = address;
@@ -273,12 +259,6 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
-#if UNITY_UNET_PRESENT
-            case UNetTransport unetTransport:
-                unetTransport.ConnectPort = port;
-                unetTransport.ServerListenPort = port;
-                break;
-#endif
             case UnityTransport utpTransport:
                 {
                     utpTransport.ConnectionData.Port = port;

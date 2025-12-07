@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using UnityEngine.Assemblies;
+#endif
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -13,7 +17,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
-    public class NetworkManagerEditor : UnityEditor.Editor
+    public class NetworkManagerEditor : NetcodeEditorBase<NetworkManager>
     {
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
@@ -30,7 +34,10 @@ namespace Unity.Netcode.GameObjects.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
-        private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+        private SerializedProperty m_AutoSpawnPlayerPrefabClientSide;
+        private SerializedProperty m_NetworkTopologyProperty;
+#endif
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
@@ -38,9 +45,13 @@ namespace Unity.Netcode.GameObjects.Editor
         private SerializedProperty m_EnableSceneManagementProperty;
         private SerializedProperty m_RecycleNetworkIdsProperty;
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
+        private SerializedProperty m_SpawnTimeOutProperty;
         private SerializedProperty m_RpcHashSizeProperty;
         private SerializedProperty m_LoadSceneTimeOutProperty;
         private SerializedProperty m_PrefabsList;
+
+        private SerializedProperty m_NetworkProfileMetrics;
+        private SerializedProperty m_NetworkMessageMetrics;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -52,7 +63,11 @@ namespace Unity.Netcode.GameObjects.Editor
         {
             m_TransportTypes.Clear();
 
+#if UNITY_6000_5_OR_NEWER
+            var assemblies = CurrentAssemblies.GetLoadedAssemblies();
+#else
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
 
             foreach (var assembly in assemblies)
             {
@@ -96,15 +111,30 @@ namespace Unity.Netcode.GameObjects.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+            m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
+#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-            m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
             m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
-            m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+
+            m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
+            m_SpawnTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("SpawnTimeout");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+
+            m_NetworkProfileMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkProfileMetrics");
+#if MULTIPLAYER_TOOLS
+            m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
+#endif
+            m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
@@ -124,103 +154,53 @@ namespace Unity.Netcode.GameObjects.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+            m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
+#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-            m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
             m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
-            m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+
+
+            m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
+            m_SpawnTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("SpawnTimeout");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+
+            m_NetworkProfileMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkProfilingMetrics");
+#if MULTIPLAYER_TOOLS
+            m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
+#endif
+
+            m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DisplayNetworkManagerProperties()
         {
-            Initialize();
-            CheckNullProperties();
-
-#if !MULTIPLAYER_TOOLS
-            DrawInstallMultiplayerToolsTip();
-#endif
-
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
+
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();
 
-                EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
-                EditorGUILayout.Space();
-
-                if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
-                {
-                    EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
-                    if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
-                    {
-                        // Default directory
-                        var directory = "Assets/";
-                        var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
-                        if (assetPath == "")
-                        {
-                            assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
-                        }
-
-                        if (assetPath != "")
-                        {
-                            directory = Path.GetDirectoryName(assetPath);
-                        }
-                        else
-                        {
-#if UNITY_2021_1_OR_NEWER
-                            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
-#else
-                            var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+                EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+                EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
 #endif
-                            if (prefabStage != null)
-                            {
-                                var prefabPath = prefabStage.assetPath;
-                                if (!string.IsNullOrEmpty(prefabPath))
-                                {
-                                    directory = Path.GetDirectoryName(prefabPath);
-                                }
-                            }
-                            if (m_NetworkManager.gameObject.scene != null)
-                            {
-                                var scenePath = m_NetworkManager.gameObject.scene.path;
-                                if (!string.IsNullOrEmpty(scenePath))
-                                {
-                                    directory = Path.GetDirectoryName(scenePath);
-                                }
-                            }
-                        }
-                        var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
-                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
-                        Debug.Log("Saving migrated Network Prefabs List to " + path);
-                        AssetDatabase.CreateAsset(networkPrefabs, path);
-                        EditorUtility.SetDirty(m_NetworkManager);
-                    }
-                }
-                else
-                {
-                    if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
-                    {
-                        EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
-                    }
-                    EditorGUILayout.PropertyField(m_PrefabsList);
-                }
-                EditorGUILayout.Space();
-
-                EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
-
                 EditorGUILayout.PropertyField(m_NetworkTransportProperty);
-
                 if (m_NetworkTransportProperty.objectReferenceValue == null)
                 {
                     EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
@@ -237,56 +217,131 @@ namespace Unity.Netcode.GameObjects.Editor
                         Repaint();
                     }
                 }
-
                 EditorGUILayout.PropertyField(m_TickRateProperty);
-
-                EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-
-                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
-
-                EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_SpawnTimeOutProperty);
                 EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.ConnectionApproval))
+                if (m_NetworkManager.NetworkConfig.ConnectionApproval)
                 {
                     EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
                 }
-
-                EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
-
-
+                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty, new GUIContent("NetworkVariable Length Safety"));
                 EditorGUILayout.PropertyField(m_RecycleNetworkIdsProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
+                if (m_NetworkManager.NetworkConfig.RecycleNetworkIds)
                 {
                     EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
                 }
-
-                EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_RpcHashSizeProperty);
 
-                EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
+                EditorGUILayout.PropertyField(m_NetworkProfileMetrics);
+#if MULTIPLAYER_TOOLS
+                EditorGUILayout.PropertyField(m_NetworkMessageMetrics);
+#endif
 
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Prefab Settings", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+                // Only display the auto spawn property when the distributed authority network topology is selected
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+                {
+                    EditorGUILayout.PropertyField(m_AutoSpawnPlayerPrefabClientSide, new GUIContent("Auto Spawn Player Prefab"));
+                }
+#endif
+                EditorGUILayout.PropertyField(m_PlayerPrefabProperty, new GUIContent("Default Player Prefab"));
+
+
+
+                if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
+                {
+                    EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
+                    if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
+                    {
+                        // Default directory
+                        var directory = "Assets/";
+                        var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
+                        if (assetPath.Length == 0)
+                        {
+                            assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
+                        }
+
+                        if (assetPath.Length > 0)
+                        {
+                            directory = Path.GetDirectoryName(assetPath);
+                        }
+                        else
+                        {
+#if UNITY_2021_1_OR_NEWER
+                            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+#else
+                            var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+#endif
+                            if (prefabStage != null)
+                            {
+                                var prefabPath = prefabStage.assetPath;
+                                if (prefabPath.Length > 0)
+                                {
+                                    directory = Path.GetDirectoryName(prefabPath);
+                                }
+                            }
+                            if (m_NetworkManager.gameObject.scene != null)
+                            {
+                                var scenePath = m_NetworkManager.gameObject.scene.path;
+                                if (!string.IsNullOrEmpty(scenePath))
+                                {
+                                    directory = Path.GetDirectoryName(scenePath);
+                                }
+                            }
+                        }
+                        var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
+#if UNITY_6000_2_OR_NEWER
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetEntityId()}.asset");
+#else
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
+#endif
+                        Debug.Log("Saving migrated Network Prefabs List to " + path);
+                        AssetDatabase.CreateAsset(networkPrefabs, path);
+                        EditorUtility.SetDirty(m_NetworkManager);
+                    }
+                }
+                else
+                {
+                    if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
+                    {
+                        EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                    }
+                    else if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.All(x => x == null))
+                    {
+                        EditorGUILayout.HelpBox("All prefab lists selected are uninitialized. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                    }
+                    EditorGUILayout.PropertyField(m_PrefabsList);
+                }
+
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Scene Management Settings", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
+                if (m_NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
                     EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
                 }
 
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
 
+        private void DisplayCallToActionButtons()
+        {
+            if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
+            {
+                string buttonDisabledReasonSuffix = "";
 
-                // Start buttons below
+                if (!EditorApplication.isPlaying)
                 {
-                    string buttonDisabledReasonSuffix = "";
+                    buttonDisabledReasonSuffix = ". This can only be done in play mode";
+                    GUI.enabled = false;
+                }
 
-                    if (!EditorApplication.isPlaying)
-                    {
-                        buttonDisabledReasonSuffix = ". This can only be done in play mode";
-                        GUI.enabled = false;
-                    }
-
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                {
                     if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
                     {
                         m_NetworkManager.StartHost();
@@ -301,11 +356,19 @@ namespace Unity.Netcode.GameObjects.Editor
                     {
                         m_NetworkManager.StartClient();
                     }
-
-                    if (!EditorApplication.isPlaying)
+                }
+                else
+                {
+                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
                     {
-                        GUI.enabled = true;
+                        m_NetworkManager.StartClient();
                     }
+                }
+
+
+                if (!EditorApplication.isPlaying)
+                {
+                    GUI.enabled = true;
                 }
             }
             else
@@ -332,6 +395,22 @@ namespace Unity.Netcode.GameObjects.Editor
                     m_NetworkManager.Shutdown();
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            var networkManager = target as NetworkManager;
+            Initialize();
+            CheckNullProperties();
+#if !MULTIPLAYER_TOOLS
+            DrawInstallMultiplayerToolsTip();
+#endif
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; }
+            ;
+            DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
+            DisplayCallToActionButtons();
+            base.OnInspectorGUI();
         }
 
         private static void DrawInstallMultiplayerToolsTip()

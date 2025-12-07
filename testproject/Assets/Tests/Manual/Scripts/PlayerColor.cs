@@ -12,7 +12,7 @@ namespace TestProject.ManualTests
         public override void OnNetworkSpawn()
         {
             MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-            ulong myId = GetComponent<NetworkObject>().OwnerClientId;
+            ulong myId = NetworkObject.OwnerClientId;
             var color = s_Colors[myId % Convert.ToUInt64(s_Colors.Length)];
             meshRenderer.material.color = color;
             if (ApplyColorToChildren)

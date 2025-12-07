@@ -10,6 +10,8 @@ using Random = UnityEngine.Random;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class SceneEventProgressTests : NetcodeIntegrationTest
     {
         private const string k_SceneUsedToGetAsyncOperation = "EmptyScene";
@@ -17,11 +19,19 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private bool m_SceneEventProgressCompleted;
         private SceneEventProgress m_CurrentSceneEventProgress;
 
         private List<ulong> m_ClientThatShouldNotHaveCompleted = new List<ulong>();
         private List<ulong> m_ClientThatShouldHaveCompleted = new List<ulong>();
+
+        public SceneEventProgressTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         private bool SceneEventProgressComplete(SceneEventProgress sceneEventProgress)
         {

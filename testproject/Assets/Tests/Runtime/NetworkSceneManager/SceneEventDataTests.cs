@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using Unity.Netcode;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +17,13 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class SceneEventDataTests
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against a CMB server
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         /// <summary>
         /// This verifies that change from Allocator.TmpJob to Allocator.Persistent
         /// will not cause memory leak warning notifications if the scene event takes
@@ -46,7 +55,7 @@ namespace TestProject.RuntimeTests
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
                 SceneEventProgressId = Guid.NewGuid(),
                 LoadSceneMode = LoadSceneMode.Single,
-                SceneHandle = 32768
+                SceneHandle = new NetworkSceneHandle(32768, true)
             };
 
             sceneEventData.Serialize(fastBufferWriter);

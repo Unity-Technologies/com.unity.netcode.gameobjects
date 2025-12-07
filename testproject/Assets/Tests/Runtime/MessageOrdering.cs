@@ -9,6 +9,9 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    /// <summary>
+    /// TODO: This test needs to be converted to an integration test 
+    /// </summary>
     public class MessageOrderingTests
     {
         private GameObject m_Prefab;
@@ -16,6 +19,12 @@ namespace TestProject.RuntimeTests
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -111,7 +120,7 @@ namespace TestProject.RuntimeTests
             //server.PrefabHandler.AddHandler(networkObject.GlobalObjectIdHash, handler);
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, client);
                 client.PrefabHandler.AddHandler(networkObject, clientHandler);
                 clientHandlers.Add(clientHandler);
             }
@@ -190,6 +199,8 @@ namespace TestProject.RuntimeTests
             Debug.Log($"It took {Time.frameCount - frameCountStart} frames to process the MessageOrdering.SpawnRpcDespawn integration test.");
         }
 
+        private ulong m_SpawnedNetworkObjectId;
+
         [UnityTest]
         public IEnumerator RpcOnNetworkSpawn()
         {
@@ -205,7 +216,7 @@ namespace TestProject.RuntimeTests
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var handlers = new List<SpawnRpcDespawnInstanceHandler>();
-            var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+            var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, server);
 
             // We *must* always add a unique handler to both the server and the clients
             server.PrefabHandler.AddHandler(networkObject, handler);
@@ -213,7 +224,7 @@ namespace TestProject.RuntimeTests
             foreach (var client in clients)
             {
                 // Create a unique SpawnRpcDespawnInstanceHandler per client
-                handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+                handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, client);
                 handlers.Add(handler);
                 client.PrefabHandler.AddHandler(networkObject, handler);
             }
@@ -243,10 +254,30 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Check to make sure all clients are connected
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length, null, 512);
 
-            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
-            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
-            serverNetworkObject.Spawn();
+            var serverNetworkObject = NetworkObject.InstantiateAndSpawn(m_Prefab, server);
+
+            m_SpawnedNetworkObjectId = serverNetworkObject.GlobalObjectIdHash;
+
+            // Make sure everyone spawns the object
+            var allClientsSpawnedObject = false;
+            var waitPeriod = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
+            var timeout = Time.realtimeSinceStartup + 4.0f;
+            while (!allClientsSpawnedObject)
+            {
+                if (timeout < Time.realtimeSinceStartup)
+                {
+                    Assert.Fail($"Timed out waiting for all clients to spawn {serverNetworkObject.name}!");
+                }
+                foreach (var client in clients)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedNetworkObjectId))
+                    {
+                        yield return waitPeriod;
+                        continue;
+                    }
+                }
+                allClientsSpawnedObject = true;
+            }
 
             // Wait until all objects have spawned.
             const int maxFrames = 240;

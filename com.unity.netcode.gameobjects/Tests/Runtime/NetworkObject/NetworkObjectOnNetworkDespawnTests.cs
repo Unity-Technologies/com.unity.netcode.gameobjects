@@ -10,13 +10,25 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests that check OnNetworkDespawn being invoked
     /// </summary>
-    public class NetworkObjectOnNetworkDespawnTests
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    internal class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
     {
-        private NetworkManager m_ServerHost;
-        private NetworkManager[] m_Clients;
+        private const string k_ObjectName = "TestDespawn";
+        public enum InstanceTypes
+        {
+            Server,
+            Client
+        }
 
+        protected override int NumberOfClients => 1;
         private GameObject m_ObjectToSpawn;
         private NetworkObject m_NetworkObject;
+
+        public NetworkObjectOnNetworkDespawnTests(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+        }
 
         internal class OnNetworkDespawnTestComponent : NetworkBehaviour
         {
@@ -35,86 +47,68 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        [UnitySetUp]
-        public IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            Assert.IsTrue(NetcodeIntegrationTestHelpers.Create(1, out m_ServerHost, out m_Clients));
-
-            m_ObjectToSpawn = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(nameof(NetworkObjectOnNetworkDespawnTests), m_ServerHost, m_Clients);
+            m_ObjectToSpawn = CreateNetworkObjectPrefab(k_ObjectName);
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
-            m_NetworkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
-
-            yield return null;
+            base.OnServerAndClientsCreated();
         }
 
-        [UnityTearDown]
-        public IEnumerator Teardown()
+        private bool ObjectSpawnedOnAllNetworkManagerInstances()
         {
-            // Shutdown and clean up both of our NetworkManager instances
-            if (m_ObjectToSpawn)
+            foreach (var manager in m_NetworkManagers)
             {
-                Object.Destroy(m_ObjectToSpawn);
-                m_ObjectToSpawn = null;
+                if (!s_GlobalNetworkObjects.ContainsKey(manager.LocalClientId))
+                {
+                    return false;
+                }
+                if (!s_GlobalNetworkObjects[manager.LocalClientId].ContainsKey(m_NetworkObject.NetworkObjectId))
+                {
+                    return false;
+                }
             }
-            NetcodeIntegrationTestHelpers.Destroy();
-            yield return null;
-        }
 
-        public enum InstanceType
-        {
-            Server,
-            Host,
-            Client
+            return true;
         }
 
         /// <summary>
-        /// Tests that a spawned NetworkObject's associated NetworkBehaviours will have
-        /// their OnNetworkDespawn invoked during NetworkManager shutdown.
+        /// This test validates that <see cref="NetworkBehaviour.OnNetworkDespawn"/> is invoked when the
+        /// <see cref="NetworkManager"/> is shutdown.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceType.Server, InstanceType.Host, InstanceType.Client)] InstanceType despawnCheck)
+        public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceTypes.Server, InstanceTypes.Client)] InstanceTypes despawnCheck)
         {
-            var useHost = despawnCheck != InstanceType.Server;
-            var networkManager = despawnCheck == InstanceType.Host || despawnCheck == InstanceType.Server ? m_ServerHost : m_Clients[0];
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
 
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerHost, m_Clients))
+            var networkManager = despawnCheck == InstanceTypes.Server ? authority : nonAuthority;
+            var networkManagerOwner = authority;
+            if (m_DistributedAuthority)
             {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
+                networkManagerOwner = networkManager;
             }
 
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_Clients, null, 512);
-
-            // [Host-Server-Side] Check to make sure all clients are connected
-            var clientCount = useHost ? m_Clients.Length + 1 : m_Clients.Length;
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerHost, clientCount, null, 512);
-
             // Spawn the test object
-            var spawnedObject = Object.Instantiate(m_NetworkObject);
-            var spawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            spawnedNetworkObject.NetworkManagerOwner = m_ServerHost;
-            spawnedNetworkObject.Spawn(true);
+            var spawnedObject = SpawnObject(m_ObjectToSpawn, networkManagerOwner);
+            m_NetworkObject = spawnedObject.GetComponent<NetworkObject>();
+
+
+            yield return WaitForConditionOrTimeOut(ObjectSpawnedOnAllNetworkManagerInstances);
+            AssertOnTimeout($"Timed out waiting for all {nameof(NetworkManager)} instances to spawn {m_NetworkObject.name}!");
 
             // Get the spawned object relative to which NetworkManager instance we are testing.
-            var relativeSpawnedObject = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.GetComponent<OnNetworkDespawnTestComponent>() != null), networkManager, relativeSpawnedObject);
-            var onNetworkDespawnTestComponent = relativeSpawnedObject.Result.GetComponent<OnNetworkDespawnTestComponent>();
+            var relativeSpawnedObject = s_GlobalNetworkObjects[networkManager.LocalClientId][m_NetworkObject.NetworkObjectId];
+            var onNetworkDespawnTestComponent = relativeSpawnedObject.GetComponent<OnNetworkDespawnTestComponent>();
 
             // Confirm it is not set before shutting down the NetworkManager
-            Assert.IsFalse(onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
+            Assert.IsFalse(onNetworkDespawnTestComponent.OnNetworkDespawnCalled, $"{nameof(OnNetworkDespawnTestComponent.OnNetworkDespawnCalled)} was set prior to shutting down!");
 
             // Shutdown the NetworkManager instance we are testing.
             networkManager.Shutdown();
 
-            // Since shutdown is now delayed until the post frame update
-            // just wait 2 frames before checking to see if OnNetworkDespawnCalled is true
-            var currentFrame = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount <= currentFrame);
-
             // Confirm that OnNetworkDespawn is invoked after shutdown
-            Assert.IsTrue(onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
+            yield return WaitForConditionOrTimeOut(() => onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
+            AssertOnTimeout($"Timed out waiting for {nameof(NetworkObject)} instance to despawn on the {despawnCheck} side!");
         }
     }
 }

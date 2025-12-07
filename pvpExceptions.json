@@ -1,0 +1,14 @@
+{
+  "exempts": {
+    "PVP-41-1": {
+      "errors": [
+        "CHANGELOG.md: line 9: Unreleased section is not allowed for public release"
+      ]
+    },
+    "PVP-132-2": {
+      "errors": [
+        "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: name of editor assembly should end with '.Editor'"
+      ]
+    }
+  }
+}

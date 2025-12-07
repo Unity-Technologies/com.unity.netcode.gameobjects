@@ -26,6 +26,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 198001549274419308}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -305, y: -240, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
@@ -34,7 +35,6 @@ Transform:
   - {fileID: 3456315205079358758}
   - {fileID: 8794063308444682358}
   m_Father: {fileID: 9223070337736602118}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &164258606156585344
 MeshFilter:
@@ -61,6 +61,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -94,9 +97,17 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 198001549274419308}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Size: {x: 1.0000002, y: 1, z: 1.0000002}
   m_Center: {x: 0.0000019073493, y: 0.000000007450581, z: -0.000001907349}
 --- !u!1 &5279449370783340031
@@ -125,13 +136,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5279449370783340031}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.505}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5566730610036911080}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2013809210325159650
 MeshFilter:
@@ -158,6 +169,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -191,9 +205,17 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5279449370783340031}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5679353742332220714
@@ -222,13 +244,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5679353742332220714}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.514}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5566730610036911080}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1796761232470876384
 MeshFilter:
@@ -255,6 +277,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -288,9 +313,17 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5679353742332220714}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &9223070337736602117
@@ -321,6 +354,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9223070337736602117}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 320, y: 240, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -328,7 +362,6 @@ Transform:
   m_Children:
   - {fileID: 5566730610036911080}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &9223070337736602119
 MonoBehaviour:
@@ -342,13 +375,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
+  GlobalObjectIdHash: 1958757820
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!95 &6515743261518512780
 Animator:
-  serializedVersion: 4
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -362,10 +404,12 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &3276706183666593358
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -378,44 +422,100 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
+  AuthorityMode: 0
+  m_Animator: {fileID: 6515743261518512780}
   TransitionStateInfoList:
-  - Layer: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
     OriginatingState: 2081823275
     DestinationState: -570305638
     TransitionDuration: 0.30227518
     TriggerNameHash: 1033918907
     TransitionIndex: 1
-  - Layer: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
     OriginatingState: 2081823275
     DestinationState: -1509639022
     TransitionDuration: 0.25
     TriggerNameHash: 1033918907
     TransitionIndex: 2
-  - Layer: 1
+  - IsCrossFadeExit: 0
+    Layer: 1
     OriginatingState: 2081823275
     DestinationState: -623385122
     TransitionDuration: 2.2832582
     TriggerNameHash: -623385122
     TransitionIndex: 0
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: -1829531531
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 0
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: 705160537
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 1
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: 801385362
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 2
-  m_Animator: {fileID: 6515743261518512780}
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Rotate
+      NameHash: 807753530
+      Synchronize: 1
+      ParameterType: 4
+    - name: Pulse
+      NameHash: -623385122
+      Synchronize: 1
+      ParameterType: 9
+    - name: TestFloat
+      NameHash: -758535706
+      Synchronize: 1
+      ParameterType: 1
+    - name: TestInt
+      NameHash: -1682086748
+      Synchronize: 1
+      ParameterType: 3
+    - name: TestBool
+      NameHash: 953368263
+      Synchronize: 1
+      ParameterType: 4
+    - name: TestTrigger
+      NameHash: 1033918907
+      Synchronize: 1
+      ParameterType: 9
+    - name: LateJoinTest
+      NameHash: -1545343146
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 9
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Weapon
+      NameHash: 1855955664
+      Synchronize: 1
+      ParameterType: 3
+    - name: ExcludeFromSync
+      NameHash: -1993481368
+      Synchronize: 0
+      ParameterType: 1
+  AnimatorParametersExpanded: 0
 --- !u!114 &-8876216387850298050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -428,6 +528,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48b31fae64dc3c14c98e3c5d09cb1269, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &5194088446451573146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -440,3 +541,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a915cfb2e4f748e4f9526a8bf5ee84f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1

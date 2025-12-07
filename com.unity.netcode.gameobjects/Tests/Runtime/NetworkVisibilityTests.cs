@@ -7,20 +7,20 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(SceneManagementState.SceneManagementEnabled)]
-    [TestFixture(SceneManagementState.SceneManagementDisabled)]
-    public class NetworkVisibilityTests : NetcodeIntegrationTest
+    [TestFixture(SceneManagementState.SceneManagementEnabled, NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementEnabled, NetworkTopologyTypes.ClientServer)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, NetworkTopologyTypes.ClientServer)]
+    internal class NetworkVisibilityTests : NetcodeIntegrationTest
     {
-        public enum SceneManagementState
-        {
-            SceneManagementEnabled,
-            SceneManagementDisabled
-        }
-        protected override int NumberOfClients => 1;
+
+        protected override int NumberOfClients => 2;
         private GameObject m_TestNetworkPrefab;
         private bool m_SceneManagementEnabled;
+        private GameObject m_SpawnedObject;
+        private NetworkManager m_SessionOwner;
 
-        public NetworkVisibilityTests(SceneManagementState sceneManagementState)
+        public NetworkVisibilityTests(SceneManagementState sceneManagementState, NetworkTopologyTypes networkTopologyType) : base(networkTopologyType)
         {
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
         }
@@ -29,10 +29,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_TestNetworkPrefab = CreateNetworkObjectPrefab("Object");
             m_TestNetworkPrefab.AddComponent<NetworkVisibilityComponent>();
-            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+
+            foreach (var manager in m_NetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
+                manager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
             }
             base.OnServerAndClientsCreated();
         }
@@ -40,7 +40,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            SpawnObject(m_TestNetworkPrefab, m_ServerNetworkManager);
+            m_SessionOwner = GetAuthorityNetworkManager();
+            m_SpawnedObject = SpawnObject(m_TestNetworkPrefab, m_SessionOwner);
 
             yield return base.OnServerAndClientsConnected();
         }
@@ -48,13 +49,36 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator HiddenObjectsTest()
         {
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == 2);
-#else
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
-#endif
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == TotalClients);
+            AssertOnTimeout($"Timed out waiting for the visible object count to equal {TotalClients}!Actual count {Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned)}");
+        }
 
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
+        [UnityTest]
+        public IEnumerator HideShowAndDeleteTest()
+        {
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned) == TotalClients);
+
+            AssertOnTimeout($"Timed out waiting for the visible object count to equal {TotalClients}! Actual count {Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned)}");
+
+            var sessionOwnerNetworkObject = m_SpawnedObject.GetComponent<NetworkObject>();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            sessionOwnerNetworkObject.NetworkHide(nonAuthority.LocalClientId);
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == TotalClients - 1);
+            AssertOnTimeout($"Timed out waiting for {m_SpawnedObject.name} to be hidden from client!");
+            var networkObjectId = sessionOwnerNetworkObject.NetworkObjectId;
+            sessionOwnerNetworkObject.NetworkShow(nonAuthority.LocalClientId);
+            sessionOwnerNetworkObject.Despawn(true);
+
+            // Expect no exceptions while waiting to show the object and wait for the client id to be removed
+            yield return WaitForConditionOrTimeOut(() => !m_SessionOwner.SpawnManager.ObjectsToShowToClient.ContainsKey(nonAuthority.LocalClientId));
+            AssertOnTimeout($"Timed out waiting for client-{nonAuthority.LocalClientId} to be removed from the {nameof(NetworkSpawnManager.ObjectsToShowToClient)} table!");
+
+            // Now force a scenario where it normally would have caused an exception
+            m_SessionOwner.SpawnManager.ObjectsToShowToClient.Add(nonAuthority.LocalClientId, new System.Collections.Generic.List<NetworkObject>());
+            m_SessionOwner.SpawnManager.ObjectsToShowToClient[nonAuthority.LocalClientId].Add(null);
+
+            // Expect no exceptions
+            yield return s_DefaultWaitForTick;
         }
     }
 }

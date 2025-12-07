@@ -10,12 +10,23 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
     public class NetworkSceneManagerPopulateInSceneTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         protected Dictionary<uint, GameObject> m_InSceneObjectList = new Dictionary<uint, GameObject>();
+
+        public NetworkSceneManagerPopulateInSceneTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         protected override IEnumerator OnSetup()
         {

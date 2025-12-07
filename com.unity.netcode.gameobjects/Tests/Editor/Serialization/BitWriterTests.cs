@@ -4,7 +4,7 @@ using Unity.Collections;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class BitWriterTests
+    internal class BitWriterTests
     {
         [Test]
         public unsafe void TestWritingOneBit()

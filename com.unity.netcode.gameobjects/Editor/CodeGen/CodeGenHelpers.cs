@@ -21,13 +21,16 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         public const string NetcodeModuleName = "Unity.Netcode.Runtime.dll";
 
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
+        public const string ComponentsAssemblyName = "Unity.Netcode.Components";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
         public static readonly string INetworkMessage_FullName = typeof(INetworkMessage).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
+        public static readonly string RpcAttribute_FullName = typeof(RpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
+        public static readonly string RpcParams_FullName = typeof(RpcParams).FullName;
         public static readonly string ClientRpcSendParams_FullName = typeof(ClientRpcSendParams).FullName;
         public static readonly string ClientRpcReceiveParams_FullName = typeof(ClientRpcReceiveParams).FullName;
         public static readonly string ServerRpcSendParams_FullName = typeof(ServerRpcSendParams).FullName;
@@ -41,6 +44,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
         public static readonly string UnityVector4_FullName = typeof(Vector4).FullName;
         public static readonly string UnityQuaternion_FullName = typeof(Quaternion).FullName;
+        public static readonly string UnityPose_FullName = typeof(Pose).FullName;
         public static readonly string UnityRay_FullName = typeof(Ray).FullName;
         public static readonly string UnityRay2D_FullName = typeof(Ray2D).FullName;
 
@@ -59,7 +63,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
         public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
         {
-            if (!typeDefinition.IsClass)
+            if (typeDefinition == null || !typeDefinition.IsClass)
             {
                 return false;
             }
@@ -154,8 +158,12 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
         public static bool IsSubclassOf(this TypeReference typeReference, TypeReference baseClass)
         {
+            if (typeReference == null)
+            {
+                return false;
+            }
             var type = typeReference.Resolve();
-            if (type.BaseType == null || type.BaseType.Name == nameof(Object))
+            if (type?.BaseType == null || type.BaseType.Name == nameof(Object))
             {
                 return false;
             }
@@ -297,6 +305,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             }
 
             if (typeReference.FullName == UnityQuaternion_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityPose_FullName)
             {
                 return true;
             }

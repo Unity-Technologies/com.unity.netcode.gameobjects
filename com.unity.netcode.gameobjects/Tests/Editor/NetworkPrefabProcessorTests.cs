@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class NetworkPrefabProcessorTests
+    internal class NetworkPrefabProcessorTests
     {
         private NetcodeForGameObjectsProjectSettings m_Settings;
         private bool m_EditorDefaultPrefabSetting;

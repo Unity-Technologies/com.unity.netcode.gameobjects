@@ -10,6 +10,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventCallbacks : NetcodeIntegrationTest
@@ -18,6 +19,12 @@ namespace TestProject.RuntimeTests
         protected override int NumberOfClients => 4;
         private Scene m_CurrentScene;
         private bool m_CanStartServerOrClients = false;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         private class SceneEventNotificationTestInfo
         {

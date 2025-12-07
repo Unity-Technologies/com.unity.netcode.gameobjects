@@ -3,14 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
+#if HOSTNAME_RESOLUTION_AVAILABLE
+using Unity.Networking.Transport;
+#endif
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class UnityTransportConnectionTests
+    internal class UnityTransportConnectionTests
     {
         // For tests using multiple clients.
         private const int k_NumClients = 5;
@@ -19,9 +23,17 @@ namespace Unity.Netcode.RuntimeTests
         private List<TransportEvent> m_ServerEvents;
         private List<TransportEvent>[] m_ClientsEvents = new List<TransportEvent>[k_NumClients];
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
+            VerboseDebug = false;
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -33,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (transport)
                 {
                     transport.Shutdown();
-                    UnityEngine.Object.DestroyImmediate(transport);
+                    UnityEngine.Object.DestroyImmediate(transport.gameObject);
                 }
             }
 
@@ -42,31 +54,18 @@ namespace Unity.Netcode.RuntimeTests
                 transportEvents?.Clear();
             }
 
+            UnityTransportTestComponent.CleanUp();
             yield return null;
         }
 
-        // Check that invalid endpoint addresses are detected and return false if detected
-        [Test]
-        public void DetectInvalidEndpoint()
-        {
-            using var netcodeLogAssert = new NetcodeLogAssert(true);
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
-            m_Server.ConnectionData.Address = "Fubar";
-            m_Server.ConnectionData.ServerListenAddress = "Fubar";
-            m_Clients[0].ConnectionData.Address = "MoreFubar";
-            Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
-            Assert.False(m_Clients[0].StartClient(), "Client failed to detect invalid endpoint!");
-            netcodeLogAssert.LogWasReceived(LogType.Error, $"Network listen address ({m_Server.ConnectionData.Address}) is Invalid!");
-            netcodeLogAssert.LogWasReceived(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is Invalid!");
-        }
-
-        // Check connection with a single client.
+        // Check connection with a single client (IP address).
         [UnityTest]
-        public IEnumerator ConnectSingleClient()
+        public IEnumerator ConnectSingleClient_IPAddress()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+
+            m_Clients[0].SetConnectionData("127.0.0.1", 7777);
 
             m_Server.StartServer();
             m_Clients[0].StartClient();
@@ -79,6 +78,41 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return null;
         }
+
+#if HOSTNAME_RESOLUTION_AVAILABLE
+        // Check connection with a single client (hostname).
+        [UnityTest]
+        public IEnumerator ConnectSingleClient_Hostname()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+
+            // We don't know if localhost will resolve to 127.0.0.1 or ::1, so we wait until we know
+            // before starting the server. Because localhost is pretty much always defined locally
+            // it should resolve immediatly and thus waiting one frame should be enough.
+
+            // We'll need to retry connection requests most likely so make this fast.
+            m_Clients[0].ConnectTimeoutMS = 50;
+
+            m_Clients[0].SetConnectionData("localhost", 7777);
+            m_Clients[0].StartClient();
+
+            yield return null;
+
+            var endpoint = m_Clients[0].GetLocalEndpoint();
+            var ip = endpoint.Family == NetworkFamily.Ipv4 ? "127.0.0.1" : "::1";
+            m_Server.SetConnectionData(ip, 7777, ip);
+            m_Server.StartServer();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
+
+            // Check we've received Connect event on server too.
+            Assert.AreEqual(1, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Connect, m_ServerEvents[0].Type);
+
+            yield return null;
+        }
+#endif
 
         // Check connection with multiple clients.
         [UnityTest]
@@ -161,8 +195,6 @@ namespace Unity.Netcode.RuntimeTests
             // Check that all clients got a Disconnect event.
             Assert.True(m_ClientsEvents.All(evs => evs.Count == 2));
             Assert.True(m_ClientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
-
-            yield return null;
         }
 
         // Check client disconnection from a single client.
@@ -186,35 +218,36 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectMultipleClients()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            m_Server.StartServer();
+            VerboseDebug = true;
+            InitializeTransport(out m_Server, out m_ServerEvents, identifier: "Server");
+            Assert.True(m_Server.StartServer(), "Failed to start server!");
 
             for (int i = 0; i < k_NumClients; i++)
             {
-                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i]);
-                m_Clients[i].StartClient();
+                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i], identifier: $"Client-{i + 1}");
+                Assert.True(m_Clients[i].StartClient(), $"Failed to start client-{i + 1}");
+                // Assure all clients have connected before disconnecting them
+                yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[i], 5);
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[k_NumClients - 1]);
-
             // Disconnect a single client.
+            VerboseLog($"Disconnecting Client-1");
             m_Clients[0].DisconnectLocalClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 5);
 
             // Disconnect all the other clients.
             for (int i = 1; i < k_NumClients; i++)
             {
+                VerboseLog($"Disconnecting Client-{i + 1}");
                 m_Clients[i].DisconnectLocalClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForMultipleNetworkEvents(NetworkEvent.Disconnect, m_ServerEvents, 4, 20);
 
             // Check that we got the correct number of Disconnect events on the server.
             Assert.AreEqual(k_NumClients * 2, m_ServerEvents.Count);
             Assert.AreEqual(k_NumClients, m_ServerEvents.Count(e => e.Type == NetworkEvent.Disconnect));
-
-            yield return null;
         }
 
         // Check that server re-disconnects are no-ops.
@@ -244,8 +277,6 @@ namespace Unity.Netcode.RuntimeTests
             // Check we haven't received anything else on the client or server.
             Assert.AreEqual(m_ServerEvents.Count, previousServerEventsCount);
             Assert.AreEqual(m_ClientsEvents[0].Count, previousClientEventsCount);
-
-            yield return null;
         }
 
         // Check that client re-disconnects are no-ops.
@@ -275,8 +306,6 @@ namespace Unity.Netcode.RuntimeTests
             // Check we haven't received anything else on the client or server.
             Assert.AreEqual(m_ServerEvents.Count, previousServerEventsCount);
             Assert.AreEqual(m_ClientsEvents[0].Count, previousClientEventsCount);
-
-            yield return null;
         }
 
         // Check connection with different server/listen addresses.

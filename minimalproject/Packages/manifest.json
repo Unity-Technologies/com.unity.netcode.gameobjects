@@ -1,8 +1,10 @@
 {
-    "dependencies": {
-        "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
-    },
-    "testables": [
-        "com.unity.netcode.gameobjects"
-    ]
+  "disableProjectUpdate": false,
+  "dependencies": {
+    "com.unity.ide.rider": "3.0.38",
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
+  },
+  "testables": [
+    "com.unity.netcode.gameobjects"
+  ]
 }

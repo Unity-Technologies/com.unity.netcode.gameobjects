@@ -1,4 +1,5 @@
 system: jira
 server: jira.unity3d.com
-project: NCCBUG
 issuetype: Bug
+package: Multiplayer Netcode for GameObjects
+project: NCCBUG

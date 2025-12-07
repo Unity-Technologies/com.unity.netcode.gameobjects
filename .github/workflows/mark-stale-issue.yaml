@@ -1,0 +1,39 @@
+﻿# This workflow utilises an existing implementation (https://github.com/actions/stale) that performs the following actions:
+#   1) Adds "stale" label to issues that have "stat:awaiting-response" for more than 30 days meaning that since we don't have enough information we may potentially close such issue
+#   2) Closes issues that have been marked as "stale" for more than 30 days
+
+# This affects only Issues but at some point we may also consider rules for PRs
+
+name: Mark or Close Stale Issues
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    steps:
+      - uses: actions/stale@v10
+        with:
+          # Only mark issues (not PRs) as stale
+          any-of-labels: 'stat:awaiting-response'
+          days-before-stale: 30
+          days-before-close: 30
+          stale-issue-label: 'Stale'
+          exempt-issue-labels: 'stat:import,stat:imported'
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has been awaiting 
+            response for over 30 days without any activity.
+
+            Please update the issue with any new information or it may be closed in 30 days.
+          close-issue-message: >
+            This issue has been automatically closed because it has been stale for 30 days 
+            without any activity. Feel free to reopen if you have new information to add.
+          # Prevent the action from marking/closing PRs
+          days-before-pr-stale: -1
+          days-before-pr-close: -1

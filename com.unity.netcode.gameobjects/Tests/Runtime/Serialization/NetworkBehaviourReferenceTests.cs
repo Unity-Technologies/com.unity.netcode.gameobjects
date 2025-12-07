@@ -13,10 +13,19 @@ namespace Unity.Netcode.RuntimeTests
     /// - Deserializing NetworkObjectReference to NetworkObject
     /// - Implicit operators of NetworkObjectReference
     /// </summary>
-    public class NetworkBehaviourReferenceTests : IDisposable
+    internal class NetworkBehaviourReferenceTests : IDisposable
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         private class TestNetworkBehaviour : NetworkBehaviour
         {
+            public static bool ReceivedRPC;
+
             public NetworkVariable<NetworkBehaviourReference> TestVariable = new NetworkVariable<NetworkBehaviourReference>();
 
             public TestNetworkBehaviour RpcReceivedBehaviour;
@@ -25,6 +34,7 @@ namespace Unity.Netcode.RuntimeTests
             public void SendReferenceServerRpc(NetworkBehaviourReference value)
             {
                 RpcReceivedBehaviour = (TestNetworkBehaviour)value;
+                ReceivedRPC = true;
             }
         }
 
@@ -57,8 +67,43 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
         }
 
+        [UnityTest]
+        public IEnumerator TestSerializeNull([Values] bool initializeWithNull)
+        {
+            TestNetworkBehaviour.ReceivedRPC = false;
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
 
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
 
+            // If not initializing with null, then use the default constructor with no assigned NetworkBehaviour
+            if (!initializeWithNull)
+            {
+                testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference());
+            }
+            else // Otherwise, initialize and pass in null as the reference
+            {
+                testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference(null));
+            }
+
+            // wait for rpc completion
+            float t = 0;
+            while (!TestNetworkBehaviour.ReceivedRPC)
+            {
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedBehaviour);
+        }
 
         [UnityTest]
         public IEnumerator TestRpcImplicitNetworkBehaviour()
@@ -131,15 +176,6 @@ namespace Unity.Netcode.RuntimeTests
             });
         }
 
-        [Test]
-        public void FailSerializeNullBehaviour()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                NetworkBehaviourReference outReference = null;
-            });
-        }
-
         public void Dispose()
         {
             //Stop, shutdown, and destroy
@@ -156,7 +192,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Integration tests for NetworkBehaviourReference
     /// </summary>
-    public class NetworkBehaviourReferenceIntegrationTests : NetcodeIntegrationTest
+    internal class NetworkBehaviourReferenceIntegrationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

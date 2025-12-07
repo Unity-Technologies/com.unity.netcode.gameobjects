@@ -4,6 +4,117 @@ using Unity.Collections;
 namespace Unity.Netcode
 {
     /// <summary>
+    /// Specifies how RPC messages should be handled in terms of local execution timing
+    /// </summary>
+    public enum LocalDeferMode
+    {
+        /// <summary>
+        /// Uses the default behavior for RPC message handling.
+        /// The default behavior is <see cref="SendImmediate"/>.
+        /// </summary>
+        /// <remarks>
+        /// If <see cref="RpcAttribute.RpcAttributeParams.DeferLocal"/> is enabled, the behavior of this field wil change to <see cref="Defer"/>.
+        /// </remarks>
+        Default,
+
+        /// <summary>
+        /// Defers the local execution of the RPC until the next network tick
+        /// </summary>
+        Defer,
+
+        /// <summary>
+        /// Executes the RPC immediately on the local client without waiting for network synchronization
+        /// </summary>
+        SendImmediate
+    }
+
+    /// <summary>
+    /// Defines parameters for sending Remote Procedure Calls (RPCs) in the network system
+    /// </summary>
+    public struct RpcSendParams
+    {
+        /// <summary>
+        /// Specifies the target that will receive this RPC
+        /// </summary>
+        public BaseRpcTarget Target;
+
+        /// <summary>
+        /// Controls how the RPC is handled for local execution timing
+        /// </summary>
+        public LocalDeferMode LocalDeferMode;
+
+        /// <summary>
+        /// Implicitly converts a BaseRpcTarget to RpcSendParams
+        /// </summary>
+        /// <param name="target">The RPC target to convert</param>
+        /// <returns>A new RpcSendParams instance with the specified target</returns>
+        public static implicit operator RpcSendParams(BaseRpcTarget target) => new RpcSendParams { Target = target };
+
+        /// <summary>
+        /// Implicitly converts a LocalDeferMode to RpcSendParams
+        /// </summary>
+        /// <param name="deferMode">The defer mode to convert</param>
+        /// <returns>A new RpcSendParams instance with the specified defer mode</returns>
+        public static implicit operator RpcSendParams(LocalDeferMode deferMode) => new RpcSendParams { LocalDeferMode = deferMode };
+    }
+
+    /// <summary>
+    /// The receive parameters for an RPC call
+    /// </summary>
+    public struct RpcReceiveParams
+    {
+        /// <summary>
+        /// The sender's client identifier
+        /// </summary>
+        public ulong SenderClientId;
+    }
+
+    /// <summary>
+    /// Parameters for an RPC call
+    /// Can be used with any remote procedure call
+    /// </summary>
+    public struct RpcParams
+    {
+        /// <summary>
+        /// The RPC send parameters (currently a place holder)
+        /// </summary>
+        public RpcSendParams Send;
+
+        /// <summary>
+        /// The RPC receive parameters provides you with the sender's identifier
+        /// </summary>
+        public RpcReceiveParams Receive;
+
+        /// <summary>
+        /// Implicitly converts RpcSendParams to RpcParams
+        /// </summary>
+        /// <param name="send">The send parameters to convert</param>
+        /// <returns>A new RpcParams instance with the specified send parameters</returns>
+        public static implicit operator RpcParams(RpcSendParams send) => new RpcParams { Send = send };
+
+        /// <summary>
+        /// Implicitly converts a BaseRpcTarget to RpcParams
+        /// </summary>
+        /// <param name="target">The RPC target to convert</param>
+        /// <returns>A new RpcParams instance with the specified target in its send parameters</returns>
+        public static implicit operator RpcParams(BaseRpcTarget target) => new RpcParams { Send = new RpcSendParams { Target = target } };
+
+        /// <summary>
+        /// Implicitly converts a LocalDeferMode to RpcParams
+        /// </summary>
+        /// <param name="deferMode">The defer mode to convert</param>
+        /// <returns>A new RpcParams instance with the specified defer mode in its send parameters</returns>
+        public static implicit operator RpcParams(LocalDeferMode deferMode) => new RpcParams { Send = new RpcSendParams { LocalDeferMode = deferMode } };
+
+        /// <summary>
+        /// Implicitly converts RpcReceiveParams to RpcParams
+        /// </summary>
+        /// <param name="receive">The receive parameters to convert</param>
+        /// <returns>A new RpcParams instance with the specified receive parameters</returns>
+        public static implicit operator RpcParams(RpcReceiveParams receive) => new RpcParams { Receive = receive };
+    }
+
+    /// <summary>
     /// Server-Side RPC
     /// Place holder.  <see cref="ServerRpcParams"/>
     /// Note: Clients always send to one destination when sending RPCs to the server
@@ -99,7 +210,13 @@ namespace Unity.Netcode
     internal struct __RpcParams
 #pragma warning restore IDE1006 // restore naming rule violation check
     {
+        public RpcParams Ext;
         public ServerRpcParams Server;
         public ClientRpcParams Client;
+
+        /// <summary>
+        /// Internal information used by <see cref="RpcMessageHelpers"/> to help handle this message.
+        /// </summary>
+        internal ulong SenderId;
     }
 }

@@ -47,6 +47,18 @@ namespace Unity.Netcode
         /// If you receive this event then it is most likely due to a bug (<em>please open a GitHub issue with steps to replicate</em>).<br/>
         /// </summary>
         InternalNetcodeError,
+        /// <summary>
+        /// This is returned when an unload or load action is attempted and scene management is disabled
+        /// </summary>
+        SceneManagementNotEnabled,
+        /// <summary>
+        /// This is returned when a client attempts to perform a server only action
+        /// </summary>
+        ServerOnlyAction,
+        /// <summary>
+        /// This is returned when a client that is not the session owner attempts to perform a session owner only action
+        /// </summary>
+        SessionOwnerOnlyAction,
     }
 
     /// <summary>
@@ -112,7 +124,7 @@ namespace Unity.Netcode
             {
                 // If we are the host, then add the host-client to the list
                 // of clients that completed if the AsyncOperation is done.
-                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
+                if ((m_NetworkManager.IsHost || m_NetworkManager.LocalClient.IsSessionOwner) && m_AsyncOperation.isDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -149,22 +161,20 @@ namespace Unity.Netcode
             if (status == SceneEventProgressStatus.Started)
             {
                 m_NetworkManager = networkManager;
-
-                if (networkManager.IsServer)
+                WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
+                if ((networkManager.IsServer && !networkManager.DistributedAuthorityMode) || (networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner))
                 {
                     m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
                     // Track the clients that were connected when we started this event
-                    foreach (var connectedClientId in networkManager.ConnectedClientsIds)
+                    foreach (var connectedClientId in networkManager.ConnectionManager.ConnectedClientIds)
                     {
-                        // Ignore the host client
-                        if (NetworkManager.ServerClientId == connectedClientId)
+                        // Ignore the host or session owner
+                        if ((!networkManager.DistributedAuthorityMode && NetworkManager.ServerClientId == connectedClientId) || (networkManager.DistributedAuthorityMode && networkManager.CurrentSessionOwner == connectedClientId))
                         {
                             continue;
                         }
                         ClientsProcessingSceneEvent.Add(connectedClientId, false);
                     }
-
-                    WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
                     m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
                 }
             }
@@ -211,6 +221,14 @@ namespace Unity.Netcode
                 ClientsProcessingSceneEvent[clientId] = true;
                 TryFinishingSceneEventProgress();
             }
+        }
+
+        /// <summary>
+        /// Returns whether the SceneEventType is related to an unloading event.
+        /// </summary>
+        internal bool IsUnloading()
+        {
+            return SceneEventType is SceneEventType.Unload or SceneEventType.UnloadComplete or SceneEventType.UnloadEventCompleted;
         }
 
         /// <summary>
@@ -290,7 +308,7 @@ namespace Unity.Netcode
                     m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
                 }
 
-                if (m_TimeOutCoroutine != null)
+                if (m_TimeOutCoroutine != null && m_NetworkManager != null)
                 {
                     m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
                 }

@@ -9,16 +9,18 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
     /// </summary>
     public class NetworkPrefabProcessor : AssetPostprocessor
     {
-        private static string s_DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
+        /// <summary>
+        /// The path to the default network prefabs list.
+        /// </summary>
         public static string DefaultNetworkPrefabsPath
         {
             get
             {
-                return s_DefaultNetworkPrefabsPath;
+                return NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath;
             }
             internal set
             {
-                s_DefaultNetworkPrefabsPath = value;
+                NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath = value;
                 // Force a recache of the prefab list
                 s_PrefabsList = null;
             }
@@ -133,7 +135,7 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
 
             // Process the imported and deleted assets
             var markDirty = ProcessImportedAssets(importedAssets);
-            markDirty &= ProcessDeletedAssets(deletedAssets);
+            markDirty |= ProcessDeletedAssets(deletedAssets);
 
             if (markDirty)
             {

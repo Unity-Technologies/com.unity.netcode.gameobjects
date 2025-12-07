@@ -14,12 +14,12 @@ namespace Unity.Netcode
 
         AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress);
 
-        void PopulateLoadedScenes(ref Dictionary<int, Scene> scenesLoaded, NetworkManager networkManager = null);
+        void PopulateLoadedScenes(ref Dictionary<NetworkSceneHandle, Scene> scenesLoaded, NetworkManager networkManager = null);
         Scene GetSceneFromLoadedScenes(string sceneName, NetworkManager networkManager = null);
 
         bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager = null);
 
-        void StopTrackingScene(int handle, string name, NetworkManager networkManager = null);
+        void StopTrackingScene(NetworkSceneHandle handle, string name, NetworkManager networkManager = null);
 
         void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager = null);
 
@@ -32,5 +32,7 @@ namespace Unity.Netcode
         void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
 
         bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager);
+
+        bool IsIntegrationTest();
     }
 }

@@ -2,11 +2,10 @@ using System;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class BatchedReceiveQueueTests
+    internal class BatchedReceiveQueueTests
     {
         [Test]
         public void BatchedReceiveQueue_EmptyReader()

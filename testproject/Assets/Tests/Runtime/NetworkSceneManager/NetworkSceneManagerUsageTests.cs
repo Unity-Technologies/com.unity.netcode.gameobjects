@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -8,6 +7,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerUsageTests : NetcodeIntegrationTest
@@ -19,32 +19,25 @@ namespace TestProject.RuntimeTests
         private Scene m_CurrentScene;
 
         protected override int NumberOfClients => 1;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkSceneManagerUsageTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         /// <summary>
         /// Checks that LoadScene cannot be called when EnableSceneManagement is false
         /// </summary>
         [Test]
-        public void SceneManagementDisabledException([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
+        public void SceneManagementDisabled([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
         {
             m_CurrentSceneName = k_AdditiveScene1;
-
-            var threwException = false;
-            try
-            {
-                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-                m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
-                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling " +
-                    $"{nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}."))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+            var results = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
+            Assert.True(results == SceneEventProgressStatus.SceneManagementNotEnabled, $"[Server][Load][{loadSceneMode}] Failed to receive a {nameof(SceneEventProgressStatus)}.{nameof(SceneEventProgressStatus.SceneManagementNotEnabled)}!");
         }
 
         /// <summary>
@@ -53,7 +46,14 @@ namespace TestProject.RuntimeTests
         [Test]
         public void ClientSetClientSynchronizationMode()
         {
-            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Clients should not set this value as it is automatically synchronized with the server's setting!");
+            if (!m_DistributedAuthority)
+            {
+                LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Clients should not set this value as it is automatically synchronized with the server's setting!");
+            }
+            else
+            {
+                LogAssert.NoUnexpectedReceived();
+            }
             m_ClientNetworkManagers[0].SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
         }
 
@@ -63,11 +63,21 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ServerSetClientSynchronizationModeAfterClientsConnected()
         {
-            // Verify that changing this setting when additional clients are connect will generate the warning
-            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+            if (!m_DistributedAuthority)
+            {
+                // Verify that changing this setting when additional clients are connect will generate the warning
+                LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+            }
+            else
+            {
+                LogAssert.NoUnexpectedReceived();
+            }
+
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+
             // Verify that changing this setting when no additional clients are connected will not generate a warning
             yield return StopOneClient(m_ClientNetworkManagers[0]);
+
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             LogAssert.NoUnexpectedReceived();
         }
@@ -79,23 +89,16 @@ namespace TestProject.RuntimeTests
         public IEnumerator ClientCannotUseException([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
         {
             m_CurrentSceneName = k_AdditiveScene1;
-            bool threwException = false;
-            try
+            var statusResult = m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
+            var expectedResult = SceneEventProgressStatus.ServerOnlyAction;
+            if (m_DistributedAuthority)
             {
-                m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
+                expectedResult = SceneEventProgressStatus.SessionOwnerOnlyAction;
             }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("Only server can start a scene event!"))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+
+            Assert.True(statusResult == expectedResult, $"[Client][Load][{loadSceneMode}] Failed to receive a {nameof(expectedResult)} response!");
 
             // Check that a client cannot call UnloadScene
-            threwException = false;
-
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
             m_ClientNetworkManagers[0].SceneManager.OnLoadComplete += ClientSceneManager_OnLoadComplete;
             // Loading additive only because we don't want to unload the
@@ -109,18 +112,10 @@ namespace TestProject.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {m_CurrentSceneName} {nameof(SceneEventType.LoadComplete)} event from client!");
 
             // Now try to unload the scene as a client
-            try
-            {
-                m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("Only server can start a scene event!"))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+            statusResult = m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
+
+
+            Assert.True(statusResult == expectedResult, $"[Client][Unload] Failed to receive a {nameof(expectedResult)} response!");
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {

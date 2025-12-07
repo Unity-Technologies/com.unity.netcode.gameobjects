@@ -1,84 +1,207 @@
-validation_editor: 2020.3
-mobile_validation_editor: 2021.3
+# DESCRIPTION-----------------------------------------------------------------------------------------------------------------
+# This file is the central configuration file defining test environments, platforms, projects, editors and other parameters used.
+# Data from this file is used to generate CI pipeline configurations through templating in other .yamato/ files.
+# This provides consistent environment definitions across all CI jobs. It's easier to modify values in central place (for example image reference) than having to modify every job
 
-# Platforms that will be tested. The first entry in this array will also
-# be used for validation
+# VALUE MEANING----------------------------------------------------------------------------------------------------------------------------
+# Usual fields being defined are
+    # name --> Identifier used to distinguish different configurations in the CI pipeline
+    # type --> Specifies the Bokken agent type (e.g., Unity::VM, Unity::VM::osx, Unity::mobile::shield)
+    # image --> Defines the package-ci Bokken image to use for the environment (e.g., package-ci/ubuntu-22.04:v4). This is basically a device configuration
+    # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
+    # smaller_flavor --> An override for flavor that determines the VM size/resources for lighter weight jobs that can run on a smaller vm
+    # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
+    # model --> Defines specific hardware model requirements (e.g., rtx2080, iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
+    # base --> Indicates the base operating system for build operations (e.g., win, mac)
+    # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
+
+
+# SMALL AGENT CONFIGURATION---------------------------------------------------------------------------------------------------
+# The small agent was created to handle jobs that don't involve running Unity and are in general super light when it comes to resource usage (for example pack job).
+# It uses ubuntu since Linux VMs are faster and cheaper to provision than Mac or Windows Virtual Machines (VMs).
+# The b1.small flavour is nearly always sufficient for jobs that don’t involve running Unity Editor.
+small_agent_platform:
+    - name: ubuntu
+      type: Unity::VM
+      image: package-ci/ubuntu-22.04:v4.77.0
+      flavor: b1.small
+
+
+# PLATFORM CONFIGURATIONS----------------------------------------------------------------------------------------------------------------
+# test_platforms specifies platforms that project will/can be tested on.
+# For desktops we include Windows, Ubuntu and Mac, for mobiles we include Android and iOS, for consoles we include ps4, ps5, switch, xbox360 and xboxOne
+# For mobile and console a split was required for build and test jobs and this is also applied for desktops for consistency (though for desktop this split is not required)
+
+
 test_platforms:
-  - name: win
-    type: Unity::VM
-    image: package-ci/win10:stable
-    flavor: b1.large
-    pathsep: \
-    standalone: StandaloneWindows64
-    editorpath: .Editor\Unity.exe
-    utr: .\utr.bat
-  - name: mac
-    type: Unity::VM::osx
-    image: package-ci/mac:stable
-    pathsep: /
-    standalone: StandaloneOSX
-    flavor: b1.large
-    editorpath: .Editor/Unity.app/Contents/MacOS/Unity
-    utr: ./utr
-  - name: ubuntu
-    type: Unity::VM
-    image: package-ci/ubuntu:stable
-    flavor: b1.large
-    pathsep: /
-    standalone: StandaloneLinux64
-    editorpath: .Editor/Unity
-    utr: ./utr
+    # Default platform is used for all basic jobs. Ubuntu was chosen since it's fastest and most available
+    default:
+        - name: ubuntu
+          type: Unity::VM
+          image: package-ci/ubuntu-22.04:v4.77.0
+          flavor: b1.large
+          standalone: StandaloneLinux64
+    desktop:
+        - name: ubuntu
+          type: Unity::VM
+          image: package-ci/ubuntu-22.04:v4.77.0
+          flavor: b1.large
+          smaller_flavor: b1.medium
+          standalone: StandaloneLinux64
+          model: rtx2080
+        - name: win
+          type: Unity::VM
+          image: package-ci/win10:v4
+          flavor: b1.large
+          smaller_flavor: b1.medium
+          standalone: StandaloneWindows64
+          model: rtx2080
+        - name: mac
+          type: Unity::VM::osx
+          image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
+          flavor: m1.mac
+          smaller_flavor: m1.mac # mac doesn't have a smaller vm size. We define it anyway as it simplifies the yaml templating to have it defined.
+          standalone: StandaloneOSX
+          model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
+    # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
+    # TODO: For android we could consider adding ARM64 configuration
+    mobile_build:
+        - name: android
+          type: Unity::VM
+          image: package-ci/win10:v4
+          flavor: b1.large
+          standalone: Android
+          base: win
+          architecture: armv7
+        # iOS modern builds are ARM64-only, thus no testing with armv7
+        - name: ios-arm64
+          type: Unity::VM::osx
+          image: package-ci/macos-13:v4
+          flavor: m1.mac
+          standalone: IOS
+          base: mac
+          architecture: arm64
+    mobile_test:
+        - name: android
+          type: Unity::mobile::shield
+          image: package-ci/win10:v4
+          flavor: b1.large
+          standalone: Android
+          base: win
+          architecture: armv7
+        - name: ios-arm64
+          type: Unity::mobile::iPhone
+          image: package-ci/macos-13-arm64:v4
+          flavor: m1.mac
+          model: 13
+          standalone: IOS
+          base: mac
+          architecture: arm64
+    console_build:
+        - name: ps4
+          type: Unity::VM
+          image: package-ci/win10-ps4:v4
+          flavor: b1.large
+          standalone: PS4
+        # - name: ps5 --> SEE MTT-12118
+        #  type: Unity::VM
+        #  image: package-ci/win10-ps5:v4
+        #  flavor: b1.large
+        #  standalone: PS5
+        - name: switch
+          type: Unity::VM
+          image: package-ci/win10-switch:v4
+          flavor: b1.large
+          standalone: Switch
+        - name: GameCoreXboxOne
+          type: Unity::VM
+          image: package-ci/win10-xbox:v4
+          flavor: b1.large
+          standalone: GameCoreXboxOne
+        - name: GameCoreScarlett
+          type: Unity::VM
+          image: package-ci/win10-xbox:v4
+          flavor: b1.large
+          standalone: GameCoreScarlett
+    console_test:
+        - name: ps4
+          type: Unity::console::ps4
+          image: package-ci/win10-ps4:v4
+          flavor: b1.large
+          standalone: PS4
+        #- name: ps5 --> SEE MTT-12118
+        #  type:  Unity::console::ps5
+        #  image: package-ci/win10-ps5:v4
+        #  flavor: b1.large
+        #  standalone: PS5
+        - name: switch
+          type: Unity::console::switch
+          image: package-ci/win10-switch:v4
+          flavor: b1.large
+          standalone: Switch
+          base: win
+        - name: GameCoreXboxOne
+          type: Unity::console::xbox
+          image: package-ci/win10-xbox:v4
+          flavor: b1.large
+          standalone: GameCoreXboxOne
+        - name: GameCoreScarlett
+          type: Unity::console::scarlett
+          image: package-ci/win10-xbox:v4
+          flavor: b1.large
+          standalone: GameCoreScarlett
 
-# Projects within the repository that will be tested. Name will be used
-# for job ids, so it should not contain spaces/non-supported characters
-projects:
-  - name: testproject
-    path: testproject
-    validate: true
-    publish: true
-    has_tests: true
-    # Packages within a project that will be tested
-    packages:
-      - name: com.unity.netcode.gameobjects
-        path: com.unity.netcode.gameobjects
-    test_editors:
-      - 2020.3
-      - 2021.3
-      - 2022.2
-      - 2023.1
-      - trunk
-  - name: minimalproject
-    path: minimalproject
-    validate: false
-    publish: false
-    has_tests: false
-    packages:
-      - name: com.unity.netcode.gameobjects
-        path: com.unity.netcode.gameobjects
-    test_editors:
-      - 2020.3
-  - name: testproject-tools-integration
-    path: testproject-tools-integration
-    validate: false
-    publish: false
-    has_tests: true
-    test_editors:
-      - 2021.3
-      - 2022.2
-      - trunk
+# EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
+# Editors to be used for testing. NGOv2.X official support started from 6000.0 editor
+# TODO: When a new editor will be released it should be added to this list
 
-# Package dependencies
-dependencies: 
-  - name: com.unity.transport
-    version: 2.0.0-pre.2
-    test_editors:
-      - 2022.2
-      - trunk
+validation_editors:
+    default:
+        - trunk
+    all:
+        - 6000.0
+        - 6000.2
+        - 6000.3
+        - 6000.4
+        - trunk
+    minimal:
+        - 6000.0
 
-# Scripting backends used by Standalone Playmode Tests
-scripting_backends: 
+
+# Scripting backends used by Standalone RunTimeTests---------------------------------------------------
+
+scripting_backends:
   - mono
   - il2cpp
 
-# Images with build-tools installed required for Standalone Tests - IL2CPP
-win_il2cpp_test_image: dots-player/windows10:latest
+
+# PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------
+# Projects within the repository that will be tested/build.
+# The default project should be used for general validation, code coverage and other tests where choice of project should not matter (because we are interested in NGO package)
+# has_tests --> describes if projects contains any tests to run.
+
+projects:
+    default:
+        - name: testproject
+          path: testproject
+          has_tests: true
+    all:
+        - name: testproject
+          path: testproject
+          has_tests: true
+        - name: minimalproject
+          path: minimalproject
+          has_tests: false
+
+
+# UNIFIED TEST RUNNER CONFIGURATIONS--------------------------------------------------------------------
+# Shared settings for the UnifiedTestRunner
+
+# Configures the number of times a failed test is retried before it is considered failed.
+# Helps handle flaky tests
+# Passed into --retry
+num_test_retries: 1
+
+# Number of seconds before a single test times out
+# Passed into --timeout
+test_timeout: 1800

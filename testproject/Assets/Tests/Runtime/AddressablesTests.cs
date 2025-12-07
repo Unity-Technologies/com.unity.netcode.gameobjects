@@ -12,8 +12,9 @@ using Assert = UnityEngine.Assertions.Assert;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(HostOrServer.Server)]
+    [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     public class AddressablesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -33,10 +34,15 @@ namespace TestProject.RuntimeTests
             return NetworkManagerInstatiationMode.DoNotCreate;
         }
 
-
         protected override void OnInlineTearDown()
         {
             ShutdownAndCleanUp();
+        }
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
         }
 
         private IEnumerator LoadAsset(AssetReferenceGameObject asset, NetcodeIntegrationTestHelpers.ResultWrapper<GameObject> prefab)

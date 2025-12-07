@@ -12,7 +12,7 @@ using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class InvalidConnectionEventsTest : NetcodeIntegrationTest
+    internal class InvalidConnectionEventsTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
@@ -79,8 +79,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingConnectionApprovedToAlreadyConnectedClient_ConnectionApprovedMessageIsRejected()
         {
-            var message = new ConnectionApprovedMessage();
-            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
+            var message = new ConnectionApprovedMessage
+            {
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+            };
+            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionApproved), m_ClientNetworkManagers[0].LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -93,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new Hooks<ConnectionApprovedMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(m_ClientNetworkManagers.ToList());
         }
@@ -102,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenSendingConnectionRequestToAnyClient_ConnectionRequestMessageIsRejected()
         {
             var message = new ConnectionRequestMessage();
-            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
+            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionRequest), m_ClientNetworkManagers[0].LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -115,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new Hooks<ConnectionRequestMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(m_ClientNetworkManagers.ToList());
         }
@@ -124,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenSendingConnectionRequestFromAlreadyConnectedClient_ConnectionRequestMessageIsRejected()
         {
             var message = new ConnectionRequestMessage();
-            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
+            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionRequest), m_ServerNetworkManager.LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -137,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new Hooks<ConnectionRequestMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(new List<NetworkManager> { m_ServerNetworkManager });
         }
@@ -145,8 +148,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingConnectionApprovedFromAnyClient_ConnectionApprovedMessageIsRejected()
         {
-            var message = new ConnectionApprovedMessage();
-            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
+            var message = new ConnectionApprovedMessage
+            {
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+            };
+            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionApproved), m_ServerNetworkManager.LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -159,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new Hooks<ConnectionApprovedMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(new List<NetworkManager> { m_ServerNetworkManager });
         }

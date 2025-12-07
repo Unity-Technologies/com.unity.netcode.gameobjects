@@ -8,12 +8,22 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";
         private const string k_InSceneObjectName = "InSceneObject";
         protected override int NumberOfClients => 0;
         protected Scene m_SceneLoaded;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
+        public RespawnInSceneObjectsAfterShutdown(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnOneTimeSetup()
         {

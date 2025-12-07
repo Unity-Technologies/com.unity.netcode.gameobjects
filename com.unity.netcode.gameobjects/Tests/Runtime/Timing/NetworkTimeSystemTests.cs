@@ -10,12 +10,19 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Runtime tests to test the network time system with the Unity player loop.
     /// </summary>
-    public class NetworkTimeSystemTests
+    internal class NetworkTimeSystemTests
     {
         private MonoBehaviourTest<PlayerLoopFixedTimeTestComponent> m_PlayerLoopFixedTimeTestComponent; // cache for teardown
         private MonoBehaviourTest<PlayerLoopTimeTestComponent> m_PlayerLoopTimeTestComponent; // cache for teardown
 
         private float m_OriginalTimeScale = 1.0f;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         [SetUp]
         public void Setup()
@@ -62,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator CorrectAmountTicksTest()
         {
             NetworkTickSystem tickSystem = NetworkManager.Singleton.NetworkTickSystem;
-            float delta = tickSystem.LocalTime.FixedDeltaTime;
+            double delta = tickSystem.LocalTime.FixedDeltaTimeAsDouble;
             int previous_localTickCalculated = 0;
             int previous_serverTickCalculated = 0;
 
@@ -78,7 +85,6 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     previous_localTickCalculated++;
                 }
-
 
                 tickCalculated = NetworkManager.Singleton.ServerTime.Time / delta;
                 previous_serverTickCalculated = (int)tickCalculated;
@@ -117,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class PlayerLoopFixedTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
+    internal class PlayerLoopFixedTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
     {
         public const int Passes = 100;
 
@@ -184,7 +190,7 @@ namespace Unity.Netcode.RuntimeTests
         public bool IsTestFinished => m_UpdatePasses >= Passes;
     }
 
-    public class PlayerLoopTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
+    internal class PlayerLoopTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
     {
         public const int Passes = 100;
 

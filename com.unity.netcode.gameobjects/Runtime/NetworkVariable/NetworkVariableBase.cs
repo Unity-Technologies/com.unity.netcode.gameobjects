@@ -1,23 +1,69 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
     /// <summary>
+    /// Defines update timing constraints for NetworkVariables
+    /// </summary>
+    public struct NetworkVariableUpdateTraits
+    {
+        /// <summary>
+        /// The minimum amount of time that must pass between sending updates. If this amount of time has not passed since the last update, dirtiness will be ignored.
+        /// </summary>
+        [Tooltip("The minimum amount of time that must pass between sending updates. If this amount of time has not passed since the last update, dirtiness will be ignored.")]
+        public float MinSecondsBetweenUpdates;
+
+        /// <summary>
+        /// The maximum amount of time that a variable can be dirty without sending an update. If this amount of time has passed since the last update, an update will be sent even if the dirtiness threshold has not been met.
+        /// </summary>
+        [Tooltip("The maximum amount of time that a variable can be dirty without sending an update. If this amount of time has passed since the last update, an update will be sent even if the dirtiness threshold has not been met.")]
+        public float MaxSecondsBetweenUpdates;
+    }
+
+    /// <summary>
     /// Interface for network value containers
     /// </summary>
     public abstract class NetworkVariableBase : IDisposable
     {
-        /// <summary>
-        /// The delivery type (QoS) to send data with
-        /// </summary>
-        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableFragmentedSequenced;
+        [SerializeField]
+        internal NetworkVariableUpdateTraits UpdateTraits = default;
+
+        [NonSerialized]
+        internal double LastUpdateSent;
 
         /// <summary>
         /// Maintains a link to the associated NetworkBehaviour
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
 
+        private protected NetworkManager m_NetworkManager;
+
+        private protected NetworkObject m_NetworkObject;
+
+        private bool m_UseServerTime;
+
+        // Determines if this NetworkVariable has been "initialized" to prevent initializing more than once which can happen when first
+        // instantiated and spawned. If this NetworkVariable instance is on an in-scene placed NetworkObject =or= a pooled NetworkObject
+        // that can persist between sessions and/or be recycled we need to reset the LastUpdateSent value prior to spawning otherwise
+        // this NetworkVariableBase property instance will not update until the last session time used.
+        internal bool HasBeenInitialized { get; private set; }
+
+        internal string GetWritePermissionError()
+        {
+            return $"|Client-{m_NetworkManager.LocalClientId}|{m_NetworkBehaviour.name}|{Name}| Write permissions ({WritePerm}) for this client instance is not allowed!";
+        }
+
+        internal void LogWritePermissionError()
+        {
+            Debug.LogError(GetWritePermissionError());
+        }
+
+        /// <summary>
+        /// Gets the NetworkBehaviour instance associated with this network variable
+        /// </summary>
+        /// <returns>The NetworkBehaviour that owns this network variable</returns>
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;
@@ -29,7 +75,131 @@ namespace Unity.Netcode
         /// <param name="networkBehaviour">The NetworkBehaviour the NetworkVariable belongs to</param>
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
+            // If we have already been initialized, then exit early.
+            // This can happen on the very first instantiation and spawning of the associated NetworkObject
+            if (HasBeenInitialized)
+            {
+                return;
+            }
+
+            // Throw an exception if there is an invalid NetworkBehaviour parameter
+            if (!networkBehaviour)
+            {
+                throw new Exception($"[{GetType().Name}][Initialize] {nameof(NetworkBehaviour)} parameter passed in is null!");
+            }
             m_NetworkBehaviour = networkBehaviour;
+
+            // Throw an exception if there is no NetworkManager available
+            if (!m_NetworkBehaviour.NetworkManager)
+            {
+                // Exit early if there has yet to be a NetworkManager assigned.
+                // This is ok because Initialize is invoked multiple times until
+                // it is considered "initialized".
+                return;
+            }
+
+            if (!m_NetworkBehaviour.NetworkObject)
+            {
+                // Exit early if there has yet to be a NetworkObject assigned.
+                // This is ok because Initialize is invoked multiple times until
+                // it is considered "initialized".
+                return;
+            }
+
+            m_NetworkObject = m_NetworkBehaviour.NetworkObject;
+
+            if (!m_NetworkObject.NetworkManagerOwner)
+            {
+                // Exit early if there has yet to be a NetworkManagerOwner assigned
+                // to the NetworkObject. This is ok because Initialize is invoked
+                // multiple times until it is considered "initialized".
+                return;
+            }
+            m_NetworkManager = m_NetworkObject.NetworkManagerOwner;
+
+            m_UseServerTime = m_NetworkManager.CMBServiceConnection || !m_NetworkManager.IsServer;
+
+            // When in distributed authority mode, there is no such thing as server write permissions
+            InternalWritePerm = m_NetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
+
+            OnInitialize();
+
+            // Some unit tests don't operate with a running NetworkManager.
+            // Only update the last time if there is a NetworkTimeSystem.
+            if (m_NetworkManager.NetworkTimeSystem != null)
+            {
+                // Update our last sent time relative to when this was initialized
+                UpdateLastSentTime();
+
+                // At this point, this instance is considered initialized
+                HasBeenInitialized = true;
+            }
+            else if (m_NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                Debug.LogWarning($"[{m_NetworkBehaviour.name}][{m_NetworkBehaviour.GetType().Name}][{GetType().Name}][Initialize] {nameof(NetworkManager)} has no {nameof(NetworkTimeSystem)} assigned!");
+            }
+        }
+
+        /// TODO-API: After further vetting and alignment on these, we might make them part of the public API.
+        /// Could actually be like an interface that gets automatically registered for these kinds of notifications
+        /// without having to be a NetworkBehaviour.
+        #region OnSpawn and OnPreDespawn (ETC)
+
+        /// <summary>
+        /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPostSpawn"/> has been invoked.
+        /// </summary>
+        internal virtual void OnSpawned()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPreDespawn"/> has been invoked.
+        /// </summary>
+        internal virtual void OnPreDespawn()
+        {
+
+        }
+        #endregion
+
+        /// <summary>
+        /// Deinitialize is invoked when a NetworkObject is despawned.
+        /// This allows for a recyled NetworkObject (in-scene or pooled)
+        /// to be properly initialized upon the next use/spawn.
+        /// </summary>
+        internal void Deinitialize()
+        {
+            // When despawned, reset the HasBeenInitialized so if the associated NetworkObject instance
+            // is recylced (i.e. in-scene placed or pooled) it will re-initialize the LastUpdateSent time.
+            HasBeenInitialized = false;
+        }
+
+        /// <summary>
+        /// Called on initialization
+        /// </summary>
+        public virtual void OnInitialize()
+        {
+
+        }
+
+        /// <summary>
+        /// Sets the update traits for this network variable to determine how frequently it will send updates.
+        /// </summary>
+        /// <param name="traits">The new update traits to apply to this network variable</param>
+        public void SetUpdateTraits(NetworkVariableUpdateTraits traits)
+        {
+            UpdateTraits = traits;
+        }
+
+        /// <summary>
+        /// Check whether or not this variable has changed significantly enough to send an update.
+        /// If not, no update will be sent even if the variable is dirty, unless the time since last update exceeds
+        /// the <see cref="UpdateTraits"/>' <see cref="NetworkVariableUpdateTraits.MaxSecondsBetweenUpdates"/>.
+        /// </summary>
+        /// <returns>True if the variable exceeds the dirtiness threshold or the time since the last update exceeds MaxSecondsBetweenUpdates. otherwise, false</returns>
+        public virtual bool ExceedsDirtinessThreshold()
+        {
+            return true;
         }
 
         /// <summary>
@@ -53,7 +223,7 @@ namespace Unity.Netcode
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
         {
             ReadPerm = readPerm;
-            WritePerm = writePerm;
+            InternalWritePerm = writePerm;
         }
 
         /// <summary>
@@ -76,7 +246,17 @@ namespace Unity.Netcode
         /// <summary>
         /// The write permission for this var
         /// </summary>
-        public readonly NetworkVariableWritePermission WritePerm;
+        public NetworkVariableWritePermission WritePerm
+        {
+            get
+            {
+                return InternalWritePerm;
+            }
+        }
+
+        // We had to change the Write Permission in distributed authority.
+        // (It is too bad we initially declared it as readonly)
+        internal NetworkVariableWritePermission InternalWritePerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -88,15 +268,69 @@ namespace Unity.Netcode
 
             if (m_IsDirty)
             {
-                if (m_NetworkBehaviour == null)
+                MarkNetworkBehaviourDirty();
+            }
+        }
+
+        internal bool CanSend()
+        {
+            // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
+            var time = m_UseServerTime ? m_NetworkManager.ServerTime.Time : m_NetworkManager.NetworkTimeSystem.LocalTime;
+            var timeSinceLastUpdate = time - LastUpdateSent;
+            return
+                (
+                    UpdateTraits.MaxSecondsBetweenUpdates > 0 &&
+                    timeSinceLastUpdate >= UpdateTraits.MaxSecondsBetweenUpdates
+                ) ||
+                (
+                    timeSinceLastUpdate >= UpdateTraits.MinSecondsBetweenUpdates &&
+                    ExceedsDirtinessThreshold()
+                );
+        }
+
+        internal void UpdateLastSentTime()
+        {
+            // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
+            LastUpdateSent = m_UseServerTime ? m_NetworkManager.ServerTime.Time : m_NetworkManager.NetworkTimeSystem.LocalTime;
+        }
+
+        internal static bool IgnoreInitializeWarning;
+
+        /// <summary>
+        /// Marks the associated NetworkBehaviour as dirty, indicating it needs synchronization
+        /// </summary>
+        protected void MarkNetworkBehaviourDirty()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                if (!IgnoreInitializeWarning)
                 {
                     Debug.LogWarning($"NetworkVariable is written to, but doesn't know its NetworkBehaviour yet. " +
                                      "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
-                    return;
                 }
-
-                m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+                return;
             }
+            if (m_NetworkManager.ShutdownInProgress)
+            {
+                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to during the NetworkManager shutdown! " +
+                 "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
+                }
+                return;
+            }
+
+            if (!m_NetworkManager.IsListening)
+            {
+                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to after the NetworkManager has already shutdown! " +
+                     "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
+                }
+                return;
+            }
+
+            m_NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkObject);
         }
 
         /// <summary>
@@ -106,6 +340,12 @@ namespace Unity.Netcode
         {
             m_IsDirty = false;
         }
+
+        /// <summary>
+        /// Only used during the NetworkBehaviourUpdater pass and only used for NetworkVariable.
+        /// This is to bypass duplication of the "original internal value" for collections.
+        /// </summary>
+        internal bool NetworkUpdaterCheck;
 
         /// <summary>
         /// Gets Whether or not the container is dirty
@@ -123,13 +363,23 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to read</returns>
         public bool CanClientRead(ulong clientId)
         {
+            if (!m_NetworkBehaviour)
+            {
+                return false;
+            }
+
+            // When in distributed authority mode, everyone can read (but only the owner can write)
+            if (m_NetworkManager.DistributedAuthorityMode)
+            {
+                return true;
+            }
             switch (ReadPerm)
             {
                 default:
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.Owner:
-                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId || NetworkManager.ServerClientId == clientId;
+                    return clientId == m_NetworkObject.OwnerClientId || NetworkManager.ServerClientId == clientId;
             }
         }
 
@@ -140,22 +390,46 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to write</returns>
         public bool CanClientWrite(ulong clientId)
         {
+            if (!m_NetworkBehaviour)
+            {
+                return false;
+            }
+
             switch (WritePerm)
             {
                 default:
                 case NetworkVariableWritePermission.Server:
                     return clientId == NetworkManager.ServerClientId;
                 case NetworkVariableWritePermission.Owner:
-                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
+                    return clientId == m_NetworkObject.OwnerClientId;
             }
         }
 
         /// <summary>
-        /// Returns the ClientId of the owning client
+        /// Returns true if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise false.
         /// </summary>
-        internal ulong OwnerClientId()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool CanWrite()
         {
-            return m_NetworkBehaviour.NetworkObject.OwnerClientId;
+            return m_NetworkManager && CanClientWrite(m_NetworkManager.LocalClientId);
+        }
+
+        /// <summary>
+        /// Returns false if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise true.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool CannotWrite()
+        {
+            return m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
+        }
+
+        /// <summary>
+        /// Primarily to check for collections dirty states when doing
+        /// a fully owner read/write NetworkVariable update.
+        /// </summary>
+        internal virtual void OnCheckIsDirtyState()
+        {
+
         }
 
         /// <summary>
@@ -175,7 +449,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="reader">The stream to read the state from</param>
         public abstract void ReadField(FastBufferReader reader);
-
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
@@ -184,10 +457,44 @@ namespace Unity.Netcode
         public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
         /// <summary>
+        /// This should be always invoked (client & server) to assure the previous values are set
+        /// !! IMPORTANT !!
+        /// When a server forwards delta updates to connected clients, it needs to preserve the previous dirty value(s)
+        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked
+        /// after it is done forwarding the deltas at the end of the <see cref="NetworkVariableDeltaMessage.Handle(ref NetworkContext)"/> method.
+        /// </summary>
+        internal virtual void PostDeltaRead()
+        {
+        }
+
+        /// <summary>
+        /// WriteFieldSynchronization will write the current value only if there are no pending changes.
+        /// Otherwise, it will write the previous value if there are pending changes since the pending
+        /// changes will be sent shortly after the client's synchronization.
+        /// <br /><br />
+        /// There are scenarios, specifically with collections, where a client could be synchronizing and
+        /// some NetworkVariables have pending updates. To avoid duplicating entries, this is invoked only
+        /// when sending the full synchronization information.
+        /// </summary>
+        /// <remarks>
+        /// Derived classes should send the previous value for synchronization so when the updated value
+        /// is sent (after synchronizing the client) it will apply the updates.
+        /// </remarks>
+        /// <param name="writer"></param>
+        internal virtual void WriteFieldSynchronization(FastBufferWriter writer)
+        {
+            WriteField(writer);
+        }
+
+        /// <summary>
         /// Virtual <see cref="IDisposable"/> implementation
         /// </summary>
         public virtual void Dispose()
         {
+            HasBeenInitialized = false;
+            m_NetworkBehaviour = null;
+            m_NetworkObject = null;
+            m_NetworkManager = null;
         }
     }
 }

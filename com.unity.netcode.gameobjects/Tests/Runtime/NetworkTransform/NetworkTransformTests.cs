@@ -1,372 +1,124 @@
-using System.Collections.Generic;
+using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
-using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// Helper component for all NetworkTransformTests
-    /// </summary>
-    public class NetworkTransformTestComponent : NetworkTransform
-    {
-        public bool ServerAuthority;
-        public bool ReadyToReceivePositionUpdate = false;
-
-        public NetworkTransformState AuthorityLastSentState;
-        public bool StatePushed { get; internal set; }
-
-        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
-        {
-            StatePushed = true;
-            AuthorityLastSentState = networkTransformState;
-            base.OnAuthorityPushTransformState(ref networkTransformState);
-        }
-
-
-        public bool StateUpdated { get; internal set; }
-        protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
-        {
-            StateUpdated = true;
-            base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
-        }
-
-        protected override bool OnIsServerAuthoritative()
-        {
-            return ServerAuthority;
-        }
-
-        public static NetworkTransformTestComponent AuthorityInstance;
-
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
-
-            if (CanCommitToTransform)
-            {
-                AuthorityInstance = this;
-            }
-
-            ReadyToReceivePositionUpdate = true;
-        }
-
-        public void CommitToTransform()
-        {
-            TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-        }
-
-        public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
-        {
-            var transformState = ApplyLocalNetworkState(transform);
-            return (transformState.IsDirty, transformState.HasPositionChange, transformState.HasRotAngleChange, transformState.HasScaleChange);
-        }
-    }
-
-    /// <summary>
-    /// Helper component for NetworkTransform parenting tests
-    /// </summary>
-    public class ChildObjectComponent : NetworkTransform
-    {
-        public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
-        public static ChildObjectComponent AuthorityInstance { get; internal set; }
-        public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
-
-        public static void Reset()
-        {
-            AuthorityInstance = null;
-            ClientInstances.Clear();
-            Instances.Clear();
-        }
-
-        public bool ServerAuthority;
-
-        protected override bool OnIsServerAuthoritative()
-        {
-            return ServerAuthority;
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
-            if (CanCommitToTransform)
-            {
-                AuthorityInstance = this;
-            }
-            else
-            {
-                Instances.Add(this);
-            }
-            ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
-        }
-    }
-
-    /// <summary>
     /// Integration tests for NetworkTransform that will test both
     /// server and host operating modes and will test both authoritative
     /// models for each operating mode.
     /// </summary>
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority)]
-    [TestFixture(HostOrServer.Server, Authority.OwnerAuthority)]
-
-    public class NetworkTransformTests : IntegrationTestWithApproximation
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    internal class NetworkTransformTests : NetworkTransformBase
     {
-        private NetworkObject m_AuthoritativePlayer;
-        private NetworkObject m_NonAuthoritativePlayer;
-        private NetworkObject m_ChildObject;
-        private NetworkObject m_ParentObject;
+        protected const int k_TickRate = 60;
 
-        private NetworkTransformTestComponent m_AuthoritativeTransform;
-        private NetworkTransformTestComponent m_NonAuthoritativeTransform;
-        private NetworkTransformTestComponent m_OwnerTransform;
-
-        private readonly Authority m_Authority;
-
-        public enum Authority
-        {
-            ServerAuthority,
-            OwnerAuthority
-        }
-
-        public enum Interpolation
-        {
-            DisableInterpolate,
-            EnableInterpolate
-        }
-
-        public enum Precision
-        {
-            Half,
-            Full
-        }
-
-        public enum Rotation
-        {
-            Euler,
-            Quaternion
-        }
-
-        public enum RotationCompression
-        {
-            None,
-            QuaternionCompress
-        }
-
-
-        public enum TransformSpace
-        {
-            World,
-            Local
-        }
-
-        public enum OverrideState
-        {
-            Update,
-            CommitToTransform,
-            SetState
-        }
-
-        public enum Axis
-        {
-            X,
-            Y,
-            Z,
-            XY,
-            XZ,
-            YZ,
-            XYZ
-        }
-
+        protected const int k_DefaultTimeTravelFrames = 1000;
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="testWithHost">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
-        public NetworkTransformTests(HostOrServer testWithHost, Authority authority)
+        public NetworkTransformTests(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision, NetworkTransform.InterpolationTypes interpolation) :
+            base(testWithHost, authority, rotationCompression, rotation, precision)
         {
-            m_UseHost = testWithHost == HostOrServer.Host ? true : false;
-            m_Authority = authority;
+            NetworkTransform.AssignDefaultInterpolationType = true;
+            NetworkTransform.DefaultInterpolationType = interpolation;
         }
 
-        protected override int NumberOfClients => 1;
-        protected override bool m_EnableTimeTravel => true;
-        protected override bool m_SetupIsACoroutine => false;
-        protected override bool m_TearDownIsACoroutine => false;
-
-        private const int k_TickRate = 60;
-        private int m_OriginalTargetFrameRate;
-        protected override void OnOneTimeSetup()
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
         {
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = 120;
-            base.OnOneTimeSetup();
+            return false;
         }
 
         protected override void OnOneTimeTearDown()
         {
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
             base.OnOneTimeTearDown();
         }
 
-        protected override void OnInlineSetup()
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
+
+        protected override uint GetTickRate()
         {
-            NetworkTransformTestComponent.AuthorityInstance = null;
-            m_Precision = Precision.Full;
-            ChildObjectComponent.Reset();
+            return k_TickRate;
         }
 
-        protected override void OnInlineTearDown()
+        private bool m_UseParentingThreshold;
+        private const float k_ParentingThreshold = 0.25f;
+
+        protected override float GetDeltaVarianceThreshold()
         {
-            m_EnableVerboseDebug = false;
-            Object.DestroyImmediate(m_PlayerPrefab);
-        }
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            var networkTransformTestComponent = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
-            networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
-        }
-
-        protected override void OnServerAndClientsCreated()
-        {
-            var childObject = CreateNetworkObjectPrefab("ChildObject");
-            var childNetworkTransform = childObject.AddComponent<ChildObjectComponent>();
-            childNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
-            m_ChildObject = childObject.GetComponent<NetworkObject>();
-
-            var parentObject = CreateNetworkObjectPrefab("ParentObject");
-            var parentNetworkTransform = parentObject.AddComponent<NetworkTransformTestComponent>();
-            parentNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
-            m_ParentObject = parentObject.GetComponent<NetworkObject>();
-
-
-            // Now apply local transform values
-            m_ChildObject.transform.position = m_ChildObjectLocalPosition;
-            var childRotation = m_ChildObject.transform.rotation;
-            childRotation.eulerAngles = m_ChildObjectLocalRotation;
-            m_ChildObject.transform.rotation = childRotation;
-            m_ChildObject.transform.localScale = m_ChildObjectLocalScale;
-            if (m_EnableVerboseDebug)
+            if (m_UseParentingThreshold)
             {
-                m_ServerNetworkManager.LogLevel = LogLevel.Developer;
-                foreach (var clientNetworkManager in m_ClientNetworkManagers)
-                {
-                    clientNetworkManager.LogLevel = LogLevel.Developer;
-                }
+                return k_ParentingThreshold;
             }
-
-            m_ServerNetworkManager.NetworkConfig.TickRate = k_TickRate;
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.TickRate = k_TickRate;
-            }
+            return base.GetDeltaVarianceThreshold();
         }
 
-        protected override void OnTimeTravelServerAndClientsConnected()
+        protected override IEnumerator OnSetup()
         {
-            // Get the client player representation on both the server and the client side
-            var serverSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
-            var clientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
-
-            m_AuthoritativePlayer = m_Authority == Authority.ServerAuthority ? serverSideClientPlayer : clientSideClientPlayer;
-            m_NonAuthoritativePlayer = m_Authority == Authority.ServerAuthority ? clientSideClientPlayer : serverSideClientPlayer;
-
-            // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
-            m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
-            m_NonAuthoritativeTransform = m_NonAuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
-
-            m_OwnerTransform = m_AuthoritativeTransform.IsOwner ? m_AuthoritativeTransform : m_NonAuthoritativeTransform;
-
-            // Wait for the client-side to notify it is finished initializing and spawning.
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate == true);
-            Assert.True(success, "Timed out waiting for client-side to notify it is ready!");
-
-            Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
-            Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
-            // Just wait for at least one tick for NetworkTransforms to finish synchronization
-            WaitForNextTick();
-        }
-
-        /// <summary>
-        /// Returns true when the server-host and all clients have
-        /// instantiated the child object to be used in <see cref="NetworkTransformParentingLocalSpaceOffsetTests"/>
-        /// </summary>
-        /// <returns></returns>
-        private bool AllChildObjectInstancesAreSpawned()
-        {
-            if (ChildObjectComponent.AuthorityInstance == null)
-            {
-                return false;
-            }
-
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                if (!ChildObjectComponent.ClientInstances.ContainsKey(clientNetworkManager.LocalClientId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool AllChildObjectInstancesHaveChild()
-        {
-            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
-            {
-                if (instance.transform.parent == null)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        // To test that local position, rotation, and scale remain the same when parented.
-        private Vector3 m_ChildObjectLocalPosition = new Vector3(5.0f, 0.0f, -5.0f);
-        private Vector3 m_ChildObjectLocalRotation = new Vector3(-35.0f, 90.0f, 270.0f);
-        private Vector3 m_ChildObjectLocalScale = new Vector3(0.1f, 0.5f, 0.4f);
-
-        /// <summary>
-        /// A wait condition specific method that assures the local space coordinates
-        /// are not impacted by NetworkTransform when parented.
-        /// </summary>
-        private bool AllInstancesKeptLocalTransformValues()
-        {
-            var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
-            var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
-            var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
-
-            foreach (var childInstance in ChildObjectComponent.Instances)
-            {
-                var childLocalPosition = childInstance.transform.localPosition;
-                var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
-                var childLocalScale = childInstance.transform.localScale;
-                // Adjust approximation based on precision
-                if (m_Precision == Precision.Half)
-                {
-                    m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
-                }
-                if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
-                {
-                    return false;
-                }
-                if (!Approximately(childLocalScale, authorityObjectLocalScale))
-                {
-                    return false;
-                }
-                // Adjust approximation based on precision
-                if (m_Precision == Precision.Half)
-                {
-                    m_CurrentHalfPrecision = k_HalfPrecisionRot;
-                }
-                if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
-                {
-                    return false;
-                }
-            }
-            return true;
+            m_UseParentingThreshold = false;
+            return base.OnSetup();
         }
 
         /// <summary>
@@ -374,74 +126,55 @@ namespace Unity.Netcode.RuntimeTests
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private void AllChildrenLocalTransformValuesMatch()
+        private void AllChildrenLocalTransformValuesMatch(bool useSubChild, ChildrenTransformCheckType checkType)
         {
-            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
-            //TimeTravelToNextTick();
-            var infoMessage = new System.Text.StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
-            var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
-            var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
-            var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
-
-            if (s_GlobalTimeoutHelper.TimedOut || !success)
+            // We don't assert on timeout here because we want to log this information during PostAllChildrenLocalTransformValuesMatch
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesKeptLocalTransformValues(useSubChild), (int)GetTickRate() * 2);
+            m_InfoMessage.Clear();
+            m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
+            if (!success)
             {
-                foreach (var childInstance in ChildObjectComponent.Instances)
+                // If we timed out, then wait for 4 ticks to assure all data has been synchronized before declaring this a failed test.
+                for (int j = 0; j < 4; j++)
                 {
-                    var childLocalPosition = childInstance.transform.localPosition;
-                    var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
-                    var childLocalScale = childInstance.transform.localScale;
-                    // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
-                    {
-                        m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
-                    }
-                    if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
-                    {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Position ({childLocalPosition}) | Authority Local Position ({authorityObjectLocalPosition})");
-                        success = false;
-                    }
-                    if (!Approximately(childLocalScale, authorityObjectLocalScale))
-                    {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Authority Local Scale ({authorityObjectLocalScale})");
-                        success = false;
-                    }
+                    success = PostAllChildrenLocalTransformValuesMatch(useSubChild);
+                    TimeTravelAdvanceTick();
+                }
+            }
 
-                    // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
-                    {
-                        m_CurrentHalfPrecision = k_HalfPrecisionRot;
-                    }
-                    if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
-                    {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Authority Local Rotation ({authorityObjectLocalRotation})");
-                        success = false;
-                    }
-                }
-                if (!success)
-                {
-                    Assert.True(success, infoMessage.ToString());
-                }
+            if (!success)
+            {
+                Assert.True(success, m_InfoMessage.ToString());
             }
         }
 
-        private NetworkObject m_AuthorityParentObject;
-        private NetworkTransformTestComponent m_AuthorityParentNetworkTransform;
-        private NetworkObject m_AuthorityChildObject;
-        private ChildObjectComponent m_AuthorityChildNetworkTransform;
+        private void UpdateTransformLocal(NetworkTransform networkTransformTestComponent)
+        {
+            networkTransformTestComponent.transform.localPosition += GetRandomVector3(0.5f, 2.0f);
+            var rotation = networkTransformTestComponent.transform.localRotation;
+            var eulerRotation = rotation.eulerAngles;
+            eulerRotation += GetRandomVector3(0.5f, 5.0f);
+            rotation.eulerAngles = eulerRotation;
+            networkTransformTestComponent.transform.localRotation = rotation;
+        }
+
+        private void UpdateTransformWorld(NetworkTransform networkTransformTestComponent)
+        {
+            networkTransformTestComponent.transform.position += GetRandomVector3(0.5f, 2.0f);
+            var rotation = networkTransformTestComponent.transform.rotation;
+            var eulerRotation = rotation.eulerAngles;
+            eulerRotation += GetRandomVector3(0.5f, 5.0f);
+            rotation.eulerAngles = eulerRotation;
+            networkTransformTestComponent.transform.rotation = rotation;
+        }
 
         /// <summary>
-        /// Validates that transform values remain the same when a NetworkTransform is
-        /// parented under another NetworkTransform under all of the possible axial conditions
-        /// as well as when the parent has a varying scale.
+        /// This test validates the SwitchTransformSpaceWhenParented setting under all network topologies
         /// </summary>
         [Test]
-        public void ParentedNetworkTransformTest([Values] Precision precision, [Values] Rotation rotation,
-            [Values] RotationCompression rotationCompression, [Values] Interpolation interpolation, [Values] bool worldPositionStays,
-            [Values(0.5f, 1.0f, 5.0f)] float scale)
+        public void SwitchTransformSpaceWhenParentedTest([Values(0.5f, 1.0f, 5.0f)] float scale)
         {
-            // Set the precision being used for threshold adjustments
-            m_Precision = precision;
-
+            m_UseParentingThreshold = true;
             // Get the NetworkManager that will have authority in order to spawn with the correct authority
             var isServerAuthority = m_Authority == Authority.ServerAuthority;
             var authorityNetworkManager = m_ServerNetworkManager;
@@ -450,9 +183,211 @@ namespace Unity.Netcode.RuntimeTests
                 authorityNetworkManager = m_ClientNetworkManagers[0];
             }
 
-            // Spawn a parent and child object
+            var childAuthorityNetworkManager = m_ClientNetworkManagers[0];
+            if (!isServerAuthority)
+            {
+                childAuthorityNetworkManager = m_ServerNetworkManager;
+            }
+
+            // Spawn a parent and children
+            ChildObjectComponent.HasSubChild = true;
+            // Modify our prefabs for this specific test
+            m_ParentObject.GetComponent<NetworkTransformTestComponent>().TickSyncChildren = true;
+            m_ChildObject.GetComponent<ChildObjectComponent>().SwitchTransformSpaceWhenParented = true;
+            m_ChildObject.GetComponent<ChildObjectComponent>().TickSyncChildren = true;
+            m_SubChildObject.GetComponent<ChildObjectComponent>().SwitchTransformSpaceWhenParented = true;
+            m_SubChildObject.GetComponent<ChildObjectComponent>().TickSyncChildren = true;
+            m_ChildObject.AllowOwnerToParent = true;
+            m_SubChildObject.AllowOwnerToParent = true;
+
+
+            var authoritySideParent = SpawnObject(m_ParentObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+            var authoritySideChild = SpawnObject(m_ChildObject.gameObject, childAuthorityNetworkManager).GetComponent<NetworkObject>();
+            var authoritySideSubChild = SpawnObject(m_SubChildObject.gameObject, childAuthorityNetworkManager).GetComponent<NetworkObject>();
+
+            // Assure all of the child object instances are spawned before proceeding to parenting
+            var success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
+            Assert.True(success, "Timed out waiting for all child instances to be spawned!");
+
+            // Get the owner instance if in client-server mode with owner authority
+            if (m_Authority == Authority.OwnerAuthority && !m_DistributedAuthority)
+            {
+                authoritySideParent = s_GlobalNetworkObjects[authoritySideParent.OwnerClientId][authoritySideParent.NetworkObjectId];
+                authoritySideChild = s_GlobalNetworkObjects[authoritySideChild.OwnerClientId][authoritySideChild.NetworkObjectId];
+                authoritySideSubChild = s_GlobalNetworkObjects[authoritySideSubChild.OwnerClientId][authoritySideSubChild.NetworkObjectId];
+            }
+
+            // Get the authority parent and child instances
+            m_AuthorityParentObject = NetworkTransformTestComponent.AuthorityInstance.NetworkObject;
+            m_AuthorityChildObject = ChildObjectComponent.AuthorityInstance.NetworkObject;
+            m_AuthoritySubChildObject = ChildObjectComponent.AuthoritySubInstance.NetworkObject;
+
+            // The child NetworkTransform will use world space when world position stays and
+            // local space when world position does not stay when parenting.
+            ChildObjectComponent.AuthorityInstance.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
+
+            ChildObjectComponent.AuthoritySubInstance.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
+
+            // Set whether we are interpolating or not
+            m_AuthorityParentNetworkTransform = m_AuthorityParentObject.GetComponent<NetworkTransformTestComponent>();
+            m_AuthorityParentNetworkTransform.Interpolate = true;
+            m_AuthorityChildNetworkTransform = m_AuthorityChildObject.GetComponent<ChildObjectComponent>();
+            m_AuthorityChildNetworkTransform.Interpolate = true;
+            m_AuthoritySubChildNetworkTransform = m_AuthoritySubChildObject.GetComponent<ChildObjectComponent>();
+            m_AuthoritySubChildNetworkTransform.Interpolate = true;
+
+            // Apply a scale to the parent object to make sure the scale on the child is properly updated on
+            // non-authority instances.
+            var halfScale = scale * 0.5f;
+            m_AuthorityParentObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthorityChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthoritySubChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+
+            // Allow one tick for authority to update these changes
+            TimeTravelAdvanceTick();
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
+
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
+
+            // Move things around while parenting and removing the parent
+            // Not the absolute "perfect" test, but it validates the clients all synchronize
+            // parenting and transform values.
+            for (int i = 0; i < 30; i++)
+            {
+                // Provide two network ticks for interpolation to finalize
+                TimeTravelAdvanceTick();
+                TimeTravelAdvanceTick();
+
+                // This validates each child instance has preserved their local space values
+                AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
+
+                // This validates each sub-child instance has preserved their local space values
+                AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
+                // Parent while in motion
+                if (i == 5)
+                {
+                    // Parent the child under the parent with the current world position stays setting
+                    Assert.True(authoritySideChild.TrySetParent(authoritySideParent.transform), $"[Child][Client-{authoritySideChild.NetworkManagerOwner.LocalClientId}] Failed to set child's parent!");
+
+                    // This waits for all child instances to be parented
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllFirstLevelChildObjectInstancesHaveChild, 300);
+                    Assert.True(success, "Timed out waiting for all instances to have parented a child!");
+                }
+
+                if (i == 10)
+                {
+                    // Parent the sub-child under the child with the current world position stays setting
+                    Assert.True(authoritySideSubChild.TrySetParent(authoritySideChild.transform), $"[Sub-Child][Client-{authoritySideSubChild.NetworkManagerOwner.LocalClientId}] Failed to set sub-child's parent!");
+
+                    // This waits for all child instances to be parented
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild, 300);
+                    Assert.True(success, "Timed out waiting for all instances to have parented a child!");
+                }
+
+                if (i == 15)
+                {
+                    // Verify that a late joining client will synchronize to the parented NetworkObjects properly
+                    CreateAndStartNewClientWithTimeTravel();
+
+                    // Assure all of the child object instances are spawned (basically for the newly connected client)
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned, 300);
+                    Assert.True(success, "Timed out waiting for all child instances to be spawned!");
+
+                    // This waits for all child instances to be parented
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild, 300);
+                    Assert.True(success, "Timed out waiting for all instances to have parented a child!");
+
+                    // This validates each child instance has preserved their local space values
+                    AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
+
+                    // This validates each sub-child instance has preserved their local space values
+                    AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
+                }
+
+                if (i == 20)
+                {
+                    // Remove the parent
+                    Assert.True(authoritySideSubChild.TryRemoveParent(), $"[Sub-Child][Client-{authoritySideSubChild.NetworkManagerOwner.LocalClientId}] Failed to set sub-child's parent!");
+
+                    // This waits for all child instances to have the parent removed
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllSubChildObjectInstancesHaveNoParent, 300);
+                    Assert.True(success, "Timed out waiting for all instances remove the parent!");
+                }
+
+                if (i == 25)
+                {
+                    // Parent the child under the parent with the current world position stays setting
+                    Assert.True(authoritySideChild.TryRemoveParent(), $"[Child][Client-{authoritySideChild.NetworkManagerOwner.LocalClientId}] Failed to remove parent!");
+
+                    // This waits for all child instances to be parented
+                    success = WaitForConditionOrTimeOutWithTimeTravel(AllFirstLevelChildObjectInstancesHaveNoParent, 300);
+                    Assert.True(success, "Timed out waiting for all instances remove the parent!");
+                }
+                UpdateTransformWorld(m_AuthorityParentNetworkTransform);
+                if (m_AuthorityChildNetworkTransform.InLocalSpace)
+                {
+                    UpdateTransformLocal(m_AuthorityChildNetworkTransform);
+                }
+                else
+                {
+                    UpdateTransformWorld(m_AuthorityChildNetworkTransform);
+                }
+
+                if (m_AuthoritySubChildNetworkTransform.InLocalSpace)
+                {
+                    UpdateTransformLocal(m_AuthoritySubChildNetworkTransform);
+                }
+                else
+                {
+                    UpdateTransformWorld(m_AuthoritySubChildNetworkTransform);
+                }
+            }
+
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches, 300);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
+
+            // Revert the modifications made for this specific test
+            m_ParentObject.GetComponent<NetworkTransformTestComponent>().TickSyncChildren = false;
+            m_ChildObject.GetComponent<ChildObjectComponent>().SwitchTransformSpaceWhenParented = false;
+            m_ChildObject.GetComponent<ChildObjectComponent>().TickSyncChildren = false;
+            m_ChildObject.AllowOwnerToParent = false;
+            m_SubChildObject.AllowOwnerToParent = false;
+            m_SubChildObject.GetComponent<ChildObjectComponent>().SwitchTransformSpaceWhenParented = false;
+            m_SubChildObject.GetComponent<ChildObjectComponent>().TickSyncChildren = false;
+        }
+
+
+        /// <summary>
+        /// Validates that transform values remain the same when a NetworkTransform is
+        /// parented under another NetworkTransform under all of the possible axial conditions
+        /// as well as when the parent has a varying scale.
+        /// </summary>
+        [Test]
+        public void ParentedNetworkTransformTest([Values] Interpolation interpolation, [Values] bool worldPositionStays, [Values(0.5f, 1.0f, 5.0f)] float scale)
+        {
+            m_UseParentingThreshold = true;
+            // Get the NetworkManager that will have authority in order to spawn with the correct authority
+            var isServerAuthority = m_Authority == Authority.ServerAuthority;
+            var authorityNetworkManager = m_ServerNetworkManager;
+            if (!isServerAuthority)
+            {
+                authorityNetworkManager = m_ClientNetworkManagers[0];
+            }
+
+            // Spawn a parent and children
+            ChildObjectComponent.HasSubChild = true;
             var serverSideParent = SpawnObject(m_ParentObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
             var serverSideChild = SpawnObject(m_ChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+            var serverSideSubChild = SpawnObject(m_SubChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
 
             // Assure all of the child object instances are spawned before proceeding to parenting
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
@@ -461,36 +396,65 @@ namespace Unity.Netcode.RuntimeTests
             // Get the authority parent and child instances
             m_AuthorityParentObject = NetworkTransformTestComponent.AuthorityInstance.NetworkObject;
             m_AuthorityChildObject = ChildObjectComponent.AuthorityInstance.NetworkObject;
+            m_AuthoritySubChildObject = ChildObjectComponent.AuthoritySubInstance.NetworkObject;
 
             // The child NetworkTransform will use world space when world position stays and
             // local space when world position does not stay when parenting.
             ChildObjectComponent.AuthorityInstance.InLocalSpace = !worldPositionStays;
-            ChildObjectComponent.AuthorityInstance.UseHalfFloatPrecision = precision == Precision.Half;
-            ChildObjectComponent.AuthorityInstance.UseQuaternionSynchronization = rotation == Rotation.Quaternion;
-            ChildObjectComponent.AuthorityInstance.UseQuaternionCompression = rotationCompression == RotationCompression.QuaternionCompress;
+            ChildObjectComponent.AuthorityInstance.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
+
+            ChildObjectComponent.AuthoritySubInstance.InLocalSpace = !worldPositionStays;
+            ChildObjectComponent.AuthoritySubInstance.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionCompression = m_RotationCompression == RotationCompression.QuaternionCompress;
 
             // Set whether we are interpolating or not
             m_AuthorityParentNetworkTransform = m_AuthorityParentObject.GetComponent<NetworkTransformTestComponent>();
             m_AuthorityParentNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthorityChildNetworkTransform = m_AuthorityChildObject.GetComponent<ChildObjectComponent>();
             m_AuthorityChildNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_AuthoritySubChildNetworkTransform = m_AuthoritySubChildObject.GetComponent<ChildObjectComponent>();
+            m_AuthoritySubChildNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
 
             // Apply a scale to the parent object to make sure the scale on the child is properly updated on
             // non-authority instances.
-            m_AuthorityParentObject.transform.localScale = new Vector3(scale, scale, scale);
+            var halfScale = scale * 0.5f;
+            m_AuthorityParentObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthorityChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthoritySubChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
 
             // Allow one tick for authority to update these changes
-            TimeTravelToNextTick();
+            TimeTravelAdvanceTick();
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
+
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
 
             // Parent the child under the parent with the current world position stays setting
             Assert.True(serverSideChild.TrySetParent(serverSideParent.transform, worldPositionStays), "[Server-Side Child] Failed to set child's parent!");
+
+            // Parent the sub-child under the child with the current world position stays setting
+            Assert.True(serverSideSubChild.TrySetParent(serverSideChild.transform, worldPositionStays), "[Server-Side SubChild] Failed to set sub-child's parent!");
 
             // This waits for all child instances to be parented
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
+            // Provide two network ticks for interpolation to finalize
+            TimeTravelAdvanceTick();
+            TimeTravelAdvanceTick();
+
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch();
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
+
+            // This validates each sub-child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -499,122 +463,67 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
             Assert.True(success, "Timed out waiting for all child instances to be spawned!");
 
-            // Assure the newly connected client's child object's transform values are correct
-            AllChildrenLocalTransformValuesMatch();
+            // This waits for all child instances to be parented
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
+            Assert.True(success, "Timed out waiting for all instances to have parented a child!");
+
+            // This validates each child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
+
+            // This validates each sub-child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
         }
 
-        /// <summary>
-        /// Validates that moving, rotating, and scaling the authority side with a single
-        /// tick will properly synchronize the non-authoritative side with the same values.
-        /// </summary>
-        private void MoveRotateAndScaleAuthority(Vector3 position, Vector3 rotation, Vector3 scale, OverrideState overrideState)
-        {
-            switch (overrideState)
-            {
-                case OverrideState.SetState:
-                    {
-                        var authoritativeRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation();
-                        authoritativeRotation.eulerAngles = rotation;
-                        if (m_Authority == Authority.OwnerAuthority)
-                        {
-                            // Under the scenario where the owner is not the server, and non-auth is the server we set the state from the server
-                            // to be updated to the owner.
-                            if (m_AuthoritativeTransform.IsOwner && !m_AuthoritativeTransform.IsServer && m_NonAuthoritativeTransform.IsServer)
-                            {
-                                m_NonAuthoritativeTransform.SetState(position, authoritativeRotation, scale);
-                            }
-                            else
-                            {
-                                m_AuthoritativeTransform.SetState(position, authoritativeRotation, scale);
-                            }
-                        }
-                        else
-                        {
-                            m_AuthoritativeTransform.SetState(position, authoritativeRotation, scale);
-                        }
-
-                        break;
-                    }
-                case OverrideState.Update:
-                default:
-                    {
-                        m_AuthoritativeTransform.transform.position = position;
-
-                        var authoritativeRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation();
-                        authoritativeRotation.eulerAngles = rotation;
-                        m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
-                        m_AuthoritativeTransform.transform.localScale = scale;
-                        break;
-                    }
-            }
-        }
-
-        /// <summary>
-        /// Waits until the next tick
-        /// </summary>
-        private void WaitForNextTick()
-        {
-            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
-            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
-            {
-                var frameRate = Application.targetFrameRate;
-                if (frameRate <= 0)
-                {
-                    frameRate = 60;
-                }
-                var frameDuration = 1f / frameRate;
-                TimeTravel(frameDuration, 1);
-            }
-        }
-
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
-        // Note: this was reduced from 8 iterations to 3 due to the number of tests based on all of the various parameter combinations
-        private const int k_PositionRotationScaleIterations = 3;
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            networkManager.NetworkConfig.TickRate = k_TickRate;
-            base.OnNewClientCreated(networkManager);
-        }
-
-        private Precision m_Precision = Precision.Full;
-        private float m_CurrentHalfPrecision = 0.0f;
-        private const float k_HalfPrecisionPosScale = 0.03f;
-        private const float k_HalfPrecisionRot = 0.725f;
-
-        protected override float GetDeltaVarianceThreshold()
-        {
-            if (m_Precision == Precision.Half)
-            {
-                return m_CurrentHalfPrecision;
-            }
-            return base.GetDeltaVarianceThreshold();
-        }
-
-
-        private Axis m_CurrentAxis;
         /// <summary>
         /// This validates that multiple changes can occur within the same tick or over
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
+        /// <remarks>
+        /// When testing less than 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
+        /// When testing 3 axis: Interpolation is enabled, sometimes an axis is intentionally excluded during a
+        /// delta update, and it runs through 8 delta updates per unique test.
+        /// </remarks>
         [Test]
-        public void NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
-            [Values] Precision precision, [Values] Rotation rotationSynch, [Values] Axis axis)
+        public void MultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState, [Values] Axis axis)
         {
-            // In the name of reducing the very long time it takes to interpolate and run all of the possible combinations,
-            // we only interpolate when the second client joins
-            m_AuthoritativeTransform.Interpolate = false;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
             bool axisX = axis == Axis.X || axis == Axis.XY || axis == Axis.XZ || axis == Axis.XYZ;
             bool axisY = axis == Axis.Y || axis == Axis.XY || axis == Axis.YZ || axis == Axis.XYZ;
             bool axisZ = axis == Axis.Z || axis == Axis.XZ || axis == Axis.YZ || axis == Axis.XYZ;
+
+            var axisCount = axisX ? 1 : 0;
+            axisCount += axisY ? 1 : 0;
+            axisCount += axisZ ? 1 : 0;
+
+            // Enable interpolation when all 3 axis are selected to make sure we are synchronizing properly
+            // when interpolation is enabled.
+            m_AuthoritativeTransform.Interpolate = axisCount == 3 ? true : false;
+
+            // Lerp smoothing skews values based on our tests and how we had to originally adjust for the way we handled the original Lerp approach and how that
+            // consumed state updates from the buffer.
+            // With the two new interpolation types, they will process until close to the final value before moving on to the next.
+            // Lerp--> Will skip to next state before finishing the current state (i.e. loss of precision but arrives to the final value at the end of multiple updates faster)
+            // LerpAhead & SmoothDampening -->
+            // Will not skip to the next state update until approximately at the end of the current state (higher precision longer time to final value)
+            // How this impacts this test:
+            // It was re-written to use TimeTravel which has a limit of 60 update iterations per "WaitforCondition" which if you are interpolating between two large values
+            // it can take a few more iterations with lerp smoothing enabled. Lerp smoothing is purely a visual thing and will eventually end up at its final destination
+            // upon processing the last state update. However, this test should be only to verify the functionality of the actual lerping between values without the added
+            // delay of smoothing the final result. So, instead of having one timeout value for the two new interpolation types and the default for the original I am opting
+            // for the disabling of lerp smoothing while this particular test runs as it really is only validating that each interpolator type will interpolate to the right
+            // value within a given period of time which is simulated using the time travel approach.
+            // With smooth lerping enabled, the two new interpolation types will come very close to the correct value but will not reach the 2nd or 3rd pass values set because
+            // this test uses the adjusted approximation checks that prematurely determines the target values (position, rotation, and scale) have been reached and as such
+            // sends a new state update that will sit in the buffer for 3-4 frames before the two new interpolation types are done with the current state update. This will
+            // eventually lead to a time deficit that will offset the processing of the next state update such that the default time travel timeout (60 updates) will timeout
+            // and the test will fail. This only happens with 3 axis since that is the only time interpolation was enabled for this particular test.
+            // As such, just disabling smooth lerping for all 3 seemed like the better approach as the maximum interpolation time out period for smooth lerping is now
+            // adjustable by users (i.e. they can adjust how much lerp smoothing is applied based on their project's needs).
+            m_NonAuthoritativeTransform.PositionLerpSmoothing = false;
+            m_NonAuthoritativeTransform.RotationLerpSmoothing = false;
+            m_NonAuthoritativeTransform.ScaleLerpSmoothing = false;
+
             m_CurrentAxis = axis;
-            // Authority dictates what is synchronized and what the precision is going to be
-            // so we only need to set this on the authoritative side.
-            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_AuthoritativeTransform.UseQuaternionSynchronization = rotationSynch == Rotation.Quaternion;
-            m_Precision = precision;
 
             m_AuthoritativeTransform.SyncPositionX = axisX;
             m_AuthoritativeTransform.SyncPositionY = axisY;
@@ -640,29 +549,55 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform.SyncScaleY = axisY;
             m_AuthoritativeTransform.SyncScaleZ = axisZ;
 
-
             var positionStart = GetRandomVector3(0.25f, 1.75f);
             var rotationStart = GetRandomVector3(1f, 15f);
             var scaleStart = GetRandomVector3(0.25f, 2.0f);
             var position = positionStart;
             var rotation = rotationStart;
             var scale = scaleStart;
-            m_AuthoritativeTransform.StatePushed = false;
-            // Wait for the deltas to be pushed
-            WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
-            // Allow the precision settings to propagate first as changing precision
-            // causes a teleport event to occur
-            WaitForNextTick();
+            var success = false;
+
+            // The default is interpolate, so we only need to check for the updated state when
+            // we turn off interpolation.
+            if (!m_AuthoritativeTransform.Interpolate)
+            {
+                // Reset our state updated and state pushed
+                m_NonAuthoritativeTransform.StateUpdated = false;
+                m_AuthoritativeTransform.StatePushed = false;
+                // Wait for both authority and non-authority to update their respective flags so we know the change to interpolation has been received.
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                Assert.True(success, "Failed to wait for interpolation changed state update!");
+            }
+
+            var iterations = axisCount == 3 ? k_PositionRotationScaleIterations3Axis : k_PositionRotationScaleIterations;
 
             // Move and rotate within the same tick, validate the non-authoritative instance updates
             // to each set of changes.  Repeat several times.
-            for (int i = 0; i < k_PositionRotationScaleIterations; i++)
+            for (int i = 0; i < iterations; i++)
             {
+                // Always reset this per delta update pass
+                m_AxisExcluded = false;
+                var deltaPositionDelta = GetRandomVector3(-1.5f, 1.5f);
+                var deltaRotationDelta = GetRandomVector3(-3.5f, 3.5f);
+                var deltaScaleDelta = GetRandomVector3(-0.5f, 0.5f);
+
                 m_NonAuthoritativeTransform.StateUpdated = false;
                 m_AuthoritativeTransform.StatePushed = false;
-                position = positionStart * i;
-                rotation = rotationStart * i;
-                scale = scaleStart * i;
+
+                // With two or more axis, excluding one of them while chaging another will validate that
+                // full precision updates are maintaining their target state value(s) to interpolate towards
+                if (axisCount == 3)
+                {
+                    position += RandomlyExcludeAxis(deltaPositionDelta);
+                    rotation += RandomlyExcludeAxis(deltaRotationDelta);
+                    scale += RandomlyExcludeAxis(deltaScaleDelta);
+                }
+                else
+                {
+                    position += deltaPositionDelta;
+                    rotation += deltaRotationDelta;
+                    scale += deltaScaleDelta;
+                }
 
                 // Apply delta between ticks
                 MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
@@ -670,54 +605,38 @@ namespace Unity.Netcode.RuntimeTests
                 // Wait for the deltas to be pushed
                 Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated), $"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-                // Wait for deltas to synchronize on non-authoritative side
-                var success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
-                // Provide additional debug info about what failed (if it fails)
-                if (!success)
+                // For 3 axis, we will skip validating that the non-authority interpolates to its target point at least once.
+                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2
+                // of the axis are being updated to assure interpolation maintains the targeted axial value per axis.
+                // For 2 and 1 axis tests we always validate per delta update
+                if (m_AxisExcluded || axisCount < 3)
                 {
-                    m_EnableVerboseDebug = true;
-                    PositionRotationScaleMatches();
-                    m_EnableVerboseDebug = false;
+                    // Wait for deltas to synchronize on non-authoritative side
+                    success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+                    // Provide additional debug info about what failed (if it fails)
+                    if (!success)
+                    {
+                        m_EnableVerboseDebug = true;
+                        VerboseDebug($"Failed on iteration: {i}");
+                        success = PositionRotationScaleMatches();
+                        m_EnableVerboseDebug = false;
+                    }
+                    Assert.True(success, $"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
                 }
-                Assert.True(success, $"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
             }
 
-            // Only enable interpolation when all axis are set (to reduce the test times)
-            if (axis == Axis.XYZ)
+            if (axisCount == 3)
             {
-                // Now, enable interpolation
-                m_AuthoritativeTransform.Interpolate = true;
-                m_NonAuthoritativeTransform.StateUpdated = false;
-                m_AuthoritativeTransform.StatePushed = false;
-                // Wait for the delta (change in interpolation) to be pushed
-                var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                Assert.True(success, $"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-                // Continue for one more update with interpolation enabled
-                // Note: We are just verifying one update with interpolation enabled due to the number of tests this integration test has to run
-                // and since the NestedNetworkTransformTests already tests interpolation under the same number of conditions (excluding Axis).
-                // This is just to verify selecting specific axis doesn't cause issues when interpolating as well.
-                m_NonAuthoritativeTransform.StateUpdated = false;
-                m_AuthoritativeTransform.StatePushed = false;
-                position = positionStart * k_PositionRotationScaleIterations;
-                rotation = rotationStart * k_PositionRotationScaleIterations;
-                scale = scaleStart * k_PositionRotationScaleIterations;
-                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
-
-                // Wait for the deltas to be pushed and updated
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-                success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches, 120);
-
+                // As a final test, wait for deltas to synchronize on non-authoritative side to assure it interpolates to th
+                success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
                 // Provide additional debug info about what failed (if it fails)
                 if (!success)
                 {
                     m_EnableVerboseDebug = true;
-                    PositionRotationScaleMatches();
+                    success = PositionRotationScaleMatches();
                     m_EnableVerboseDebug = false;
                 }
-                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
+                Assert.True(success, $"Timed out waiting for non-authority to match authority's position or rotation");
             }
         }
 
@@ -727,7 +646,6 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void LateJoiningPlayerInitialScaleValues([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
@@ -775,39 +693,33 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
-
-            // test position
-            var authPlayerTransform = overrideUpdate ? m_OwnerTransform.transform : m_AuthoritativeTransform.transform;
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
+            TimeTravelAdvanceTick();
+            TimeTravelToNextTick();
+
             m_AuthoritativeTransform.StatePushed = false;
             var nextPosition = GetRandomVector3(2f, 30f);
-            m_AuthoritativeTransform.transform.position = nextPosition;
-            if (overideState != OverrideState.SetState)
+
+            switch (overideState)
             {
-                authPlayerTransform.position = nextPosition;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.position = nextPosition;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(nextPosition, null, null);
+                        break;
+                    }
             }
 
-            bool success;
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
-                Assert.True(success, $"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
-            }
-
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch());
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch(), k_DefaultTimeTravelFrames);
             Assert.True(success, $"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
@@ -815,217 +727,56 @@ namespace Unity.Netcode.RuntimeTests
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextRotation = Quaternion.Euler(GetRandomVector3(5, 60)); // using euler angles instead of quaternions directly to really see issues users might encounter
-            if (overideState != OverrideState.SetState)
+            switch (overideState)
             {
-                authPlayerTransform.rotation = nextRotation;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(null, nextRotation, null, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
-                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.rotation = nextRotation;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(null, nextRotation, null);
+                        break;
+                    }
             }
 
             // Make sure the values match
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch());
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch(), k_DefaultTimeTravelFrames);
             Assert.True(success, $"Timed out waiting for rotations to match");
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextScale = GetRandomVector3(1, 6);
-            if (overrideUpdate)
+
+            switch (overideState)
             {
-                authPlayerTransform.localScale = nextScale;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(null, null, nextScale, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
-                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.localScale = nextScale;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(null, null, nextScale);
+                        break;
+                    }
             }
 
             // Make sure the scale values match
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleValuesMatch());
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleValuesMatch(), k_DefaultTimeTravelFrames);
             Assert.True(success, $"Timed out waiting for scale values to match");
         }
-
-        /// <summary>
-        /// Test to verify nonAuthority cannot change the transform directly
-        /// </summary>
-        [Test]
-        public void VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation, [Values] Precision precision)
-        {
-            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_AuthoritativeTransform.UseQuaternionSynchronization = true;
-            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_NonAuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_NonAuthoritativeTransform.UseQuaternionSynchronization = true;
-
-
-            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "other side pos should be zero at first"); // sanity check
-
-            m_NonAuthoritativeTransform.transform.position = new Vector3(4, 5, 6);
-
-            WaitForNextTick();
-            WaitForNextTick();
-
-            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "[Position] NonAuthority was able to change the position!");
-
-            var nonAuthorityRotation = m_NonAuthoritativeTransform.transform.rotation;
-            var originalNonAuthorityEulerRotation = nonAuthorityRotation.eulerAngles;
-            var nonAuthorityEulerRotation = originalNonAuthorityEulerRotation;
-            // Verify rotation is not marked dirty when rotated by half of the threshold
-            nonAuthorityEulerRotation.y += 20.0f;
-            nonAuthorityRotation.eulerAngles = nonAuthorityEulerRotation;
-            m_NonAuthoritativeTransform.transform.rotation = nonAuthorityRotation;
-            WaitForNextTick();
-            var nonAuthorityCurrentEuler = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
-            Assert.True(originalNonAuthorityEulerRotation.Equals(nonAuthorityCurrentEuler), "[Rotation] NonAuthority was able to change the rotation!");
-
-            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
-            m_NonAuthoritativeTransform.transform.localScale = nonAuthorityScale * 100;
-
-            WaitForNextTick();
-
-            Assert.True(nonAuthorityScale.Equals(m_NonAuthoritativeTransform.transform.localScale), "[Scale] NonAuthority was able to change the scale!");
-        }
-
-        /// <summary>
-        /// Validates that rotation checks don't produce false positive
-        /// results when rolling over between 0 and 360 degrees
-        /// </summary>
-        [Test]
-        public void TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
-        {
-            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_AuthoritativeTransform.UseQuaternionSynchronization = true;
-            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_NonAuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_NonAuthoritativeTransform.UseQuaternionSynchronization = true;
-            m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 5.0f;
-
-            var halfThreshold = m_AuthoritativeTransform.RotAngleThreshold * 0.5001f;
-            var authorityRotation = m_AuthoritativeTransform.transform.rotation;
-            var authorityEulerRotation = authorityRotation.eulerAngles;
-
-            // Apply the current state which assures all bitset flags are updated
-            var results = m_AuthoritativeTransform.ApplyState();
-
-            // Verify rotation is not marked dirty when rotated by half of the threshold
-            authorityEulerRotation.y += halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
-            WaitForNextTick();
-
-            // Verify rotation is marked dirty when rotated by another half threshold value
-            authorityEulerRotation.y += halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {m_AuthoritativeTransform.RotAngleThreshold} degrees!");
-            WaitForNextTick();
-
-            //Reset rotation back to zero on all axis
-            authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            WaitForNextTick();
-
-            // Rotate by 360 minus halfThreshold (which is really just negative halfThreshold) and verify rotation is not marked dirty
-            authorityEulerRotation.y = 360 - halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
-                $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
-
-            authorityEulerRotation.y -= halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
-
-            //Reset rotation back to zero on all axis
-            authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            WaitForNextTick();
-
-            authorityEulerRotation.y -= halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
-                $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
-
-            authorityEulerRotation.y -= halfThreshold;
-            authorityRotation.eulerAngles = authorityEulerRotation;
-            m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            results = m_AuthoritativeTransform.ApplyState();
-
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
-        }
-
-        private bool ValidateBitSetValues(NetworkTransform.NetworkTransformState serverState, NetworkTransform.NetworkTransformState clientState)
-        {
-            if (serverState.HasPositionX == clientState.HasPositionX && serverState.HasPositionY == clientState.HasPositionY && serverState.HasPositionZ == clientState.HasPositionZ &&
-                serverState.HasRotAngleX == clientState.HasRotAngleX && serverState.HasRotAngleY == clientState.HasRotAngleY && serverState.HasRotAngleZ == clientState.HasRotAngleZ &&
-                serverState.HasScaleX == clientState.HasScaleX && serverState.HasScaleY == clientState.HasScaleY && serverState.HasScaleZ == clientState.HasScaleZ)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Test to make sure that the bitset value is updated properly
-        /// </summary>
-        [Test]
-        public void TestBitsetValue([Values] Interpolation interpolation)
-        {
-            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
-            WaitForNextTick();
-
-            m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
-            var serverLastSentState = m_AuthoritativeTransform.AuthorityLastSentState;
-            var clientReplicatedState = m_NonAuthoritativeTransform.ReplicatedNetworkState.Value;
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
-            Assert.True(success, $"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
-
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch());
-            Assert.True(success, $"[Timed-Out] Authoritative rotation {m_AuthoritativeTransform.transform.rotation.eulerAngles} != Non-Authoritative rotation {m_NonAuthoritativeTransform.transform.rotation.eulerAngles}");
-        }
-
-        private float m_DetectedPotentialInterpolatedTeleport;
 
         /// <summary>
         /// The tests teleporting with and without interpolation
         /// </summary>
         [Test]
-        public void TeleportTest([Values] Interpolation interpolation, [Values] Precision precision)
+        public void TeleportTest([Values] Interpolation interpolation)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_Precision = precision;
             var authTransform = m_AuthoritativeTransform.transform;
             var nonAuthPosition = m_NonAuthoritativeTransform.transform.position;
-            var currentTick = m_AuthoritativeTransform.NetworkManager.ServerTime.Tick;
             m_DetectedPotentialInterpolatedTeleport = 0.0f;
             var teleportDestination = GetRandomVector3(50.0f, 200.0f);
             m_NonAuthoritativeTransform.StateUpdated = false;
@@ -1047,210 +798,5 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(Approximately(m_DetectedPotentialInterpolatedTeleport, 0.0f), $"Detected possible interpolation on non-authority side! NonAuthority distance: {m_DetectedPotentialInterpolatedTeleport} | Target distance: {targetDistance}");
         }
 
-        /// <summary>
-        /// This test validates the <see cref="NetworkTransform.SetState(Vector3?, Quaternion?, Vector3?, bool)"/> method
-        /// usage for the non-authoritative side.  It will either be the owner or the server making/requesting state changes.
-        /// This validates that:
-        /// - The owner authoritative mode can still be controlled by the server (i.e. owner authoritative with server authority override capabilities)
-        /// - The server authoritative mode can still be directed by the client owner.
-        /// </summary>
-        /// <remarks>
-        /// This also tests that the original server authoritative model with client-owner driven NetworkTransforms is preserved.
-        /// </remarks>
-        [Test]
-        public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
-        {
-            var interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_AuthoritativeTransform.Interpolate = interpolate;
-            m_NonAuthoritativeTransform.Interpolate = interpolate;
-            m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
-
-            // Test one parameter at a time first
-            var newPosition = new Vector3(125f, 35f, 65f);
-            var newRotation = Quaternion.Euler(1, 2, 3);
-            var newScale = new Vector3(2.0f, 2.0f, 2.0f);
-            m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition));
-            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!");
-            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
-            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
-
-            m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles));
-            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
-
-            m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale));
-            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
-
-            // Test all parameters at once
-            newPosition = new Vector3(55f, 95f, -25f);
-            newRotation = Quaternion.Euler(20, 5, 322);
-            newScale = new Vector3(0.5f, 0.5f, 0.5f);
-
-            m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale));
-            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!");
-            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
-            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
-        }
-
-        private const float k_AproximateDeltaVariance = 0.025f;
-        private bool PositionsMatchesValue(Vector3 positionToMatch)
-        {
-            var authorityPosition = m_AuthoritativeTransform.transform.position;
-            var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
-            var auhtorityIsEqual = Approximately(authorityPosition, positionToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityPosition, positionToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority position {authorityPosition} != position to match: {positionToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority position {nonAuthorityPosition} != position to match: {positionToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool RotationMatchesValue(Vector3 rotationEulerToMatch)
-        {
-            var authorityRotationEuler = m_AuthoritativeTransform.transform.rotation.eulerAngles;
-            var nonAuthorityRotationEuler = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
-            var auhtorityIsEqual = Approximately(authorityRotationEuler, rotationEulerToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityRotationEuler, rotationEulerToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority rotation {authorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority rotation {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool ScaleMatchesValue(Vector3 scaleToMatch)
-        {
-            var authorityScale = m_AuthoritativeTransform.transform.localScale;
-            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
-            var auhtorityIsEqual = Approximately(authorityScale, scaleToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityScale, scaleToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority scale {authorityScale} != scale to match: {scaleToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority scale {nonAuthorityScale} != scale to match: {scaleToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool TeleportPositionMatches(Vector3 nonAuthorityOriginalPosition)
-        {
-            var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
-            var authorityPosition = m_AuthoritativeTransform.transform.position;
-            var targetDistance = Mathf.Abs(Vector3.Distance(nonAuthorityOriginalPosition, authorityPosition));
-            var nonAuthorityCurrentDistance = Mathf.Abs(Vector3.Distance(nonAuthorityPosition, nonAuthorityOriginalPosition));
-            // If we are not within our target distance range
-            if (!Approximately(targetDistance, nonAuthorityCurrentDistance))
-            {
-                // Apply the non-authority's distance that is checked at the end of the teleport test
-                m_DetectedPotentialInterpolatedTeleport = nonAuthorityCurrentDistance;
-                return false;
-            }
-            else
-            {
-                // Otherwise, if we are within our target distance range then reset any already set value
-                m_DetectedPotentialInterpolatedTeleport = 0.0f;
-            }
-            var xIsEqual = Approximately(authorityPosition.x, nonAuthorityPosition.x);
-            var yIsEqual = Approximately(authorityPosition.y, nonAuthorityPosition.y);
-            var zIsEqual = Approximately(authorityPosition.z, nonAuthorityPosition.z);
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}] Authority position {authorityPosition} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        private bool PositionRotationScaleMatches(Vector3 position, Vector3 eulerRotation, Vector3 scale)
-        {
-            return PositionsMatchesValue(position) && RotationMatchesValue(eulerRotation) && ScaleMatchesValue(scale);
-        }
-
-        private bool PositionRotationScaleMatches()
-        {
-            return RotationsMatch() && PositionsMatch() && ScaleValuesMatch();
-        }
-
-        private void PrintPositionRotationScaleDeltas()
-        {
-            RotationsMatch(true);
-            PositionsMatch(true);
-            ScaleValuesMatch(true);
-        }
-
-        private bool RotationsMatch(bool printDeltas = false)
-        {
-            m_CurrentHalfPrecision = k_HalfPrecisionRot;
-            var authorityEulerRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation().eulerAngles;
-            var nonAuthorityEulerRotation = m_NonAuthoritativeTransform.GetSpaceRelativeRotation().eulerAngles;
-            var xIsEqual = ApproximatelyEuler(authorityEulerRotation.x, nonAuthorityEulerRotation.x) || !m_AuthoritativeTransform.SyncRotAngleX;
-            var yIsEqual = ApproximatelyEuler(authorityEulerRotation.y, nonAuthorityEulerRotation.y) || !m_AuthoritativeTransform.SyncRotAngleY;
-            var zIsEqual = ApproximatelyEuler(authorityEulerRotation.z, nonAuthorityEulerRotation.z) || !m_AuthoritativeTransform.SyncRotAngleZ;
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}][{m_CurrentAxis}]" +
-                    $"[Sync: X-{m_AuthoritativeTransform.SyncRotAngleX} |  X-{m_AuthoritativeTransform.SyncRotAngleY} |  X-{m_AuthoritativeTransform.SyncRotAngleZ}] Authority rotation {authorityEulerRotation} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
-            }
-            if (printDeltas)
-            {
-                Debug.Log($"[Rotation Match] Euler Delta {EulerDelta(authorityEulerRotation, nonAuthorityEulerRotation)}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        private bool PositionsMatch(bool printDeltas = false)
-        {
-            m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
-            var authorityPosition = m_AuthoritativeTransform.GetSpaceRelativePosition();
-            var nonAuthorityPosition = m_NonAuthoritativeTransform.GetSpaceRelativePosition();
-            var xIsEqual = Approximately(authorityPosition.x, nonAuthorityPosition.x) || !m_AuthoritativeTransform.SyncPositionX;
-            var yIsEqual = Approximately(authorityPosition.y, nonAuthorityPosition.y) || !m_AuthoritativeTransform.SyncPositionY;
-            var zIsEqual = Approximately(authorityPosition.z, nonAuthorityPosition.z) || !m_AuthoritativeTransform.SyncPositionZ;
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}] Authority position {authorityPosition} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        private bool ScaleValuesMatch(bool printDeltas = false)
-        {
-            m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
-            var authorityScale = m_AuthoritativeTransform.transform.localScale;
-            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
-            var xIsEqual = Approximately(authorityScale.x, nonAuthorityScale.x) || !m_AuthoritativeTransform.SyncScaleX;
-            var yIsEqual = Approximately(authorityScale.y, nonAuthorityScale.y) || !m_AuthoritativeTransform.SyncScaleY;
-            var zIsEqual = Approximately(authorityScale.z, nonAuthorityScale.z) || !m_AuthoritativeTransform.SyncScaleZ;
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}] Authority scale {authorityScale} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
     }
 }

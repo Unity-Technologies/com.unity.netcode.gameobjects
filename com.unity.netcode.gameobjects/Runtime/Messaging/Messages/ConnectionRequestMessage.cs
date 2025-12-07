@@ -2,11 +2,52 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Only used when connecting to the distributed authority service
+    /// </summary>
+    internal struct ClientConfig : INetworkSerializable
+    {
+        public SessionConfig SessionConfig;
+        public int SessionVersion => (int)SessionConfig.SessionVersion;
+        public uint TickRate;
+        public bool EnableSceneManagement;
+
+        // Only gets deserialized but should never be used unless testing
+        public int RemoteClientSessionVersion;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            // Clients always write
+            if (serializer.IsWriter)
+            {
+                var writer = serializer.GetFastBufferWriter();
+                BytePacker.WriteValueBitPacked(writer, SessionVersion);
+                BytePacker.WriteValueBitPacked(writer, TickRate);
+                writer.WriteValueSafe(EnableSceneManagement);
+            }
+            else
+            {
+                var reader = serializer.GetFastBufferReader();
+                ByteUnpacker.ReadValueBitPacked(reader, out RemoteClientSessionVersion);
+                ByteUnpacker.ReadValueBitPacked(reader, out TickRate);
+                reader.ReadValueSafe(out EnableSceneManagement);
+            }
+        }
+    }
+
     internal struct ConnectionRequestMessage : INetworkMessage
     {
-        public int Version => 0;
+        internal const string InvalidSessionVersionMessage = "The client version is not compatible with the session version.";
+
+        // This version update is unidirectional (client to service) and version
+        // handling occurs on the service side. This serialized data is never sent
+        // to a host or server.
+        private const int k_SendClientConfigToService = 1;
+        public int Version => k_SendClientConfigToService;
 
         public ulong ConfigHash;
+        public bool DistributedAuthority;
+        public ClientConfig ClientConfig;
 
         public byte[] ConnectionData;
 
@@ -29,6 +70,11 @@ namespace Unity.Netcode
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
+
+            if (DistributedAuthority)
+            {
+                writer.WriteNetworkSerializable(ClientConfig);
+            }
 
             if (ShouldSendConnectionData)
             {
@@ -72,6 +118,11 @@ namespace Unity.Netcode
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
+
+            if (networkManager.DAHost)
+            {
+                reader.ReadNetworkSerializable(out ClientConfig);
+            }
 
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
@@ -135,6 +186,17 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
 
+            // DAHost mocking the service logic to disconnect clients trying to connect with a lower session version
+            if (networkManager.DAHost)
+            {
+                if (ClientConfig.RemoteClientSessionVersion < networkManager.SessionConfig.SessionVersion)
+                {
+                    //Disconnect with reason
+                    networkManager.ConnectionManager.DisconnectClient(senderId, InvalidSessionVersionMessage);
+                    return;
+                }
+            }
+
             if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
@@ -148,12 +210,16 @@ namespace Unity.Netcode
             }
             else
             {
-                var response = new NetworkManager.ConnectionApprovalResponse
+                var createPlayerObject = networkManager.NetworkConfig.PlayerPrefab != null;
+
+                // DAHost only:
+                // Never create the player object on the server if AutoSpawnPlayerPrefabClientSide is set.
+                if (networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide)
                 {
-                    Approved = true,
-                    CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null
-                };
-                networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
+                    createPlayerObject = false;
+                }
+
+                networkManager.ConnectionManager.HandleConnectionApproval(senderId, createPlayerObject);
             }
         }
     }

@@ -8,9 +8,9 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Optimized class used for writing values into a byte stream
-    /// <seealso cref="FastBufferReader"/>
-    /// <seealso cref="BytePacker"/>
-    /// <seealso cref="ByteUnpacker"/>
+    /// <see cref="FastBufferReader"/>
+    /// <see cref="BytePacker"/>
+    /// <see cref="ByteUnpacker"/>
     /// </summary>
     public struct FastBufferWriter : IDisposable
     {
@@ -314,9 +314,9 @@ namespace Unity.Netcode
         /// Internal version of TryBeginWrite.
         /// Differs from TryBeginWrite only in that it won't ever move the AllowedWriteMark backward.
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="bytes">The number of bytes to check for write availability</param>
+        /// <returns>True if the specified number of bytes can be written, false if there isn't enough space</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to use BufferWriter in bytewise mode while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool TryBeginWriteInternal(int bytes)
         {
@@ -356,7 +356,7 @@ namespace Unity.Netcode
         /// Returns an array representation of the underlying byte buffer.
         /// !!Allocates a new array!!
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A new byte array containing a copy of the buffer's contents.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte[] ToArray()
         {
@@ -395,7 +395,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a direct pointer to the underlying buffer
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An unsafe pointer to the start of the underlying buffer memory</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
@@ -405,7 +405,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a direct pointer to the underlying buffer at the current read position
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An unsafe pointer to the underlying buffer memory offset by the current position</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
@@ -417,18 +417,18 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="s">The string to write</param>
         /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
-        /// <returns></returns>
+        /// <returns>The total number of bytes required to write the string, including the length field</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetWriteSize(string s, bool oneByteChars = false)
         {
-            return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
+            return SizeOfLengthField() + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
         }
 
         /// <summary>
         /// Write an INetworkSerializable
         /// </summary>
         /// <param name="value">The value to write</param>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of the value</typeparam>
         public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(this));
@@ -438,19 +438,55 @@ namespace Unity.Netcode
         /// <summary>
         /// Write an array of INetworkSerializables
         /// </summary>
-        /// <param name="array">The value to write</param>
-        /// <param name="count"></param>
-        /// <param name="offset"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="array">The array of objects to write</param>
+        /// <param name="count">The number of elements to write. If set to -1, will write all elements from offset to end</param>
+        /// <param name="offset">The starting position in the array from which to begin writing</param>
+        /// <typeparam name="T">The type of the value</typeparam>
         public void WriteNetworkSerializable<T>(T[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
-            WriteValueSafe(sizeInTs);
+            WriteLengthSafe(sizeInTs);
             foreach (var item in array)
             {
                 WriteNetworkSerializable(item);
             }
         }
+
+        /// <summary>
+        /// Write a NativeArray of INetworkSerializables
+        /// </summary>
+        /// <param name="array">The NativeArray containing the values to write</param>
+        /// <param name="count">The number of elements to write. If -1 (default), writes array.Length - offset elements</param>
+        /// <param name="offset">The starting position in the array. Defaults to 0</param>
+        /// <typeparam name="T">The type of the value</typeparam>
+        public void WriteNetworkSerializable<T>(NativeArray<T> array, int count = -1, int offset = 0) where T : unmanaged, INetworkSerializable
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            WriteLengthSafe(sizeInTs);
+            foreach (var item in array)
+            {
+                WriteNetworkSerializable(item);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Write a NativeList of INetworkSerializables
+        /// </summary>
+        /// <param name="array">The NativeArray containing the values to write</param>
+        /// <param name="count">The number of elements to write. If -1 (default), writes array.Length - offset elements</param>
+        /// <param name="offset">The starting position in the array. Defaults to 0/param>
+        /// <typeparam name="T">The type of the value</typeparam>
+        public void WriteNetworkSerializable<T>(NativeList<T> array, int count = -1, int offset = 0) where T : unmanaged, INetworkSerializable
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            WriteLengthSafe(sizeInTs);
+            foreach (var item in array)
+            {
+                WriteNetworkSerializable(item);
+            }
+        }
+#endif
 
         /// <summary>
         /// Writes a string
@@ -459,7 +495,7 @@ namespace Unity.Netcode
         /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
         public unsafe void WriteValue(string s, bool oneByteChars = false)
         {
-            WriteValue((uint)s.Length);
+            WriteLength((uint)s.Length);
             int target = s.Length;
             if (oneByteChars)
             {
@@ -502,7 +538,7 @@ namespace Unity.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
 
-            WriteValue((uint)s.Length);
+            WriteLength((uint)s.Length);
             int target = s.Length;
             if (oneByteChars)
             {
@@ -526,15 +562,49 @@ namespace Unity.Netcode
         /// <param name="array">The array to write</param>
         /// <param name="count">The amount of elements to write</param>
         /// <param name="offset">Where in the array to start</param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">The type of elements in the array, must be unmanaged</typeparam>
+        /// <returns>The total number of bytes required to write the array, including the length field</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe int GetWriteSize<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
-            return sizeof(int) + sizeInBytes;
+            return SizeOfLengthField() + sizeInBytes;
         }
+
+        /// <summary>
+        /// Get the required size to write a NativeArray
+        /// </summary>
+        /// <param name="array">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
+        /// <param name="offset">Where in the array to start</param>
+        /// <typeparam name="T">The type of elements in the array, must be unmanaged</typeparam>
+        /// <returns>The total number of bytes required to write the array, including the length field</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int GetWriteSize<T>(NativeArray<T> array, int count = -1, int offset = 0) where T : unmanaged
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            int sizeInBytes = sizeInTs * sizeof(T);
+            return SizeOfLengthField() + sizeInBytes;
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Get the required size to write a NativeList
+        /// </summary>
+        /// <param name="array">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
+        /// <param name="offset">Where in the array to start</param>
+        /// <typeparam name="T">The type of elements in the array, must be unmanaged</typeparam>
+        /// <returns>The total number of bytes required to write the array, including the length field</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int GetWriteSize<T>(NativeList<T> array, int count = -1, int offset = 0) where T : unmanaged
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            int sizeInBytes = sizeInTs * sizeof(T);
+            return SizeOfLengthField() + sizeInBytes;
+        }
+#endif
 
         /// <summary>
         /// Write a partial value. The specified number of bytes is written from the value and the rest is ignored.
@@ -542,9 +612,9 @@ namespace Unity.Netcode
         /// <param name="value">Value to write</param>
         /// <param name="bytesToWrite">Number of bytes</param>
         /// <param name="offsetBytes">Offset into the value to begin reading the bytes</param>
-        /// <typeparam name="T"></typeparam>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="OverflowException"></exception>
+        /// <typeparam name="T">The type of elements in the array, must be unmanaged</typeparam>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to use BufferWriter in bytewise mode while in a bitwise context</exception>
+        /// <exception cref="OverflowException">Thrown when attempting to write without first calling TryBeginWrite() or when writing beyond the allowed write mark</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T : unmanaged
         {
@@ -630,7 +700,7 @@ namespace Unity.Netcode
             }
             if (Handle->Position + size > Handle->AllowedWriteMark)
             {
-                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
+                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}(), Position+Size={Handle->Position + size} > AllowedWriteMark={Handle->AllowedWriteMark}");
             }
 #endif
             UnsafeUtility.MemCpy((Handle->BufferPointer + Handle->Position), value + offset, size);
@@ -659,7 +729,7 @@ namespace Unity.Netcode
 
             if (!TryBeginWriteInternal(size))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException($"Writing past the end of the buffer, size is {size} bytes but remaining capacity is {Handle->Capacity - Handle->Position} bytes");
             }
             UnsafeUtility.MemCpy((Handle->BufferPointer + Handle->Position), value + offset, size);
             Handle->Position += size;
@@ -682,6 +752,32 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Write multiple bytes to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytes(NativeArray<byte> value, int size = -1, int offset = 0)
+        {
+            byte* ptr = (byte*)value.GetUnsafePtr();
+            WriteBytes(ptr, size == -1 ? value.Length : size, offset);
+        }
+
+        /// <summary>
+        /// Write multiple bytes to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytes(NativeList<byte> value, int size = -1, int offset = 0)
+        {
+            byte* ptr = value.GetUnsafePtr();
+            WriteBytes(ptr, size == -1 ? value.Length : size, offset);
+        }
+
+        /// <summary>
+        /// Write multiple bytes to the stream
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
@@ -696,6 +792,32 @@ namespace Unity.Netcode
             {
                 WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
             }
+        }
+
+        /// <summary>
+        /// Write multiple bytes to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytesSafe(NativeArray<byte> value, int size = -1, int offset = 0)
+        {
+            byte* ptr = (byte*)value.GetUnsafePtr();
+            WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
+        }
+
+        /// <summary>
+        /// Write multiple bytes to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytesSafe(NativeList<byte> value, int size = -1, int offset = 0)
+        {
+            byte* ptr = value.GetUnsafePtr();
+            WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
         }
 
         /// <summary>
@@ -727,10 +849,10 @@ namespace Unity.Netcode
         /// The ForStructs value here makes this the lowest-priority overload so other versions
         /// will be prioritized over this if they match
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="unused"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <param name="value">The unmanaged value to calculate the size for</param>
+        /// <param name="unused">Unused parameter for overload resolution</param>
+        /// <typeparam name="T">The type of the value, must be unmanaged</typeparam>
+        /// <returns>The size in bytes required to write the value</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe int GetWriteSize<T>(in T value, ForStructs unused = default) where T : unmanaged
         {
@@ -740,20 +862,58 @@ namespace Unity.Netcode
         /// <summary>
         /// Get the write size for a FixedString
         /// </summary>
-        /// <param name="value"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <param name="value">The FixedString value to calculate the size for</param>
+        /// <typeparam name="T">The specific FixedString type, must implement INativeList{byte} and IUTF8Bytes</typeparam>
+        /// <returns>The size in bytes required to write the value</returns>
         public static int GetWriteSize<T>(in T value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
-            return value.Length + sizeof(int);
+            return SizeOfLengthField() + value.Length;
         }
+
+        /// <summary>
+        /// Get the write size for an array of FixedStrings
+        /// </summary>
+        /// <param name="value">The NativeArray of FixedStrings to calculate the size for</param>
+        /// <typeparam name="T">The specific FixedString type, must implement INativeList{byte} and IUTF8Bytes</typeparam>
+        /// <returns>The total size in bytes required to write all strings, including all length fields</returns>
+        public static int GetWriteSize<T>(in NativeArray<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            var size = SizeOfLengthField();
+            foreach (var item in value)
+            {
+                size += SizeOfLengthField() + item.Length;
+            }
+
+            return size;
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Get the write size for an array of FixedStrings
+        /// </summary>
+        /// <param name="value">The NativeList of FixedStrings to calculate the size for</param>
+        /// <typeparam name="T">The specific FixedString type, must implement INativeList{byte} and IUTF8Bytes</typeparam>
+        /// <returns>The total size in bytes required to write all strings, including all length fields</returns>
+        public static int GetWriteSize<T>(in NativeList<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            var size = SizeOfLengthField();
+            foreach (var item in value)
+            {
+                size += SizeOfLengthField() + item.Length;
+            }
+
+            return size;
+        }
+#endif
 
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">The type to calculate the size for, must be unmanaged</typeparam>
+        /// <returns>The size in bytes required to write a value of type T</returns>
         public static unsafe int GetWriteSize<T>() where T : unmanaged
         {
             return sizeof(T);
@@ -779,9 +939,31 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SizeOfLengthField() => sizeof(uint);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteLengthSafe(uint length) => WriteUnmanagedSafe(length);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteLength(uint length) => WriteUnmanaged(length);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteLengthSafe(int length)
+        {
+            if (length < 0)
+            {
+                throw new InvalidCastException("Cannot write negative length");
+            }
+            WriteLengthSafe((uint)length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteLength(int length) => WriteLength((uint)length);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
         {
-            WriteUnmanaged(value.Length);
+            WriteLength(value.Length);
             fixed (T* ptr = value)
             {
                 byte* bytes = (byte*)ptr;
@@ -791,13 +973,57 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
         {
-            WriteUnmanagedSafe(value.Length);
+            WriteLengthSafe(value.Length);
             fixed (T* ptr = value)
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytesSafe(bytes, sizeof(T) * value.Length);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void WriteUnmanaged<T>(NativeArray<T> value) where T : unmanaged
+        {
+            WriteLength(value.Length);
+            var ptr = (T*)value.GetUnsafePtr();
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytes(bytes, sizeof(T) * value.Length);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void WriteUnmanagedSafe<T>(NativeArray<T> value) where T : unmanaged
+        {
+            WriteLengthSafe(value.Length);
+            var ptr = (T*)value.GetUnsafePtr();
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytesSafe(bytes, sizeof(T) * value.Length);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void WriteUnmanaged<T>(NativeList<T> value) where T : unmanaged
+        {
+            WriteLength(value.Length);
+            var ptr = value.GetUnsafePtr();
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytes(bytes, sizeof(T) * value.Length);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void WriteUnmanagedSafe<T>(NativeList<T> value) where T : unmanaged
+        {
+            WriteLengthSafe(value.Length);
+            var ptr = value.GetUnsafePtr();
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytesSafe(bytes, sizeof(T) * value.Length);
+            }
+        }
+#endif
 
         /// <summary>
         /// This empty struct exists to allow overloading WriteValue based on generic constraints.
@@ -870,6 +1096,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
+        public struct ForGeneric
+        {
+
+        }
+
+        /// <summary>
         /// Write a NetworkSerializable value
         /// </summary>
         /// <param name="value">The value to write</param>
@@ -930,6 +1170,75 @@ namespace Unity.Netcode
         public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
 
         /// <summary>
+        /// Write a struct NativeArray
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(NativeArray<T> value, ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.Write(this, ref value);
+            }
+            else
+            {
+                WriteUnmanaged(value);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Write a struct NativeList
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(NativeList<T> value, ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Write(this, ref value);
+            }
+            else
+            {
+                WriteUnmanaged(value);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void WriteValueSafe<T>(NativeHashSet<T> value) where T : unmanaged, IEquatable<T>
+        {
+            WriteLengthSafe(value.Count);
+            foreach (var item in value)
+            {
+                var iReffable = item;
+                NetworkVariableSerialization<T>.Write(this, ref iReffable);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void WriteValueSafe<TKey, TVal>(NativeHashMap<TKey, TVal> value)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            WriteLengthSafe(value.Count);
+            foreach (var item in value)
+            {
+                (var key, var val) = (item.Key, item.Value);
+                NetworkVariableSerialization<TKey>.Write(this, ref key);
+                NetworkVariableSerialization<TVal>.Write(this, ref val);
+            }
+        }
+#endif
+
+        /// <summary>
         /// Write a struct
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -952,6 +1261,56 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a struct NativeArray
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(NativeArray<T> value, ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.Write(this, ref value);
+            }
+            else
+            {
+                WriteUnmanagedSafe(value);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Write a struct NativeList
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(NativeList<T> value, ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Write(this, ref value);
+            }
+            else
+            {
+                WriteUnmanagedSafe(value);
+            }
+        }
+#endif
 
         /// <summary>
         /// Write a primitive value (int, bool, etc)
@@ -1130,6 +1489,20 @@ namespace Unity.Netcode
         public void WriteValue(Quaternion[] value) => WriteUnmanaged(value);
 
         /// <summary>
+        /// Write a Pose
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Pose value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Pose array
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Pose[] value) => WriteUnmanaged(value);
+
+        /// <summary>
         /// Write a Color
         /// </summary>
         /// <param name="value">the value to write</param>
@@ -1184,7 +1557,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
-
 
         /// <summary>
         /// Write a Vector2
@@ -1307,6 +1679,26 @@ namespace Unity.Netcode
         public void WriteValueSafe(Quaternion[] value) => WriteUnmanagedSafe(value);
 
         /// <summary>
+        /// Write a Pose
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Pose value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Pose array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Pose[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
         /// Write a Color
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1405,7 +1797,8 @@ namespace Unity.Netcode
         public unsafe void WriteValue<T>(in T value, ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
-            WriteUnmanaged(value.Length);
+            // BytePacker.WriteValuePacked(this, value.Length);
+            WriteLength(value.Length);
             // This avoids a copy on the string, which could be costly for FixedString4096Bytes
             // Otherwise, GetUnsafePtr() is an impure function call and will result in a copy
             // for `in` parameters.
@@ -1414,6 +1807,65 @@ namespace Unity.Netcode
                 WriteBytes(ptr->GetUnsafePtr(), value.Length);
             }
         }
+
+        /// <summary>
+        /// Write an array of FixedString values. Writes only the part of each string that's actually used.
+        /// When calling TryBeginWrite, ensure you calculate the write size correctly (preferably by calling
+        /// FastBufferWriter.GetWriteSize())
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+
+        /// <summary>
+        /// Write a NativeArray of FixedString values. Writes only the part of each string that's actually used.
+        /// When calling TryBeginWrite, ensure you calculate the write size correctly (preferably by calling
+        /// FastBufferWriter.GetWriteSize())
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in NativeArray<T> value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Write a NativeList of FixedString values. Writes only the part of each string that's actually used.
+        /// When calling TryBeginWrite, ensure you calculate the write size correctly (preferably by calling
+        /// FastBufferWriter.GetWriteSize())
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in NativeList<T> value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+#endif
 
 
         /// <summary>
@@ -1429,11 +1881,80 @@ namespace Unity.Netcode
         public void WriteValueSafe<T>(in T value, ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
-            if (!TryBeginWriteInternal(sizeof(int) + value.Length))
+            if (!TryBeginWriteInternal(SizeOfLengthField() + value.Length))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
             WriteValue(value);
         }
+
+        /// <summary>
+        /// Write a NativeArray of FixedString values. Writes only the part of each string that's actually used.
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            if (!TryBeginWriteInternal(GetWriteSize(value)))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+
+        /// <summary>
+        /// Write a NativeArray of FixedString values. Writes only the part of each string that's actually used.
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in NativeArray<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            if (!TryBeginWriteInternal(GetWriteSize(value)))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        /// <summary>
+        /// Write a NativeList of FixedString values. Writes only the part of each string that's actually used.
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in NativeList<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            if (!TryBeginWriteInternal(GetWriteSize(value)))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            WriteLength(value.Length);
+            foreach (var str in value)
+            {
+                WriteValue(str);
+            }
+        }
+#endif
     }
 }

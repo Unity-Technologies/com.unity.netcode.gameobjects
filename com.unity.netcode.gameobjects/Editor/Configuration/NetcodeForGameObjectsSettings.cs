@@ -1,13 +1,11 @@
 using UnityEditor;
-using UnityEngine;
-using UnityEngine.Serialization;
-
 
 namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
     internal class NetcodeForGameObjectsEditorSettings
     {
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
+        internal const string CheckForNetworkObject = "NetworkBehaviour-Check-For-NetworkObject";
         internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
 
         internal static int GetNetcodeInstallMultiplayerToolTips()
@@ -31,7 +29,7 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             {
                 return EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists);
             }
-
+            // Default for this is false
             return false;
         }
 
@@ -39,30 +37,20 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         {
             EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, autoAddSetting);
         }
-    }
 
-    [FilePath("ProjectSettings/NetcodeForGameObjects.settings", FilePathAttribute.Location.ProjectFolder)]
-    internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
-    {
-        [SerializeField]
-        [FormerlySerializedAs("GenerateDefaultNetworkPrefabs")]
-        private byte m_GenerateDefaultNetworkPrefabs;
-
-        public bool GenerateDefaultNetworkPrefabs
+        internal static bool GetCheckForNetworkObjectSetting()
         {
-            get
+            if (EditorPrefs.HasKey(CheckForNetworkObject))
             {
-                return m_GenerateDefaultNetworkPrefabs != 0;
+                return EditorPrefs.GetBool(CheckForNetworkObject);
             }
-            set
-            {
-                m_GenerateDefaultNetworkPrefabs = (byte)(value ? 1 : 0);
-            }
+            // Default for this is true
+            return true;
         }
 
-        internal void SaveSettings()
+        internal static void SetCheckForNetworkObjectSetting(bool checkForNetworkObject)
         {
-            Save(true);
+            EditorPrefs.SetBool(CheckForNetworkObject, checkForNetworkObject);
         }
     }
 }

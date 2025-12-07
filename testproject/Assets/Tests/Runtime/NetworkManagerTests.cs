@@ -1,15 +1,36 @@
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    public class NetworkManagerTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 2;
+
+        [Test]
+        public void ValidateTransportAndClientIds()
+        {
+            var transportId = m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId);
+            Assert.IsTrue(m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId) == m_ServerNetworkManager.ConnectionManager.ServerTransportId);
+            Assert.IsTrue(m_ServerNetworkManager.GetClientIdFromTransportId(transportId) == m_ServerNetworkManager.LocalClientId);
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                transportId = m_ServerNetworkManager.GetTransportIdFromClientId(client.LocalClientId);
+                Assert.AreEqual(client.LocalClientId, m_ServerNetworkManager.GetClientIdFromTransportId(transportId), "Server and client transport IDs don't match.");
+            }
+        }
+    }
+
     [TestFixture(UseSceneManagement.SceneManagementDisabled)]
     [TestFixture(UseSceneManagement.SceneManagementEnabled)]
-    public class NetworkManagerTests : NetcodeIntegrationTest
+    public class NetworkManagerSceneTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "InSceneNetworkObject";
         protected override int NumberOfClients => 0;
@@ -20,7 +41,6 @@ namespace TestProject.RuntimeTests
             SceneManagementDisabled
         }
 
-        private bool m_EnableSceneManagement;
         private NetworkObject m_NetworkObject;
         private bool m_NetworkObjectWasSpawned;
         private bool m_NetworkBehaviourIsHostWasSet;
@@ -32,19 +52,22 @@ namespace TestProject.RuntimeTests
 
         private bool m_UseSceneManagement;
 
-        public NetworkManagerTests(UseSceneManagement useSceneManagement)
+        public NetworkManagerSceneTests(UseSceneManagement useSceneManagement)
         {
             m_UseSceneManagement = useSceneManagement == UseSceneManagement.SceneManagementEnabled;
         }
 
         private void OnClientConnectedCallback(NetworkObject networkObject, int numberOfTimesInvoked, bool isHost, bool isClient, bool isServer)
         {
-            m_NetworkObject = networkObject;
-            m_NetworkObjectWasSpawned = networkObject.IsSpawned;
-            m_NetworkBehaviourIsHostWasSet = isHost;
-            m_NetworkBehaviourIsClientWasSet = isClient;
-            m_NetworkBehaviourIsServerWasSet = isServer;
-            m_NumberOfTimesInvoked = numberOfTimesInvoked;
+            if (networkObject != null)
+            {
+                m_NetworkObject = networkObject;
+                m_NetworkObjectWasSpawned = networkObject.IsSpawned;
+                m_NetworkBehaviourIsHostWasSet = isHost;
+                m_NetworkBehaviourIsClientWasSet = isClient;
+                m_NetworkBehaviourIsServerWasSet = isServer;
+                m_NumberOfTimesInvoked = numberOfTimesInvoked;
+            }
         }
 
         private bool TestComponentFound()
@@ -80,7 +103,7 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_UseSceneManagement;
             m_NetworkObjectTestComponent.ConfigureClientConnected(m_ServerNetworkManager, OnClientConnectedCallback);
         }
 
@@ -93,6 +116,86 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(m_NetworkBehaviourIsClientWasSet, $"IsClient was not true when OnClientConnectedCallback was invoked!");
             Assert.IsTrue(m_NumberOfTimesInvoked == 1, $"OnClientConnectedCallback was invoked {m_NumberOfTimesInvoked} as opposed to just once!");
             Assert.IsTrue(m_NetworkBehaviourIsServerWasSet, $"IsServer was not true when OnClientConnectedCallback was invoked!");
+        }
+
+        public enum ShutdownChecks
+        {
+            Server,
+            Client
+        }
+
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.EnableSceneManagement = m_UseSceneManagement;
+            base.OnNewClientCreated(networkManager);
+        }
+
+        /// <summary>
+        /// Validate shutting down a second time does not cause an exception.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ValidateShutdown([Values] ShutdownChecks shutdownCheck)
+        {
+
+
+            if (shutdownCheck == ShutdownChecks.Server)
+            {
+                // Register for the server stopped notification so we know we have shutdown completely
+                m_ServerNetworkManager.OnServerStopped += OnServerStopped;
+                // Shutdown
+                m_ServerNetworkManager.Shutdown();
+            }
+            else
+            {
+                // For this test (simplify the complexity) with a late joining client, just remove the
+                // in-scene placed NetworkObject prior to the client connecting
+                // (We are testing the shutdown sequence)
+                var spawnedObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.ToList();
+
+                for (int i = spawnedObjects.Count - 1; i >= 0; i--)
+                {
+                    var spawnedObject = spawnedObjects[i];
+                    if (spawnedObject.IsSceneObject != null && spawnedObject.IsSceneObject.Value)
+                    {
+                        spawnedObject.Despawn();
+                    }
+                }
+
+                yield return s_DefaultWaitForTick;
+
+                yield return CreateAndStartNewClient();
+
+                // Register for the server stopped notification so we know we have shutdown completely
+                m_ClientNetworkManagers[0].OnClientStopped += OnClientStopped;
+                m_ClientNetworkManagers[0].Shutdown();
+            }
+
+            // Let the network manager instance shutdown
+            yield return s_DefaultWaitForTick;
+
+            // Validate the shutdown is no longer in progress
+            if (shutdownCheck == ShutdownChecks.Server)
+            {
+                Assert.False(m_ServerNetworkManager.ShutdownInProgress, $"[{shutdownCheck}] Shutdown in progress was still detected!");
+            }
+            else
+            {
+                Assert.False(m_ClientNetworkManagers[0].ShutdownInProgress, $"[{shutdownCheck}] Shutdown in progress was still detected!");
+            }
+        }
+
+        private void OnClientStopped(bool obj)
+        {
+            m_ServerNetworkManager.OnServerStopped -= OnClientStopped;
+            // Verify that we can invoke shutdown again without an exception
+            m_ServerNetworkManager.Shutdown();
+        }
+
+        private void OnServerStopped(bool obj)
+        {
+            m_ServerNetworkManager.OnServerStopped -= OnServerStopped;
+            // Verify that we can invoke shutdown again without an exception
+            m_ServerNetworkManager.Shutdown();
         }
     }
 }

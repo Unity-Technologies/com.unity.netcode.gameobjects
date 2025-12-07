@@ -9,4 +9,6 @@ upm-ci~
 utr
 utr.bat
 .download
+Tools/CI/bin
+Tools/CI/obj
 

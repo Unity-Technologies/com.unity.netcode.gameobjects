@@ -1,4 +1,4 @@
-blank_issues_enabled: True
+blank_issues_enabled: False
 contact_links:
   - name: Documentation Issues
     url: https://github.com/Unity-Technologies/com.unity.multiplayer.docs/issues
@@ -9,3 +9,9 @@ contact_links:
   - name: Unity Multiplayer Forum
     url: https://forum.unity.com/forums/multiplayer.26/
     about: Create a thread in the Unity Multiplayer Forum
+  - name: Support
+    url: https://discussions.unity.com/tag/netcode-for-gameobjects
+    about: Creating a thread in discussions is usually the fastest way to get help from Unity stuff or other experienced users
+  - name: Feedback
+    url: https://discussions.unity.com/tag/netcode-for-gameobjects
+    about: We are always looking for feedback on our products, so please let us know what you think

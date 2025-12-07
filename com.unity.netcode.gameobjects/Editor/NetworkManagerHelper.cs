@@ -27,6 +27,7 @@ namespace Unity.Netcode.GameObjects.Editor
         private static void InitializeOnload()
         {
             Singleton = new NetworkManagerHelper();
+
             NetworkManager.NetworkManagerHelper = Singleton;
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
@@ -61,6 +62,12 @@ namespace Unity.Netcode.GameObjects.Editor
                     {
                         s_LastKnownNetworkManagerParents.Clear();
                         ScenesInBuildActiveSceneCheck();
+                        EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
+                        break;
+                    }
+                case PlayModeStateChange.EnteredEditMode:
+                    {
+                        EditorApplication.hierarchyChanged += EditorApplication_hierarchyChanged;
                         break;
                     }
             }
@@ -110,6 +117,12 @@ namespace Unity.Netcode.GameObjects.Editor
         /// </summary>
         private static void EditorApplication_hierarchyChanged()
         {
+            if (Application.isPlaying)
+            {
+                EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
+                return;
+            }
+
             var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
             foreach (var networkManager in allNetworkManagers)
             {
@@ -211,6 +224,17 @@ namespace Unity.Netcode.GameObjects.Editor
                 }
             }
             return isParented;
+        }
+
+        internal NetcodeAnalytics NetcodeAnalytics = new NetcodeAnalytics();
+
+        /// <summary>
+        /// Directly define the interface method to keep this internal
+        /// </summary>
+        /// <returns>The <see cref="NetcodeAnalytics"/> instance which is derived from the <see cref="NetworkManager.NetcodeAnalytics"/> abstract class.</returns>
+        NetworkManager.NetcodeAnalytics NetworkManager.INetworkManagerHelper.Analytics()
+        {
+            return NetcodeAnalytics;
         }
     }
 #endif

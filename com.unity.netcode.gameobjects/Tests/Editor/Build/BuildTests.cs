@@ -7,10 +7,12 @@ using UnityEngine;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
-    public class BuildTests
+    internal class BuildTests
     {
         public const string DefaultBuildScenePath = "Tests/Editor/Build/BuildTestScene.unity";
 
+        // Increased the Build test timeout from 3 to 10 minutes.
+        [Timeout(900000)]
         [Test]
         public void BasicBuildTest()
         {

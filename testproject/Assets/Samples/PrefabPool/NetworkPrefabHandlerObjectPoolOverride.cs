@@ -128,8 +128,7 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
     {
         var gameObject = GetNextSpawnObject();
         gameObject.SetActive(true);
-        gameObject.transform.position = position;
-        gameObject.transform.rotation = rotation;
+        gameObject.transform.SetPositionAndRotation(position, rotation);
         return gameObject.GetComponent<NetworkObject>();
     }
 
@@ -180,4 +179,3 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         }
     }
 }
-

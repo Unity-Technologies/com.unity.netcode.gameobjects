@@ -11,17 +11,21 @@ namespace Unity.Netcode
     {
         private NetworkObjectReference m_NetworkObjectReference;
         private ushort m_NetworkBehaviourId;
+        private static ushort s_NullId = ushort.MaxValue;
+
 
         /// <summary>
         /// Creates a new instance of the <see cref="NetworkBehaviourReference{T}"/> struct.
         /// </summary>
         /// <param name="networkBehaviour">The <see cref="NetworkBehaviour"/> to reference.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown when the provided NetworkBehaviour does not have an associated NetworkObject. This can happen if the behaviour is not properly attached to a networked GameObject.</exception>
         public NetworkBehaviourReference(NetworkBehaviour networkBehaviour)
         {
             if (networkBehaviour == null)
             {
-                throw new ArgumentNullException(nameof(networkBehaviour));
+                m_NetworkObjectReference = new NetworkObjectReference((NetworkObject)null);
+                m_NetworkBehaviourId = s_NullId;
+                return;
             }
             if (networkBehaviour.NetworkObject == null)
             {
@@ -40,7 +44,7 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet(out NetworkBehaviour networkBehaviour, NetworkManager networkManager = null)
         {
-            networkBehaviour = GetInternal(this, null);
+            networkBehaviour = GetInternal(this, networkManager);
             return networkBehaviour != null;
         }
 
@@ -53,13 +57,18 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet<T>(out T networkBehaviour, NetworkManager networkManager = null) where T : NetworkBehaviour
         {
-            networkBehaviour = GetInternal(this, null) as T;
+            networkBehaviour = GetInternal(this, networkManager) as T;
             return networkBehaviour != null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkBehaviour GetInternal(NetworkBehaviourReference networkBehaviourRef, NetworkManager networkManager = null)
         {
+            if (networkBehaviourRef.m_NetworkBehaviourId == s_NullId)
+            {
+                return null;
+            }
+
             if (networkBehaviourRef.m_NetworkObjectReference.TryGet(out NetworkObject networkObject, networkManager))
             {
                 return networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourRef.m_NetworkBehaviourId);

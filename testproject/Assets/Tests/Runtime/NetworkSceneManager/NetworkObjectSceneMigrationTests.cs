@@ -59,19 +59,6 @@ namespace TestProject.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrfab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                if (networkPrfab.Prefab == null)
-                {
-                    continue;
-                }
-                networkManager.NetworkConfig.Prefabs.Add(networkPrfab);
-            }
-            base.OnNewClientCreated(networkManager);
-        }
-
         private bool DidClientsSpawnInstance(NetworkObject serverObject, bool checkDestroyWithScene = false)
         {
             foreach (var networkManager in m_ClientNetworkManagers)

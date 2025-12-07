@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
+using System.Linq;
+using Unity.Netcode.Components;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -13,8 +18,29 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/Network Manager", -100)]
+    [HelpURL(HelpUrls.NetworkManager)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        /// <summary>
+        /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance has been instantiated.
+        /// </summary>
+        public static event Action<NetworkManager> OnInstantiated;
+
+        /// <summary>
+        /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance is being destroyed.
+        /// </summary>
+        public static event Action<NetworkManager> OnDestroying;
+
+
+#if UNITY_EDITOR
+        // Inspector view expand/collapse settings for this derived child class
+        [HideInInspector]
+        public bool NetworkManagerExpanded;
+#endif
+
+        // TODO: Deprecate...
+        // The following internal values are not used, but because ILPP makes them public in the assembly, they cannot
+        // be removed thanks to our semver validation.
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -23,33 +49,416 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        // RuntimeAccessModifiersILPP will make this `public`
+        // RuntimeAccessModifiersILPP will make this `public` (legacy table should be removed in v3.x.x)
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-#endif
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static List<Type> s_SerializedType = new List<Type>();
+        // This is used to control the serialized type not optimized messaging for integration test purposes
+        internal static bool DisableNotOptimizedSerializedType;
+        /// <summary>
+        /// Until all serialized types are optimized for the distributed authority network topology,
+        /// this will handle the notification to the user that the type being serialized is not yet
+        /// optimized but will only log the message once to prevent log spamming.
+        /// </summary>
+        internal static void LogSerializedTypeNotOptimized<T>()
+        {
+            if (DisableNotOptimizedSerializedType)
+            {
+                return;
+            }
+            var type = typeof(T);
+            if (!s_SerializedType.Contains(type))
+            {
+                s_SerializedType.Add(type);
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{type.Name}] Serialized type has not been optimized for use with Distributed Authority!");
+                }
+            }
+        }
+#endif
+
+        internal SessionConfig SessionConfig;
+
+        /// <summary>
+        /// Used for internal testing purposes
+        /// </summary>
+        internal delegate SessionConfig OnGetSessionConfigHandler();
+        internal OnGetSessionConfigHandler OnGetSessionConfig;
+        private SessionConfig GetSessionConfig()
+        {
+            return OnGetSessionConfig != null ? OnGetSessionConfig.Invoke() : new SessionConfig();
+        }
+
+        internal static bool IsDistributedAuthority;
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Returns true if the current session is running in distributed authority mode.
+        /// </summary>
+        public bool DistributedAuthorityMode { get; private set; }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Gets whether the NetworkManager is connected to a distributed authority state service.
+        /// <see cref="NetworkClient.DAHost"/> to determine if the instance is mocking the state service.
+        /// </summary>
+        public bool CMBServiceConnection
+        {
+            get
+            {
+                return NetworkConfig.UseCMBService;
+            }
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// When enabled, the player prefab will be automatically spawned on the newly connected client-side.
+        /// </summary>
+        /// <remarks>
+        /// Refer to <see cref="NetworkConfig.AutoSpawnPlayerPrefabClientSide"/> to enable/disable automatic spawning of the player prefab.
+        /// Alternately, override the <see cref="FetchLocalPlayerPrefabToSpawn"/> to control what prefab the player should spawn.
+        /// </remarks>
+        public bool AutoSpawnPlayerPrefabClientSide
+        {
+            get
+            {
+                return NetworkConfig.AutoSpawnPlayerPrefabClientSide;
+            }
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Delegate definition for <see cref="FetchLocalPlayerPrefabToSpawn"/>
+        /// </summary>
+        /// <returns>Player Prefab <see cref="GameObject"/></returns>
+        public delegate GameObject OnFetchLocalPlayerPrefabToSpawnDelegateHandler();
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// When a callback is assigned, this provides control over what player prefab a client will be using.
+        /// This is invoked only when <see cref="NetworkConfig.AutoSpawnPlayerPrefabClientSide"/> is enabled.
+        /// </summary>
+        public OnFetchLocalPlayerPrefabToSpawnDelegateHandler OnFetchLocalPlayerPrefabToSpawn;
+
+        internal GameObject FetchLocalPlayerPrefabToSpawn()
+        {
+            if (!AutoSpawnPlayerPrefabClientSide)
+            {
+                Debug.LogError($"[{nameof(FetchLocalPlayerPrefabToSpawn)}] Invoked when {nameof(NetworkConfig.AutoSpawnPlayerPrefabClientSide)} was not set! Check call paths!");
+                return null;
+            }
+            if (OnFetchLocalPlayerPrefabToSpawn == null && NetworkConfig.PlayerPrefab == null)
+            {
+                return null;
+            }
+
+            if (OnFetchLocalPlayerPrefabToSpawn != null)
+            {
+                return OnFetchLocalPlayerPrefabToSpawn();
+            }
+            return NetworkConfig.PlayerPrefab;
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Gets whether the current NetworkManager is running as a mock distributed authority state service (DAHost)
+        /// </summary>
+        public bool DAHost
+        {
+            get
+            {
+                return LocalClient.DAHost;
+            }
+        }
+
+        // DANGO-TODO: Determine if this needs to be removed once the service handles object distribution
+        internal List<ulong> ClientsToRedistribute = new List<ulong>();
+        internal bool RedistributeToClients;
+
+        /// <summary>
+        /// Handles object redistribution when scene management is disabled.
+        /// <see cref="NetworkBehaviourUpdater.NetworkBehaviourUpdater_Tick"/>
+        /// DANGO-TODO: Determine if this needs to be removed once the service handles object distribution
+        /// </summary>
+        internal void HandleRedistributionToClients()
+        {
+            foreach (var clientId in ClientsToRedistribute)
+            {
+                SpawnManager.DistributeNetworkObjects(clientId);
+            }
+            RedistributeToClients = false;
+            ClientsToRedistribute.Clear();
+        }
+
+
+        internal List<NetworkObject> DeferredDespawnObjects = new List<NetworkObject>();
+
+        /// <summary>
+        /// Gets the client identifier of the current session owner in distributed authority mode
+        /// </summary>
+        public ulong CurrentSessionOwner { get; internal set; }
+
+        /// <summary>
+        /// Delegate declaration for <see cref="OnSessionOwnerPromoted"/>
+        /// </summary>
+        /// <param name="sessionOwnerPromoted">the new session owner client identifier</param>
+        public delegate void OnSessionOwnerPromotedDelegateHandler(ulong sessionOwnerPromoted);
+
+        /// <summary>
+        /// Network Topology: Distributed Authority
+        /// When a new session owner is promoted, this event is triggered on all connected clients
+        /// </summary>
+        public event OnSessionOwnerPromotedDelegateHandler OnSessionOwnerPromoted;
+
+        internal void SetSessionOwner(ulong sessionOwner)
+        {
+            var previousSessionOwner = CurrentSessionOwner;
+            CurrentSessionOwner = sessionOwner;
+            LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
+            if (LocalClient.IsSessionOwner)
+            {
+                foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
+                {
+                    var networkObject = networkObjectEntry.Value;
+                    if (networkObject.IsOwnershipSessionOwner && networkObject.OwnerClientId != LocalClientId)
+                    {
+                        SpawnManager.ChangeOwnership(networkObject, LocalClientId, true);
+                    }
+                }
+            }
+
+            OnSessionOwnerPromoted?.Invoke(sessionOwner);
+        }
+
+#if ENABLE_SESSIONOWNER_PROMOTION_NOTIFICATION
+        public void PromoteSessionOwner(ulong clientId)
+#else
+        internal void PromoteSessionOwner(ulong clientId)
+#endif
+        {
+            if (!DistributedAuthorityMode)
+            {
+                NetworkLog.LogErrorServer($"[SceneManagement][NotDA] Invoking promote session owner while not in distributed authority mode!");
+                return;
+            }
+            if (!DAHost)
+            {
+                NetworkLog.LogErrorServer($"[SceneManagement][NotDAHost] Client is attempting to promote another client as the session owner!");
+                return;
+            }
+            SetSessionOwner(clientId);
+            var sessionOwnerMessage = new SessionOwnerMessage()
+            {
+                SessionOwner = clientId,
+            };
+            var delivery = MessageDeliveryType<SessionOwnerMessage>.DefaultDelivery;
+            if (CMBServiceConnection)
+            {
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, ServerClientId);
+            }
+            else
+            {
+                var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
+                foreach (var targetClient in clients)
+                {
+                    ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, targetClient);
+                }
+            }
+        }
+
+        internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+        internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
+#endif
+
+        internal void NetworkTransformRegistration(NetworkObject networkObject, bool onUpdate = true, bool register = true)
+        {
+            if (onUpdate)
+            {
+                if (register)
+                {
+                    if (!NetworkTransformUpdate.ContainsKey(networkObject.NetworkObjectId))
+                    {
+                        NetworkTransformUpdate.Add(networkObject.NetworkObjectId, networkObject);
+                    }
+                }
+                else
+                {
+                    NetworkTransformUpdate.Remove(networkObject.NetworkObjectId);
+                }
+            }
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            else
+            {
+                if (register)
+                {
+                    if (!NetworkTransformFixedUpdate.ContainsKey(networkObject.NetworkObjectId))
+                    {
+                        NetworkTransformFixedUpdate.Add(networkObject.NetworkObjectId, networkObject);
+                    }
+                }
+                else
+                {
+                    NetworkTransformFixedUpdate.Remove(networkObject.NetworkObjectId);
+                }
+            }
+#endif
+        }
+
+        private void UpdateTopology()
+        {
+            var transportTopology = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
+            if (transportTopology != NetworkConfig.NetworkTopology)
+            {
+                NetworkLog.LogErrorServer($"[Topology Mismatch] Transport detected an issue with the topology ({transportTopology} | {NetworkConfig.NetworkTopology}) usage or setting! Disconnecting from session.");
+                Shutdown();
+            }
+            else
+            {
+                IsDistributedAuthority = DistributedAuthorityMode = transportTopology == NetworkTopologyTypes.DistributedAuthority;
+            }
+        }
+
+        /// <summary>
+        /// Processes network-related updates for a specific update stage in the frame
+        /// </summary>
+        /// <param name="updateStage">The current network update stage being processed</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
+                        UpdateTopology();
+
+                        // Handle processing any new connections or transport events
+                        NetworkConfig.NetworkTransport.EarlyUpdate();
+
                         ConnectionManager.ProcessPendingApprovals();
                         ConnectionManager.PollAndHandleNetworkEvents();
 
+                        DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnNextFrame, 0);
+
+                        AnticipationSystem.SetupForUpdate();
                         MessageManager.ProcessIncomingMessageQueue();
-                        MessageManager.CleanupDisconnectedClients();
+
+                        AnticipationSystem.ProcessReanticipation();
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.ResetFixedTimeDelta();
+                                }
+                            }
+                        }
+#endif
                     }
                     break;
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                case NetworkUpdateStage.FixedUpdate:
+                    {
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.OnFixedUpdate();
+                                }
+                            }
+                        }
+                    }
+                    break;
+#endif
                 case NetworkUpdateStage.PreUpdate:
                     {
+                        var currentTick = ServerTime.Tick;
                         NetworkTimeSystem.UpdateTime();
+                        if (ServerTime.Tick != currentTick)
+                        {
+                            // If we have a lower than expected frame rate and our number of ticks that have passed since the last
+                            // frame is greater than 1, then use the first next tick as opposed to the last tick when checking for
+                            // changes in transform state.
+                            // Note: This is an adjustment from using the NetworkTick event as that can be invoked more than once in
+                            // a single frame under the above condition and since any changes to the transform are frame driven there
+                            // is no need to check for changes to the transform more than once per frame.
+                            NetworkTransform.CurrentTick = (ServerTime.Tick - currentTick) > 1 ? currentTick + 1 : ServerTime.Tick;
+                            NetworkTransform.UpdateNetworkTick(this);
+                        }
+                        AnticipationSystem.Update();
+                    }
+                    break;
+                case NetworkUpdateStage.PreLateUpdate:
+                    {
+                        // Non-physics based non-authority NetworkTransforms update their states after all other components
+                        foreach (var networkObjectEntry in NetworkTransformUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.OnUpdate();
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case NetworkUpdateStage.PostScriptLateUpdate:
+                    {
+                        AnticipationSystem.Sync();
+                        AnticipationSystem.SetupForRender();
                     }
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
                     {
+                        // Handle deferred despawning
+                        if (DistributedAuthorityMode)
+                        {
+                            SpawnManager.DeferredDespawnUpdate(ServerTime);
+                        }
+
+                        // Send any pending objects to be shown (in-between ticks)
+                        SpawnManager.HandleNetworkObjectShow(true);
+
+                        // Handles object redistribution when scene management is disabled and
+                        // using a distributed authority network topology. Only set specific to
+                        // this configuration and when a client connects.
+                        if (RedistributeToClients)
+                        {
+                            HandleRedistributionToClients();
+                        }
+
+                        // Update any NetworkObject's registered to notify of scene migration changes.
+                        SpawnManager.UpdateNetworkObjectSceneChanges();
+
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 
@@ -59,19 +468,109 @@ namespace Unity.Netcode
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
+                        // Handle sending any pending transport messages
+                        NetworkConfig.NetworkTransport.PostLateUpdate();
+
+                        // TODO: Determine a better way to handle this
                         NetworkObject.VerifyParentingStatus();
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
+                        if (IsServer)
+                        {
+                            // Process any pending clients that need to be disconnected.
+                            // This is typically a disconnect with reason scenario where
+                            // we want the disconnect reason message to be sent prior to
+                            // completely shutting down the endpoint.
+                            ConnectionManager.ProcessClientsToDisconnect();
+                        }
+
+                        // Clean up disconnected clients last
+                        MessageManager.CleanupDisconnectedClients();
+
                         if (m_ShuttingDown)
                         {
-                            ShutdownInternal();
+                            // Host-server will disconnect any connected clients prior to finalizing its shutdown
+                            if (IsServer)
+                            {
+                                ProcessServerShutdown();
+                            }
+                            else
+                            {
+                                // Clients just disconnect immediately
+                                ShutdownInternal();
+                            }
                         }
                     }
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Used to provide a graceful shutdown sequence
+        /// </summary>
+        internal enum ServerShutdownStates
+        {
+            None,
+            WaitForClientDisconnects,
+            InternalShutdown,
+            ShuttingDown,
+        };
+
+        internal ServerShutdownStates ServerShutdownState;
+        private float m_ShutdownTimeout;
+
+        /// <summary>
+        /// This is a "soft shutdown" where the host or server will disconnect
+        /// all clients, with a provided reasons, prior to invoking its final
+        /// internal shutdown.
+        /// </summary>
+        internal void ProcessServerShutdown()
+        {
+            var minClientCount = IsHost ? 2 : 1;
+            switch (ServerShutdownState)
+            {
+                case ServerShutdownStates.None:
+                    {
+                        if (ConnectedClients.Count >= minClientCount)
+                        {
+                            var hostServer = IsHost ? "host" : "server";
+                            var disconnectReason = $"Disconnected due to {hostServer} shutting down.";
+                            for (int i = ConnectedClientsIds.Count - 1; i >= 0; i--)
+                            {
+                                var clientId = ConnectedClientsIds[i];
+                                if (clientId == ServerClientId)
+                                {
+                                    continue;
+                                }
+                                ConnectionManager.DisconnectClient(clientId, disconnectReason);
+                            }
+                            ServerShutdownState = ServerShutdownStates.WaitForClientDisconnects;
+                            m_ShutdownTimeout = Time.realtimeSinceStartup + 5.0f;
+                        }
+                        else
+                        {
+                            ServerShutdownState = ServerShutdownStates.InternalShutdown;
+                            ProcessServerShutdown();
+                        }
+                        break;
+                    }
+                case ServerShutdownStates.WaitForClientDisconnects:
+                    {
+                        if (ConnectedClients.Count < minClientCount || m_ShutdownTimeout < Time.realtimeSinceStartup)
+                        {
+                            ServerShutdownState = ServerShutdownStates.InternalShutdown;
+                            ProcessServerShutdown();
+                        }
+                        break;
+                    }
+                case ServerShutdownStates.InternalShutdown:
+                    {
+                        ServerShutdownState = ServerShutdownStates.ShuttingDown;
+                        ShutdownInternal();
+                        break;
+                    }
             }
         }
 
@@ -90,19 +589,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
+        /// Gets a dictionary of connected clients and their clientId keys.
         /// </summary>
-        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => IsServer ? ConnectionManager.ConnectedClients : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => ConnectionManager.ConnectedClients;
 
         /// <summary>
-        /// Gets a list of connected clients. This is only accessible on the server.
+        /// Gets a list of connected clients.
         /// </summary>
-        public IReadOnlyList<NetworkClient> ConnectedClientsList => IsServer ? ConnectionManager.ConnectedClientsList : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
+        public IReadOnlyList<NetworkClient> ConnectedClientsList => ConnectionManager.ConnectedClientsList;
 
         /// <summary>
-        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
+        /// Gets a list of just the IDs of all connected clients.
         /// </summary>
-        public IReadOnlyList<ulong> ConnectedClientsIds => IsServer ? ConnectionManager.ConnectedClientIds : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
+        public IReadOnlyList<ulong> ConnectedClientsIds => ConnectionManager.ConnectedClientIds;
 
         /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
@@ -121,6 +620,11 @@ namespace Unity.Netcode
         public bool IsServer => ConnectionManager.LocalClient.IsServer;
 
         /// <summary>
+        /// Gets whether or not the current server (local or remote) is a host - i.e., also a client
+        /// </summary>
+        public bool ServerIsHost => ConnectionManager.ConnectedClientIds.Contains(ServerClientId);
+
+        /// <summary>
         /// Gets Whether or not a client is running
         /// </summary>
         public bool IsClient => ConnectionManager.LocalClient.IsClient;
@@ -135,6 +639,16 @@ namespace Unity.Netcode
         /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
         /// </summary>
         public string DisconnectReason => ConnectionManager.DisconnectReason;
+
+        /// <summary>
+        /// If supported by the <see cref="NetworkTransport"/>, this <see cref="NetworkTransport.DisconnectEvents"/> property will be set for each disconnect event.
+        /// If not supported, then this remain as the default <see cref="Networking.Transport.Error.DisconnectReason"/> value.
+        /// </summary>
+        /// <remarks>
+        /// A server/host will receive notifications for remote clients disconnecting and will update this <see cref="Networking.Transport.Error.DisconnectReason"/> property
+        /// upon each disconnect event.<br />
+        /// </remarks>
+        public NetworkTransport.DisconnectEvents DisconnectEvent => ConnectionManager.DisconnectEvent;
 
         /// <summary>
         /// Is true when a server or host is listening for connections.
@@ -189,6 +703,29 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Delegate for handling network state reanticipation events
+        /// </summary>
+        /// <param name="lastRoundTripTime">The most recent round-trip time measurement in seconds between client and server</param>
+        public delegate void ReanticipateDelegate(double lastRoundTripTime);
+
+        /// <summary>
+        /// This callback is called after all individual OnReanticipate calls on AnticipatedNetworkVariable
+        /// and AnticipatedNetworkTransform values have been invoked. The first parameter is a hash set of
+        /// all the variables that have been changed on this frame (you can detect a particular variable by
+        /// checking if the set contains it), while the second parameter is a set of all anticipated network
+        /// transforms that have been changed. Both are passed as their base class type.
+        ///
+        /// The third parameter is the local time corresponding to the current authoritative server state
+        /// (i.e., to determine the amount of time that needs to be re-simulated, you will use
+        /// NetworkManager.LocalTime.Time - authorityTime).
+        /// </summary>
+        public event ReanticipateDelegate OnReanticipate
+        {
+            add => AnticipationSystem.OnReanticipate += value;
+            remove => AnticipationSystem.OnReanticipate -= value;
+        }
+
+        /// <summary>
         /// The callback to invoke during connection approval. Allows client code to decide whether or not to allow incoming client connection
         /// </summary>
         public Action<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
@@ -207,6 +744,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
+        ///
+        /// It is recommended to use OnConnectionEvent instead, as this will eventually be deprecated
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback
         {
@@ -216,11 +755,23 @@ namespace Unity.Netcode
 
         /// <summary>
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
+        ///
+        /// It is recommended to use OnConnectionEvent instead, as this will eventually be deprecated
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback
         {
             add => ConnectionManager.OnClientDisconnectCallback += value;
             remove => ConnectionManager.OnClientDisconnectCallback -= value;
+        }
+
+        /// <summary>
+        /// The callback to invoke on any connection event. See <see cref="ConnectionEvent"/> and <see cref="ConnectionEventData"/>
+        /// for more info.
+        /// </summary>
+        public event Action<NetworkManager, ConnectionEventData> OnConnectionEvent
+        {
+            add => ConnectionManager.OnConnectionEvent += value;
+            remove => ConnectionManager.OnConnectionEvent -= value;
         }
 
         /// <summary>
@@ -339,16 +890,20 @@ namespace Unity.Netcode
         public event Action OnClientStarted = null;
 
         /// <summary>
+        /// Subscribe to this event to get notifications before a <see cref="NetworkManager"/> instance is being destroyed.
+        /// This is useful if you want to use the state of anything the NetworkManager cleans up during its shutdown.
+        /// </summary>
+        public event Action OnPreShutdown = null;
+
+        /// <summary>
         /// This callback is invoked once the local server is stopped.
         /// </summary>
-        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
         public event Action<bool> OnServerStopped = null;
 
         /// <summary>
         /// The callback to invoke once the local client stops
         /// </summary>
         /// <remarks>The parameter states whether the client was running in host mode</remarks>
-        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
         public event Action<bool> OnClientStopped = null;
 
         /// <summary>
@@ -377,6 +932,24 @@ namespace Unity.Netcode
 
         internal IDeferredNetworkMessageManager DeferredMessageManager { get; private set; }
 
+        // This erroneously tries to simplify these method references but the docs do not pick it up correctly
+        // because they try to resolve it on the field rather than the class of the same name.
+#pragma warning disable IDE0001
+        /// <summary>
+        /// Provides access to the various <see cref="SendTo"/> targets at runtime, as well as
+        /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>, <see cref="Unity.Netcode.RpcTarget.Not(ulong)"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(ulong[])"/>, and
+        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>
+        /// </summary>
+#pragma warning restore IDE0001
+        public RpcTarget RpcTarget;
+
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
         /// </summary>
@@ -400,6 +973,8 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
 
+        internal AnticipationSystem AnticipationSystem { get; private set; }
+
         /// <summary>
         /// Used for time mocking in tests
         /// </summary>
@@ -409,90 +984,6 @@ namespace Unity.Netcode
         internal NetworkMetricsManager MetricsManager = new NetworkMetricsManager();
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
         internal NetworkMessageManager MessageManager = null;
-
-#if UNITY_EDITOR
-        internal static INetworkManagerHelper NetworkManagerHelper;
-
-        /// <summary>
-        /// Interface for NetworkManagerHelper
-        /// </summary>
-        internal interface INetworkManagerHelper
-        {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
-            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
-        }
-
-        internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
-
-        internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
-
-        private void Reset()
-        {
-            OnNetworkManagerReset?.Invoke(this);
-        }
-
-        internal void OnValidate()
-        {
-            if (NetworkConfig == null)
-            {
-                return; // May occur when the component is added
-            }
-
-            if (GetComponentInChildren<NetworkObject>() != null)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
-                }
-            }
-
-            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-
-            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
-            if (!activeScene.isDirty || EditorApplication.isUpdating)
-            {
-                return;
-            }
-
-            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
-            NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Clear();
-
-            var prefabs = NetworkConfig.Prefabs.Prefabs;
-            // Check network prefabs and assign to dictionary for quick look up
-            for (int i = 0; i < prefabs.Count; i++)
-            {
-                var networkPrefab = prefabs[i];
-                var networkPrefabGo = networkPrefab?.Prefab;
-                if (networkPrefabGo == null)
-                {
-                    continue;
-                }
-
-                var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
-                if (networkObject == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
-                    }
-
-                    continue;
-                }
-
-                {
-                    var childNetworkObjects = new List<NetworkObject>();
-                    networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
-                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
-                        }
-                    }
-                }
-            }
-        }
-#endif
 
         /// <summary>
         /// Determines if the NetworkManager's GameObject is parented under another GameObject and
@@ -540,6 +1031,11 @@ namespace Unity.Netcode
             NetworkConfig?.InitializePrefabs();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged += ModeChanged;
+#endif
+            // Notify we have instantiated a new instance of NetworkManager.
+            OnInstantiated?.Invoke(this);
         }
 
         private void OnEnable()
@@ -570,18 +1066,97 @@ namespace Unity.Netcode
         /// <summary>
         /// <see cref="NetworkPrefabHandler.AddNetworkPrefab(GameObject)"/>
         /// </summary>
-        /// <param name="prefab"></param>
-        /// <exception cref="Exception"></exception>
+        /// <param name="prefab">The GameObject prefab to register for network spawning</param>
+        /// <exception cref="Exception">Thrown when the prefab is invalid or already registered</exception>
         public void AddNetworkPrefab(GameObject prefab) => PrefabHandler.AddNetworkPrefab(prefab);
 
         /// <summary>
         /// <see cref="NetworkPrefabHandler.RemoveNetworkPrefab(GameObject)"/>
         /// </summary>
-        /// <param name="prefab"></param>
+        /// <param name="prefab">The GameObject prefab to unregister from network spawning</param>
         public void RemoveNetworkPrefab(GameObject prefab) => PrefabHandler.RemoveNetworkPrefab(prefab);
+
+        /// <summary>
+        /// Sets the maximum size of a single non-fragmented message (or message batch) passed through the transport.
+        /// This should represent the transport's default MTU size, minus any transport-level overhead.
+        /// This value will be used for any remote endpoints that haven't had per-endpoint MTUs set.
+        /// This value is also used as the size of the temporary buffer used when serializing
+        /// a single message (to avoid serializing multiple times when sending to multiple endpoints),
+        /// and thus should be large enough to ensure it can hold each message type.
+        /// This value defaults to 1296.
+        /// </summary>
+        public int MaximumTransmissionUnitSize
+        {
+            set => MessageManager.NonFragmentedMessageMaxSize = value & ~7; // Round down to nearest word aligned size
+            get => MessageManager.NonFragmentedMessageMaxSize;
+        }
+
+        /// <summary>
+        /// Set the maximum transmission unit for a specific peer.
+        /// This determines the maximum size of a message batch that can be sent to that client.
+        /// If not set for any given client, <see cref="MaximumTransmissionUnitSize"/> will be used instead.
+        /// </summary>
+        /// <param name="clientId">The unique identifier of the client peer</param>
+        /// <param name="size">The MTU size in bytes for this specific peer</param>
+        public void SetPeerMTU(ulong clientId, int size)
+        {
+            MessageManager.PeerMTUSizes[clientId] = size;
+        }
+
+        /// <summary>
+        /// Queries the current MTU size for a client.
+        /// If no MTU has been set for that client, will return <see cref="MaximumTransmissionUnitSize"/>
+        /// </summary>
+        /// <param name="clientId">he unique identifier of the client peer</param>
+        /// <returns>The MTU size in bytes for the specified peer. If no custom MTU has been set for this peer, returns the global <see cref="MaximumTransmissionUnitSize"/> value.</returns>
+        public int GetPeerMTU(ulong clientId)
+        {
+            if (MessageManager.PeerMTUSizes.TryGetValue(clientId, out var ret))
+            {
+                return ret;
+            }
+
+            return MessageManager.NonFragmentedMessageMaxSize;
+        }
+
+        /// <summary>
+        /// Sets the maximum size of a message (or message batch) passed through the transport with the ReliableFragmented delivery.
+        /// Warning: setting this value too low may result in the SDK becoming non-functional with projects that have a large number of NetworkBehaviours or NetworkVariables, as the SDK relies on the transport's ability to fragment some messages when they grow beyond the MTU size.
+        /// </summary>
+        public int MaximumFragmentedMessageSize
+        {
+            set => MessageManager.FragmentedMessageMaxSize = value;
+            get => MessageManager.FragmentedMessageMaxSize;
+        }
 
         internal void Initialize(bool server)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (!DisableNotOptimizedSerializedType)
+            {
+                s_SerializedType.Clear();
+            }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            NetworkTransformFixedUpdate.Clear();
+#endif
+            NetworkTransformUpdate.Clear();
+
+            UpdateTopology();
+
+            // Always create a default session config when starting a NetworkManager instance
+            if (DistributedAuthorityMode)
+            {
+                SessionConfig = GetSessionConfig();
+            }
+
+            // Make sure the ServerShutdownState is reset when initializing
+            if (server)
+            {
+                ServerShutdownState = ServerShutdownStates.None;
+            }
+
             // Don't allow the user to start a network session if the NetworkManager is
             // still parented under another GameObject
             if (NetworkManagerCheckForParent(true))
@@ -606,7 +1181,12 @@ namespace Unity.Netcode
             }
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            this.RegisterNetworkUpdate(NetworkUpdateStage.FixedUpdate);
+#endif
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostScriptLateUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreLateUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             // ComponentFactory needs to set its defaults next
@@ -622,11 +1202,17 @@ namespace Unity.Netcode
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                MessageManager.Hook(new ProfilingHooks());
+                if (NetworkConfig.NetworkProfilingMetrics)
+                {
+                    MessageManager.Hook(new ProfilingHooks());
+                }
 #endif
 
 #if MULTIPLAYER_TOOLS
-                MessageManager.Hook(new MetricHooks(this));
+                if (NetworkConfig.NetworkMessageMetrics)
+                {
+                    MessageManager.Hook(new MetricHooks(this));
+                }
 #endif
 
                 // Assures there is a server message queue available
@@ -639,11 +1225,14 @@ namespace Unity.Netcode
             // The remaining systems can then be initialized
             NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
+            AnticipationSystem = new AnticipationSystem(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
 
             DeferredMessageManager = ComponentFactory.Create<IDeferredNetworkMessageManager>(this);
+
+            RpcTarget = new RpcTarget(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
@@ -654,6 +1243,9 @@ namespace Unity.Netcode
 
             NetworkConfig.InitializePrefabs();
             PrefabHandler.RegisterPlayerPrefab();
+#if UNITY_EDITOR
+            BeginNetworkSession();
+#endif
         }
 
         private enum StartType
@@ -722,7 +1314,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(true, false, this);
+            if (!ConnectionManager.LocalClient.SetRole(true, false, this))
+            {
+                return false;
+            }
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
             Initialize(true);
@@ -735,6 +1330,8 @@ namespace Unity.Netcode
                 {
                     SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+                    // Notify the server that everything should be synchronized/spawned at this time.
+                    SpawnManager.NotifyNetworkObjectsSynchronized();
                     OnServerStarted?.Invoke();
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
@@ -768,7 +1365,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(false, true, this);
+            if (!ConnectionManager.LocalClient.SetRole(false, true, this))
+            {
+                return false;
+            }
 
             Initialize(false);
 
@@ -811,10 +1411,12 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(true, true, this);
+            if (!ConnectionManager.LocalClient.SetRole(true, true, this))
+            {
+                return false;
+            }
 
             Initialize(true);
-
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -847,6 +1449,7 @@ namespace Unity.Netcode
         {
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
+            MessageManager.SetLocalClientId(LocalClientId);
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
@@ -860,20 +1463,19 @@ namespace Unity.Netcode
                     }
                 }
 
-                response.Approved = true;
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+                ConnectionManager.HandleConnectionApproval(ServerClientId, response.CreatePlayerObject, response.PlayerPrefabHash, response.Position, response.Rotation);
             }
             else
             {
-                var response = new ConnectionApprovalResponse
-                {
-                    Approved = true,
-                    CreatePlayerObject = NetworkConfig.PlayerPrefab != null
-                };
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+                // Distributed authority always tries to create the player object since the client side handles spawning (whether automatically or manually)
+                var createPlayerObject = DistributedAuthorityMode || NetworkConfig.PlayerPrefab != null;
+                ConnectionManager.HandleConnectionApproval(ServerClientId, createPlayerObject);
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+            // Notify the host that everything should be synchronized/spawned at this time.
+            SpawnManager.NotifyNetworkObjectsSynchronized();
 
             OnServerStarted?.Invoke();
             OnClientStarted?.Invoke();
@@ -885,10 +1487,36 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Get the TransportId from the associated ClientId.
+        /// </summary>
+        /// <param name="clientId">The ClientId to get the TransportId from</param>
+        /// <returns>
+        /// The TransportId associated with the given ClientId if the given clientId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
+        public ulong GetTransportIdFromClientId(ulong clientId)
+        {
+            var (id, success) = ConnectionManager.ClientIdToTransportId(clientId);
+            return success ? id : ulong.MaxValue;
+        }
+
+        /// <summary>
+        /// Get the ClientId from the associated TransportId.
+        /// </summary>
+        /// <param name="transportId">The TransportId to get the ClientId from</param>
+        /// <returns>
+        /// The ClientId from the associated TransportId if the given transportId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
+        public ulong GetClientIdFromTransportId(ulong transportId)
+        {
+            var (id, success) = ConnectionManager.TransportIdToClientId(transportId);
+            return success ? id : ulong.MaxValue;
+        }
+
+        /// <summary>
         /// Disconnects the remote client.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
-        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId);
+        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId, $"Client-{clientId} disconnected by server.");
 
         /// <summary>
         /// Disconnects the remote client.
@@ -920,10 +1548,11 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                MessageManager.StopProcessing = discardMessageQueue;
+                if (MessageManager != null)
+                {
+                    MessageManager.StopProcessing = discardMessageQueue;
+                }
             }
-
-            NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
@@ -937,9 +1566,29 @@ namespace Unity.Netcode
 
         internal void ShutdownInternal()
         {
+#if UNITY_EDITOR
+            EndNetworkSession();
+#endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
+            }
+
+            // Always wrap events that can invoke user script in a
+            // try-catch to assure any proceeding script is still
+            // executed.
+            // Example:
+            // In editor some script registered to OnPreShutdown
+            // throws and exception. The UnregisterAllNetworkUpdates
+            // will never be invoked which means it will continue to
+            // be invoked outside of play mode.
+            try
+            {
+                OnPreShutdown?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
 
             this.UnregisterAllNetworkUpdates();
@@ -951,6 +1600,24 @@ namespace Unity.Netcode
             BehaviourUpdater?.Shutdown();
             BehaviourUpdater = null;
 
+            /// Despawning upon shutdown
+
+            // We need to clean up NetworkObjects before we reset the IsServer
+            // and IsClient properties. This provides consistency of these two
+            // property values for NetworkObjects that are still spawned when
+            // the shutdown cycle begins.
+
+            // We need to handle despawning prior to shutting down the connection
+            // manager or disposing of the RpcTarget so any final updates can take
+            // place (i.e. sending any last state updates or the like).
+
+            SpawnManager?.DespawnAndDestroyNetworkObjects();
+            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            ////
+
+            RpcTarget?.Dispose();
+            RpcTarget = null;
+
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
 
@@ -960,19 +1627,20 @@ namespace Unity.Netcode
                 MessageManager = null;
             }
 
-            // We need to clean up NetworkObjects before we reset the IsServer
-            // and IsClient properties. This provides consistency of these two
-            // property values for NetworkObjects that are still spawned when
-            // the shutdown cycle begins.
-            SpawnManager?.DespawnAndDestroyNetworkObjects();
-            SpawnManager?.ServerResetShudownStateForSceneObjects();
-            SpawnManager = null;
-
             // Let the NetworkSceneManager clean up its two SceneEvenData instances
             SceneManager?.Dispose();
             SceneManager = null;
+
+            SpawnManager = null;
+
             IsListening = false;
             m_ShuttingDown = false;
+
+            // Generate a local notification that the host client is disconnected
+            if (IsHost)
+            {
+                ConnectionManager.InvokeOnClientDisconnectCallback(LocalClientId);
+            }
 
             if (ConnectionManager.LocalClient.IsClient)
             {
@@ -988,11 +1656,15 @@ namespace Unity.Netcode
                 OnServerStopped?.Invoke(ConnectionManager.LocalClient.IsClient);
             }
 
-            // Reset the client's roles
-            ConnectionManager.LocalClient.SetRole(false, false);
+            // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
+            m_ShuttingDown = false;
 
-            // This cleans up the internal prefabs list
+            // Completely reset the NetworkClient
+            ConnectionManager.LocalClient = new NetworkClient();
+
+            // Clean up the internal prefabs data
             NetworkConfig?.Prefabs?.Shutdown();
+            PrefabHandler.Shutdown();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes
@@ -1007,20 +1679,265 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Abrupt shutdown (or immediate exit of play mode).
+            // Assure we unregister from network updates.
+            this.UnregisterAllNetworkUpdates();
+
+            // Make sure ShutdownInProgress returns true during this time
+            m_ShuttingDown = true;
+            // Exit early if this is invoked and the Singleton has yet to be set.
+            if (Singleton == null && !IsListening)
+            {
+                return;
+            }
             OnDestroy();
+#if UNITY_EDITOR
+            if (Singleton != null)
+            {
+                Debug.LogWarning($"[nameof({nameof(OnApplicationQuit)}][{nameof(NetworkManager)}][{name}] Singleton is not null after invoking OnDestroy. Singleton instance name is {Singleton.name}. Do you have more than one {nameof(NetworkManager)} instance in the DDOL scene?");
+            }
+#endif
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            ShutdownInternal();
+            try
+            {
+                ShutdownInternal();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
+            // try-catch to assure we reset the Singleton and, if in the editor,
+            // unscubscribe from playModeStateChanged.
+            try
+            {
+                // Notify we are destroying NetworkManager
+                OnDestroying?.Invoke(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             if (Singleton == this)
             {
                 Singleton = null;
             }
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged -= ModeChanged;
+#endif
         }
+
+#if UNITY_EDITOR
+        internal static INetworkManagerHelper NetworkManagerHelper;
+
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+
+            internal NetcodeAnalytics Analytics();
+        }
+
+        internal abstract class NetcodeAnalytics
+        {
+            internal abstract void ModeChanged(PlayModeStateChange playModeState, NetworkManager networkManager);
+
+            internal abstract void SessionStarted(NetworkManager networkManager);
+
+            internal abstract void SessionStopped(NetworkManager networkManager);
+
+            internal abstract void OnOneTimeSetup();
+
+            internal abstract void OnOneTimeTearDown();
+        }
+
+        internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
+
+        internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
+
+        private void Reset()
+        {
+            OnNetworkManagerReset?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Invoked when validating the <see cref="NetworkManager"/> component.
+        /// </summary>
+        protected virtual void OnValidateComponent()
+        {
+
+        }
+
+        private PackageInfo GetPackageInfo(string packageName)
+        {
+            return AssetDatabase.FindAssets("package").Select(AssetDatabase.GUIDToAssetPath).Where(x => AssetDatabase.LoadAssetAtPath<TextAsset>(x) != null).Select(PackageInfo.FindForAssetPath).Where(x => x != null).First(x => x.name == packageName);
+        }
+
+        internal void OnValidate()
+        {
+            if (NetworkConfig == null)
+            {
+                return; // May occur when the component is added
+            }
+
+            // Do a validation pass on NetworkConfig properties
+            NetworkConfig.OnValidate();
+
+            if (GetComponentInChildren<NetworkObject>() != null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
+                }
+            }
+
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
+            NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Clear();
+
+            var prefabs = NetworkConfig.Prefabs.Prefabs;
+            // Check network prefabs and assign to dictionary for quick look up
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                var networkPrefab = prefabs[i];
+                var networkPrefabGo = networkPrefab?.Prefab;
+                if (networkPrefabGo == null)
+                {
+                    continue;
+                }
+
+                var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
+                if (networkObject == null)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
+                    }
+
+                    continue;
+                }
+
+                {
+                    var childNetworkObjects = new List<NetworkObject>();
+                    networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
+                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                        }
+                    }
+                }
+            }
+
+            try
+            {
+                OnValidateComponent();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        internal void ModeChanged(PlayModeStateChange playModeState)
+        {
+            if (playModeState == PlayModeStateChange.ExitingPlayMode)
+            {
+                if (IsListening)
+                {
+                    OnApplicationQuit();
+                }
+            }
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.ModeChanged(playModeState, this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+
+        }
+
+        /// <summary>
+        /// Invoked when NetworkManager is started.
+        /// </summary>
+        private void BeginNetworkSession()
+        {
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.SessionStarted(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Invoked when NetworkManager is stopped or upon exiting play mode.
+        /// </summary>
+        private void EndNetworkSession()
+        {
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.SessionStopped(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+#endif
+
+#if UNITY_INCLUDE_TESTS
+        /// <summary>
+        /// Used for integration tests
+        /// </summary>
+        internal static void OnOneTimeSetup()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.OnOneTimeSetup();
+            }
+            catch { }
+#endif
+        }
+
+        /// <summary>
+        /// Used for integration tests
+        /// </summary>
+        internal static void OnOneTimeTearDown()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.OnOneTimeTearDown();
+            }
+            catch { }
+#endif
+        }
+#endif
+
     }
 }

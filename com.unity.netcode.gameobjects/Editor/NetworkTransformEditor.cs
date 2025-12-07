@@ -8,8 +8,12 @@ namespace Unity.Netcode.GameObjects.Editor
     /// The <see cref="CustomEditor"/> for <see cref="NetworkTransform"/>
     /// </summary>
     [CustomEditor(typeof(NetworkTransform), true)]
-    public class NetworkTransformEditor : UnityEditor.Editor
+    [CanEditMultipleObjects]
+    public class NetworkTransformEditor : NetcodeEditorBase<NetworkTransform>
     {
+        private SerializedProperty m_SwitchTransformSpaceWhenParented;
+        private SerializedProperty m_TickSyncChildren;
+        private SerializedProperty m_UseUnreliableDeltas;
         private SerializedProperty m_SyncPositionXProperty;
         private SerializedProperty m_SyncPositionYProperty;
         private SerializedProperty m_SyncPositionZProperty;
@@ -24,21 +28,36 @@ namespace Unity.Netcode.GameObjects.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
+        private SerializedProperty m_PositionInterpolationTypeProperty;
+        private SerializedProperty m_RotationInterpolationTypeProperty;
+        private SerializedProperty m_ScaleInterpolationTypeProperty;
+        private SerializedProperty m_PositionLerpSmoothing;
+        private SerializedProperty m_RotationLerpSmoothing;
+        private SerializedProperty m_ScaleLerpSmoothing;
+
+        private SerializedProperty m_PositionMaximumInterpolationTimeProperty;
+        private SerializedProperty m_RotationMaximumInterpolationTimeProperty;
+        private SerializedProperty m_ScaleMaximumInterpolationTimeProperty;
 
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
         private SerializedProperty m_UseHalfFloatPrecision;
         private SerializedProperty m_SlerpPosition;
+        private SerializedProperty m_AuthorityMode;
 
         private static int s_ToggleOffset = 45;
+
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
         private static GUIContent s_PositionLabel = EditorGUIUtility.TrTextContent("Position");
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
         /// <inheritdoc/>
-        public void OnEnable()
+        public override void OnEnable()
         {
+            m_SwitchTransformSpaceWhenParented = serializedObject.FindProperty(nameof(NetworkTransform.SwitchTransformSpaceWhenParented));
+            m_TickSyncChildren = serializedObject.FindProperty(nameof(NetworkTransform.TickSyncChildren));
+            m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
             m_SyncPositionYProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionY));
             m_SyncPositionZProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionZ));
@@ -53,16 +72,32 @@ namespace Unity.Netcode.GameObjects.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
+
+            m_PositionInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionInterpolationType));
+            m_PositionMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionMaxInterpolationTime));
+            m_RotationInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationInterpolationType));
+            m_RotationMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationMaxInterpolationTime));
+            m_ScaleInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleInterpolationType));
+            m_ScaleMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleMaxInterpolationTime));
+
+            m_PositionLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.PositionLerpSmoothing));
+            m_RotationLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.RotationLerpSmoothing));
+            m_ScaleLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.ScaleLerpSmoothing));
+
+
+
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
             m_SlerpPosition = serializedObject.FindProperty(nameof(NetworkTransform.SlerpPosition));
+            m_AuthorityMode = serializedObject.FindProperty(nameof(NetworkTransform.AuthorityMode));
+            base.OnEnable();
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DisplayNetworkTransformProperties()
         {
-            EditorGUILayout.LabelField("Syncing", EditorStyles.boldLabel);
+            var networkTransform = target as NetworkTransform;
+            EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
             {
                 GUILayout.BeginHorizontal();
 
@@ -72,11 +107,11 @@ namespace Unity.Netcode.GameObjects.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_PositionLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncPositionXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncPositionXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncPositionXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncPositionYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncPositionYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncPositionYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncPositionZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncPositionZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncPositionZProperty);
 
                 GUILayout.EndHorizontal();
             }
@@ -91,11 +126,11 @@ namespace Unity.Netcode.GameObjects.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_RotationLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncRotationXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncRotationXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncRotationXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncRotationYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncRotationYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncRotationYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncRotationZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncRotationZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncRotationZProperty);
 
                 GUILayout.EndHorizontal();
             }
@@ -115,26 +150,108 @@ namespace Unity.Netcode.GameObjects.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_ScaleLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncScaleXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncScaleXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncScaleXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncScaleYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncScaleYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncScaleYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncScaleZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncScaleZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncScaleZProperty);
 
                 GUILayout.EndHorizontal();
             }
 
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Authority", EditorStyles.boldLabel);
+            {
+                EditorGUILayout.PropertyField(m_AuthorityMode);
+            }
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Thresholds", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_PositionThresholdProperty);
-            EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
-            EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            if (networkTransform.SynchronizePosition)
+            {
+                EditorGUILayout.PropertyField(m_PositionThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeRotation)
+            {
+                EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeScale)
+            {
+                EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            }
 
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_TickSyncChildren);
+            EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
-            EditorGUILayout.PropertyField(m_InterpolateProperty);
-            EditorGUILayout.PropertyField(m_SlerpPosition);
+            EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            if (m_SwitchTransformSpaceWhenParented.boolValue)
+            {
+                m_TickSyncChildren.boolValue = true;
+            }
+            else
+            {
+                // Should only be visible when SwitchTransformSpaceWhenParented is disabled.
+                EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            }
+            if (!networkTransform.HideInterpolateValue)
+            {
+                if (networkTransform.Interpolate)
+                {
+                    EditorGUILayout.Space();
+                }
+                DrawPropertyField(m_InterpolateProperty, networkTransform.Interpolate ? FontStyle.Bold : FontStyle.Normal);
+                if (networkTransform.Interpolate)
+                {
+                    BeginIndent();
+                    if (networkTransform.SynchronizePosition)
+                    {
+                        DrawPropertyField(m_PositionInterpolationTypeProperty);
+
+                        BeginIndent();
+                        if (networkTransform.PositionInterpolationType != NetworkTransform.InterpolationTypes.SmoothDampening)
+                        {
+                            DrawPropertyField(m_SlerpPosition);
+                        }
+                        DrawPropertyField(m_PositionLerpSmoothing);
+                        if (networkTransform.PositionLerpSmoothing)
+                        {
+                            DrawPropertyField(m_PositionMaximumInterpolationTimeProperty);
+                        }
+                        EndIndent();
+                    }
+                    if (networkTransform.SynchronizeRotation)
+                    {
+                        DrawPropertyField(m_RotationInterpolationTypeProperty);
+
+                        BeginIndent();
+                        DrawPropertyField(m_RotationLerpSmoothing);
+                        if (networkTransform.RotationLerpSmoothing)
+                        {
+                            DrawPropertyField(m_RotationMaximumInterpolationTimeProperty);
+                        }
+                        EndIndent();
+                    }
+                    if (networkTransform.SynchronizeScale)
+                    {
+                        DrawPropertyField(m_ScaleInterpolationTypeProperty);
+
+                        BeginIndent();
+                        DrawPropertyField(m_ScaleLerpSmoothing);
+                        if (networkTransform.ScaleLerpSmoothing)
+                        {
+                            DrawPropertyField(m_ScaleMaximumInterpolationTimeProperty);
+                        }
+                        EndIndent();
+                    }
+                    EndIndent();
+                    EditorGUILayout.Space();
+                }
+            }
+
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
             {
@@ -148,8 +265,7 @@ namespace Unity.Netcode.GameObjects.Editor
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
-            var go = ((NetworkTransform)target).gameObject;
-            if (go.TryGetComponent<Rigidbody>(out _) && go.TryGetComponent<NetworkRigidbody>(out _) == false)
+            if (networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
@@ -157,14 +273,43 @@ namespace Unity.Netcode.GameObjects.Editor
 #endif // COM_UNITY_MODULES_PHYSICS
 
 #if COM_UNITY_MODULES_PHYSICS2D
-            if (go.TryGetComponent<Rigidbody2D>(out _) && go.TryGetComponent<NetworkRigidbody2D>(out _) == false)
+            if (networkTransform.TryGetComponent<Rigidbody2D>(out _) && networkTransform.TryGetComponent<NetworkRigidbody2D>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
 #endif // COM_UNITY_MODULES_PHYSICS2D
+        }
 
-            serializedObject.ApplyModifiedProperties();
+        /// <summary>
+        /// Draw a ToggleLeft property field so it will support multi selection editing if applicable.
+        /// </summary>
+        private void DrawToggleProperty(Rect rect, string label, SerializedProperty property)
+        {
+            if (property.hasMultipleDifferentValues)
+            {
+                EditorGUI.showMixedValue = true;
+                EditorGUI.BeginChangeCheck();
+                bool enabled = EditorGUI.ToggleLeft(rect, label, property.boolValue);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    property.boolValue = enabled;
+                }
+                EditorGUI.showMixedValue = false;
+            }
+            else
+            {
+                property.boolValue = EditorGUI.ToggleLeft(rect, label, property.boolValue);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            var networkTransform = target as NetworkTransform;
+            void SetExpanded(bool expanded) { networkTransform.NetworkTransformExpanded = expanded; };
+            DrawFoldOutGroup<NetworkTransform>(networkTransform.GetType(), DisplayNetworkTransformProperties, networkTransform.NetworkTransformExpanded, SetExpanded);
+            base.OnInspectorGUI();
         }
     }
 }

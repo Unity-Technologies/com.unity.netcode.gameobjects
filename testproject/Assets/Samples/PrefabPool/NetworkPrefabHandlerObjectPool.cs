@@ -71,8 +71,7 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
     {
         var gameObject = GetNextSpawnObject();
         gameObject.SetActive(true);
-        gameObject.transform.position = position;
-        gameObject.transform.rotation = rotation;
+        gameObject.transform.SetPositionAndRotation(position, rotation);
         return gameObject.GetComponent<NetworkObject>();
     }
 

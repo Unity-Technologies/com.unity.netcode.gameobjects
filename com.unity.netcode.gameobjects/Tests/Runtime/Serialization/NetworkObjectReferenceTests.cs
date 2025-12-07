@@ -15,10 +15,19 @@ namespace Unity.Netcode.RuntimeTests
     /// - Deserializing NetworkObjectReference to NetworkObject
     /// - Implicit operators of NetworkObjectReference
     /// </summary>
-    public class NetworkObjectReferenceTests : IDisposable
+    internal class NetworkObjectReferenceTests : IDisposable
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         private class TestNetworkBehaviour : NetworkBehaviour
         {
+            public static bool ReceivedRPC;
+
             public NetworkVariable<NetworkObjectReference> TestVariable = new NetworkVariable<NetworkObjectReference>();
 
             public NetworkObject RpcReceivedNetworkObject;
@@ -28,6 +37,7 @@ namespace Unity.Netcode.RuntimeTests
             [ServerRpc]
             public void SendReferenceServerRpc(NetworkObjectReference value)
             {
+                ReceivedRPC = true;
                 RpcReceivedGameObject = value;
                 RpcReceivedNetworkObject = value;
             }
@@ -148,6 +158,60 @@ namespace Unity.Netcode.RuntimeTests
             Assert.NotNull(networkObject);
             networkObjectReference.TryGet(out NetworkObject result);
             Assert.AreEqual(networkObject, result);
+        }
+
+        public enum NetworkObjectConstructorTypes
+        {
+            None,
+            NullNetworkObject,
+            NullGameObject
+        }
+
+        [UnityTest]
+        public IEnumerator TestSerializeNull([Values] NetworkObjectConstructorTypes networkObjectConstructorTypes)
+        {
+            TestNetworkBehaviour.ReceivedRPC = false;
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            switch (networkObjectConstructorTypes)
+            {
+                case NetworkObjectConstructorTypes.None:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference());
+                        break;
+                    }
+                case NetworkObjectConstructorTypes.NullNetworkObject:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference((NetworkObject)null));
+                        break;
+                    }
+                case NetworkObjectConstructorTypes.NullGameObject:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference((GameObject)null));
+                        break;
+                    }
+            }
+
+
+            // wait for rpc completion
+            float t = 0;
+            while (!TestNetworkBehaviour.ReceivedRPC)
+            {
+
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedNetworkObject);
+            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedGameObject);
         }
 
         [UnityTest]
@@ -305,24 +369,6 @@ namespace Unity.Netcode.RuntimeTests
             });
         }
 
-        [Test]
-        public void FailSerializeNullNetworkObject()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                NetworkObjectReference outReference = (NetworkObject)null;
-            });
-        }
-
-        [Test]
-        public void FailSerializeNullGameObject()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                NetworkObjectReference outReference = (GameObject)null;
-            });
-        }
-
         public void Dispose()
         {
             //Stop, shutdown, and destroy
@@ -340,7 +386,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Helper method for tests to create and destroy Unity Objects.
     /// </summary>
     /// <typeparam name="T">The type of Object this context incorporates.</typeparam>
-    public class UnityObjectContext<T> : UnityObjectContext where T : Object
+    internal class UnityObjectContext<T> : UnityObjectContext where T : Object
     {
         private T m_Object;
 
@@ -353,7 +399,7 @@ namespace Unity.Netcode.RuntimeTests
         public T Object => m_Object;
     }
 
-    public class UnityObjectContext : IDisposable
+    internal class UnityObjectContext : IDisposable
     {
         private Object m_Root;
 

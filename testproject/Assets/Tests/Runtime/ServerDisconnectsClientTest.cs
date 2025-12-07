@@ -8,9 +8,21 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ServerDisconnectsClientTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
+        public ServerDisconnectsClientTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+
         protected override void OnCreatePlayerPrefab()
         {
             m_PlayerPrefab.AddComponent<ClientSendRpcUponDisconnect>();
@@ -35,7 +47,7 @@ namespace TestProject.RuntimeTests
                 base.OnNetworkSpawn();
             }
 
-            [ServerRpc(RequireOwnership = false)]
+            [Rpc(SendTo.Server)]
             public void ClientToServerRpc()
             {
                 Debug.Log($"Received {nameof(ClientToServerRpc)}");

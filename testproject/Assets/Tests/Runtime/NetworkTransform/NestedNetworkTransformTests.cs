@@ -2,24 +2,66 @@ using System.Collections;
 using System.Text;
 using NUnit.Framework;
 using TestProject.ManualTests;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Owner)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+
+    // Lerp, extrapolate, and blend pass
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.Lerp, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+
+    // Smooth dampening interpolation pass
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
     public class NestedNetworkTransformTests : IntegrationTestWithApproximation
     {
         private const string k_TestScene = "NestedNetworkTransformTestScene";
@@ -39,7 +81,9 @@ namespace TestProject.RuntimeTests
         private Object m_PlayerPrefabResource;
         private Interpolation m_Interpolation;
         private Precision m_Precision;
-        private AuthoritativeModel m_Authority;
+        private NetworkTransform.AuthorityModes m_Authority;
+        private NestedTickSynchronization m_NestedTickSynchronization;
+        private NetworkTransform.InterpolationTypes m_InterpolationType;
 
         public enum Interpolation
         {
@@ -60,17 +104,35 @@ namespace TestProject.RuntimeTests
             Owner
         }
 
-
-        public NestedNetworkTransformTests(Interpolation interpolation, Precision precision, AuthoritativeModel authoritativeModel)
+        public enum NestedTickSynchronization
         {
+            NormalSynchronize,
+            TickSynchronized,
+        }
+
+
+        public NestedNetworkTransformTests(NetworkTransform.InterpolationTypes interpolationType, Interpolation interpolation, Precision precision, NetworkTransform.AuthorityModes authoritativeModel, NestedTickSynchronization nestedTickSynchronization)
+        {
+            m_InterpolationType = interpolationType;
             m_Interpolation = interpolation;
             m_Precision = precision;
             m_Authority = authoritativeModel;
+            m_NestedTickSynchronization = nestedTickSynchronization;
         }
+
+        public NestedNetworkTransformTests(Interpolation interpolation, Precision precision, NetworkTransform.AuthorityModes authoritativeModel, NestedTickSynchronization nestedTickSynchronization) :
+            this(NetworkTransform.InterpolationTypes.LegacyLerp, interpolation, precision, authoritativeModel, nestedTickSynchronization)
+        { }
 
         public NestedNetworkTransformTests()
         {
 
+        }
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
         }
 
         protected override void OnOneTimeSetup()
@@ -108,6 +170,8 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            NetworkTransform.AssignDefaultInterpolationType = true;
+            NetworkTransform.DefaultInterpolationType = m_InterpolationType;
             yield return WaitForConditionOrTimeOut(() => m_BaseSceneLoaded.IsValid() && m_BaseSceneLoaded.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
         }
@@ -126,6 +190,8 @@ namespace TestProject.RuntimeTests
         {
             // This prevents us from trying to destroy the resource loaded
             m_PlayerPrefab = null;
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
         }
 
         private void ConfigureNetworkTransform(IntegrationNetworkTransform networkTransform)
@@ -134,7 +200,8 @@ namespace TestProject.RuntimeTests
             networkTransform.UseQuaternionSynchronization = true;
             networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half || m_Precision == Precision.Compressed;
             networkTransform.UseQuaternionCompression = m_Precision == Precision.Compressed;
-            networkTransform.IsServerAuthority = m_Authority == AuthoritativeModel.Server;
+            networkTransform.AuthorityMode = m_Authority;
+            networkTransform.TickSyncChildren = m_NestedTickSynchronization == NestedTickSynchronization.TickSynchronized;
         }
 
 
@@ -151,6 +218,12 @@ namespace TestProject.RuntimeTests
             foreach (var networkTransform in networkTransforms)
             {
                 ConfigureNetworkTransform(networkTransform);
+                if (networkTransform.TickSyncChildren && networkTransform.gameObject != m_PlayerPrefab)
+                {
+                    // Skew the thresholds of the children
+                    networkTransform.PositionThreshold *= Random.Range(0.75f, 0.90f);
+                    networkTransform.RotAngleThreshold *= Random.Range(0.75f, 0.90f);
+                }
             }
 
             base.OnCreatePlayerPrefab();
@@ -181,11 +254,6 @@ namespace TestProject.RuntimeTests
 
         private StringBuilder m_ValidationErrors;
 
-        private string GetVector3Values(ref Vector3 vector3)
-        {
-            return $"({vector3.x.ToString("G6")},{vector3.y.ToString("G6")},{vector3.z.ToString("G6")})";
-        }
-
         /// <summary>
         /// Validates all transform instance values match the authority's
         /// </summary>
@@ -194,7 +262,7 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors.Clear();
             foreach (var connectedClient in m_ServerNetworkManager.ConnectedClientsIds)
             {
-                var authorityId = m_Authority == AuthoritativeModel.Server ? m_ServerNetworkManager.LocalClientId : connectedClient;
+                var authorityId = m_Authority == NetworkTransform.AuthorityModes.Server ? m_ServerNetworkManager.LocalClientId : connectedClient;
                 var playerToValidate = m_PlayerNetworkObjects[authorityId][connectedClient];
                 var playerNetworkTransforms = playerToValidate.GetComponentsInChildren<IntegrationNetworkTransform>();
                 foreach (var playerRelative in m_PlayerNetworkObjects)
@@ -229,9 +297,11 @@ namespace TestProject.RuntimeTests
                             }
                         }
 
-                        if (!Approximately(playerNetworkTransforms[i].PushedScale, relativeClonedTransforms[i].transform.localScale))
+                        if (!Approximately(playerNetworkTransforms[i].transform.localScale, relativeClonedTransforms[i].transform.localScale))
                         {
-                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]\n");
+                            var playerScale = playerNetworkTransforms[i].transform.localScale;
+                            var relativeScale = relativeClonedTransforms[i].transform.localScale;
+                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {GetVector3Values(ref playerScale)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {GetVector3Values(ref relativeScale)}]\n");
                         }
 
                         // TODO: Determine why MAC OS X on 2020.3 has precision issues when interpolating using full precision but no other platform does nor does MAC OS X on later versions of Unity.
@@ -263,7 +333,7 @@ namespace TestProject.RuntimeTests
                                 var eulerPlayer = playerCurrentRotation.eulerAngles;
                                 var eulerClone = cloneRotation.eulerAngles;
 
-                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({eulerPlayer.x}, {eulerPlayer.y}, {eulerPlayer.z})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({eulerClone.x}, {eulerClone.y}, {eulerClone.z})]\n");
+                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({GetVector3Values(ref eulerPlayer)})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({GetVector3Values(ref eulerClone)})]\n");
                                 m_ValidationErrors.Append($"[Rotation Delta] ({deltaEuler.x}, {deltaEuler.y}, {deltaEuler.z})\n");
                             }
                         }
@@ -296,13 +366,12 @@ namespace TestProject.RuntimeTests
         {
             var timeStarted = Time.realtimeSinceStartup;
             var startFrameCount = Time.frameCount;
-            m_EnableVerboseDebug = true;
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
 
             var pauseFrames = CalculateTimeOutFrames(1f);
-            var synchTimeOut = CalculateTimeOutFrames(m_Interpolation == Interpolation.Interpolation ? 4 : 2);
+            var synchTimeOut = CalculateTimeOutFrames(m_Interpolation == Interpolation.Interpolation ? k_DefaultTickRate * 3 : k_DefaultTickRate * 2);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
 
@@ -335,7 +404,6 @@ namespace TestProject.RuntimeTests
                     // If we have 5 precision failures in a row and fail to correct, then fail this test
                     if (precisionFailures > k_MaximumPrecisionFailures)
                     {
-                        m_EnableVerboseDebug = true;
                         DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
                         Assert.True(success, $"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
                             $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}");

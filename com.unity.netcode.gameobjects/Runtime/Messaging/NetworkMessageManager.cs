@@ -34,6 +34,9 @@ namespace Unity.Netcode
     internal class NetworkMessageManager : IDisposable
     {
         public bool StopProcessing = false;
+        private static Type s_ConnectionApprovedType = typeof(ConnectionApprovedMessage);
+        private static Type s_ConnectionRequestType = typeof(ConnectionRequestMessage);
+        private static Type s_DisconnectReasonType = typeof(DisconnectReasonMessage);
 
         private struct ReceiveQueueItem
         {
@@ -85,6 +88,8 @@ namespace Unity.Netcode
         private INetworkMessageSender m_Sender;
         private bool m_Disposed;
 
+        private ulong m_LocalClientId;
+
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
 
@@ -95,8 +100,21 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public const int NonFragmentedMessageMaxSize = 1300;
-        public const int FragmentedMessageMaxSize = int.MaxValue;
+        internal object GetOwner()
+        {
+            return m_Owner;
+        }
+
+        internal void SetLocalClientId(ulong id)
+        {
+            m_LocalClientId = id;
+        }
+
+        public const int DefaultNonFragmentedMessageMaxSize = 1300 & ~7; // Round down to nearest word aligned size (1296)
+        public int NonFragmentedMessageMaxSize = DefaultNonFragmentedMessageMaxSize;
+        public int FragmentedMessageMaxSize = int.MaxValue;
+
+        public Dictionary<ulong, int> PeerMTUSizes = new Dictionary<ulong, int>();
 
         internal struct MessageWithHandler
         {
@@ -105,49 +123,20 @@ namespace Unity.Netcode
             public VersionGetter GetVersion;
         }
 
-        internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
-        {
-            var prioritizedTypes = new List<MessageWithHandler>();
-
-            // First pass puts the priority message in the first indices
-            // Those are the messages that must be delivered in order to allow re-ordering the others later
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName == typeof(ConnectionRequestMessage).FullName ||
-                    t.MessageType.FullName == typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName != typeof(ConnectionRequestMessage).FullName &&
-                    t.MessageType.FullName != typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            return prioritizedTypes;
-        }
-
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
             {
                 m_Sender = sender;
                 m_Owner = owner;
-
                 if (provider == null)
                 {
                     provider = new ILPPMessageProvider();
                 }
 
+                // Get the presorted message types returned by the provider
                 var allowedTypes = provider.GetMessages();
 
-                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
-                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
@@ -159,6 +148,8 @@ namespace Unity.Netcode
                 throw;
             }
         }
+
+        internal static bool EnableMessageOrderConsoleLog = false;
 
         public void Dispose()
         {
@@ -496,10 +487,16 @@ namespace Unity.Netcode
             m_SendQueues.Remove(clientId);
 
             m_PerClientMessageVersions.Remove(clientId);
+            PeerMTUSizes.Remove(clientId);
         }
 
         internal void CleanupDisconnectedClients()
         {
+            if (m_DisconnectedClients.Count == 0)
+            {
+                return;
+            }
+
             foreach (var clientId in m_DisconnectedClients)
             {
                 CleanupDisconnectedClient(clientId);
@@ -513,19 +510,23 @@ namespace Unity.Netcode
             return new T().Version;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int GetMessageVersion(Type type, ulong clientId, bool forReceive = false)
         {
             if (!m_PerClientMessageVersions.TryGetValue(clientId, out var versionMap))
             {
-                if (forReceive)
+                var networkManager = NetworkManager.Singleton;
+                if (networkManager != null && networkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    if (forReceive)
+                    {
+                        NetworkLog.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    }
+                    else
+                    {
+                        NetworkLog.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
-                }
-
                 return -1;
             }
 
@@ -537,16 +538,20 @@ namespace Unity.Netcode
             return messageVersion;
         }
 
+
+
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
+            var messageType = typeof(T);
             var message = new T();
             var messageVersion = 0;
+
             // Special cases because these are the messages that carry the version info - thus the version info isn't
             // populated yet when we get these. The first part of these messages always has to be the version data
             // and can't change.
-            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage))
+            if (messageType != s_ConnectionRequestType && messageType != s_ConnectionApprovedType && messageType != s_DisconnectReasonType && context.SenderId != manager.m_LocalClientId)
             {
-                messageVersion = manager.GetMessageVersion(typeof(T), context.SenderId, true);
+                messageVersion = manager.GetMessageVersion(messageType, context.SenderId, true);
                 if (messageVersion < 0)
                 {
                     return;
@@ -598,7 +603,7 @@ namespace Unity.Netcode
                 var messageVersion = 0;
                 // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
                 // The first part of this message always has to be the version data and can't change.
-                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                if (typeof(TMessageType) != s_ConnectionRequestType)
                 {
                     messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
                     if (messageVersion < 0)
@@ -652,7 +657,7 @@ namespace Unity.Netcode
 
                 // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
                 // The first part of this message always has to be the version data and can't change.
-                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                if (typeof(TMessageType) != s_ConnectionRequestType)
                 {
                     var messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
                     if (messageVersion < 0)
@@ -674,6 +679,21 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                var startSize = NonFragmentedMessageMaxSize;
+                if (delivery != NetworkDelivery.ReliableFragmentedSequenced)
+                {
+                    if (PeerMTUSizes.TryGetValue(clientId, out var clientMaxSize))
+                    {
+                        maxSize = clientMaxSize;
+                    }
+                    startSize = maxSize;
+                    if (tmpSerializer.Position >= maxSize)
+                    {
+                        Debug.LogError($"MTU size for {clientId} is too small to contain a message of type {typeof(TMessageType).FullName}");
+                        continue;
+                    }
+                }
+
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
                     m_Hooks[hookIdx].OnBeforeSendMessage(clientId, ref message, delivery);
@@ -682,7 +702,7 @@ namespace Unity.Netcode
                 var sendQueueItem = m_SendQueues[clientId];
                 if (sendQueueItem.Length == 0)
                 {
-                    sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
+                    sendQueueItem.Add(new SendQueueItem(delivery, startSize, Allocator.TempJob, maxSize));
                     sendQueueItem.ElementAt(0).Writer.Seek(sizeof(NetworkBatchHeader));
                 }
                 else
@@ -690,13 +710,17 @@ namespace Unity.Netcode
                     ref var lastQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
                     if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length + headerSerializer.Length)
                     {
-                        sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
+                        sendQueueItem.Add(new SendQueueItem(delivery, startSize, Allocator.TempJob, maxSize));
                         sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(NetworkBatchHeader));
                     }
                 }
 
                 ref var writeQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
-                writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length);
+                if (!writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length))
+                {
+                    Debug.LogError($"Not enough space to write message, size={tmpSerializer.Length + headerSerializer.Length} space used={writeQueueItem.Writer.Position} total size={writeQueueItem.Writer.Capacity}");
+                    continue;
+                }
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
                 writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
@@ -717,7 +741,7 @@ namespace Unity.Netcode
             // Special case because this is the message that carries the version info - thus the version info isn't
             // populated yet when we get this. The first part of this message always has to be the version data
             // and can't change.
-            if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+            if (typeof(TMessageType) != s_ConnectionRequestType)
             {
                 messageVersion = GetMessageVersion(typeof(TMessageType), clientId);
                 if (messageVersion < 0)
@@ -786,6 +810,12 @@ namespace Unity.Netcode
             return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
         }
 
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeList<ulong> clientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds.GetUnsafePtr(), clientIds.Length));
+        }
+
         internal unsafe void ProcessSendQueues()
         {
             if (StopProcessing)
@@ -825,11 +855,17 @@ namespace Unity.Netcode
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
-                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
 
-                    queueItem.BatchHeader.BatchSize = queueItem.Writer.Length;
+
+                    var alignedLength = (queueItem.Writer.Length + 7) & ~7;
+                    queueItem.Writer.TryBeginWrite(alignedLength);
+
+                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), alignedLength - sizeof(NetworkBatchHeader));
+
+                    queueItem.BatchHeader.BatchSize = alignedLength;
 
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
+                    queueItem.Writer.Seek(alignedLength);
 
 
                     try

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode;
@@ -9,12 +10,23 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class SenderIdTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
+
+        public SenderIdTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
@@ -89,36 +101,34 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(secondReceived);
         }
 
+
+        private List<ulong> m_ClientsDisconnected = new List<ulong>();
+        private ulong m_ClientToValidateDisconnected;
+
+        private bool ValidateClientId()
+        {
+            return m_ClientsDisconnected.Contains(m_ClientToValidateDisconnected);
+        }
+
+        private void OnClientDisconnected(ulong clientId)
+        {
+            m_ClientsDisconnected.Add(clientId);
+        }
+
         [UnityTest]
         public IEnumerator WhenClientDisconnectsFromServer_ClientIdIsCorrect()
         {
-            var firstClientId = FirstClient.LocalClientId;
-            bool received = false;
-            void firstCallback(ulong id)
-            {
-                Assert.AreEqual(firstClientId, id);
-                received = true;
-            }
-            m_ServerNetworkManager.OnClientDisconnectCallback += firstCallback;
+            m_ClientsDisconnected.Clear();
+            m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+            m_ClientToValidateDisconnected = m_ClientNetworkManagers[0].LocalClientId;
             FirstClient.Shutdown();
+            yield return WaitForConditionOrTimeOut(ValidateClientId);
+            AssertOnTimeout($"Timed out waiting for the server to receive Client-{m_ClientToValidateDisconnected} disconnect event!");
 
-            yield return new WaitForSeconds(0.2f);
-
-            Assert.IsTrue(received);
-            var secondClientId = SecondClient.LocalClientId;
-            received = false;
-
-            m_ServerNetworkManager.OnClientDisconnectCallback -= firstCallback;
-            m_ServerNetworkManager.OnClientDisconnectCallback += id =>
-            {
-                Assert.AreEqual(secondClientId, id);
-                received = true;
-            };
+            m_ClientToValidateDisconnected = m_ClientNetworkManagers[1].LocalClientId;
             SecondClient.Shutdown();
-
-            yield return new WaitForSeconds(0.2f);
-
-            Assert.IsTrue(received);
+            yield return WaitForConditionOrTimeOut(ValidateClientId);
+            AssertOnTimeout($"Timed out waiting for the server to receive Client-{m_ClientToValidateDisconnected} disconnect event!");
         }
     }
 }

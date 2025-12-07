@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
@@ -9,8 +10,16 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkUpdateLoopTests
+    internal class NetworkUpdateLoopTests
     {
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [Test]
         public void RegisterCustomLoopInTheMiddle()
         {
