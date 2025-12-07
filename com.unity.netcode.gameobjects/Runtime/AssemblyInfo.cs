@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.TestHelpers.Runtime")]
 [assembly: InternalsVisibleTo("TestProject.Runtime.Tests")]
 #if UNITY_EDITOR
-[assembly: InternalsVisibleTo("Unity.Netcode.GameObjects.EditorTests")]
+[assembly: InternalsVisibleTo("Unity.Netcode.GameObjects.Editor.Tests")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor.Tests")]
 [assembly: InternalsVisibleTo("TestProject.Editor.Tests")]

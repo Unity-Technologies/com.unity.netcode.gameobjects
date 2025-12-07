@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode.Editor;
+using Unity.Netcode.Editor.Configuration;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;

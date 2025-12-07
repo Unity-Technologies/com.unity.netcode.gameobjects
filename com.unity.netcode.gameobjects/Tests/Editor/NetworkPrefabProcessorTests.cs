@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Unity.Netcode.Editor.Configuration;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
