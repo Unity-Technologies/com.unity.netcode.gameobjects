@@ -91,20 +91,6 @@ logError(){
 
 # Unity Version -----------------------------------------------------------------
 
-DIR="./artifacts"
-if [[ -d "$DIR" ]]; then
-  echo "Artifacts directory exists"
-else
-  echo "Artifacts directory does not exist"
-fi
-
-FILE="artifacts/TestResults.js"
-if [[ -f "$FILE" ]]; then
-  echo "TestResults File exists and is a regular file"
-else
-  echo "TestResults File missing"
-fi
-
 echo "$(<$FILE)"
 
 sed --help
@@ -114,7 +100,7 @@ unity_version="$(sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE)"
 # ensure arguments were passed and the ports are defined
 if [ -z "$unity_version" ]; then
   logMessage "Failed to find unity version: $unity_version! Using default string";
-elif [[ "$echo_port" == "$service_port" ]]; then
+else
   logMessage "Found Unity version: $unity_version";
 fi
 
