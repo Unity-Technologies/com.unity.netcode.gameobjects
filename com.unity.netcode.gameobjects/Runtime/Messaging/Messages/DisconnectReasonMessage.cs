@@ -1,3 +1,6 @@
+using System.Collections;
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     internal struct DisconnectReasonMessage : INetworkMessage
@@ -37,10 +40,24 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
             // Always apply the server-side generated disconnect reason to the server specific disconnect reason.
             // This is combined with the additional disconnect information when getting NetworkManager.DisconnectReason
             // (NetworkConnectionManager.DisconnectReason).
-            ((NetworkManager)context.SystemOwner).ConnectionManager.ServerDisconnectReason = Reason;
+            networkManager.ConnectionManager.ServerDisconnectReason = Reason;
+
+            if (networkManager.NetworkConfig.UseCMBService)
+            {
+                networkManager.StartCoroutine(HandleDisconnectAfterReason(networkManager));
+            }
+        }
+
+        private IEnumerator HandleDisconnectAfterReason(NetworkManager networkManager)
+        {
+            yield return new WaitForFixedUpdate();
+
+            var connectionManager = networkManager.ConnectionManager;
+            connectionManager.DisconnectEventHandler(connectionManager.LocalClientTransportId);
         }
     };
 }

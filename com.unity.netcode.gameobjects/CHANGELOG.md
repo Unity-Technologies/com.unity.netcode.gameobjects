@@ -77,6 +77,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- CMB service no longer waits for a timeout before disconnecting on an invalid ConnectionRequest. (#3812)
 - Initialization errors with NetworkAnimator. (#3767)
 - Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
