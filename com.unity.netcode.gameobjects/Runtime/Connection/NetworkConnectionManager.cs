@@ -492,6 +492,8 @@ namespace Unity.Netcode
         /// </remarks>
         private ulong m_LocalClientTransportId;
 
+        internal ulong LocalClientTransportId => m_LocalClientTransportId;
+
         /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
@@ -595,8 +597,10 @@ namespace Unity.Netcode
             // do not remove it just yet.
             var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
 
-            // If the client is not registered and we are the server
-            if (!isConnectedClient && NetworkManager.IsServer)
+            // If the client is not registered and we are the server or we are connecting to
+            // the live CMB service and the client had a transport Id assigned then exit early
+            /// <see cref="DisconnectReasonMessage"/> handles disconnecting the client
+            if (!isConnectedClient && (NetworkManager.IsServer || (NetworkManager.CMBServiceConnection && m_LocalClientTransportId != 0)))
             {
                 // Then exit early
                 return;
@@ -639,8 +643,18 @@ namespace Unity.Netcode
                 // Client's clean up their transport id separately from the server.
                 TransportIdCleanUp(transportClientId);
 
-                // Notify local client of disconnection
-                InvokeOnClientDisconnectCallback(clientId);
+                try
+                {
+                    // Notify local client of disconnection
+                    InvokeOnClientDisconnectCallback(clientId);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+
+                // Reset the transport ID
+                m_LocalClientTransportId = 0;
 
                 // As long as we are not in the middle of a shutdown
                 if (!NetworkManager.ShutdownInProgress)
