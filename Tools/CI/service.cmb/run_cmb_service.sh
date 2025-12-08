@@ -91,17 +91,24 @@ logError(){
 
 # Unity Version -----------------------------------------------------------------
 
+
+FILE="artifacts/TestResults.js"
+
 echo "$(<$FILE)"
 
-sed --help
 
-unity_version="$(sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE)"
+first_sed=$(sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE)
+
+
+second_sed="$(sed -nE 's/.*"editorVersion":[[:space:]]*"([^[:space:]"]+).*/\1/p' $FILE)"
+
+project_settings="$(sed -nE 's/^m_EditorVersion:[[:space:]]*([[:alnum:].]+).*/\1/p' testproject/ProjectSettings/ProjectVersion.txt)"
 
 # ensure arguments were passed and the ports are defined
-if [ -z "$unity_version" ]; then
-  logMessage "Failed to find unity version: $unity_version! Using default string";
+if [ -z "$first_sed" ]; then
+  logMessage "Failed to find unity version: first: $first_sed, second: $second_sed, project_settings: $project_settings! Using default string";
 else
-  logMessage "Found Unity version: $unity_version";
+  logMessage "Found Unity version: first: $first_sed, second: $second_sed, project_settings: $project_settings";
 fi
 
 # # Protocol Buffer Compiler ------------------------------------------------------
