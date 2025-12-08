@@ -107,8 +107,9 @@ fi
 
 echo "$(<$FILE)"
 
+sed --help
 
-unity_version=sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE
+unity_version="$(sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE)"
 
 # ensure arguments were passed and the ports are defined
 if [ -z "$unity_version" ]; then
