@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
 - First pass of CoreCLR engine API changes. (#3799)
 - Changed when a server is disconnecting a client with a reason it now defers the complete transport disconnect sequence until the end of the frame after the server's transport has sent all pending outbound messages. (#3786)

@@ -13,63 +13,53 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
 
-        private byte m_DestroyFlags;
-
         internal int DeferredDespawnTick;
         // Temporary until we make this a list
         internal ulong TargetClientId;
 
         internal bool IsDistributedAuthority;
 
-        internal bool IsTargetedDestroy
-        {
-            get => ByteUtility.GetBit(m_DestroyFlags, 0);
+        private const byte k_IsTargetedDestroy = 0x01;
+        private const byte k_IsDeferredDespawn = 0x02;
+        private const byte k_DestroyGameObject = 0x04;
 
-            set => ByteUtility.SetBit(ref m_DestroyFlags, 0, value);
-        }
-
-        private bool IsDeferredDespawn
-        {
-            get => ByteUtility.GetBit(m_DestroyFlags, 1);
-
-            set => ByteUtility.SetBit(ref m_DestroyFlags, 1, value);
-        }
+        internal bool IsTargetedDestroy;
 
         /// <summary>
         /// Used to communicate whether to destroy the associated game object.
         /// Should be false if the object is InScenePlaced and true otherwise
         /// </summary>
-        public bool DestroyGameObject
-        {
-            get => ByteUtility.GetBit(m_DestroyFlags, 2);
-
-            set => ByteUtility.SetBit(ref m_DestroyFlags, 2, value);
-        }
+        public bool DestroyGameObject;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             // Set deferred despawn flag
-            IsDeferredDespawn = DeferredDespawnTick > 0;
+            var isDeferredDespawn = DeferredDespawnTick > 0;
+
+            byte bitset = 0x00;
+            if (IsTargetedDestroy) { bitset |= k_IsTargetedDestroy; }
+            if (isDeferredDespawn) { bitset |= k_IsDeferredDespawn; }
+            if (DestroyGameObject) { bitset |= k_DestroyGameObject; }
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
 
             if (IsDistributedAuthority)
             {
-                writer.WriteByteSafe(m_DestroyFlags);
+                writer.WriteByteSafe(bitset);
 
                 if (IsTargetedDestroy)
                 {
                     BytePacker.WriteValueBitPacked(writer, TargetClientId);
                 }
 
-                if (targetVersion < k_OptimizeDestroyObjectMessage || IsDeferredDespawn)
+                if (targetVersion < k_OptimizeDestroyObjectMessage || isDeferredDespawn)
                 {
                     BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
                 }
             }
             else if (targetVersion >= k_AllowDestroyGameInPlaced)
             {
-                writer.WriteByteSafe(m_DestroyFlags);
+                writer.WriteByteSafe(bitset);
             }
 
             if (targetVersion < k_OptimizeDestroyObjectMessage)
@@ -89,20 +79,25 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             if (networkManager.DistributedAuthorityMode)
             {
-                reader.ReadByteSafe(out m_DestroyFlags);
+                reader.ReadByteSafe(out byte bitset);
+                IsTargetedDestroy = (bitset & k_IsTargetedDestroy) != 0;
+                var isDeferredDespawn = (bitset & k_IsDeferredDespawn) != 0;
+                DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
+
                 if (IsTargetedDestroy)
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out TargetClientId);
                 }
 
-                if (receivedMessageVersion < k_OptimizeDestroyObjectMessage || IsDeferredDespawn)
+                if (receivedMessageVersion < k_OptimizeDestroyObjectMessage || isDeferredDespawn)
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
                 }
             }
             else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
             {
-                reader.ReadByteSafe(out m_DestroyFlags);
+                reader.ReadByteSafe(out byte bitset);
+                DestroyGameObject = (bitset & k_DestroyGameObject) != 0;
             }
 
             if (receivedMessageVersion < k_OptimizeDestroyObjectMessage)
