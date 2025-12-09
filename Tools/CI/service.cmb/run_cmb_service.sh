@@ -168,6 +168,8 @@ cargo build --release --locked
 # The infinite loop is required as the service will exit each time all connected clients disconnect.
 # This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
 logMessage "Running service integration tests..."
+echo "comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version"
+
 while :; do
   ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version;
 done & # <- use & to run the entire loop in the background
