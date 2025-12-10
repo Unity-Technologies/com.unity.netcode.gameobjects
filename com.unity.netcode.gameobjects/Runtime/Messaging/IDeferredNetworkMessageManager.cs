@@ -8,6 +8,9 @@ namespace Unity.Netcode
             OnSpawn,
             OnAddPrefab,
             OnNextFrame,
+#if UNIFIED_NETCODE
+            OnGhostSpawned,
+#endif
         }
 
         /// <summary>

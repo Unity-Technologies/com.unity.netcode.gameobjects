@@ -5,6 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
+
 #if UNITY_EDITOR
 using UnityEditor;
 #if UNITY_2021_2_OR_NEWER
@@ -243,6 +247,10 @@ namespace Unity.Netcode
         /// </summary>
         internal void OnValidate()
         {
+#if UNIFIED_NETCODE
+            UnifiedValidation();
+#endif
+
             // Always exit early if we are in prefab edit mode and this instance is the
             // prefab instance within the InContext or InIsolation edit scene.
             if (s_PrefabInstance == this)
@@ -337,6 +345,27 @@ namespace Unity.Netcode
             }
         }
 #endif // UNITY_EDITOR
+
+#if UNIFIED_NETCODE
+        [HideInInspector]
+        [SerializeField]
+        internal GhostAdapter GhostAdapter;
+
+        [HideInInspector]
+        [SerializeField]
+        internal bool HasGhost;
+
+        private void UnifiedValidation()
+        {
+            NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
+            GhostAdapter = GetComponent<GhostAdapter>();
+            HasGhost = GhostAdapter != null;
+            if (HasGhost && NetworkObjectBridge == null)
+            {
+                NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+            }
+        }
+#endif
 
         internal bool HasParentNetworkObject(Transform transform)
         {
@@ -2836,6 +2865,10 @@ namespace Unity.Netcode
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
 
+#if UNIFIED_NETCODE
+            public int GhostId;
+#endif
+
             public bool IsPlayerObject
             {
                 get => ByteUtility.GetBit(m_BitField, 0);
@@ -2910,6 +2943,14 @@ namespace Unity.Netcode
                 get => ByteUtility.GetBit(m_BitField, 11);
                 set => ByteUtility.SetBit(ref m_BitField, 11, value);
             }
+
+#if UNIFIED_NETCODE
+            public bool HasGhost
+            {
+                get => ByteUtility.GetBit(m_BitField, 12);
+                set => ByteUtility.SetBit(ref m_BitField, 12, value);
+            }
+#endif
 
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.
@@ -3000,6 +3041,13 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
+#if UNIFIED_NETCODE
+                if (HasGhost)
+                {
+                    writer.WriteValueSafe(GhostId);
+                }
+#endif
+
                 // write placeholder for serialized data size.
                 // Can't be bitpacked because we don't know the value until we calculate it later
                 var positionBeforeSynchronizing = writer.Position;
@@ -3078,6 +3126,13 @@ namespace Unity.Netcode
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
+
+#if UNIFIED_NETCODE
+                if (HasGhost)
+                {
+                    reader.ReadValueSafe(out GhostId);
+                }
+#endif
 
                 // Read the size of the remaining synchronization data
                 // This data will be read in AddSceneObject()
@@ -3175,7 +3230,11 @@ namespace Unity.Netcode
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId,
-                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
+                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0,
+#if UNIFIED_NETCODE
+                HasGhost = HasGhost,
+                GhostId = HasGhost ? GhostInstance.ghostId : 0,
+#endif
             };
 
             // Handle Parenting
@@ -3248,10 +3307,8 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out instantiationData);
             }
 
-
             // Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationData);
-
 
             if (networkObject == null)
             {
@@ -3490,7 +3547,121 @@ namespace Unity.Netcode
 #endif
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
+#if UNIFIED_NETCODE
+            InitGhost();
+#endif
+
         }
+
+        private void OnEnable()
+        {
+            Debug.Log("Enabled!");
+        }
+
+        private void OnDisable()
+        {
+            Debug.Log("Disabled!");
+        }
+
+#if UNIFIED_NETCODE
+
+        private void Start()
+        {
+            enabled = true;
+        }
+        internal GhostInstance GhostInstance;
+        [SerializeField]
+        [HideInInspector]
+        internal NetworkObjectBridge NetworkObjectBridge;
+
+        private void InitGhost()
+        {
+            enabled = true;
+            // All instances with Ghosts are automatically registered
+            if (HasGhost && NetworkObjectBridge)
+            {
+                Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
+                NetworkObjectBridge.NetworkObjectIdChanged += OnNetworkObjectIdChanged;
+                if (NetworkObjectBridge.NetworkObjectId.Value != 0)
+                {
+                    RegisterGhostBridge();
+                }
+                //var networkObjectRegistration = (false, (ulong)0);
+                //NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId);
+                //try
+                //{
+                //    networkObjectRegistration = GhostAdapter.GetNetworkObjectId();
+                //}
+                //catch (Exception ex)
+                //{
+                //    Debug.LogException(ex);
+                //}
+
+                //if (networkObjectRegistration.Item1)
+                //{
+                //    // Authority and Non-Authority:
+                //    // Upon instantiation it will always register itself as a Ghost that is pending NGO spawn.
+
+                //    // Non-Authority:
+                //    // - If registered prior to the CreateObjectMessage, then upon receiving the CreateObjectMessag it will be processed immediately using this instance.
+                //    // - If registered after receiving the CreateObjectMessage, then upon registering it will also process any deferred CreateObjectMessages
+                //    // If this happens prior to receiving the  is received,
+                //    // Authority:
+                //    // Upon spawning locally, this entry is removed from the ghost pending spawn table.
+
+
+
+                //}
+                //else if (!NetworkManager.IsServer)
+                //{
+                //    StartCoroutine(WaitForGhostData());
+                //}
+                //else
+                //{
+                //    Debug.LogError($"[{name}] Failed to get ghost instance or GhostId is zero!");
+                //}
+            }
+        }
+
+        private void RegisterGhostBridge()
+        {
+            Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
+            NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
+        }
+
+        private void OnNetworkObjectIdChanged(ulong networkObjectId)
+        {
+            RegisterGhostBridge();
+        }
+
+        //private System.Collections.IEnumerator WaitForGhostData()
+        //{
+        //    var waitPeriod = new WaitForSeconds(0.1f);
+        //    var timeout = Time.realtimeSinceStartup + 5.0f;
+        //    while (timeout > Time.realtimeSinceStartup)
+        //    {
+        //        enabled = true;
+        //        var networkObjectRegistration = (false, (ulong)0);
+        //        try
+        //        {
+        //            networkObjectRegistration = GhostAdapter.GetNetworkObjectId();
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Debug.LogException(ex);
+        //        }
+        //        if (networkObjectRegistration.Item1)
+        //        {
+        //            NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, networkObjectRegistration.Item2);
+        //            yield break;
+        //        }
+        //        yield return waitPeriod;
+        //    }
+
+        //    Debug.Log("Timed out waiting for Ghost to be registered!");
+
+        //}
+#endif
 
         /// <summary>
         /// Update

@@ -30,6 +30,30 @@ namespace Unity.Netcode
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
+#if UNIFIED_NETCODE
+
+        internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
+
+        public void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
+        {
+            Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
+            GhostsPendingSpawn.TryAdd(networkObjectId, networkObject);
+            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, (ulong)networkObject.GhostInstance.ghostId);
+        }
+
+        internal NetworkObject GetGhostNetworkObjectForSpawn(ulong networkObjectId)
+        {
+            if (!GhostsPendingSpawn.ContainsKey(networkObjectId))
+            {
+                Debug.LogError($"[{nameof(GetGhostNetworkObjectForSpawn)}] Attempting to spawn NetworkObject-{networkObjectId} with no instance to spawn!");
+                return null;
+            }
+            var networkObject = GhostsPendingSpawn[networkObjectId];
+            GhostsPendingSpawn.Remove(networkObjectId);
+            return networkObject;
+        }
+#endif
+
         /// <summary>
         /// Use to get all NetworkObjects owned by a client
         /// Ownership to Objects Table Format:
@@ -901,27 +925,45 @@ namespace Unity.Netcode
             var parentNetworkId = sceneObject.HasParent ? sceneObject.ParentObjectId : default;
             var worldPositionStays = (!sceneObject.HasParent) || sceneObject.WorldPositionStays;
 
-            // If scene management is disabled or the NetworkObject was dynamically spawned
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
+#if UNIFIED_NETCODE
+            if (sceneObject.HasGhost)
             {
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationData);
-            }
-            else // Get the in-scene placed NetworkObject
-            {
-                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
+                // TODO-UNIFIED: Get this working somehow (or if not possible prevent this from happening prior to getting to this point)
+                if (sceneObject.HasInstantiationData)
+                {
+                    Debug.LogError($"[{nameof(NetworkObject)}] Pre-spawn instantiation data does not work in this version!");
+                }
+                networkObject = GetGhostNetworkObjectForSpawn(sceneObject.NetworkObjectId);
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                    }
-                }
 
-                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
-                // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
+                }
+            }
+            else
+#endif
+            {
+                // If scene management is disabled or the NetworkObject was dynamically spawned
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
                 {
-                    networkObject.gameObject.SetActive(true);
+                    networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationData);
+                }
+                else // Get the in-scene placed NetworkObject
+                {
+                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
+                    if (networkObject == null)
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        {
+                            NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
+                        }
+                    }
+
+                    // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
+                    // NetworkBehaviours will have their OnNetworkSpawn method invoked
+                    if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
+                    {
+                        networkObject.gameObject.SetActive(true);
+                    }
                 }
             }
 
@@ -1091,6 +1133,14 @@ namespace Unity.Netcode
             }
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+
+#if UNIFIED_NETCODE
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
+                //networkObject.GhostAdapter.RegisterNetworkObjectId(networkObject.NetworkObjectId);
+            }
+#endif
 
             // When done spawning invoke post spawn
             networkObject.InvokeBehaviourNetworkPostSpawn();
