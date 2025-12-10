@@ -158,7 +158,7 @@ namespace Unity.Netcode
                 {
                     if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
-                        sobj.Observers.Add(OwnerClientId);
+                        sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
                         var sceneObject = sobj.GetMessageSceneObject(OwnerClientId, IsDistributedAuthority);
                         sceneObject.Serialize(writer);

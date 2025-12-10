@@ -208,7 +208,7 @@ namespace Unity.Netcode
                     // Update the observers for this instance
                     for (int i = 0; i < clientList.Count; i++)
                     {
-                        networkObject.Observers.Add(clientList[i]);
+                        networkObject.AddObserver(clientList[i]);
                     }
 
                     // Mock CMB Service and forward to all clients
