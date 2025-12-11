@@ -121,12 +121,19 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            UnityEngine.Debug.Log($"Received {nameof(CreateObjectMessage)} for NetworkObjectId-{ObjectInfo.NetworkObjectId}.");
+            if (networkManager.LogLevel == LogLevel.Developer)
+            {
+                UnityEngine.Debug.Log($"Received {nameof(CreateObjectMessage)} for NetworkObjectId-{ObjectInfo.NetworkObjectId}.");
+            }
+            
             // For now, we will defer the create object message until the associated Ghost is spawned
             if (ObjectInfo.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(ObjectInfo.NetworkObjectId))
             {
-                UnityEngine.Debug.Log($"Deferring {nameof(CreateObjectMessage)} to wait for Ghost.");
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, (ulong)ObjectInfo.GhostId, reader, ref context, k_Name);
+                if (networkManager.LogLevel == LogLevel.Developer)
+                {
+                    UnityEngine.Debug.Log($"Deferring {nameof(CreateObjectMessage)} to wait for Ghost.");
+                }
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, ObjectInfo.NetworkObjectId, reader, ref context, k_Name);
                 return false;
             }
 #endif

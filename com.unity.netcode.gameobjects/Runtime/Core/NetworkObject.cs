@@ -2865,10 +2865,6 @@ namespace Unity.Netcode
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
 
-#if UNIFIED_NETCODE
-            public int GhostId;
-#endif
-
             public bool IsPlayerObject
             {
                 get => ByteUtility.GetBit(m_BitField, 0);
@@ -3041,13 +3037,6 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
-#if UNIFIED_NETCODE
-                if (HasGhost)
-                {
-                    writer.WriteValueSafe(GhostId);
-                }
-#endif
-
                 // write placeholder for serialized data size.
                 // Can't be bitpacked because we don't know the value until we calculate it later
                 var positionBeforeSynchronizing = writer.Position;
@@ -3126,13 +3115,6 @@ namespace Unity.Netcode
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
-
-#if UNIFIED_NETCODE
-                if (HasGhost)
-                {
-                    reader.ReadValueSafe(out GhostId);
-                }
-#endif
 
                 // Read the size of the remaining synchronization data
                 // This data will be read in AddSceneObject()
@@ -3233,7 +3215,6 @@ namespace Unity.Netcode
                 HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0,
 #if UNIFIED_NETCODE
                 HasGhost = HasGhost,
-                GhostId = HasGhost ? GhostInstance.ghostId : 0,
 #endif
             };
 
@@ -3553,15 +3534,15 @@ namespace Unity.Netcode
 
         }
 
-        private void OnEnable()
-        {
-            Debug.Log("Enabled!");
-        }
+        //private void OnEnable()
+        //{
+        //    Debug.Log("Enabled!");
+        //}
 
-        private void OnDisable()
-        {
-            Debug.Log("Disabled!");
-        }
+        //private void OnDisable()
+        //{
+        //    Debug.Log("Disabled!");
+        //}
 
 #if UNIFIED_NETCODE
 
@@ -3580,52 +3561,24 @@ namespace Unity.Netcode
             // All instances with Ghosts are automatically registered
             if (HasGhost && NetworkObjectBridge)
             {
-                Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
+                }
                 NetworkObjectBridge.NetworkObjectIdChanged += OnNetworkObjectIdChanged;
                 if (NetworkObjectBridge.NetworkObjectId.Value != 0)
                 {
                     RegisterGhostBridge();
                 }
-                //var networkObjectRegistration = (false, (ulong)0);
-                //NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId);
-                //try
-                //{
-                //    networkObjectRegistration = GhostAdapter.GetNetworkObjectId();
-                //}
-                //catch (Exception ex)
-                //{
-                //    Debug.LogException(ex);
-                //}
-
-                //if (networkObjectRegistration.Item1)
-                //{
-                //    // Authority and Non-Authority:
-                //    // Upon instantiation it will always register itself as a Ghost that is pending NGO spawn.
-
-                //    // Non-Authority:
-                //    // - If registered prior to the CreateObjectMessage, then upon receiving the CreateObjectMessag it will be processed immediately using this instance.
-                //    // - If registered after receiving the CreateObjectMessage, then upon registering it will also process any deferred CreateObjectMessages
-                //    // If this happens prior to receiving the  is received,
-                //    // Authority:
-                //    // Upon spawning locally, this entry is removed from the ghost pending spawn table.
-
-
-
-                //}
-                //else if (!NetworkManager.IsServer)
-                //{
-                //    StartCoroutine(WaitForGhostData());
-                //}
-                //else
-                //{
-                //    Debug.LogError($"[{name}] Failed to get ghost instance or GhostId is zero!");
-                //}
             }
         }
 
         private void RegisterGhostBridge()
         {
-            Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
+            }
             NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
         }
 
@@ -3633,34 +3586,6 @@ namespace Unity.Netcode
         {
             RegisterGhostBridge();
         }
-
-        //private System.Collections.IEnumerator WaitForGhostData()
-        //{
-        //    var waitPeriod = new WaitForSeconds(0.1f);
-        //    var timeout = Time.realtimeSinceStartup + 5.0f;
-        //    while (timeout > Time.realtimeSinceStartup)
-        //    {
-        //        enabled = true;
-        //        var networkObjectRegistration = (false, (ulong)0);
-        //        try
-        //        {
-        //            networkObjectRegistration = GhostAdapter.GetNetworkObjectId();
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Debug.LogException(ex);
-        //        }
-        //        if (networkObjectRegistration.Item1)
-        //        {
-        //            NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, networkObjectRegistration.Item2);
-        //            yield break;
-        //        }
-        //        yield return waitPeriod;
-        //    }
-
-        //    Debug.Log("Timed out waiting for Ghost to be registered!");
-
-        //}
 #endif
 
         /// <summary>

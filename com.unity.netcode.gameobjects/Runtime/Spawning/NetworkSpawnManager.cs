@@ -36,7 +36,10 @@ namespace Unity.Netcode
 
         public void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
         {
-            Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
+            }
             GhostsPendingSpawn.TryAdd(networkObjectId, networkObject);
             NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, (ulong)networkObject.GhostInstance.ghostId);
         }
@@ -1138,7 +1141,6 @@ namespace Unity.Netcode
             if (networkObject.HasGhost)
             {
                 networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
-                //networkObject.GhostAdapter.RegisterNetworkObjectId(networkObject.NetworkObjectId);
             }
 #endif
 
