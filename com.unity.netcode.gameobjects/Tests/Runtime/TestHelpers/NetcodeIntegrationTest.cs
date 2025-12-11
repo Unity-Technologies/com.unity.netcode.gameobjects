@@ -2002,6 +2002,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForDespawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectsDespawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (client.SpawnManager.SpawnedObjects.TryGetValue(networkObject.NetworkObjectId, out NetworkObject clientObj) && clientObj.IsSpawned)
+                        {
+                            errorLog.Append($"Object-{networkObject.NetworkObjectId} is still spawned on Client-{client.LocalClientId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectsDespawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
         /// have connected or it will time out.
