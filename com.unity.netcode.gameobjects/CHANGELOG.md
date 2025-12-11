@@ -40,6 +40,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- If m_DisconnectTimeoutMS is set to 0 in the Editor for Unity Transport, the timeout will be entirely disabeled. (#3810)
 - Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
 - First pass of CoreCLR engine API changes. (#3799)
