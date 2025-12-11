@@ -23,9 +23,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private Dictionary<NetworkManager, InvokePermissionBehaviour> m_InvokeInstances = new();
 
-        // TODO: [CmbServiceTests] Enable once the CMB service fixes the client spoofing issue.
-        protected override bool UseCMBService() => false;
-
         protected override void OnServerAndClientsCreated()
         {
             m_Prefab = CreateNetworkObjectPrefab("RpcInvokePermissionTest");
