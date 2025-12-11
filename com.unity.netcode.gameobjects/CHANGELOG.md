@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
 ## [2.8.0] - 2025-12-15
 
 ### Added
@@ -29,6 +51,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Ensure `NetworkBehaviour.IsSessionOwner` is correctly set when a new session owner is promoted. (#3817)
+- Fixed issue where spawning a player in distributed authority mode via a client, typically session owner, other than the newly connected client and scene management is disabled then the already spawned players will not properly get synchronized by each owning client due to the newly connected client's identifier already being added prior to synchronization. (#3816)
 - Reset extended ownership flags on `NetworkObject` despawn. (#3817)
 - Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
 - Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
