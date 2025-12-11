@@ -515,7 +515,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether the client is the distributed authority mode session owner.
         /// </summary>
-        public bool IsSessionOwner { get; private set; }
+        public bool IsSessionOwner { get; internal set; }
 
         /// <summary>
         /// Gets whether the server (local or remote) is a host.
@@ -1685,12 +1685,15 @@ namespace Unity.Netcode
                 Debug.LogException(ex);
             }
 
-            if (m_NetworkObject != null && m_NetworkObject.IsSpawned && IsSpawned)
+            if (IsSpawned)
             {
-                // If the associated NetworkObject is still spawned then this
-                // NetworkBehaviour will be removed from the NetworkObject's
-                // ChildNetworkBehaviours list.
-                m_NetworkObject.OnNetworkBehaviourDestroyed(this);
+                if (m_NetworkObject != null && m_NetworkObject.IsSpawned)
+                {
+                    // If the associated NetworkObject is still spawned then this
+                    // NetworkBehaviour will be removed from the NetworkObject's
+                    // ChildNetworkBehaviours list.
+                    m_NetworkObject.OnNetworkBehaviourDestroyed(this);
+                }
             }
 
             // this seems odd to do here, but in fact especially in tests we can find ourselves

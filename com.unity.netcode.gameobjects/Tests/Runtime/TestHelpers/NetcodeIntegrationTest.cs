@@ -255,13 +255,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The <see cref="NetworkManager"/> instance that is the current authority</returns>
         protected NetworkManager GetAuthorityNetworkManager()
         {
-            if (m_UseCmbService)
+            if (m_DistributedAuthority)
             {
                 // If we haven't even started any NetworkManager, then return the first instance
                 // since it will be the session owner.
                 if (!NetcodeIntegrationTestHelpers.IsStarted)
                 {
-                    return m_NetworkManagers[0];
+                    return m_UseCmbService ? m_NetworkManagers[0] : m_ServerNetworkManager;
+                }
+
+                if (!m_UseCmbService && m_ServerNetworkManager.LocalClient.IsSessionOwner)
+                {
+                    return m_ServerNetworkManager;
                 }
 
                 foreach (var client in m_NetworkManagers)
@@ -1967,6 +1972,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
             yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
+                        {
+                            errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObject.NetworkObjectId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectsSpawnedOnAllClients, timeOutHelper);
         }
 
         /// <summary>
