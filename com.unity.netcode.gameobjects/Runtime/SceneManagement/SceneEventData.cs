@@ -5,6 +5,7 @@ using System.Text;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
 
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -1132,12 +1133,39 @@ namespace Unity.Netcode
                 {
                     builder.AppendLine($"[Read][Synchronize Objects][WPos: {InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
                 }
+#if UNIFIED_NETCODE
+                // TODO-UNIFIED: This is a temporary POC fix to handle hybrid spawning where the Ghost instance might not yet exist.
+                var spawnManager = m_NetworkManager.SpawnManager;
+#endif
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
                     var noStart = InternalBuffer.Position;
                     var sceneObject = new NetworkObject.SceneObject();
                     sceneObject.Deserialize(InternalBuffer);
+
+#if UNIFIED_NETCODE
+                    // TODO-UNIFIED: This is a temporary POC fix to handle synchronizing hybrid spawned objects where the Ghost instance might not yet exist.
+                    if (sceneObject.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(sceneObject.NetworkObjectId))
+                    {
+                        if (networkManager.LogLevel == LogLevel.Developer)
+                        {
+                            UnityEngine.Debug.Log($"[{nameof(SceneEventData)}][{nameof(SynchronizeSceneNetworkObjects)}] Deferring creation of NetworkObjectId-{sceneObject.NetworkObjectId} to wait for Ghost.");
+                        }
+
+                        var newEntry = new PendingGhostSpawnEntry()
+                        {
+                            RegistrationTime = UnityEngine.Time.realtimeSinceStartup,
+                            SceneObject = sceneObject,
+                            Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, sceneObject.SynchronizationDataSize)
+                        };
+
+                        spawnManager.RegisterGhostPendingSynchronization(newEntry);
+
+                        InternalBuffer.Seek(InternalBuffer.Position + sceneObject.SynchronizationDataSize);
+                        continue;
+                    }
+#endif
 
                     // If the sceneObject is in-scene placed, then set the scene being synchronized
                     if (sceneObject.IsSceneObject)
@@ -1425,4 +1453,14 @@ namespace Unity.Netcode
             SceneEventId = XXHash.Hash32(Guid.NewGuid().ToString());
         }
     }
+
+#if UNIFIED_NETCODE
+    internal struct PendingGhostSpawnEntry
+    {
+        public float RegistrationTime;
+        public FastBufferReader Buffer;
+        public NetworkObject.SceneObject SceneObject;
+
+    }
+#endif
 }

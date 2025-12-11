@@ -41,7 +41,12 @@ namespace Unity.Netcode
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
             }
             GhostsPendingSpawn.TryAdd(networkObjectId, networkObject);
-            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, (ulong)networkObject.GhostInstance.ghostId);
+            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
+            if (GhostsArePendingSynchronization && GhostsPendingSynchronization.ContainsKey(networkObjectId))
+            {
+                // When the object is spawned, it will invoke GetGhostNetworkObjectForSpawn below which removes the entry from GhostsPendingSpawn
+                ProcessGhostPendingSynchronization(networkObjectId);
+            }
         }
 
         internal NetworkObject GetGhostNetworkObjectForSpawn(ulong networkObjectId)
@@ -55,6 +60,90 @@ namespace Unity.Netcode
             GhostsPendingSpawn.Remove(networkObjectId);
             return networkObject;
         }
+
+        internal bool GhostsArePendingSynchronization;
+        internal readonly Dictionary<ulong, PendingGhostSpawnEntry> GhostsPendingSynchronization = new Dictionary<ulong, PendingGhostSpawnEntry>();
+        internal void RegisterGhostPendingSynchronization(PendingGhostSpawnEntry pendingGhostSpawnEntry)
+        {
+            var networkObjectId = pendingGhostSpawnEntry.SceneObject.NetworkObjectId;
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {nameof(NetworkObject)}-{networkObjectId} for pending synchronization.");
+            }
+            GhostsPendingSynchronization.TryAdd(networkObjectId, pendingGhostSpawnEntry);
+            GhostsArePendingSynchronization = true;
+        }
+
+        internal void ProcessGhostPendingSynchronization(ulong networkObjectId, bool removeUponSpawn = true)
+        {
+            var ghostPendingSynch = GhostsPendingSynchronization[networkObjectId];
+            var sceneObject = ghostPendingSynch.SceneObject;
+            var reader = ghostPendingSynch.Buffer;
+            if (removeUponSpawn)
+            {
+                GhostsPendingSynchronization.Remove(networkObjectId);
+            }
+
+            if (sceneObject.IsSceneObject)
+            {
+                NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
+            }
+            var networkObject = NetworkObject.AddSceneObject(sceneObject, reader, NetworkManager);
+            // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
+            //if (sceneObject.IsSceneObject)
+            //{
+            //    networkObject.InternalInSceneNetworkObjectsSpawned();
+            //}
+
+            if (removeUponSpawn)
+            {
+                GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
+                ghostPendingSynch.Buffer.Dispose();
+            }
+        }
+
+
+        private HashSet<ulong> m_GhostSynchronizationPendingRemoval = new HashSet<ulong>();
+
+        internal void ProcessAllGhostsPendingSynchronization()
+        {
+            var spawnTimeout = NetworkManager.NetworkConfig.SpawnTimeout;
+            var logLevel = NetworkManager.LogLevel;
+            if (!GhostsArePendingSynchronization)
+            {
+                return;
+            }
+            foreach (var ghost in GhostsPendingSynchronization)
+            {
+                var networkObjectId = ghost.Value.SceneObject.NetworkObjectId;
+                if (GhostsPendingSpawn.ContainsKey(networkObjectId))
+                {
+                    // Process it, but don't remove it as we handle that a little later
+                    ProcessGhostPendingSynchronization(ghost.Value.SceneObject.NetworkObjectId, false);
+                    m_GhostSynchronizationPendingRemoval.Add(networkObjectId);
+                }
+                else
+                if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
+                {
+                    if (logLevel == LogLevel.Developer)
+                    {
+                        Debug.LogWarning($"[{nameof(NetworkSpawnManager)}][{nameof(ProcessAllGhostsPendingSynchronization)}] NetworkObject-{networkObjectId} pending Ghost spawn timed out wiating for the Ghost instance to spawn!");
+                    }
+                    // Timed out entries are removed too
+                    m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
+                }
+            }
+
+            foreach(var networkObjectId in m_GhostSynchronizationPendingRemoval)
+            {
+                var entry = GhostsPendingSynchronization[networkObjectId];
+                GhostsPendingSynchronization.Remove(networkObjectId);
+                entry.Buffer.Dispose();
+            }
+            m_GhostSynchronizationPendingRemoval.Clear();
+            GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
+        }
+
 #endif
 
         /// <summary>
@@ -1757,7 +1846,15 @@ namespace Unity.Netcode
             {
                 RemovePlayerObject(networkObject, destroyGameObject);
             }
-
+#if UNIFIED_NETCODE
+            // Let unified netcode handle destroying
+            if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
+            {
+                networkObject.NetworkObjectBridge.OnDespawn(destroyGameObject);
+                // exit early
+                return;
+            }
+#endif
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {

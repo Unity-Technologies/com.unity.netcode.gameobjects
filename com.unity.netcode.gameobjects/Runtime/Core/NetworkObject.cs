@@ -3549,8 +3549,7 @@ namespace Unity.Netcode
         private void Start()
         {
             enabled = true;
-        }
-        internal GhostInstance GhostInstance;
+        }       
         [SerializeField]
         [HideInInspector]
         internal NetworkObjectBridge NetworkObjectBridge;
