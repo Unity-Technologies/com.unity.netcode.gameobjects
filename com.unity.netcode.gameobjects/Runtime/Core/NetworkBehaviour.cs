@@ -1685,15 +1685,12 @@ namespace Unity.Netcode
                 Debug.LogException(ex);
             }
 
-            if (IsSpawned)
+            if (m_NetworkObject != null && m_NetworkObject.IsSpawned && IsSpawned)
             {
-                if (m_NetworkObject != null && m_NetworkObject.IsSpawned)
-                {
-                    // If the associated NetworkObject is still spawned then this
-                    // NetworkBehaviour will be removed from the NetworkObject's
-                    // ChildNetworkBehaviours list.
-                    m_NetworkObject.OnNetworkBehaviourDestroyed(this);
-                }
+                // If the associated NetworkObject is still spawned then this
+                // NetworkBehaviour will be removed from the NetworkObject's
+                // ChildNetworkBehaviours list.
+                m_NetworkObject.OnNetworkBehaviourDestroyed(this);
             }
 
             // this seems odd to do here, but in fact especially in tests we can find ourselves

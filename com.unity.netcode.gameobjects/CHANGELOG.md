@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Ensure `NetworkBehaviour.IsSessionOwner` is correctly set when a new session owner is promoted. (#3817)
 
 ### Security
 
