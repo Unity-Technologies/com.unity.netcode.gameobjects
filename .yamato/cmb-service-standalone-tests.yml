@@ -54,7 +54,7 @@ cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}
 
   commands:
     # run_cmb_service.sh builds and starts a release version of the full CMB service (along with the limited echo server)
-    - ./Tools/CI/service.cmb/run_cmb_service.sh -e $ECHO_SERVER_PORT -s $CMB_SERVICE_PORT
+    - ./Tools/CI/service.cmb/run_cmb_service.sh -e $ECHO_SERVER_PORT -s $CMB_SERVICE_PORT -l artifacts
 
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}

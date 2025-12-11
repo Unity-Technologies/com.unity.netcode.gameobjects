@@ -38,10 +38,11 @@ ERROR="Error: Expected ports to be defined! Example script usage:"
 EXAMPLE="run_cmb_service.sh -e <echo-server-port> -s <cmb-service-port>"
 
 # get arguments passed to the script
-while getopts 'e:s:' flag; do
+while getopts 'e:s:l:' flag; do
 case "${flag}" in
   e) echo_port="${OPTARG}" ;;
   s) service_port="${OPTARG}" ;;
+  l) build_logs="${OPTARG}" ;;
   *) printf "%s\n" "$ERROR" "$EXAMPLE"
       exit 1 ;;
   esac
@@ -88,6 +89,21 @@ logError(){
     printf "$@\n"
     printf "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 }
+
+# Unity Version -----------------------------------------------------------------
+
+# This is the path to the logs from the standalone build job
+FILE="$build_logs/TestResults.js"
+
+unity_version=$(sed -n 's/.*"editorVersion": *"\([^" (]*\).*/\1/p' $FILE)
+
+# ensure arguments were passed and the ports are defined
+if [ -z "$unity_version" ]; then
+  logMessage "Failed to find unity version! Exiting...";
+  exit 1;
+else
+  logMessage "Found Unity version: $unity_version";
+fi
 
 # Protocol Buffer Compiler ------------------------------------------------------
 
@@ -140,7 +156,7 @@ cargo build --example ngo_echo_server
 
 # Run the echo server in the background
 logMessage "Running echo server tests..."
-cargo run --example ngo_echo_server -- --port $echo_port &
+cargo run --example ngo_echo_server -- --port $echo_port --unity-version $unity_version &
 
 # CMB Service -------------------------------------------------------------------
 
@@ -152,6 +168,8 @@ cargo build --release --locked
 # The infinite loop is required as the service will exit each time all connected clients disconnect.
 # This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
 logMessage "Running service integration tests..."
+echo "comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version"
+
 while :; do
-  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m;
+  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m --unity-version $unity_version;
 done & # <- use & to run the entire loop in the background
