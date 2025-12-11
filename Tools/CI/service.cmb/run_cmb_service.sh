@@ -156,7 +156,7 @@ cargo build --example ngo_echo_server
 
 # Run the echo server in the background
 logMessage "Running echo server tests..."
-cargo run --example ngo_echo_server -- --port $echo_port &
+cargo run --example ngo_echo_server -- --port $echo_port --unity-version $unity_version &
 
 # CMB Service -------------------------------------------------------------------
 
