@@ -1518,13 +1518,16 @@ namespace Unity.Netcode.Transports.UTP
                 var maxCapacity = m_MaxSendQueueSize;
                 if (maxCapacity <= 0)
                 {
-                    var fullCalculation = Math.BigMul(m_DisconnectTimeoutMS, k_MaxReliableThroughput);
-                    if (fullCalculation == 0)
+                    // Setting m_DisconnectTimeoutMS to zero will disable the timeout entirely
+                    // by setting the maxCapacity to it's maximum capacity
+                    if (m_DisconnectTimeoutMS == 0)
                     {
                         maxCapacity = BatchedSendQueue.MaximumMaximumCapacity;
                     }
                     else
                     {
+                        // Avoids overflow when m_DisconnectTimeoutMS is set to a very high value
+                        var fullCalculation = Math.BigMul(m_DisconnectTimeoutMS, k_MaxReliableThroughput);
                         maxCapacity = (int)Math.Min(fullCalculation, BatchedSendQueue.MaximumMaximumCapacity);
                     }
                 }
