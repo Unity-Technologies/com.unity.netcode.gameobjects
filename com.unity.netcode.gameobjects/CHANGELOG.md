@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where spawning a player in distributed authority mode via a client, typically session owner, other than the newly connected client and scene management is disabled then the already spawned players will not properly get synchronized by each owning client due to the newly connected client's identifier already being added prior to synchronization. (#3816)
+
 
 ### Security
 
