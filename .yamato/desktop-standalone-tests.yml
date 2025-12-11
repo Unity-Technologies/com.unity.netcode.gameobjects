@@ -38,7 +38,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }} {% endif %}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.larger_flavor }}
 {% if platform.name == "mac" %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
