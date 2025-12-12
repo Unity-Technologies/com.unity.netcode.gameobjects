@@ -355,6 +355,8 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HasGhost;
 
+        internal bool HadBridge;
+
         private void UnifiedValidation()
         {
             NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
@@ -362,7 +364,11 @@ namespace Unity.Netcode
             HasGhost = GhostAdapter != null;
             if (HasGhost && NetworkObjectBridge == null)
             {
-                NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+                if (!HadBridge)
+                {
+                    NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+                    HadBridge = true;
+                }
             }
         }
 #endif
@@ -3549,7 +3555,7 @@ namespace Unity.Netcode
         private void Start()
         {
             enabled = true;
-        }       
+        }
         [SerializeField]
         [HideInInspector]
         internal NetworkObjectBridge NetworkObjectBridge;
