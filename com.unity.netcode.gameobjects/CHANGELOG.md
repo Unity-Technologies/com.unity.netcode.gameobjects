@@ -10,6 +10,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+## [2.8.0] - 2025-12-08
+
+### Added
+
 - It is now possible to control which port clients will bind to using the `UnityTransport.ConnectionData.ClientBindPort` field. If not set, clients will bind to an ephemeral port (same as before this change). (#3764)
 - Added a flag to override command-line arguments (port and ip) in `SetConnectionData`. (#3760)
 - Added a command-line singleton to parse environment command-line arguments. (#3760)
@@ -26,12 +48,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Improve performance of `NetworkTransformState`. (#3770)
 - Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 
-### Deprecated
-
-
-### Removed
-
-
 ### Fixed
 
 - Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
@@ -41,12 +57,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
 - Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
 - Fixed issue with authority animator instance sending itself RPCs. (#3586)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.7.0] - 2025-10-27
 
