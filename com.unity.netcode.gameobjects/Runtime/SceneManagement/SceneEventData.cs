@@ -625,7 +625,7 @@ namespace Unity.Netcode
                 var networkObject = m_NetworkObjectsSync[i];
                 var noStart = writer.Position;
                 // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                var sceneObject = m_NetworkObjectsSync[i].GetMessageSceneObject(TargetClientId, distributedAuthority);
+                var sceneObject = m_NetworkObjectsSync[i].GetMessageForSynchronization(TargetClientId, distributedAuthority);
 
                 sceneObject.Serialize(writer);
                 var noStop = writer.Position;
@@ -705,7 +705,7 @@ namespace Unity.Netcode
             foreach (var objectToSycn in m_NetworkObjectsSync)
             {
                 // Serialize the NetworkObject
-                var sceneObject = objectToSycn.GetMessageSceneObject(TargetClientId, distributedAuthority);
+                var sceneObject = objectToSycn.GetMessageForSynchronization(TargetClientId, distributedAuthority);
                 sceneObject.Serialize(writer);
                 numberOfObjects++;
             }
@@ -871,7 +871,7 @@ namespace Unity.Netcode
                 var sceneObjects = new List<NetworkObject>();
                 for (ushort i = 0; i < newObjectsCount; i++)
                 {
-                    var sceneObject = new NetworkObject.SceneObject();
+                    var sceneObject = new NetworkObject.NetworkObjectSynchronizer();
                     sceneObject.Deserialize(InternalBuffer);
 
                     if (sceneObject.IsSceneObject)
@@ -880,7 +880,7 @@ namespace Unity.Netcode
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
                     }
 
-                    var networkObject = NetworkObject.AddSceneObject(sceneObject, InternalBuffer, m_NetworkManager);
+                    var networkObject = NetworkObject.AddClientNetworkObject(sceneObject, InternalBuffer, m_NetworkManager);
 
                     if (sceneObject.IsSceneObject)
                     {
@@ -1136,7 +1136,7 @@ namespace Unity.Netcode
                 for (int i = 0; i < newObjectsCount; i++)
                 {
                     var noStart = InternalBuffer.Position;
-                    var sceneObject = new NetworkObject.SceneObject();
+                    var sceneObject = new NetworkObject.NetworkObjectSynchronizer();
                     sceneObject.Deserialize(InternalBuffer);
 
                     // If the sceneObject is in-scene placed, then set the scene being synchronized
@@ -1144,7 +1144,7 @@ namespace Unity.Netcode
                     {
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
                     }
-                    var spawnedNetworkObject = NetworkObject.AddSceneObject(sceneObject, InternalBuffer, networkManager);
+                    var spawnedNetworkObject = NetworkObject.AddClientNetworkObject(sceneObject, InternalBuffer, networkManager);
 
                     var noStop = InternalBuffer.Position;
                     if (EnableSerializationLogs)

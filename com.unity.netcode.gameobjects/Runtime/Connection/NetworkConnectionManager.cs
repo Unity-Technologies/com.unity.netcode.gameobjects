@@ -1119,15 +1119,15 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key),
+                    ObjectSynchronizerInfo = ConnectedClients[clientId].PlayerObject.GetMessageForSynchronization(clientPair.Key),
                     IncludesSerializedObject = true,
                 };
 
-                message.ObjectInfo.Hash = playerPrefabHash;
-                message.ObjectInfo.IsSceneObject = false;
-                message.ObjectInfo.HasParent = false;
-                message.ObjectInfo.IsPlayerObject = true;
-                message.ObjectInfo.OwnerClientId = clientId;
+                message.ObjectSynchronizerInfo.Hash = playerPrefabHash;
+                message.ObjectSynchronizerInfo.IsSceneObject = false;
+                message.ObjectSynchronizerInfo.HasParent = false;
+                message.ObjectSynchronizerInfo.IsPlayerObject = true;
+                message.ObjectSynchronizerInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, MessageDeliveryType<CreateObjectMessage>.DefaultDelivery, clientPair.Key);
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }

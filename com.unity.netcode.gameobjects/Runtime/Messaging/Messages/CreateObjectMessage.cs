@@ -9,7 +9,7 @@ namespace Unity.Netcode
 
         private const string k_Name = "CreateObjectMessage";
 
-        public NetworkObject.SceneObject ObjectInfo;
+        public NetworkObject.NetworkObjectSynchronizer ObjectSynchronizerInfo;
         private FastBufferReader m_ReceivedNetworkVariableData;
 
         // DA - NGO CMB SERVICE NOTES:
@@ -64,7 +64,7 @@ namespace Unity.Netcode
 
             if (IncludesSerializedObject)
             {
-                ObjectInfo.Serialize(writer);
+                ObjectSynchronizerInfo.Serialize(writer);
             }
             else
             {
@@ -113,16 +113,16 @@ namespace Unity.Netcode
 
             if (IncludesSerializedObject)
             {
-                ObjectInfo.Deserialize(reader);
+                ObjectSynchronizerInfo.Deserialize(reader);
             }
             else
             {
                 ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
             }
 
-            if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectInfo))
+            if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectSynchronizerInfo))
             {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Hash, reader, ref context, k_Name);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectSynchronizerInfo.Hash, reader, ref context, k_Name);
                 return false;
             }
             m_ReceivedNetworkVariableData = reader;
@@ -136,18 +136,18 @@ namespace Unity.Netcode
             // If a client receives a create object message and it is still synchronizing, then defer the object creation until it has finished synchronizing
             if (networkManager.SceneManager.ShouldDeferCreateObject())
             {
-                networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
+                networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectSynchronizerInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
             }
             else
             {
                 if (networkManager.DistributedAuthorityMode && !IncludesSerializedObject && UpdateObservers)
                 {
-                    ObjectInfo = new NetworkObject.SceneObject()
+                    ObjectSynchronizerInfo = new NetworkObject.NetworkObjectSynchronizer()
                     {
                         NetworkObjectId = NetworkObjectId,
                     };
                 }
-                CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
+                CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectSynchronizerInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
             }
         }
 
@@ -158,20 +158,20 @@ namespace Unity.Netcode
             var observerIds = deferredObjectCreation.ObserverIds;
             var newObserverIds = deferredObjectCreation.NewObserverIds;
             var messageSize = deferredObjectCreation.MessageSize;
-            var sceneObject = deferredObjectCreation.SceneObject;
+            var sceneObject = deferredObjectCreation.NetworkObjectSynchronizer;
             var networkVariableData = deferredObjectCreation.FastBufferReader;
             CreateObject(ref networkManager, senderId, messageSize, sceneObject, networkVariableData, observerIds, newObserverIds);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData, ulong[] observerIds, ulong[] newObserverIds)
+        internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.NetworkObjectSynchronizer networkObjectSynchronizer, FastBufferReader networkVariableData, ulong[] observerIds, ulong[] newObserverIds)
         {
             var networkObject = (NetworkObject)null;
             try
             {
                 if (!networkManager.DistributedAuthorityMode)
                 {
-                    networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager);
+                    networkObject = NetworkObject.AddClientNetworkObject(networkObjectSynchronizer, networkVariableData, networkManager);
                 }
                 else
                 {
@@ -179,25 +179,25 @@ namespace Unity.Netcode
                     var hasNewObserverIdList = newObserverIds != null && newObserverIds.Length > 0;
                     // Depending upon visibility of the NetworkObject and the client in question, it could be that
                     // this client already has visibility of this NetworkObject
-                    if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(sceneObject.NetworkObjectId))
+                    if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectSynchronizer.NetworkObjectId))
                     {
                         // If so, then just get the local instance
-                        networkObject = networkManager.SpawnManager.SpawnedObjects[sceneObject.NetworkObjectId];
+                        networkObject = networkManager.SpawnManager.SpawnedObjects[networkObjectSynchronizer.NetworkObjectId];
 
                         // This should not happen, logging error just in case
                         if (hasNewObserverIdList && newObserverIds.Contains(networkManager.LocalClientId))
                         {
-                            NetworkLog.LogErrorServer($"[{nameof(CreateObjectMessage)}][Duplicate-Broadcast] Detected duplicated object creation for {sceneObject.NetworkObjectId}!");
+                            NetworkLog.LogErrorServer($"[{nameof(CreateObjectMessage)}][Duplicate-Broadcast] Detected duplicated object creation for {networkObjectSynchronizer.NetworkObjectId}!");
                         }
                         else // Trap to make sure the owner is not receiving any messages it sent
                         if (networkManager.CMBServiceConnection && networkManager.LocalClientId == networkObject.OwnerClientId)
                         {
-                            NetworkLog.LogWarning($"[{nameof(CreateObjectMessage)}][Client-{networkManager.LocalClientId}][Duplicate-CreateObjectMessage][Client Is Owner] Detected duplicated object creation for {networkObject.name}-{sceneObject.NetworkObjectId}!");
+                            NetworkLog.LogWarning($"[{nameof(CreateObjectMessage)}][Client-{networkManager.LocalClientId}][Duplicate-CreateObjectMessage][Client Is Owner] Detected duplicated object creation for {networkObject.name}-{networkObjectSynchronizer.NetworkObjectId}!");
                         }
                     }
                     else
                     {
-                        networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager, true);
+                        networkObject = NetworkObject.AddClientNetworkObject(networkObjectSynchronizer, networkVariableData, networkManager, true);
                     }
 
                     // DA - NGO CMB SERVICE NOTES:
@@ -229,7 +229,7 @@ namespace Unity.Netcode
 
                         var createObjectMessage = new CreateObjectMessage()
                         {
-                            ObjectInfo = sceneObject,
+                            ObjectSynchronizerInfo = networkObjectSynchronizer,
                             m_ReceivedNetworkVariableData = networkVariableData,
                             ObserverIds = hasObserverIdList ? observerIds : null,
                             NetworkObjectId = networkObject.NetworkObjectId,
