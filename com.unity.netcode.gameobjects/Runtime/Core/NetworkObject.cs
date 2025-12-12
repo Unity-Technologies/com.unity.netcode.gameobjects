@@ -2011,6 +2011,7 @@ namespace Unity.Netcode
             IsSpawned = false;
             DeferredDespawnTick = 0;
             m_LatestParent = null;
+            RemoveOwnershipExtended(OwnershipStatusExtended.Locked | OwnershipStatusExtended.Requested);
         }
 
         /// <summary>
@@ -2084,6 +2085,19 @@ namespace Unity.Netcode
                 {
                     Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
                 }
+            }
+        }
+
+        internal void InvokeSessionOwnerPromoted(bool isSessionOwner)
+        {
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+            foreach (var childBehaviour in ChildNetworkBehaviours)
+            {
+                childBehaviour.IsSessionOwner = isSessionOwner;
             }
         }
 
