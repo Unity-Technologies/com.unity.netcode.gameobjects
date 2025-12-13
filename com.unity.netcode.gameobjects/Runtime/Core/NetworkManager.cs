@@ -333,6 +333,15 @@ namespace Unity.Netcode
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
+#if UNIFIED_NETCODE
+                        // Temporary work around for handling the registration
+                        // of hybrid spawned objects.
+                        if (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
+                        {
+                            NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
+                        }
+#endif
+
                         UpdateTopology();
 
                         // Handle processing any new connections or transport events

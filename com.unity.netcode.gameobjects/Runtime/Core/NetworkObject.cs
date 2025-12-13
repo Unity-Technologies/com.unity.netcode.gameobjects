@@ -3534,27 +3534,46 @@ namespace Unity.Netcode
 #endif
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
-#if UNIFIED_NETCODE
-            InitGhost();
-#endif
 
         }
 
-        //private void OnEnable()
-        //{
-        //    Debug.Log("Enabled!");
-        //}
-
-        //private void OnDisable()
-        //{
-        //    Debug.Log("Disabled!");
-        //}
-
 #if UNIFIED_NETCODE
+
+#if DEBUG_ENABLE_DISABLE
+        private void OnEnable()
+        {
+            Debug.Log("Enabled!");
+        }
+
+        private void OnDisable()
+        {
+            Debug.Log("Disabled!");
+            if (IsSpawned)
+            {
+                enabled = true;
+            }
+
+            try
+            {
+                throw new Exception("Disabled trap!");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[{name}][{ex.Message}] Callstack:\n{ex.StackTrace}");
+            }
+        }
+#endif
 
         private void Start()
         {
-            enabled = true;
+            // TODO-UNIFIED: Remove once the prefab registration is in place.
+            if (!enabled)
+            {
+                Debug.LogWarning($"[{nameof(NetworkObject)}][{name}] Was not enabled on start! Enabling.");
+                enabled = true;
+            }
+            
+            InitGhost();
         }
         [SerializeField]
         [HideInInspector]
@@ -3562,7 +3581,6 @@ namespace Unity.Netcode
 
         private void InitGhost()
         {
-            enabled = true;
             // All instances with Ghosts are automatically registered
             if (HasGhost && NetworkObjectBridge)
             {

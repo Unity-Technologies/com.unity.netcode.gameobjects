@@ -277,6 +277,48 @@ namespace Unity.Netcode
             return false;
         }
 
+#if UNIFIED_NETCODE
+        internal bool HasPendingGhostPrefabs { get; private set; }
+        private List<NetworkPrefab> m_PendingGhostRegistration = new List<NetworkPrefab>();
+
+        /// <summary>
+        /// UNIFIED-POC<br />
+        /// Hybrid NetworkObject-Ghost Prefab Registration<br />
+        /// </summary>
+        /// <remarks>
+        /// When <see cref="NetworkObject.HasGhost"/> is true, <see cref="NetworkPrefab"/>s
+        /// will mark themselves as having a ghost during <see cref="NetworkPrefab.Validate(int)"/>.
+        /// After validation, if a network prefab's <see cref="NetworkPrefab.HasGhost"/> value is
+        /// set, then it is added to <see cref="m_PendingGhostRegistration"/>.
+        /// Within <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/> during the <see cref="NetworkUpdateStage.EarlyUpdate"/>,
+        /// if <see cref="HasPendingGhostPrefabs"/> is true then <see cref="RegisterGhostPrefabs(NetworkManager)"/> will be invoked.
+        /// This will repeat until the hosted single world instance is created.
+        /// </remarks>
+        /// <param name="networkManager"></param>
+        internal void RegisterGhostPrefabs(NetworkManager networkManager)
+        {
+            if (!HasPendingGhostPrefabs)
+            {
+                Debug.LogWarning($"Should not be invoking!");
+                return;
+            }
+            var isHost = networkManager.IsHost;
+            for (int i = m_PendingGhostRegistration.Count - 1; i >= 0; i--)
+            {
+                var networkPrefab = m_PendingGhostRegistration[i];
+
+                // Returns false if the single world is not available yet
+                if (NetCode.Netcode.RegisterPrefabSingleWorld(networkPrefab.Prefab, isHost))
+                {
+                    Debug.Log($"[{nameof(NetworkPrefabs)}][{nameof(RegisterGhostPrefabs)}] Registered hybrid spawned object: {networkPrefab.Prefab.name}");
+                    m_PendingGhostRegistration.RemoveAt(i);
+                }
+            }
+            HasPendingGhostPrefabs = m_PendingGhostRegistration.Count > 0;
+        }
+#endif
+
+
         /// <summary>
         /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
         /// </summary>
@@ -294,6 +336,14 @@ namespace Unity.Netcode
 
             uint source = networkPrefab.SourcePrefabGlobalObjectIdHash;
             uint target = networkPrefab.TargetPrefabGlobalObjectIdHash;
+
+#if UNIFIED_NETCODE
+            if (networkPrefab.HasGhost)
+            {
+                HasPendingGhostPrefabs = true;
+                m_PendingGhostRegistration.Add(networkPrefab);
+            }
+#endif
 
             // Make sure the prefab isn't already registered.
             if (NetworkPrefabOverrideLinks.ContainsKey(source))

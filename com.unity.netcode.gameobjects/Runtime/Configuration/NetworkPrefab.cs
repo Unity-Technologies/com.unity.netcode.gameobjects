@@ -57,6 +57,14 @@ namespace Unity.Netcode
         /// </summary>
         public GameObject OverridingTargetPrefab;
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Used to determine if this prefab needs to be registered
+        /// via the unified API.
+        /// </summary>
+        internal bool HasGhost { get; private set; }
+#endif
+
         /// <summary>
         /// Compares this NetworkPrefab with another to determine equality
         /// </summary>
@@ -166,6 +174,11 @@ namespace Unity.Netcode
                     return false;
                 }
 
+#if UNIFIED_NETCODE
+                // Mark this network prefab as having to be registered via the unified API
+                HasGhost = networkObject.HasGhost;
+#endif
+
                 return true;
             }
 
@@ -183,7 +196,6 @@ namespace Unity.Netcode
 
                             return false;
                         }
-
                         break;
                     }
                 case NetworkPrefabOverride.Prefab:
