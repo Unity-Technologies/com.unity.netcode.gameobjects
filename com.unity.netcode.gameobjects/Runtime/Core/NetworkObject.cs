@@ -368,6 +368,8 @@ namespace Unity.Netcode
                 {
                     NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
                     HadBridge = true;
+                    // Transform synchronization is handled by unified netcode
+                    SynchronizeTransform = false;
                 }
             }
         }
@@ -2696,34 +2698,77 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-
-                    // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
-                    var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
-                    networkBehaviours[i].SetNetworkObject(this, nextIndex);
-                    m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
-
                     var type = networkBehaviours[i].GetType();
-                    if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
-                    {
-                        if (NetworkTransforms == null)
-                        {
-                            NetworkTransforms = new List<NetworkTransform>();
-                        }
-                        var networkTransform = networkBehaviours[i] as NetworkTransform;
-                        networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
-                        NetworkTransforms.Add(networkTransform);
-                    }
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                    else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
+                    if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
                     {
+                        var networkRigidbody = networkBehaviours[i] as NetworkRigidbodyBase;
+
                         if (NetworkRigidbodies == null)
                         {
                             NetworkRigidbodies = new List<NetworkRigidbodyBase>();
                         }
-                        NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
-                    }
+                        NetworkRigidbodies.Add(networkRigidbody);
+#if UNIFIED_NETCODE
+                        // For now, we will just destroy these components during runtime since they will not
+                        // be supported in hybrid mode (don't add to the children).
+                        if (HasGhost)
+                        {
+                            continue;
+                        }
 #endif
+                    }
+                    else
+#endif
+                    if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                    {
+                        var networkTransform = networkBehaviours[i] as NetworkTransform;
+
+                        if (NetworkTransforms == null)
+                        {
+                            NetworkTransforms = new List<NetworkTransform>();
+                        }
+
+                        networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
+                        NetworkTransforms.Add(networkTransform);
+#if UNIFIED_NETCODE
+                        // For now, we will just destroy these components during runtime since they will not
+                        // be supported in hybrid mode (don't add to the children).
+                        if (HasGhost)
+                        {
+                            continue;
+                        }
+#endif
+                    }
+
+                    // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
+                    var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
+                    networkBehaviours[i].SetNetworkObject(this, nextIndex);
+
+                    // Finally, add the NetworkBehaviour to the list of child NetworkBehaviours
+                    m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
                 }
+
+#if UNIFIED_NETCODE
+                // For now, cycle through all known NetworkTransform and NetworkRigidbodyBase derived components
+                // and destroy them all if this is a hybrid prefab instance.
+                // This allows a user to not have to make direct adjustments until trying out their NGO prefab
+                // as a hybrid spawned prefab (optional to completely remove, will eventually become obsolete and
+                // automatically removed later).
+                if (HasGhost)
+                {
+                    for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
+                    {
+                        Destroy(NetworkRigidbodies[i]);
+                    }
+                    for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
+                    {
+                        Destroy(NetworkTransforms[i]);
+                    }
+                    NetworkRigidbodies.Clear();
+                    NetworkTransforms.Clear();
+                }
+#endif
 
                 return m_ChildNetworkBehaviours;
             }
@@ -3572,7 +3617,7 @@ namespace Unity.Netcode
                 Debug.LogWarning($"[{nameof(NetworkObject)}][{name}] Was not enabled on start! Enabling.");
                 enabled = true;
             }
-            
+
             InitGhost();
         }
         [SerializeField]
