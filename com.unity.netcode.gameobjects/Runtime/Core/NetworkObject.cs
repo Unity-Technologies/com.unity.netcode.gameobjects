@@ -2842,7 +2842,7 @@ namespace Unity.Netcode
             return ChildNetworkBehaviours[index];
         }
 
-        internal struct NetworkObjectSynchronizer
+        internal struct SerializedObject
         {
             public uint Hash;
             public ulong NetworkObjectId;
@@ -3171,9 +3171,9 @@ namespace Unity.Netcode
             }
         }
 
-        internal NetworkObjectSynchronizer GetMessageForSynchronization(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
+        internal SerializedObject Serialize(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
         {
-            var obj = new NetworkObjectSynchronizer
+            var obj = new SerializedObject
             {
                 HasParent = transform.parent != null,
                 WorldPositionStays = m_CachedWorldPositionStays,
@@ -3227,7 +3227,7 @@ namespace Unity.Netcode
                     syncScaleLocalSpaceRelative = obj.HasParent;
                 }
 
-                obj.Transform = new NetworkObjectSynchronizer.TransformData
+                obj.Transform = new SerializedObject.TransformData
                 {
                     // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
@@ -3246,27 +3246,27 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to deserialize a serialized <see cref="NetworkObjectSynchronizer"/> which occurs
+        /// Used to deserialize a serialized <see cref="SerializedObject"/> which occurs
         /// when the client is approved or during a scene transition
         /// </summary>
-        /// <param name="networkObjectSynchronizer">Deserialized scene object data</param>
+        /// <param name="serializedObject">Deserialized scene object data</param>
         /// <param name="reader">FastBufferReader for the NetworkVariable data</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <param name="invokedByMessage">will be true if invoked by CreateObjectMessage</param>
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
-        internal static NetworkObject AddClientNetworkObject(in NetworkObjectSynchronizer networkObjectSynchronizer, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
+        internal static NetworkObject Deserialize(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
-            var endOfSynchronizationData = reader.Position + networkObjectSynchronizer.SynchronizationDataSize;
+            var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 
             byte[] instantiationData = null;
-            if (networkObjectSynchronizer.HasInstantiationData)
+            if (serializedObject.HasInstantiationData)
             {
                 reader.ReadValueSafe(out instantiationData);
             }
 
 
             // Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(networkObjectSynchronizer, instantiationData);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(serializedObject, instantiationData);
 
 
             if (networkObject == null)
@@ -3274,7 +3274,7 @@ namespace Unity.Netcode
                 // Log the error that the NetworkObject failed to construct
                 if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {networkObjectSynchronizer.Hash}.");
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
                 }
 
                 try
@@ -3295,7 +3295,7 @@ namespace Unity.Netcode
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
-            networkObject.OwnerClientId = networkObjectSynchronizer.OwnerClientId;
+            networkObject.OwnerClientId = serializedObject.OwnerClientId;
 
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
             networkObject.InvokeBehaviourNetworkPreSpawn();
@@ -3323,7 +3323,7 @@ namespace Unity.Netcode
             // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
             // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
             // the in-scene placed Networkobject changes several times over different sessions.
-            if (networkObjectSynchronizer.IsSceneObject && !networkObjectSynchronizer.HasParent && networkObject.m_LatestParent.HasValue)
+            if (serializedObject.IsSceneObject && !serializedObject.HasParent && networkObject.m_LatestParent.HasValue)
             {
                 networkObject.m_LatestParent = null;
             }
@@ -3336,11 +3336,11 @@ namespace Unity.Netcode
 
             // Invoke the non-authority local spawn method
             // (It also invokes post spawn and handles processing derferred messages)
-            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, networkObjectSynchronizer, networkObjectSynchronizer.DestroyWithScene);
+            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, serializedObject, serializedObject.DestroyWithScene);
 
-            if (networkObjectSynchronizer.SyncObservers)
+            if (serializedObject.SyncObservers)
             {
-                foreach (var observer in networkObjectSynchronizer.Observers)
+                foreach (var observer in serializedObject.Observers)
                 {
                     networkObject.Observers.Add(observer);
                 }
@@ -3348,7 +3348,7 @@ namespace Unity.Netcode
 
             if (networkManager.DistributedAuthorityMode)
             {
-                networkObject.SpawnWithObservers = networkObjectSynchronizer.SpawnWithObservers;
+                networkObject.SpawnWithObservers = serializedObject.SpawnWithObservers;
             }
 
             // If this was not invoked by a message handler, we are in distributed authority mode, and we are spawning with observers or
