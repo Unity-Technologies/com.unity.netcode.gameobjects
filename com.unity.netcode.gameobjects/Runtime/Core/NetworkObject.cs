@@ -2700,14 +2700,13 @@ namespace Unity.Netcode
                     }
                     var type = networkBehaviours[i].GetType();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                    if (NetworkRigidbodies == null)
+                    {
+                        NetworkRigidbodies = new List<NetworkRigidbodyBase>();
+                    }
                     if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
                     {
                         var networkRigidbody = networkBehaviours[i] as NetworkRigidbodyBase;
-
-                        if (NetworkRigidbodies == null)
-                        {
-                            NetworkRigidbodies = new List<NetworkRigidbodyBase>();
-                        }
                         NetworkRigidbodies.Add(networkRigidbody);
 #if UNIFIED_NETCODE
                         // For now, we will just destroy these components during runtime since they will not
@@ -2757,16 +2756,22 @@ namespace Unity.Netcode
                 // automatically removed later).
                 if (HasGhost)
                 {
-                    for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
+                    if (NetworkRigidbodies != null)
                     {
-                        Destroy(NetworkRigidbodies[i]);
+                        for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
+                        {
+                            Destroy(NetworkRigidbodies[i]);
+                        }
+                        NetworkRigidbodies.Clear();
                     }
-                    for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
+                    if (NetworkTransforms != null)
                     {
-                        Destroy(NetworkTransforms[i]);
+                        for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
+                        {
+                            Destroy(NetworkTransforms[i]);
+                        }
+                        NetworkTransforms.Clear();
                     }
-                    NetworkRigidbodies.Clear();
-                    NetworkTransforms.Clear();
                 }
 #endif
 
