@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.8.0] - 2025-12-15
 
 ### Added
 
@@ -26,12 +26,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Improve performance of `NetworkTransformState`. (#3770)
 - Changed NetworkAnimator to use the `RpcAttribute` along with the appropriate `SendTo` parameter. (#3586)
 
-### Deprecated
-
-
-### Removed
-
-
 ### Fixed
 
 - Ensure `NetworkBehaviour.IsSessionOwner` is correctly set when a new session owner is promoted. (#3817)
@@ -43,12 +37,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where the `Axis to Synchronize` toggles didn't work with multi object editing in `NetworkTransform`. (#3781)
 - Fixed issue where using the dedicated server package would override all attempts to change the port by code. (#3760)
 - Fixed issue with authority animator instance sending itself RPCs. (#3586)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.7.0] - 2025-10-27
 
