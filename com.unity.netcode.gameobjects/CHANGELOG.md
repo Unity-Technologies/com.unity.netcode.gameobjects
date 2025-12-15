@@ -42,6 +42,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `ParentSyncMessage`. (#3814)
 - Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
 - First pass of CoreCLR engine API changes. (#3799)
