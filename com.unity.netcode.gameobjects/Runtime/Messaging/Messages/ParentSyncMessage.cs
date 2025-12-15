@@ -10,36 +10,23 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
 
-        private byte m_BitField;
+        private const byte k_WorldPositionStays = 0x01;
+        private const byte k_IsLatestParentSet = 0x02;
+        private const byte k_RemoveParent = 0x04;
+        private const byte k_AuthorityApplied = 0x08;
 
-        public bool WorldPositionStays
-        {
-            get => ByteUtility.GetBit(m_BitField, 0);
-            set => ByteUtility.SetBit(ref m_BitField, 0, value);
-        }
+        public bool WorldPositionStays;
 
         //If(Metadata.IsReparented)
-        public bool IsLatestParentSet
-        {
-            get => ByteUtility.GetBit(m_BitField, 1);
-            set => ByteUtility.SetBit(ref m_BitField, 1, value);
-        }
+        public bool IsLatestParentSet;
 
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
         // Is set when the parent should be removed (similar to IsReparented functionality but only for removing the parent)
-        public bool RemoveParent
-        {
-            get => ByteUtility.GetBit(m_BitField, 2);
-            set => ByteUtility.SetBit(ref m_BitField, 2, value);
-        }
+        public bool RemoveParent;
 
-        public bool AuthorityApplied
-        {
-            get => ByteUtility.GetBit(m_BitField, 3);
-            set => ByteUtility.SetBit(ref m_BitField, 3, value);
-        }
+        public bool AuthorityApplied;
 
         // These additional properties are used to synchronize clients with the current position,
         // rotation, and scale after parenting/de-parenting (world/local space relative). This
@@ -51,8 +38,16 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
+
+            byte bitset = 0x00;
+            if (WorldPositionStays) { bitset |= k_WorldPositionStays; }
+            if (IsLatestParentSet) { bitset |= k_IsLatestParentSet; }
+            if (RemoveParent) { bitset |= k_RemoveParent; }
+            if (AuthorityApplied) { bitset |= k_AuthorityApplied; }
+
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
-            writer.WriteValueSafe(m_BitField);
+            writer.WriteByteSafe(bitset);
+
             if (!RemoveParent)
             {
                 if (IsLatestParentSet)
@@ -72,7 +67,12 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
 
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
-            reader.ReadValueSafe(out m_BitField);
+            reader.ReadByteSafe(out byte bitset);
+            WorldPositionStays = (bitset & k_WorldPositionStays) != 0;
+            IsLatestParentSet = (bitset & k_IsLatestParentSet) != 0;
+            RemoveParent = (bitset & k_RemoveParent) != 0;
+            AuthorityApplied = (bitset & k_AuthorityApplied) != 0;
+
             if (!RemoveParent)
             {
                 if (IsLatestParentSet)
