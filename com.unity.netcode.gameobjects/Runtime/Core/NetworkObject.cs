@@ -2844,7 +2844,6 @@ namespace Unity.Netcode
 
         internal struct NetworkObjectSynchronizer
         {
-            private ushort m_BitField;
             public uint Hash;
             public ulong NetworkObjectId;
             public ulong OwnerClientId;
@@ -2962,7 +2961,8 @@ namespace Unity.Netcode
                     HasOwnershipFlags = true;
                     SpawnWithObservers = OwnerObject.SpawnWithObservers;
                 }
-                writer.WriteValueSafe(m_BitField);
+
+                writer.WriteValueSafe(GetBitsetRepresentation());
                 writer.WriteValueSafe(Hash);
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
                 BytePacker.WriteValueBitPacked(writer, OwnerClientId);
@@ -3042,7 +3042,8 @@ namespace Unity.Netcode
 
             public void Deserialize(FastBufferReader reader)
             {
-                reader.ReadValueSafe(out m_BitField);
+                reader.ReadValueSafe(out ushort bitset);
+                SetStateFromBitset(bitset);
                 reader.ReadValueSafe(out Hash);
                 ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
                 ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
