@@ -515,7 +515,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether the client is the distributed authority mode session owner.
         /// </summary>
-        public bool IsSessionOwner { get; private set; }
+        public bool IsSessionOwner { get; internal set; }
 
         /// <summary>
         /// Gets whether the server (local or remote) is a host.

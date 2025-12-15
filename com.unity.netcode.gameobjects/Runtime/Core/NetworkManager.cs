@@ -216,19 +216,21 @@ namespace Unity.Netcode
 
         internal void SetSessionOwner(ulong sessionOwner)
         {
-            var previousSessionOwner = CurrentSessionOwner;
             CurrentSessionOwner = sessionOwner;
-            LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
-            if (LocalClient.IsSessionOwner)
+            var isSessionOwner = LocalClientId == sessionOwner;
+            LocalClient.IsSessionOwner = isSessionOwner;
+
+            foreach (var networkObject in SpawnManager.SpawnedObjects.Values)
             {
-                foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
+                if (isSessionOwner)
                 {
-                    var networkObject = networkObjectEntry.Value;
                     if (networkObject.IsOwnershipSessionOwner && networkObject.OwnerClientId != LocalClientId)
                     {
                         SpawnManager.ChangeOwnership(networkObject, LocalClientId, true);
                     }
                 }
+
+                networkObject.InvokeSessionOwnerPromoted(isSessionOwner);
             }
 
             OnSessionOwnerPromoted?.Invoke(sessionOwner);
