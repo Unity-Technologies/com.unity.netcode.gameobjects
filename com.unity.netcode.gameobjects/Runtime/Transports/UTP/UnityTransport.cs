@@ -1519,7 +1519,7 @@ namespace Unity.Netcode.Transports.UTP
                 if (maxCapacity <= 0)
                 {
                     // Setting m_DisconnectTimeoutMS to zero will disable the timeout entirely
-                    // by setting the maxCapacity to it's maximum capacity
+                    // Set the capacity as if the disconnect timeout is the largest possible value
                     if (m_DisconnectTimeoutMS == 0)
                     {
                         maxCapacity = BatchedSendQueue.MaximumMaximumCapacity;

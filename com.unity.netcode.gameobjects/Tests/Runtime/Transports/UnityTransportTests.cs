@@ -192,8 +192,9 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator VeryLargeDisconnectTimeout()
         {
-            // We want something that's over the old limit of ~44KB for reliable payloads.
-            var payloadSize = 64 * 1024;
+            // The calculation will never be lower than the UnityTransport.InitialMaxPayloadSize
+            // We want to send a message larger than that size to ensure the maximum is high enough
+            var payloadSize = UnityTransport.InitialMaxPayloadSize * 2;
 
             var disconnectTimeout = int.MaxValue;
 
@@ -207,21 +208,33 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(Encoding.ASCII.GetBytes("Some message"));
+            var payloadData = new byte[payloadSize];
+            for (int i = 0; i < payloadData.Length; i++)
+            {
+                payloadData[i] = (byte)i;
+            }
+
+            var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.Reliable);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 4);
 
-            Assert.That(m_ServerEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("Some message")));
+            Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
 
-            yield return null;
+            var receivedArray = m_ServerEvents[1].Data.Array;
+            var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
+            for (int i = 0; i < payloadSize; i++)
+            {
+                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i]);
+            }
         }
 
         [UnityTest]
         public IEnumerator ZeroDisconnectTimeoutSetToZero()
         {
-            // We want something that's over the old limit of ~44KB for reliable payloads.
-            var payloadSize = 64 * 1024;
+            // The calculation will never be lower than the UnityTransport.InitialMaxPayloadSize
+            // We want to send a message larger than that size to ensure the maximum is high enough
+            var payloadSize = UnityTransport.InitialMaxPayloadSize * 2;
 
             var disconnectTimeout = 0;
 
@@ -235,14 +248,25 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(Encoding.ASCII.GetBytes("Some message"));
+            var payloadData = new byte[payloadSize];
+            for (int i = 0; i < payloadData.Length; i++)
+            {
+                payloadData[i] = (byte)i;
+            }
+
+            var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.Reliable);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 4);
 
-            Assert.That(m_ServerEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("Some message")));
+            Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
 
-            yield return null;
+            var receivedArray = m_ServerEvents[1].Data.Array;
+            var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
+            for (int i = 0; i < payloadSize; i++)
+            {
+                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i]);
+            }
         }
 
         // Check making multiple sends to a client in a single frame.
