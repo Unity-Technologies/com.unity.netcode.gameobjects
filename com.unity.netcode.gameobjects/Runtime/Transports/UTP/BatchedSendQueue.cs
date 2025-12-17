@@ -31,6 +31,10 @@ namespace Unity.Netcode.Transports.UTP
         public const int PerMessageOverhead = sizeof(int);
 
         internal const int MinimumMinimumCapacity = 4096;
+        // int.MaxValue is odd and maximum must be even.
+        // This is safe to be so large as the queue is dynamically allocated.
+        // It's very unlikely that the actual send queue will ever grow this large
+        internal const int MaximumMaximumCapacity = int.MaxValue - 1;
 
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;
