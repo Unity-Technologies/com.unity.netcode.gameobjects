@@ -78,7 +78,7 @@ namespace Unity.Netcode.Components
         private bool HasAuthority()
         {
             var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
-            return (!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && (m_NetworkAnimator.IsServer || m_NetworkAnimator.IsOwner));
+            return (!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && (m_NetworkAnimator.IsServer));
         }
 
         /// <inheritdoc />
@@ -95,7 +95,8 @@ namespace Unity.Netcode.Components
 
                         var hasAuthority = HasAuthority();
                         // Only the authority or the server will send messages
-                        if (hasAuthority || m_IsServer)
+                        // The only exception is server authoritative and owners that are sending animation triggers.
+                        if (hasAuthority || m_IsServer || (m_NetworkAnimator.IsServerAuthoritative() && m_NetworkAnimator.IsOwner))
                         {
                             // Flush any pending messages
                             FlushMessages();
@@ -408,7 +409,18 @@ namespace Unity.Netcode.Components
             }
 
             TransitionStateInfoList = new List<TransitionStateinfo>();
-            var animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
+            var animControllerType = m_Animator.runtimeAnimatorController.GetType();
+            var animatorController = (AnimatorController)null;
+
+            if (animControllerType == typeof(AnimatorOverrideController))
+            {
+                animatorController = ((AnimatorOverrideController)m_Animator.runtimeAnimatorController).runtimeAnimatorController as AnimatorController;
+            }
+            else if (animControllerType == typeof(AnimatorController))
+            {
+                animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
+            }
+
             if (animatorController == null)
             {
                 return;
@@ -432,7 +444,22 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            var parameters = Animator.parameters;
+            var animControllerType = m_Animator.runtimeAnimatorController.GetType();
+            var animatorController = (AnimatorController)null;
+
+            if (animControllerType == typeof(AnimatorOverrideController))
+            {
+                animatorController = ((AnimatorOverrideController)m_Animator.runtimeAnimatorController).runtimeAnimatorController as AnimatorController;
+            }
+            else if (animControllerType == typeof(AnimatorController))
+            {
+                animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
+            }
+            if (animatorController == null)
+            {
+                return;
+            }
+            var parameters = animatorController.parameters;
 
             var parametersToRemove = new List<AnimatorParameterEntry>();
             ParameterToNameLookup.Clear();
