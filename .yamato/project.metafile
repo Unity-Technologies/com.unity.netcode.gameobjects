@@ -176,10 +176,9 @@ test_platforms:
 
 validation_editors:
     default:
-        - trunk
+        - 6000.3
     all:
         - 6000.0
-        - 6000.2
         - 6000.3
         - 6000.4
         - trunk
