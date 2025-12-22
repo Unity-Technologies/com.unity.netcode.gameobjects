@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions.
 
 ### Deprecated
 
