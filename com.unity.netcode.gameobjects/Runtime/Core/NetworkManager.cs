@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Unity.Collections;
 using System.Linq;
+using Unity.Collections;
+#if UNIFIED_NETCODE
+using Unity.Entities;
+#endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
 using UnityEngine;
@@ -11,6 +14,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+
 
 namespace Unity.Netcode
 {
@@ -1045,6 +1049,10 @@ namespace Unity.Netcode
 #endif
             // Notify we have instantiated a new instance of NetworkManager.
             OnInstantiated?.Invoke(this);
+
+#if UNIFIED_NETCODE && UNITY_MULTIPLAYER_PLAYMODE
+            MPPMCheckInternal.Initialize();
+#endif
         }
 
         private void OnEnable()
@@ -1307,6 +1315,35 @@ namespace Unity.Netcode
             return true;
         }
 
+#if UNIFIED_NETCODE
+        private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
+        {
+            while (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
+            {
+                yield return null;
+            }
+
+            switch (startType)
+            {
+                case StartType.Server:
+                    {
+                        InternalStartServer();
+                        break;
+                    }
+                case StartType.Host:
+                    {
+                        InternalStartHost();
+                        break;
+                    }
+                case StartType.Client:
+                    {
+                        InternalStartClient();
+                        break;
+                    }
+            }
+        }
+#endif
+
         /// <summary>
         /// Starts a server
         /// </summary>
@@ -1331,6 +1368,25 @@ namespace Unity.Netcode
 
             Initialize(true);
 
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                DefaultWorldInitialization.Initialize("Default World", false);
+                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
+                return true;
+            }
+            else
+            {
+                return InternalStartServer();
+            }
+#else
+            return InternalStartServer();
+#endif
+        }
+
+        internal bool InternalStartServer()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1354,7 +1410,6 @@ namespace Unity.Netcode
                 IsListening = false;
                 throw;
             }
-
             return IsListening;
         }
 
@@ -1381,6 +1436,27 @@ namespace Unity.Netcode
 
             Initialize(false);
 
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                DefaultWorldInitialization.Initialize("Default World", false);
+                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
+                // TODO-UNIFIED: Need a way to signal everything completed.
+                return true;
+            }
+            else
+            {
+                return InternalStartClient();
+            }
+#else
+            return InternalStartClient();
+#endif
+
+        }
+
+        internal bool InternalStartClient()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartClient();
@@ -1404,6 +1480,7 @@ namespace Unity.Netcode
             return IsListening;
         }
 
+
         /// <summary>
         /// Starts a Host
         /// </summary>
@@ -1426,6 +1503,28 @@ namespace Unity.Netcode
             }
 
             Initialize(true);
+
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                DefaultWorldInitialization.Initialize("Default World", false);
+                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
+                // TODO-UNIFIED: Need a way to signal everything completed.
+                return true;
+            }
+            else
+            {
+                return InternalStartHost();
+            }
+#else
+            return InternalStartHost();
+#endif
+
+        }
+
+        internal bool InternalStartHost()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1645,6 +1744,23 @@ namespace Unity.Netcode
             IsListening = false;
             m_ShuttingDown = false;
 
+
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                try
+                {
+                    // Dispose of all worlds
+                    World.DisposeAllWorlds();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+#endif
+
             // Generate a local notification that the host client is disconnected
             if (IsHost)
             {
@@ -1683,6 +1799,7 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
+
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
@@ -1948,5 +2065,44 @@ namespace Unity.Netcode
         }
 #endif
 
+#if UNIFIED_NETCODE
+        // TODO-UNIFIED: We might not need all of this (i.e. UnifiedUpdateConnections might be handled differently in unified)
+        public delegate void OnConnectDelegate(NetcodeConnection connection);
+        public delegate void OnDisconnectDelegate(NetcodeConnection connection);
+        public static OnConnectDelegate OnNetCodeConnect;
+        public static OnDisconnectDelegate OnNetCodeDisconnect;
+
+#if UNITY_EDITOR
+        // TODO-UNIFIED: For POC only (centralizing)
+        public static MPPMCheckInfo MPPMCheck => MPPMCheckInternal;
+        internal static MPPMCheckInfo MPPMCheckInternal = new MPPMCheckInfo();
+        public class MPPMCheckInfo
+        {
+            public bool Installed { get; private set; }
+            public bool HasServerTag;
+            public bool HasClientTag;
+            internal void Initialize()
+            {
+#if UNITY_MULTIPLAYER_PLAYMODE
+                Installed = true;
+                var tags = Multiplayer.PlayMode.CurrentPlayer.Tags;
+                foreach (var tag in tags)
+                {
+                    if (tag == "Server")
+                    {
+                        HasServerTag = true;
+                    }
+                    else if (tag == "Client")
+                    {
+                        HasClientTag = true;
+                    }
+                }
+#else
+                Installed = false;
+#endif
+            }
+        }
+#endif
+#endif
     }
 }

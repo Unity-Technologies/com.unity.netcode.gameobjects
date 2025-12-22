@@ -279,6 +279,7 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
         internal bool HasPendingGhostPrefabs { get; private set; }
+        internal bool HasGhostPrefabs { get; private set; }
         private List<NetworkPrefab> m_PendingGhostRegistration = new List<NetworkPrefab>();
 
         /// <summary>
@@ -341,6 +342,7 @@ namespace Unity.Netcode
             if (networkPrefab.HasGhost)
             {
                 HasPendingGhostPrefabs = true;
+                HasGhostPrefabs = true;
                 m_PendingGhostRegistration.Add(networkPrefab);
             }
 #endif

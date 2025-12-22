@@ -4,8 +4,13 @@ using Unity.NetCode;
 
 namespace Unity.Netcode
 {
-    // Temporarily making this public
-    // TODO: Make this internal when complete (if used)
+
+    /// <summary>
+    /// TODO-UNIFIED: Would need to be reviewed for alternate ways of handling this.
+    /// </summary>
+    /// <remarks>
+    /// If used, we most likely would make this internal
+    /// </remarks>
     public partial class NetworkObjectBridge : GhostBehaviour
     {
         public Action<ulong> NetworkObjectIdChanged;
@@ -58,6 +63,11 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// TODO-UNIFIED: Would need to be reviewed for alternate ways of handling this.
+    /// Creates the hosted world and provides a means to configuring
+    /// the 2nd port for unified netcode connection.
+    /// </summary>
     internal class UnifiedBootStrap : ClientServerBootstrap
     {
         public static UnifiedBootStrap Instance { get; private set; }
