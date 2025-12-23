@@ -13,6 +13,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `NetworkObject`. (#3820)
+- Rename pass:
+    - SceneObject -- > SerializedObject 
+    - GetMessageSceneObject --> Serialize 
+    - AddSceneObject --> Deserialize (#3820)
 
 ### Deprecated
 
@@ -41,7 +46,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Improve performance of `NetworkObject`. (#3820)
 - Improve performance of `ParentSyncMessage`. (#3814)
 - Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
