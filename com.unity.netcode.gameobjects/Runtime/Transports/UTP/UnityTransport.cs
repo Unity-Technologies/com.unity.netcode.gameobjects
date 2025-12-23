@@ -1515,7 +1515,22 @@ namespace Unity.Netcode.Transports.UTP
                 // the only case where a full send queue causes a connection loss. Full unreliable
                 // send queues are dealt with by flushing it out to the network or simply dropping
                 // new messages if that fails.
-                var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * k_MaxReliableThroughput;
+                var maxCapacity = m_MaxSendQueueSize;
+                if (maxCapacity <= 0)
+                {
+                    // Setting m_DisconnectTimeoutMS to zero will disable the timeout entirely
+                    // Set the capacity as if the disconnect timeout is the largest possible value
+                    if (m_DisconnectTimeoutMS == 0)
+                    {
+                        maxCapacity = BatchedSendQueue.MaximumMaximumCapacity;
+                    }
+                    else
+                    {
+                        // Avoids overflow when m_DisconnectTimeoutMS is set to a very high value
+                        var fullCalculation = Math.BigMul(m_DisconnectTimeoutMS, k_MaxReliableThroughput);
+                        maxCapacity = (int)Math.Min(fullCalculation, BatchedSendQueue.MaximumMaximumCapacity);
+                    }
+                }
 
                 queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
