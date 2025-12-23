@@ -42,7 +42,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Improve performance of `ParentSyncMessage`. (#3814)
-- If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabeled. (#3810)
 - Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
 - First pass of CoreCLR engine API changes. (#3799)
@@ -54,7 +53,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Ensure `NetworkBehaviour.IsSessionOwner` is correctly set when a new session owner is promoted. (#3817)
 - Reset extended ownership flags on `NetworkObject` despawn. (#3817)
-- Fixed issue where maxCapacity calculation overflows if a developer sets a very, very high (large) m_DisconnectTimeoutMS in the Editor for Unity Transport. (#3810)
+- Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
 - Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
 - Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
 - Fixed issue where the server or host would no longer have access to the transport id to client id table when processing a transport level client disconnect event. (#3786)
