@@ -2842,6 +2842,10 @@ namespace Unity.Netcode
             return ChildNetworkBehaviours[index];
         }
 
+        /// <summary>
+        /// The serialized representation of a NetworkObject.
+        /// Used for synchronizing clients on NetworkObject spawn.
+        /// </summary>
         internal struct SerializedObject
         {
             public uint Hash;
