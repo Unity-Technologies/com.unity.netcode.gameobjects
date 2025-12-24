@@ -359,7 +359,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkManagerOwner ? NetworkManagerOwner : NetworkManager.Singleton;
+        // TODO use the correct one, here are we sure it is spawned? if it is, use NetworkManager
+        public NetworkManager NetworkManager = NetworkManager.Singleton;
 
         /// <summary>
         /// Useful to know if we should or should not send a message
@@ -1114,8 +1115,11 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool InternalHasAuthority()
         {
-            var networkManager = NetworkManager;
-            return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;
+            if (!IsSpawned)
+            {
+                return false;
+            }
+            return NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
         }
 
         /// <summary>
@@ -1166,17 +1170,17 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsLocalPlayer => IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsOwner => OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => NetworkManager != null && OwnerClientId == NetworkManager.ServerClientId;
+        public bool IsOwnedByServer => OwnerClientId == NetworkManager.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
