@@ -505,7 +505,7 @@ namespace Unity.Netcode
         /// flag set and a non-owner client must have sent a request via <see cref="RequestOwnership"/>.
         /// </summary>
         public bool IsRequestInProgress => ((OwnershipStatusExtended)Ownership).HasFlag(OwnershipStatusExtended.Requested);
-        
+
         /// <summary>
         /// Determines whether a NetworkObject can be distributed to other clients during
         /// a <see cref="NetworkTopologyTypes.DistributedAuthority"/> session.
@@ -515,7 +515,7 @@ namespace Unity.Netcode
 #endif
         [SerializeField]
         internal OwnershipStatus Ownership = OwnershipStatus.Distributable;
-        
+
         /// <summary>
         /// Ownership status flags:
         /// <see cref="None"/>: If nothing is set, then ownership is considered "static" and cannot be redistributed, requested, or transferred (i.e. a Player would have this).
