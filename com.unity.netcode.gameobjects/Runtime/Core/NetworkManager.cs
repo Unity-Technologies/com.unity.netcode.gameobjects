@@ -14,6 +14,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Unity.NetCode;
 
 
 namespace Unity.Netcode
@@ -1342,6 +1343,22 @@ namespace Unity.Netcode
                     }
             }
         }
+
+        private bool UnifiedIsConfiguredCorrectly()
+        {
+            if (NetCodeConfig.Global == null)
+            {
+                Debug.LogError($"[{nameof(NetworkManager)}][Unified] You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!");
+                return false;
+            }
+            if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            {
+                Debug.LogError($"[{nameof(NetworkManager)}][Unified] You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!");
+                return false;
+            }
+            return true;
+        }
+
 #endif
 
         /// <summary>
@@ -1372,6 +1389,13 @@ namespace Unity.Netcode
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+                NetCodeConfig.Global.HostWorldModeSelection = NetCodeConfig.HostWorldMode.SingleWorld;
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
                 return true;
@@ -1440,6 +1464,13 @@ namespace Unity.Netcode
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
                 // TODO-UNIFIED: Need a way to signal everything completed.
@@ -1508,6 +1539,13 @@ namespace Unity.Netcode
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
                 // TODO-UNIFIED: Need a way to signal everything completed.
