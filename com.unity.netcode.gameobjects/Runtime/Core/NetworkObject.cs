@@ -2157,7 +2157,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns>Whether or not reparenting was successful.</returns>
+        /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             // If we are removing ourself from a parent
@@ -2177,7 +2177,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns>Whether or not reparenting was successful.</returns>
+        /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
             // If we are removing ourself from a parent
@@ -2218,7 +2218,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns>Whether or not reparenting was successful.</returns>
+        /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
             if (!AutoObjectParentSync)
@@ -2235,7 +2235,7 @@ namespace Unity.Netcode
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
             var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
 
-            // If we don't have authority and we are not shutting down, then don't allow any parenting.
+            // If we don't have authority, and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
             if (!isAuthority && !NetworkManager.ShutdownInProgress)
             {
@@ -2295,7 +2295,7 @@ namespace Unity.Netcode
                     return;
                 }
                 transform.parent = m_CachedParent;
-                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
+                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before re-parenting"));
                 return;
             }
             var isAuthority = false;
@@ -2307,18 +2307,17 @@ namespace Unity.Netcode
             // If we do not have authority and we are spawned
             if (!isAuthority && IsSpawned)
             {
-
-                // If the cached parent has not already been set and we are in distributed authority mode, then log an exception and exit early as a non-authority instance
+                // If the cached parent has not already been set, and we are in distributed authority mode, then log an exception and exit early as a non-authority instance
                 // is trying to set the parent.
                 if (distributedAuthority)
                 {
                     transform.parent = m_CachedParent;
-                    NetworkLog.LogError($"[Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can reparent it!");
+                    NetworkLog.LogError($"[Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can re-parent it!");
                 }
                 else
                 {
                     transform.parent = m_CachedParent;
-                    Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                    Debug.LogException(new NotServerException($"Only the server can re-parent {nameof(NetworkObject)}s"));
                 }
                 return;
             }
@@ -2336,7 +2335,7 @@ namespace Unity.Netcode
                 else
                 {
                     transform.parent = m_CachedParent;
-                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
+                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be re-parented after being spawned"));
                 }
                 return;
             }
@@ -2356,7 +2355,7 @@ namespace Unity.Netcode
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
-                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented under another spawned {nameof(NetworkObject)}"));
+                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be re-parented under another spawned {nameof(NetworkObject)}"));
                     return;
                 }
 
@@ -2457,7 +2456,7 @@ namespace Unity.Netcode
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
                 // If parentNetworkObject is null then the parent is a GameObject without a NetworkObject component
-                // attached. Under this case, we preserve the hierarchy but we don't keep track of the parenting.
+                // attached. Under this case, we preserve the hierarchy, but we don't keep track of the parenting.
                 // Note: We only start tracking parenting if the user removes the child from the standard GameObject
                 // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
                 if (!parentNetworkObject)
@@ -2476,7 +2475,7 @@ namespace Unity.Netcode
                 else
                 {
                     // If we made it this far, go ahead and set the network parenting values
-                    // with the WorldPoisitonSays value set to false
+                    // with the WorldPositionSays value set to false.
                     // Note: Since in-scene placed NetworkObjects are parented in the scene
                     // the default "assumption" is that children are parenting local space
                     // relative.
@@ -2489,7 +2488,7 @@ namespace Unity.Netcode
                 }
             }
 
-            // If we are removing the parent or our latest parent is not set, then remove the parent
+            // If we are removing the parent or our latest parent is not set, then remove the parent.
             // removeParent is only set when:
             //  - The server-side NetworkObject.OnTransformParentChanged is invoked and the parent is being removed
             //  - The client-side when handling a ParentSyncMessage
@@ -3192,7 +3191,7 @@ namespace Unity.Netcode
             // Handle Parenting
             if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
-                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+                var parentNetworkObject = m_CachedParent.GetComponent<NetworkObject>();
 
                 if (parentNetworkObject)
                 {
