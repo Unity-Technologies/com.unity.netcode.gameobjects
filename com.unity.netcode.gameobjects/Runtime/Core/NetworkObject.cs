@@ -3589,7 +3589,7 @@ namespace Unity.Netcode
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Developer)
+                if (NetworkManager?.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
