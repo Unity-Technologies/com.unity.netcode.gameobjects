@@ -53,6 +53,7 @@ def createPrAfterRelease(config: ReleaseConfig):
         repo.git.add(config.changelog_path)
         repo.git.add(config.manifest_path)
         repo.git.add(config.validation_exceptions_path)
+        repo.git.add("Tools/regenerate-ci.sh")
 
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)

@@ -32,7 +32,7 @@ def PrepareNetcodePackageForRelease():
         print("\nStep 3: Triggering Yamato validation jobs...")
         trigger_release_preparation_jobs(config)
 
-        print("\nStep 4: Committing changelog and version updates...")
+        print("\nStep 4: Creating PR with needed changes to default branch...")
         createPrAfterRelease(config)
 
     except Exception as e:
