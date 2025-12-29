@@ -3413,8 +3413,7 @@ namespace Unity.Netcode
         /// </summary>
         private void CurrentlyActiveSceneChanged(Scene current, Scene next)
         {
-            // TODO should we remove NetworkManager null check here?
-            // Early exit if there is no NetworkManager assigned, the NetworkManager is shutting down, the NetworkObject
+            // Early exit if the NetworkManager is shutting down, the NetworkObject
             // is not spawned, or an in-scene placed NetworkObject
             if (NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
             {
@@ -3515,8 +3514,7 @@ namespace Unity.Netcode
         /// </remarks>
         internal bool UpdateForSceneChanges()
         {
-            // TODO should we remove NetworkManager null check here?
-            // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
+            // Early exit if SceneMigrationSynchronization is disabled,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
             if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager.ShutdownInProgress ||
