@@ -104,7 +104,8 @@ def update_validation_exceptions(validation_file, package_version):
 
     # If no exceptions were updated, we do not need to write the file
     if not updated:
-        raise FileNotFoundError(f"No validation exceptions were updated in {validation_file}.")
+        warnings.warn(f"No validation exceptions were updated in {validation_file}.")
+        return
 
     with open(validation_file, 'w', encoding='UTF-8', newline='\n') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=2)
