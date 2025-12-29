@@ -334,17 +334,17 @@ namespace Unity.Netcode
 
         internal bool HasParentNetworkObject(Transform transform)
         {
-            if (transform.parent != null)
+            if (m_CachedParent != null)
             {
-                var networkObject = transform.parent.GetComponent<NetworkObject>();
+                var networkObject = m_CachedParent.GetComponent<NetworkObject>();
                 if (networkObject != null && networkObject != this)
                 {
                     return true;
                 }
 
-                if (transform.parent.parent != null)
+                if (m_CachedParent.parent != null)
                 {
-                    return HasParentNetworkObject(transform.parent);
+                    return HasParentNetworkObject(m_CachedParent);
                 }
             }
             return false;
@@ -3427,7 +3427,7 @@ namespace Unity.Netcode
             {
                 // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
                 // and update their scene handles
-                if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
+                if (IsSceneObject.HasValue && !IsSceneObject.Value && m_SceneOrigin != next && m_CachedParent == null)
                 {
                     SceneManager.MoveGameObjectToScene(gameObject, next);
                     SceneChangedUpdate(next);
@@ -3486,7 +3486,7 @@ namespace Unity.Netcode
             OnMigratedToNewScene?.Invoke();
 
             // Only the authority side will notify clients of non-parented NetworkObject scene changes
-            if (isAuthority && notify && transform.parent == null)
+            if (isAuthority && notify && !m_CachedParent)
             {
                 NetworkManager.SceneManager.NotifyNetworkObjectSceneChanged(this);
             }
