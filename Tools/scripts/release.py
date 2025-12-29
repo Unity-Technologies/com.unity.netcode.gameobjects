@@ -40,7 +40,7 @@ def regenerate_wrench():
         if platform.system() != "Windows":
             os.chmod(script_path, 0o755)
 
-        subprocess.run(script_path, check=True, shell=True)
+        subprocess.run([script_path], check=True, shell=True)
 
     except subprocess.CalledProcessError as e:
         raise Exception(f"Error: The CI regeneration script failed with exit code {e.returncode}.")
