@@ -2341,10 +2341,9 @@ namespace Unity.Netcode
             }
             var removeParent = false;
             var parentTransform = transform.parent;
-            var parentObject = (NetworkObject)null;
             if (parentTransform != null)
             {
-                if (!transform.parent.TryGetComponent(out parentObject))
+                if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
