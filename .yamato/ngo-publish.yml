@@ -1,11 +1,10 @@
 ngo_release_preparation:
   name: "NGO release preparation"
   agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
-  triggers:
-    recurring:
-      - branch: develop # We make new releases from this branch
-        frequency: "10 ? * 1" # Runs every Sunday at 10:00 AM
-  rerun: always
+  #triggers:
+  #  recurring:
+  #    - branch: develop # We make new releases from this branch
+  #      frequency: "10 ? * 1" # Runs every Sunday at 10:00 AM
   commands:
     - pip install PyGithub
     - pip install GitPython
