@@ -3625,7 +3625,7 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            if (m_CachedNetworkObject != null)
+            if (m_CachedNetworkObject)
             {
                 NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
@@ -3695,7 +3695,7 @@ namespace Unity.Netcode.Components
         }
         private NetworkObject m_CachedNetworkObject;
         /// <summary>
-        /// The internal initialzation method to allow for internal API adjustments
+        /// The internal initialization method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
         private void InternalInitialization(bool isOwnershipChange = false)
@@ -3707,7 +3707,7 @@ namespace Unity.Netcode.Components
             m_CachedNetworkObject = NetworkObject;
 
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
-            m_IsFirstNetworkTransform = NetworkObject.NetworkTransforms[0] == this;
+            m_IsFirstNetworkTransform = m_CachedNetworkObject.NetworkTransforms[0] == this;
 
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
@@ -3719,7 +3719,7 @@ namespace Unity.Netcode.Components
             {
                 if (CanCommitToTransform)
                 {
-                    if (NetworkObject.HasParentNetworkObject(transform))
+                    if (m_CachedNetworkObject.HasParentNetworkObject(transform))
                     {
                         InLocalSpace = true;
                     }
@@ -3763,7 +3763,7 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+                m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -3792,7 +3792,7 @@ namespace Unity.Netcode.Components
                 m_PreviousScaleLerpSmoothing = ScaleLerpSmoothing;
 
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
-                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
+                m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();
