@@ -52,13 +52,7 @@ namespace Unity.Netcode
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
-        public uint PrefabIdHash
-        {
-            get
-            {
-                return GlobalObjectIdHash;
-            }
-        }
+        public uint PrefabIdHash => GlobalObjectIdHash;
 
         /// <summary>
         /// InstantiationData sent during the instantiation process.
@@ -2167,7 +2161,7 @@ namespace Unity.Netcode
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             // If we are removing ourself from a parent
-            if (parent == null)
+            if (!parent)
             {
                 return TrySetParent((NetworkObject)null, worldPositionStays);
             }
@@ -2253,7 +2247,7 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (parent != null && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
+            if (!parent && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
@@ -2265,7 +2259,7 @@ namespace Unity.Netcode
 
             m_CachedWorldPositionStays = worldPositionStays;
 
-            if (parent == null)
+            if (!parent)
             {
                 CurrentParent = null;
                 transform.SetParent(null, worldPositionStays);
@@ -2381,7 +2375,7 @@ namespace Unity.Netcode
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
+                IsLatestParentSet = m_LatestParent is not null,
                 LatestParent = m_LatestParent,
                 RemoveParent = removeParent,
                 AuthorityApplied = authorityApplied,
@@ -2458,7 +2452,7 @@ namespace Unity.Netcode
             // has been set, this will not be entered into again (i.e. the later code will be invoked and
             // users will get notifications when the parent changes).
             var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
+            if (!transform.parent && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
@@ -2466,7 +2460,7 @@ namespace Unity.Netcode
                 // attached. Under this case, we preserve the hierarchy but we don't keep track of the parenting.
                 // Note: We only start tracking parenting if the user removes the child from the standard GameObject
                 // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
-                if (parentNetworkObject == null)
+                if (!parentNetworkObject)
                 {
                     // If we are parented under a GameObject, go ahead and mark the world position stays as false
                     // so clients synchronize their transform in local space. (only for in-scene placed NetworkObjects)
@@ -3176,7 +3170,7 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
-                HasParent = transform.parent != null,
+                HasParent = m_CachedParent is not null,
                 WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
