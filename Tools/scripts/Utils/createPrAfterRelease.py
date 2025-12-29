@@ -33,8 +33,7 @@ def createPrAfterRelease(config: ReleaseConfig):
 
     try:
         if not config.github_manager.is_branch_present(config.default_repo_branch):
-            print(f"Branch '{config.default_repo_branch}' does not exist. Exiting.")
-            sys.exit(1)
+            raise Exception(f"Branch '{config.default_repo_branch}' does not exist. Exiting.")
 
         repo = get_local_repo()
         repo.git.fetch('--prune', '--prune-tags')
@@ -53,7 +52,6 @@ def createPrAfterRelease(config: ReleaseConfig):
         repo.git.add(config.changelog_path)
         repo.git.add(config.manifest_path)
         repo.git.add(config.validation_exceptions_path)
-        repo.git.add("Tools/regenerate-ci.sh")
 
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)
