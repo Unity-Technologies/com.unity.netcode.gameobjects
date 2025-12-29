@@ -66,7 +66,7 @@ class ReleaseConfig:
         self.release_commit_message = f"Updated changelog and package version for Netcode in anticipation of v{self.package_version} release"
         
         self.pr_branch_name = f"netcode-update-after-{self.package_version}-release-branch-creation" # Branch from which we will create PR to default branch with relevant changes after release branch is created
-        self.pr_commit_message = f"Updated aspects of Netcode package in anticipation of v{self.package_version} release"
+        self.pr_commit_message = f"chore: Updated aspects of Netcode package in anticipation of v{self.package_version} release"
         self.pr_body = f"This PR was created in sync with branching of {self.release_branch_name}. It includes changes that should land on the default Netcode branch ({self.default_repo_branch}) to reflect the new state of the package after the v{self.package_version} release:\n" \
             f"1) Updated CHANGELOG.md by adding new [Unreleased] section template at the top and cleaning the Changelog for the current release.\n" \
             f"2) Updated package version in package.json by incrementing the patch version to signify the current state of the package.\n" \
