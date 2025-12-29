@@ -3554,7 +3554,7 @@ namespace Unity.Netcode.Components
             }
 
             // Standard non-authority synchronization is handled here
-            if (!CanCommitToTransform && NetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
+            if (!CanCommitToTransform && m_CachedNetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
             {
                 NonAuthorityFinalizeSynchronization();
             }
@@ -3627,7 +3627,7 @@ namespace Unity.Netcode.Components
 #endif
             if (m_CachedNetworkObject)
             {
-                NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+                m_CachedNetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
 
             DeregisterForTickUpdate(this);
@@ -3673,7 +3673,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            var serverTime = NetworkManager.ServerTime.Time;
+            var serverTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
@@ -3890,7 +3890,7 @@ namespace Unity.Netcode.Components
                 m_RotationInterpolator.Clear();
 
                 // Always use NetworkManager here as this can be invoked prior to spawning
-                var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, m_CachedNetworkManager.ServerTime.Tick).Time;
                 UpdatePositionInterpolator(m_InternalCurrentPosition, tempTime, true);
                 m_ScaleInterpolator.ResetTo(m_InternalCurrentScale, tempTime);
                 m_RotationInterpolator.ResetTo(m_InternalCurrentRotation, tempTime);
@@ -3922,7 +3922,7 @@ namespace Unity.Netcode.Components
                 if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
                 {
                     m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
-                    m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                    m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, m_CachedNetworkManager.ServerTime.Time);
                     if (InLocalSpace)
                     {
                         transform.localPosition = m_InternalCurrentPosition;
@@ -3954,7 +3954,7 @@ namespace Unity.Netcode.Components
                 {
                     m_InternalCurrentRotation = GetSpaceRelativeRotation();
                     m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
-                    m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                    m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, m_CachedNetworkManager.ServerTime.Time);
                     if (InLocalSpace)
                     {
                         transform.localRotation = m_InternalCurrentRotation;
@@ -4638,13 +4638,13 @@ namespace Unity.Netcode.Components
                     {
                         continue;
                     }
-                    NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
+                    m_CachedNetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
                 }
             }
             else
             {
                 // Clients (owner authoritative) send messages to the server-host
-                NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
+                m_CachedNetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
             m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OutboundMessage.BytesWritten;
         }
@@ -4783,7 +4783,7 @@ namespace Unity.Netcode.Components
         internal void RegisterForTickSynchronization()
         {
             s_TickSynchPosition++;
-            m_NextTickSync = NetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
+            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
         }
 
         private static void RegisterNetworkManagerForTickUpdate(NetworkManager networkManager)
