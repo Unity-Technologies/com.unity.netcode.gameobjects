@@ -1,4 +1,5 @@
 @echo off
 
-dotnet run -c Release --project %~dp0\CI\NGO.Cookbook.csproj %*
+cd /d "%~dp0.."
+dotnet run --project "Tools\CI\NGO.Cookbook.csproj" %*
 if %errorlevel% neq 0 exit /b %errorlevel%
