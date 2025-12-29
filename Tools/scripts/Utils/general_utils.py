@@ -6,6 +6,7 @@ import re
 import datetime
 import platform
 import subprocess
+import warnings
 
 UNRELEASED_CHANGELOG_SECTION_TEMPLATE = r"""
 ## [Unreleased]
@@ -37,8 +38,7 @@ def get_package_version_from_manifest(package_manifest_path):
     """
 
     if not os.path.exists(package_manifest_path):
-        print("get_manifest_json_version function couldn't find a specified manifest_path")
-        return None
+        raise FileNotFoundError(f"{package_manifest_path} couldn't be find")
 
     with open(package_manifest_path, 'rb') as f:
         json_text = f.read()
@@ -75,42 +75,6 @@ def update_package_version_by_patch(package_manifest_path):
         json.dump(package_manifest, f, indent=4)
 
     return new_package_version
-
-
-def regenerate_wrench():
-    """
-    It runs Tools/regenerate-ci.cmd OR Tools/regenerate-ci.sh script
-    to regenerate the CI files. (depending on the OS)
-    
-    This is needed because wrench scripts content is created dynamically depending on the available editors
-    """
-
-    # --- Regenerate the CI files ---
-    print("\nRegenerating CI files...")
-    script_path = ""
-    if platform.system() == "Windows":
-        script_path = os.path.join('Tools', 'CI', 'regenerate.bat')
-    else: # macOS and Linux
-        script_path = os.path.join('Tools', 'CI', 'regenerate.sh')
-
-    if not os.path.exists(script_path):
-        print(f"Error: Regeneration script not found at '{script_path}'.")
-        return
-
-    try:
-        # Execute the regeneration script
-        # On non-Windows systems, the script might need execute permissions.
-        if platform.system() != "Windows":
-            os.chmod(script_path, 0o755)
-
-        print(f"Running '{script_path}'...")
-        subprocess.run([script_path], check=True, shell=True)
-        print("CI regeneration completed successfully.")
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error: The CI regeneration script failed with exit code {e.returncode}.")
-    except Exception as e:
-        print(f"An unexpected error occurred while running the regeneration script: {e}")
         
         
 def update_validation_exceptions(validation_file, package_version):
@@ -140,13 +104,11 @@ def update_validation_exceptions(validation_file, package_version):
 
     # If no exceptions were updated, we do not need to write the file
     if not updated:
-        print(f"No validation exceptions were updated in {validation_file}.")
-        return
+        raise FileNotFoundError(f"No validation exceptions were updated in {validation_file}.")
 
     with open(validation_file, 'w', encoding='UTF-8', newline='\n') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=2)
         json_file.write("\n")  # Add newline cause Py JSON does not
-        print(f"updated `{validation_file}`")
 
 
 
@@ -178,7 +140,7 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
     cleaned_content = pattern.sub('', changelog_text)
 
     if version_header_to_find_if_exists in changelog_text:
-        print(f"A changelog entry for version '{new_version}' already exists. The script will just remove Unreleased section and its content.")
+        warnings.warn(f"A changelog entry for version '{new_version}' already exists. The script will just remove Unreleased section and its content.")
         changelog_text = re.sub(r'(?s)## \[Unreleased(.*?)(?=## \[)', '', changelog_text)
     else:
         # Replace the [Unreleased] section with the new version + cleaned subsections

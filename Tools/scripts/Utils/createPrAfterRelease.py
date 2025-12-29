@@ -19,7 +19,7 @@ from ReleaseAutomation.release_config import ReleaseConfig
 from Utils.general_utils import get_package_version_from_manifest, update_changelog, update_package_version_by_patch, update_validation_exceptions
 from Utils.git_utils import get_local_repo
 
-def commitChangelogAndPackageVersionUpdates(config: ReleaseConfig):
+def createPrAfterRelease(config: ReleaseConfig):
     """
     The function updates the changelog and package version of the package in anticipation of a new release.
     This means that it will
@@ -40,6 +40,9 @@ def commitChangelogAndPackageVersionUpdates(config: ReleaseConfig):
         repo.git.fetch('--prune', '--prune-tags')
         repo.git.checkout(config.default_repo_branch)
         repo.git.pull("origin", config.default_repo_branch)
+        
+        # Create a new branch for the release changes PR to default branch
+        repo.git.checkout('-b', config.pr_branch_name)
 
         # Update the changelog file with adding new [Unreleased] section
         update_changelog(config.changelog_path, config.package_version, add_unreleased_template=True)
@@ -54,10 +57,14 @@ def commitChangelogAndPackageVersionUpdates(config: ReleaseConfig):
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)
 
-        repo.index.commit(config.commit_message, author=author, committer=committer, skip_hooks=True)
-        repo.git.push("origin", config.default_repo_branch)
+        repo.index.commit(config.pr_commit_message, author=author, committer=committer, skip_hooks=True)
+        repo.git.push("origin", config.pr_branch_name)
 
-        print(f"Successfully updated and pushed the changelog on branch: {config.default_repo_branch}")
+        github = config.github_manager
+        pr = github.create_pull_request(title=config.pr_commit_message, body=config.pr_body, head=config.pr_branch_name, base=config.default_repo_branch)
+        github.request_reviews(pr, config.pr_reviewers)
+
+        print(f"Successfully updated and created the PR targeting: {config.default_repo_branch}")
 
     except GithubException as e:
         print(f"An error occurred with the GitHub API: {e.status}", file=sys.stderr)
