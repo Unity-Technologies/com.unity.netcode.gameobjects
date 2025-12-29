@@ -357,9 +357,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the NetworkManager that owns this NetworkObject instance
+        /// Gets the NetworkManager that owns this NetworkObject instance.
         /// </summary>
-        // TODO use the correct one, here are we sure it is spawned? if it is, use NetworkManager
         public NetworkManager NetworkManager = NetworkManager.Singleton;
 
         /// <summary>
@@ -1125,7 +1124,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The NetworkManager that owns this NetworkObject.
         /// This property controls where this NetworkObject belongs.
-        /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
+        /// This property is null by default currently.
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
         internal NetworkManager NetworkManagerOwner;
@@ -2233,7 +2232,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (NetworkManager == null || !NetworkManager.IsListening)
+            if (!NetworkManager.IsListening)
             {
                 return false;
             }
@@ -2254,7 +2253,7 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (parent != null && (IsSpawned ^ parent.IsSpawned) && NetworkManager != null && !NetworkManager.ShutdownInProgress)
+            if (parent != null && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
@@ -2292,7 +2291,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (NetworkManager == null || !NetworkManager.IsListening)
+            if (!NetworkManager.IsListening)
             {
                 // DANGO-TODO: Review as to whether we want to provide a better way to handle changing parenting of objects when the
                 // object is not spawned. Really, we shouldn't care about these types of changes.
@@ -3422,9 +3421,10 @@ namespace Unity.Netcode
         /// </summary>
         private void CurrentlyActiveSceneChanged(Scene current, Scene next)
         {
+            // TODO should we remove NetworkManager null check here?
             // Early exit if there is no NetworkManager assigned, the NetworkManager is shutting down, the NetworkObject
             // is not spawned, or an in-scene placed NetworkObject
-            if (NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
+            if (NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
             {
                 return;
             }
@@ -3523,10 +3523,11 @@ namespace Unity.Netcode
         /// </remarks>
         internal bool UpdateForSceneChanges()
         {
+            // TODO should we remove NetworkManager null check here?
             // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
-            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
+            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager.ShutdownInProgress ||
                 !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
             {
                 // Stop checking for a scene migration
@@ -3598,7 +3599,7 @@ namespace Unity.Netcode
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (NetworkManager?.LogLevel == LogLevel.Developer)
+                if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
