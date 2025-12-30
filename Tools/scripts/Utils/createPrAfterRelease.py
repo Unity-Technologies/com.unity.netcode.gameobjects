@@ -35,9 +35,14 @@ def createPrAfterRelease(config: ReleaseConfig):
         if not config.github_manager.is_branch_present(config.default_repo_branch):
             raise Exception(f"Branch '{config.default_repo_branch}' does not exist. Exiting.")
 
+        author = Actor(config.commiter_name, config.commiter_email)
+        committer = Actor(config.commiter_name, config.commiter_email)
+
         repo = get_local_repo()
         repo.git.fetch('--prune', '--prune-tags')
         repo.git.checkout(config.default_repo_branch)
+        repo.git.add('Tools/regenerate-ci.sh')
+        repo.index.commit(config.pr_commit_message, author=author, committer=committer, skip_hooks=True)
         repo.git.pull("origin", config.default_repo_branch)
         
         # Create a new branch for the release changes PR to default branch
@@ -52,9 +57,6 @@ def createPrAfterRelease(config: ReleaseConfig):
         repo.git.add(config.changelog_path)
         repo.git.add(config.manifest_path)
         repo.git.add(config.validation_exceptions_path)
-
-        author = Actor(config.commiter_name, config.commiter_email)
-        committer = Actor(config.commiter_name, config.commiter_email)
 
         repo.index.commit(config.pr_commit_message, author=author, committer=committer, skip_hooks=True)
         repo.git.push("origin", config.pr_branch_name)
