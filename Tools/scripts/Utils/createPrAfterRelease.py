@@ -40,9 +40,15 @@ def createPrAfterRelease(config: ReleaseConfig):
 
         repo = get_local_repo()
         repo.git.fetch('--prune', '--prune-tags')
+        
+        # Check if there are uncommitted changes that would block checkout
+        # Stash them if they exist to allow checkout to proceed
+        has_uncommitted_changes = repo.is_dirty()
+        if has_uncommitted_changes:
+            print("Uncommitted changes detected. Stashing before checkout...")
+            repo.git.stash('push', '-m', 'Auto-stash before checkout for release PR creation')
+        
         repo.git.checkout(config.default_repo_branch)
-        repo.git.add('Tools/regenerate-ci.sh')
-        repo.index.commit(config.pr_commit_message, author=author, committer=committer, skip_hooks=True)
         repo.git.pull("origin", config.default_repo_branch)
         
         # Create a new branch for the release changes PR to default branch
