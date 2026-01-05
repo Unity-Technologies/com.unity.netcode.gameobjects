@@ -45,10 +45,6 @@ def create_release_branch(config: ReleaseConfig):
     """
     Creates a new branch with the specified name, performs specified action, commits the current changes and pushes it to the repo.
     Note that command_to_run_on_release_branch (within the Config) should be a single command that will be executed using subprocess.run. For multiple commands consider using a Python script file.
-    
-    IMPORTANT: The release branch is created from the trigger branch (the branch the job was triggered from).
-    This ensures the release branch is created from the branch that was validated and will be used for the PR.
-    Please double check if the target branch is different and if so the if this was intended.
     """
 
     try:
@@ -56,16 +52,6 @@ def create_release_branch(config: ReleaseConfig):
             raise Exception(f"Branch '{config.release_branch_name}' already exists.")
 
         repo = get_local_repo()
-        trigger_branch = repo.active_branch.name
-        
-        # Stash any uncommitted changes to allow pull
-        has_uncommitted_changes = repo.is_dirty()
-        if has_uncommitted_changes:
-            print("Uncommitted changes detected. Stashing before pull...")
-            repo.git.stash('push', '-m', 'Auto-stash before pull for release branch creation')
-        
-        repo.git.fetch('--prune', '--prune-tags')
-        repo.git.pull("origin", trigger_branch)
 
         new_branch = repo.create_head(config.release_branch_name, repo.head.commit)
         new_branch.checkout()
