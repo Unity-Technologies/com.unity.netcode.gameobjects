@@ -29,6 +29,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Obsolete
 
 
+## [2.8.1] - 2026-01-05
+
 ## [2.8.0] - 2025-12-15
 
 ### Added
