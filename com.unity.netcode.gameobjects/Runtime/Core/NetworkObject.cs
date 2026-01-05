@@ -353,7 +353,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance.
         /// </summary>
-        public NetworkManager NetworkManager { get; private set; } = NetworkManager.Singleton;
+        public NetworkManager NetworkManager => NetworkManagerOwner ? NetworkManagerOwner : NetworkManager.Singleton;
 
         /// <summary>
         /// Useful to know if we should or should not send a message
