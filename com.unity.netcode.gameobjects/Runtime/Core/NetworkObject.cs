@@ -355,6 +355,8 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HasGhost;
 
+        [HideInInspector]
+        [SerializeField]
         internal bool HadBridge;
 
         private void UnifiedValidation()
@@ -364,13 +366,31 @@ namespace Unity.Netcode
             HasGhost = GhostAdapter != null;
             if (HasGhost && NetworkObjectBridge == null)
             {
-                if (!HadBridge)
                 {
                     NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
                     HadBridge = true;
                     // Transform synchronization is handled by unified netcode
                     SynchronizeTransform = false;
                 }
+
+                // Move the bridge to the top
+                while (UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
+                {
+                    // Keep moving until it can't go higher
+                }
+
+                // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
+                while (UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
+                {
+                    // Keep moving until it can't go higher
+                }
+                
+                EditorUtility.SetDirty(gameObject);
+            }
+            else if (HadBridge && !HasGhost && !NetworkObjectBridge)
+            {
+                HadBridge = false;
+                SynchronizeTransform = true;
             }
         }
 #endif
