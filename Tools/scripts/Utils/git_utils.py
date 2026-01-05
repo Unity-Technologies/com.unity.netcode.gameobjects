@@ -42,13 +42,13 @@ def get_latest_git_revision(branch_name):
         raise Exception(f"Failed to get the latest revision for branch '{branch_name}'.") from e
 
 
-def get_trigger_branch(repo, default_branch, exclude_branches=None):
+def get_trigger_branch(repo, default_branch):
     """
     Gets the trigger branch name, handling detached HEAD state in CI environments.
     
     In CI environments, the repository might be checked out at a specific commit (detached HEAD).
     This function tries multiple methods to determine the branch:
-    1. Check if HEAD is attached to a branch (but skip if it's a release branch or excluded branch)
+    1. Check if HEAD is attached to a branch
     2. Check environment variables (YAMATO_BRANCH, CI_COMMIT_REF_NAME, etc.)
     3. Use git commands to find which remote branch contains the current commit
     4. Fall back to the default branch if nothing else works
@@ -56,23 +56,13 @@ def get_trigger_branch(repo, default_branch, exclude_branches=None):
     Args:
         repo: GitPython Repo object
         default_branch: Default branch name to fall back to
-        exclude_branches: Optional list of branch names to exclude (e.g., release branches)
         
     Returns:
         str: The branch name
     """
-    exclude_branches = exclude_branches or []
-    current_branch = None
-    
     try:
         # Try to get the active branch name (works when HEAD is attached)
-        current_branch = repo.active_branch.name
-        # If we're on a release branch or excluded branch, don't use it - use other methods
-        if current_branch.startswith('release/') or current_branch in exclude_branches:
-            print(f"Current branch '{current_branch}' is a release/excluded branch, using other methods to find trigger branch...")
-            current_branch = None
-        else:
-            return current_branch
+        return repo.active_branch.name
     except (TypeError, ValueError):
         # HEAD is detached, try other methods
         pass
@@ -105,24 +95,19 @@ def get_trigger_branch(repo, default_branch, exclude_branches=None):
         )
         
         branches = [b.strip() for b in result.stdout.strip().split('\n') if b.strip()]
-        # Filter out release branches and excluded branches
-        valid_branches = []
+        # Filter to find the most likely branch (prefer default branch, then develop, then others)
         for branch_line in branches:
             branch = branch_line.replace('origin/', '').strip()
-            if branch and not branch.startswith('release/') and branch not in exclude_branches:
-                valid_branches.append(branch)
-        
-        # Prefer default branch, then other valid branches
-        for branch in valid_branches:
-            if branch == default_branch:
+            if branch and branch == default_branch:
                 print(f"Found trigger branch from remote branches: {branch}")
                 return branch
         
-        # If default branch not found, use the first valid branch
-        if valid_branches:
-            branch = valid_branches[0]
-            print(f"Found trigger branch from remote branches: {branch}")
-            return branch
+        # If default branch not found, use the first one
+        if branches:
+            branch = branches[0].replace('origin/', '').strip()
+            if branch:
+                print(f"Found trigger branch from remote branches: {branch}")
+                return branch
     except Exception as e:
         print(f"Warning: Could not determine branch from remote branches: {e}")
     
