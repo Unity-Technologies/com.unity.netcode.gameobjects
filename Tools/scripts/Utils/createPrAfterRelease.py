@@ -28,31 +28,48 @@ def createPrAfterRelease(config: ReleaseConfig):
         3) Update the package version in the package.json file by incrementing the patch version to signify the current state of the package.
         4) Update package version in the validation exceptions to match the new package version.
 
-    This assumes that at the same time you already branched off for the release. Otherwise it may be confusing
+    IMPORTANT: The PR is created against the trigger branch (the branch the job was triggered from),
+    not the default branch. This ensures consistency with the validation and release branch creation.
+    Please double check if the target branch is different and if so the if this was intended.
     """
 
     try:
+        repo = get_local_repo()
+        trigger_branch = repo.active_branch.name
+        
+        if not config.github_manager.is_branch_present(trigger_branch):
+            raise Exception(f"Trigger branch '{trigger_branch}' does not exist. Exiting.")
         if not config.github_manager.is_branch_present(config.default_repo_branch):
-            raise Exception(f"Branch '{config.default_repo_branch}' does not exist. Exiting.")
+            raise Exception(f"Default branch '{config.default_repo_branch}' does not exist. Exiting.")
+
+        # Check if PR branch already exists (could happen if a previous run failed partway through)
+        if config.github_manager.is_branch_present(config.pr_branch_name):
+            raise Exception(f"PR branch '{config.pr_branch_name}' already exists. This might indicate a previous incomplete run.")
 
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)
 
-        repo = get_local_repo()
         repo.git.fetch('--prune', '--prune-tags')
         
-        # Check if there are uncommitted changes that would block checkout
-        # Stash them if they exist to allow checkout to proceed
+        # Ensure we're on the trigger branch and have latest changes
+        # Stash any uncommitted changes that might block operations
         has_uncommitted_changes = repo.is_dirty()
         if has_uncommitted_changes:
-            print("Uncommitted changes detected. Stashing before checkout...")
-            repo.git.stash('push', '-m', 'Auto-stash before checkout for release PR creation')
+            print("Uncommitted changes detected. Stashing before operations...")
+            repo.git.stash('push', '-m', 'Auto-stash before release PR creation')
         
-        repo.git.checkout(config.default_repo_branch)
-        repo.git.pull("origin", config.default_repo_branch)
+        repo.git.checkout(trigger_branch)
+        repo.git.pull("origin", trigger_branch)
         
-        # Create a new branch for the release changes PR to default branch
-        repo.git.checkout('-b', config.pr_branch_name)
+        # Create a new branch for the release changes PR to trigger branch
+        try:
+            repo.git.checkout('-b', config.pr_branch_name)
+        except Exception as e:
+            # Branch might exist locally, try to checkout existing branch
+            if 'already exists' in str(e).lower():
+                raise Exception(f"Branch '{config.pr_branch_name}' already exists locally which is not expected. Exiting.")
+            else:
+                raise
 
         # Update the changelog file with adding new [Unreleased] section
         update_changelog(config.changelog_path, config.package_version, add_unreleased_template=True)
@@ -68,10 +85,10 @@ def createPrAfterRelease(config: ReleaseConfig):
         repo.git.push("origin", config.pr_branch_name)
 
         github = config.github_manager
-        pr = github.create_pull_request(title=config.pr_commit_message, body=config.pr_body, head=config.pr_branch_name, base=config.default_repo_branch)
+        pr = github.create_pull_request(title=config.pr_commit_message, body=config.pr_body, head=config.pr_branch_name, base=trigger_branch)
         github.request_reviews(pr, config.pr_reviewers)
 
-        print(f"Successfully updated and created the PR targeting: {config.default_repo_branch}")
+        print(f"Successfully updated and created the PR targeting trigger branch: {trigger_branch}")
 
     except GithubException as e:
         print(f"An error occurred with the GitHub API: {e.status}", file=sys.stderr)

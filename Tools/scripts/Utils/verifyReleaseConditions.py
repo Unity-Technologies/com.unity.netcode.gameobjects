@@ -7,6 +7,9 @@ The script will check the following conditions:
     - Note that if the job is triggered manually, this condition will be bypassed.
 2. **Is the [Unreleased] section of the CHANGELOG.md not empty?**
     - The script checks if the [Unreleased] section in the CHANGELOG.md contains meaningful entries.
+    - IMPORTANT: This check is performed on the branch the job was triggered from (after pulling latest).
+      The release branch will be created from this trigger branch, and the PR will target this trigger branch.
+      Please double check if the target branch is different and if so the if this was intended.
 3. **Does the release branch already exist?**
     - If the release branch for the target release already exists, the script will not run.
 """
@@ -21,6 +24,7 @@ sys.path.insert(0, PARENT_DIR)
 import datetime
 import re
 from release_config import ReleaseConfig
+from Utils.git_utils import get_local_repo
 
 def get_yamato_trigger_type():
     """
@@ -80,6 +84,9 @@ def verifyReleaseConditions(config: ReleaseConfig):
     This function checks the following conditions:
     1. If today is a scheduled release day (based on release cycle, weekday and anchor date).
     2. If the [Unreleased] section of the CHANGELOG.md is not empty.
+       IMPORTANT: This check is performed on the branch the job was triggered from (after pulling latest).
+       The release branch will be created from this trigger branch, and the PR will target this trigger branch.
+       Please double check if the target branch is different and if so the if this was intended.
     3. If the release branch does not already exist.
     """
 
@@ -92,11 +99,33 @@ def verifyReleaseConditions(config: ReleaseConfig):
         if not is_manual and not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
             error_messages.append(f"Condition not met: Today is not the scheduled release day. It should be weekday: {config.release_weekday}, every {config.release_week_cycle} weeks starting from {config.anchor_date}.")
 
+        # Pull latest changes from the trigger branch to ensure we're checking the latest state
+        # The release branch will be created from this trigger branch, and the PR will target this trigger branch
+        repo = get_local_repo()
+        trigger_branch = repo.active_branch.name
+        print(f"\nTrigger branch: {trigger_branch}")
+        print(f"Pulling latest changes from '{trigger_branch}' to verify changelog state...")
+        
+        # Stash any uncommitted changes to allow pull
+        has_uncommitted_changes = repo.is_dirty()
+        if has_uncommitted_changes:
+            print("Uncommitted changes detected. Stashing before pull...")
+            repo.git.stash('push', '-m', 'Auto-stash before pull for release verification')
+        
+        repo.git.fetch('--prune', '--prune-tags')
+        repo.git.pull("origin", trigger_branch)
+        print(f"Now on branch '{trigger_branch}' with latest changes pulled.")
+
         if is_changelog_empty(config.changelog_path):
             error_messages.append("Condition not met: The [Unreleased] section of the changelog has no meaningful entries.")
 
         if config.github_manager.is_branch_present(config.release_branch_name):
             error_messages.append("Condition not met: The release branch already exists.")
+
+        # Restore stashed changes if any
+        if has_uncommitted_changes:
+            print("Restoring stashed changes...")
+            repo.git.stash('pop')
 
         if error_messages:
             print("\n--- Release conditions not met: ---")
