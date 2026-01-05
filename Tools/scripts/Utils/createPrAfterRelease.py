@@ -35,7 +35,8 @@ def createPrAfterRelease(config: ReleaseConfig):
 
     try:
         repo = get_local_repo()
-        trigger_branch = get_trigger_branch(repo, config.default_repo_branch)
+        # Exclude the release branch when determining trigger branch (we might be on it)
+        trigger_branch = get_trigger_branch(repo, config.default_repo_branch, exclude_branches=[config.release_branch_name])
         print(f"\nTrigger branch: {trigger_branch}")
         
         if not config.github_manager.is_branch_present(trigger_branch):
