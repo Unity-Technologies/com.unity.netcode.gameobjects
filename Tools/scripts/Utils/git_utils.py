@@ -41,80 +41,6 @@ def get_latest_git_revision(branch_name):
     except subprocess.CalledProcessError as e:
         raise Exception(f"Failed to get the latest revision for branch '{branch_name}'.") from e
 
-
-def get_trigger_branch(repo, default_branch):
-    """
-    Gets the trigger branch name, handling detached HEAD state in CI environments.
-    
-    In CI environments, the repository might be checked out at a specific commit (detached HEAD).
-    This function tries multiple methods to determine the branch:
-    1. Check if HEAD is attached to a branch
-    2. Check environment variables (YAMATO_BRANCH, CI_COMMIT_REF_NAME, etc.)
-    3. Use git commands to find which remote branch contains the current commit
-    4. Fall back to the default branch if nothing else works
-    
-    Args:
-        repo: GitPython Repo object
-        default_branch: Default branch name to fall back to
-        
-    Returns:
-        str: The branch name
-    """
-    try:
-        # Try to get the active branch name (works when HEAD is attached)
-        return repo.active_branch.name
-    except (TypeError, ValueError):
-        # HEAD is detached, try other methods
-        pass
-    
-    # Method 1: Check environment variables
-    # Yamato might set branch info in environment variables
-    trigger_branch = os.environ.get('YAMATO_BRANCH') or \
-                     os.environ.get('CI_COMMIT_REF_NAME') or \
-                     os.environ.get('GITHUB_REF_NAME') or \
-                     os.environ.get('BRANCH_NAME')
-    
-    if trigger_branch:
-        # Remove 'refs/heads/' prefix if present
-        trigger_branch = trigger_branch.replace('refs/heads/', '')
-        print(f"Found trigger branch from environment variable: {trigger_branch}")
-        return trigger_branch
-    
-    # Method 2: Try to find which remote branch contains the current commit
-    try:
-        current_commit = repo.head.commit.hexsha
-        # Fetch all remote branches
-        repo.git.fetch('origin', '--prune', '--prune-tags')
-        
-        # Try to find which remote branch points to this commit
-        result = subprocess.run(
-            ['git', 'branch', '-r', '--contains', current_commit],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        
-        branches = [b.strip() for b in result.stdout.strip().split('\n') if b.strip()]
-        # Filter to find the most likely branch (prefer default branch, then develop, then others)
-        for branch_line in branches:
-            branch = branch_line.replace('origin/', '').strip()
-            if branch and branch == default_branch:
-                print(f"Found trigger branch from remote branches: {branch}")
-                return branch
-        
-        # If default branch not found, use the first one
-        if branches:
-            branch = branches[0].replace('origin/', '').strip()
-            if branch:
-                print(f"Found trigger branch from remote branches: {branch}")
-                return branch
-    except Exception as e:
-        print(f"Warning: Could not determine branch from remote branches: {e}")
-    
-    # Method 3: Fall back to default branch
-    print(f"Warning: Could not determine trigger branch, falling back to default branch: {default_branch}")
-    return default_branch
-
 def create_release_branch(config: ReleaseConfig):
     """
     Creates a new branch with the specified name, performs specified action, commits the current changes and pushes it to the repo.
@@ -130,16 +56,7 @@ def create_release_branch(config: ReleaseConfig):
             raise Exception(f"Branch '{config.release_branch_name}' already exists.")
 
         repo = get_local_repo()
-        trigger_branch = get_trigger_branch(repo, config.default_repo_branch)
-        print(f"\nTrigger branch: {trigger_branch}")
-        
-        # If we're in detached HEAD state, checkout the trigger branch first
-        try:
-            repo.active_branch.name
-        except (TypeError, ValueError):
-            # HEAD is detached, checkout the trigger branch
-            print(f"HEAD is detached, checking out trigger branch '{trigger_branch}'...")
-            repo.git.checkout(trigger_branch)
+        trigger_branch = repo.active_branch.name
         
         # Stash any uncommitted changes to allow pull
         has_uncommitted_changes = repo.is_dirty()

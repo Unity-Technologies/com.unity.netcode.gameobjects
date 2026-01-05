@@ -17,7 +17,7 @@ sys.path.insert(0, PARENT_DIR)
 
 from ReleaseAutomation.release_config import ReleaseConfig
 from Utils.general_utils import get_package_version_from_manifest, update_changelog, update_package_version_by_patch, update_validation_exceptions
-from Utils.git_utils import get_local_repo, get_trigger_branch
+from Utils.git_utils import get_local_repo
 
 def createPrAfterRelease(config: ReleaseConfig):
     """
@@ -35,8 +35,7 @@ def createPrAfterRelease(config: ReleaseConfig):
 
     try:
         repo = get_local_repo()
-        trigger_branch = get_trigger_branch(repo, config.default_repo_branch)
-        print(f"\nTrigger branch: {trigger_branch}")
+        trigger_branch = repo.active_branch.name
         
         if not config.github_manager.is_branch_present(trigger_branch):
             raise Exception(f"Trigger branch '{trigger_branch}' does not exist. Exiting.")
@@ -52,14 +51,6 @@ def createPrAfterRelease(config: ReleaseConfig):
 
         repo.git.fetch('--prune', '--prune-tags')
         
-        # If we're in detached HEAD state, checkout the trigger branch first
-        try:
-            repo.active_branch.name
-        except (TypeError, ValueError):
-            # HEAD is detached, checkout the trigger branch
-            print(f"HEAD is detached, checking out trigger branch '{trigger_branch}'...")
-            repo.git.checkout(trigger_branch)
-        
         # Ensure we're on the trigger branch and have latest changes
         # Stash any uncommitted changes that might block operations
         has_uncommitted_changes = repo.is_dirty()
@@ -67,16 +58,7 @@ def createPrAfterRelease(config: ReleaseConfig):
             print("Uncommitted changes detected. Stashing before operations...")
             repo.git.stash('push', '-m', 'Auto-stash before release PR creation')
         
-        # Make sure we're on the trigger branch (in case we were on a different branch)
-        current_branch = None
-        try:
-            current_branch = repo.active_branch.name
-        except (TypeError, ValueError):
-            pass
-        
-        if current_branch != trigger_branch:
-            repo.git.checkout(trigger_branch)
-        
+        repo.git.checkout(trigger_branch)
         repo.git.pull("origin", trigger_branch)
         
         # Create a new branch for the release changes PR to trigger branch

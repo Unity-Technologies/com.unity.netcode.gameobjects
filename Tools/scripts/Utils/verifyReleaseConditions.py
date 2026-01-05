@@ -24,7 +24,7 @@ sys.path.insert(0, PARENT_DIR)
 import datetime
 import re
 from release_config import ReleaseConfig
-from Utils.git_utils import get_local_repo, get_trigger_branch
+from Utils.git_utils import get_local_repo
 
 def get_yamato_trigger_type():
     """
@@ -102,17 +102,8 @@ def verifyReleaseConditions(config: ReleaseConfig):
         # Pull latest changes from the trigger branch to ensure we're checking the latest state
         # The release branch will be created from this trigger branch, and the PR will target this trigger branch
         repo = get_local_repo()
-        trigger_branch = get_trigger_branch(repo, config.default_repo_branch)
+        trigger_branch = repo.active_branch.name
         print(f"\nTrigger branch: {trigger_branch}")
-        
-        # If we're in detached HEAD state, checkout the trigger branch first
-        try:
-            repo.active_branch.name
-        except (TypeError, ValueError):
-            # HEAD is detached, checkout the trigger branch
-            print(f"HEAD is detached, checking out trigger branch '{trigger_branch}'...")
-            repo.git.checkout(trigger_branch)
-        
         print(f"Pulling latest changes from '{trigger_branch}' to verify changelog state...")
         
         # Stash any uncommitted changes to allow pull
