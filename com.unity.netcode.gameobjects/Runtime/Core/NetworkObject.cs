@@ -1118,7 +1118,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The NetworkManager that owns this NetworkObject.
         /// This property controls where this NetworkObject belongs.
-        /// This property is null by default currently.
+        /// This property will be null when the NetworkObject is not spawned.
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
         internal NetworkManager NetworkManagerOwner;
@@ -1163,17 +1163,17 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsLocalPlayer => IsSpawned && IsPlayerObject && OwnerClientId == NetworkManagerOwner.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsOwner => IsSpawned && OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => OwnerClientId == NetworkManager.ServerClientId;
+        public bool IsOwnedByServer => IsSpawned && OwnerClientId == NetworkManager.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
@@ -2275,7 +2275,7 @@ namespace Unity.Netcode
 
         private void OnTransformParentChanged()
         {
-            if (!AutoObjectParentSync || NetworkManager.ShutdownInProgress)
+            if (!AutoObjectParentSync)
             {
                 return;
             }
@@ -2285,8 +2285,12 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!NetworkManager.IsListening)
+            if (!IsSpawned || !NetworkManager.IsListening)
             {
+                if (NetworkManager.ShutdownInProgress)
+                {
+                    return;
+                }
                 // DANGO-TODO: Review as to whether we want to provide a better way to handle changing parenting of objects when the
                 // object is not spawned. Really, we shouldn't care about these types of changes.
                 if (NetworkManager.DistributedAuthorityMode && m_CachedParent != null && transform.parent == null)
@@ -2302,7 +2306,7 @@ namespace Unity.Netcode
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
             isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
-            var distributedAuthority = NetworkManager.DistributedAuthorityMode;
+            var distributedAuthority = NetworkManagerOwner.DistributedAuthorityMode;
 
             // If we do not have authority and we are spawned
             if (!isAuthority && IsSpawned)
@@ -2373,7 +2377,7 @@ namespace Unity.Netcode
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                IsLatestParentSet = m_LatestParent is not null,
+                IsLatestParentSet = m_LatestParent is not null && m_LatestParent.HasValue,
                 LatestParent = m_LatestParent,
                 RemoveParent = removeParent,
                 AuthorityApplied = authorityApplied,
@@ -3415,7 +3419,7 @@ namespace Unity.Netcode
         {
             // Early exit if the NetworkManager is shutting down, the NetworkObject
             // is not spawned, or an in-scene placed NetworkObject
-            if (NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
+            if (!IsSpawned || IsSceneObject != false || NetworkManager.ShutdownInProgress)
             {
                 return;
             }
@@ -3425,7 +3429,7 @@ namespace Unity.Netcode
             {
                 // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
                 // and update their scene handles
-                if (IsSceneObject.HasValue && !IsSceneObject.Value && m_SceneOrigin != next && m_CachedParent == null)
+                if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
                 {
                     SceneManager.MoveGameObjectToScene(gameObject, next);
                     SceneChangedUpdate(next);
@@ -3517,8 +3521,8 @@ namespace Unity.Netcode
             // Early exit if SceneMigrationSynchronization is disabled,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
-            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager.ShutdownInProgress ||
-                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
+            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManagerOwner.ShutdownInProgress ||
+                !NetworkManagerOwner.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
             {
                 // Stop checking for a scene migration
                 return false;
