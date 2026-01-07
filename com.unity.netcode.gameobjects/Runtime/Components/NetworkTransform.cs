@@ -3763,7 +3763,7 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -3792,7 +3792,7 @@ namespace Unity.Netcode.Components
                 m_PreviousScaleLerpSmoothing = ScaleLerpSmoothing;
 
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
-                m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, true);
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();

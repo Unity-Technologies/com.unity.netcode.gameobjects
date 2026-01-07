@@ -1168,7 +1168,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => IsSpawned && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsOwner => IsSpawned && OwnerClientId == NetworkManagerOwner.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
@@ -2247,7 +2247,7 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (!parent && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
+            if (parent && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
@@ -2454,7 +2454,7 @@ namespace Unity.Netcode
             // has been set, this will not be entered into again (i.e. the later code will be invoked and
             // users will get notifications when the parent changes).
             var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            if (!transform.parent && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
+            if (transform.parent && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
