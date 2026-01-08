@@ -2226,7 +2226,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!NetworkManager.IsListening)
+            var networkManager = NetworkManager;
+            if (!networkManager || !networkManager.IsListening)
             {
                 return false;
             }
@@ -2237,7 +2238,7 @@ namespace Unity.Netcode
 
             // If we don't have authority, and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
-            if (!isAuthority && !NetworkManager.ShutdownInProgress)
+            if (!isAuthority && !networkManager.ShutdownInProgress)
             {
                 return false;
             }
