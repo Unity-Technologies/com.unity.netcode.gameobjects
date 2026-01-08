@@ -358,7 +358,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Useful to know if we should or should not send a message
         /// </summary>
-        internal bool HasRemoteObservers => !(Observers.Count == 0 || (Observers.Contains(NetworkManager.LocalClientId) && Observers.Count == 1));
+        internal bool HasRemoteObservers => !(Observers.Count == 0 || (Observers.Contains(NetworkManagerOwner.LocalClientId) && Observers.Count == 1));
 
         /// <summary>
         /// Distributed Authority Mode Only
@@ -392,29 +392,29 @@ namespace Unity.Netcode
         /// <param name="destroy">Defaults to true, determines whether the <see cref="NetworkObject"/> will be destroyed.</param>
         public void DeferDespawn(int tickOffset, bool destroy = true)
         {
-            if (!NetworkManager.DistributedAuthorityMode)
-            {
-                NetworkLog.LogError($"This method is only available in distributed authority mode.");
-                return;
-            }
-
             if (!IsSpawned)
             {
                 NetworkLog.LogError($"Cannot defer despawning {name} because it is not spawned!");
                 return;
             }
 
+            if (!NetworkManagerOwner.DistributedAuthorityMode)
+            {
+                NetworkLog.LogError($"This method is only available in distributed authority mode.");
+                return;
+            }
+
             if (!HasAuthority)
             {
-                NetworkLog.LogError($"Only the authority can invoke {nameof(DeferDespawn)} and local Client-{NetworkManager.LocalClientId} is not the authority of {name}!");
+                NetworkLog.LogError($"Only the authority can invoke {nameof(DeferDespawn)} and local Client-{NetworkManagerOwner.LocalClientId} is not the authority of {name}!");
                 return;
             }
 
             // Apply the relative tick offset for when this NetworkObject should be despawned on
             // non-authoritative instances.
-            DeferredDespawnTick = NetworkManager.ServerTime.Tick + tickOffset;
+            DeferredDespawnTick = NetworkManagerOwner.ServerTime.Tick + tickOffset;
 
-            var connectionManager = NetworkManager.ConnectionManager;
+            var connectionManager = NetworkManagerOwner.ConnectionManager;
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
@@ -426,7 +426,7 @@ namespace Unity.Netcode
             }
 
             // DAHost handles sending updates to all clients
-            if (NetworkManager.DAHost)
+            if (NetworkManagerOwner.DAHost)
             {
                 for (int i = 0; i < connectionManager.ConnectedClientsList.Count; i++)
                 {
@@ -595,17 +595,17 @@ namespace Unity.Netcode
         /// <returns>true or false depending upon lock operation's success</returns>
         public bool SetOwnershipLock(bool lockOwnership = true)
         {
-            // If we are not in distributed autority mode, then exit early
-            if (!NetworkManager.DistributedAuthorityMode)
-            {
-                Debug.LogError($"[Feature Not Allowed In Client-Server Mode] Ownership flags are a distributed authority feature only!");
-                return false;
-            }
-
             // If we don't have authority exit early
             if (!HasAuthority)
             {
                 NetworkLog.LogWarningServer($"[Attempted Lock Without Authority] Client-{NetworkManager.LocalClientId} is trying to lock ownership but does not have authority!");
+                return false;
+            }
+
+            // If we are not in distributed autority mode, then exit early
+            if (!NetworkManager.DistributedAuthorityMode)
+            {
+                Debug.LogError($"[Feature Not Allowed In Client-Server Mode] Ownership flags are a distributed authority feature only!");
                 return false;
             }
 
@@ -730,6 +730,11 @@ namespace Unity.Netcode
             /// This object is marked as SessionOwnerOnly and therefore cannot be requested
             /// </summary>
             SessionOwnerOnly,
+
+            /// <summary>
+            /// The request is invalid (if not spawned for instance)
+            /// </summary>
+            Invalid,
         }
 
         /// <summary>
@@ -748,8 +753,20 @@ namespace Unity.Netcode
         /// <returns><see cref="OwnershipRequestStatus"/></returns>
         public OwnershipRequestStatus RequestOwnership()
         {
+            // An ownership change request can only be made if spawned.
+            if (!IsSpawned)
+            {
+
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"[{name}] is trying to perform an ownership request but the object is not spawned!");
+                }
+
+                return OwnershipRequestStatus.Invalid;
+            }
+
             // Exit early the local client is already the owner
-            if (OwnerClientId == NetworkManager.LocalClientId)
+            if (OwnerClientId == NetworkManagerOwner.LocalClientId)
             {
                 return OwnershipRequestStatus.AlreadyOwner;
             }
@@ -785,14 +802,14 @@ namespace Unity.Netcode
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 ClientIdCount = 1,
-                RequestClientId = NetworkManager.LocalClientId,
+                RequestClientId = NetworkManagerOwner.LocalClientId,
                 ClientIds = new ulong[1] { OwnerClientId },
                 DistributedAuthorityMode = true,
                 OwnershipFlags = (ushort)Ownership,
             };
 
-            var sendTarget = NetworkManager.DAHost ? OwnerClientId : NetworkManager.ServerClientId;
-            NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
+            var sendTarget = NetworkManagerOwner.DAHost ? OwnerClientId : NetworkManager.ServerClientId;
+            NetworkManagerOwner.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
 
             return OwnershipRequestStatus.RequestSent;
         }
@@ -855,9 +872,10 @@ namespace Unity.Netcode
                 // respond to any additional ownership request with OwnershipRequestResponseStatus.RequestInProgress.
                 AddOwnershipExtended(OwnershipStatusExtended.Requested);
 
+                // if OwnershipRequestStatus cannot be called before spawn
                 // This action is always authorized as long as the client still has authority.
                 // We need to pass in that this is a request approval ownership change.
-                NetworkManager.SpawnManager.ChangeOwnership(this, clientRequestingOwnership, HasAuthority, true);
+                NetworkManagerOwner.SpawnManager.ChangeOwnership(this, clientRequestingOwnership, HasAuthority, true);
             }
             else
             {
@@ -871,15 +889,15 @@ namespace Unity.Netcode
                 {
                     ChangeMessageType = ChangeOwnershipMessage.ChangeType.RequestDenied,
                     NetworkObjectId = NetworkObjectId,
-                    OwnerClientId = NetworkManager.LocalClientId, // Always use the local clientId (see above notes)
+                    OwnerClientId = NetworkManagerOwner.LocalClientId, // Always use the local clientId (see above notes)
                     RequestClientId = clientRequestingOwnership,
                     DistributedAuthorityMode = true,
                     OwnershipRequestResponseStatus = (byte)response,
                     OwnershipFlags = (ushort)Ownership,
                 };
 
-                var sendTarget = NetworkManager.DAHost ? clientRequestingOwnership : NetworkManager.ServerClientId;
-                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
+                var sendTarget = NetworkManagerOwner.DAHost ? clientRequestingOwnership : NetworkManager.ServerClientId;
+                NetworkManagerOwner.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
             }
         }
 
@@ -976,7 +994,7 @@ namespace Unity.Netcode
         /// </remarks>
         public bool SetOwnershipStatus(OwnershipStatus status, bool clearAndSet = false, OwnershipLockActions lockAction = OwnershipLockActions.None)
         {
-            if (status.HasFlag(OwnershipStatus.SessionOwner) && !NetworkManager.LocalClient.IsSessionOwner)
+            if (status.HasFlag(OwnershipStatus.SessionOwner) && !NetworkManagerOwner.LocalClient.IsSessionOwner)
             {
                 NetworkLog.LogWarning("Only the session owner is allowed to set the ownership status to session owner only.");
                 return false;
@@ -1066,22 +1084,22 @@ namespace Unity.Netcode
                 OwnershipFlags = (ushort)Ownership,
             };
 
-            if (NetworkManager.DAHost)
+            if (NetworkManagerOwner.DAHost)
             {
                 foreach (var clientId in Observers)
                 {
-                    if (clientId == NetworkManager.LocalClientId)
+                    if (clientId == NetworkManagerOwner.LocalClientId)
                     {
                         continue;
                     }
-                    NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, clientId);
+                    NetworkManagerOwner.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, clientId);
                 }
             }
             else
             {
                 changeOwnership.ClientIdCount = Observers.Count;
                 changeOwnership.ClientIds = Observers.ToArray();
-                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                NetworkManagerOwner.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, NetworkManager.ServerClientId);
             }
         }
 
@@ -1171,7 +1189,7 @@ namespace Unity.Netcode
         public bool IsOwner => IsSpawned && OwnerClientId == NetworkManagerOwner.LocalClientId;
 
         /// <summary>
-        /// Gets Whether or not the object is owned by anyone
+        /// Gets whether or not the object is owned by anyone
         /// </summary>
         public bool IsOwnedByServer => IsSpawned && OwnerClientId == NetworkManager.ServerClientId;
 
@@ -1434,7 +1452,7 @@ namespace Unity.Netcode
 
             if (!HasAuthority)
             {
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
                     throw new NotServerException($"Only the owner-authority can change visibility when distributed authority mode is enabled!");
                 }
@@ -1446,7 +1464,7 @@ namespace Unity.Netcode
 
             if (Observers.Contains(clientId))
             {
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
                     Debug.LogError($"The object {name} is already visible to Client-{clientId}!");
                     return;
@@ -1459,13 +1477,13 @@ namespace Unity.Netcode
 
             if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {gameObject.name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
                 }
                 return;
             }
-            NetworkManager.SpawnManager.MarkObjectForShowingTo(this, clientId);
+            NetworkManagerOwner.SpawnManager.MarkObjectForShowingTo(this, clientId);
             Observers.Add(clientId);
         }
 
@@ -1496,8 +1514,13 @@ namespace Unity.Netcode
             // Do the safety loop first to prevent putting the netcode in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
+                if (!networkObjects[i].IsSpawned)
+                {
+                    throw new SpawnStateException("Object is not spawned");
+                }
+
                 var networkObject = networkObjects[i];
-                var networkManager = networkObject.NetworkManager;
+                var networkManager = networkObject.NetworkManagerOwner;
 
                 if (networkManager.DistributedAuthorityMode && clientId == networkObject.OwnerClientId)
                 {
@@ -1513,7 +1536,7 @@ namespace Unity.Netcode
                 // that the local instance does not own
                 if (!networkObjects[i].HasAuthority)
                 {
-                    if (networkObjects[i].NetworkManager.DistributedAuthorityMode)
+                    if (networkObjects[i].NetworkManagerOwner.DistributedAuthorityMode)
                     {
                         // It will log locally and to the "master-host".
                         NetworkLog.LogErrorServer("Only the owner-authority can change visibility when distributed authority mode is enabled!");
@@ -1525,19 +1548,15 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (!networkObjects[i].IsSpawned)
-                {
-                    throw new SpawnStateException("Object is not spawned");
-                }
 
                 if (networkObjects[i].Observers.Contains(clientId))
                 {
                     throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
                 }
 
-                if (networkObjects[i].NetworkManager != networkManager)
+                if (networkObjects[i].NetworkManagerOwner != networkManager)
                 {
-                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManagerOwner));
                 }
             }
 
@@ -1568,9 +1587,9 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (!HasAuthority && !NetworkManager.DAHost)
+            if (!HasAuthority && !NetworkManagerOwner.DAHost)
             {
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
                     throw new NotServerException($"Only the owner-authority can change visibility when distributed authority mode is enabled!");
                 }
@@ -1580,11 +1599,11 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!NetworkManager.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
+            if (!NetworkManagerOwner.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
             {
                 if (!Observers.Contains(clientId))
                 {
-                    if (NetworkManager.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                     {
                         Debug.LogWarning($"{name} is already hidden from Client-{clientId}! (ignoring)");
                         return;
@@ -1596,41 +1615,41 @@ namespace Unity.Netcode
                 {
                     NetworkObjectId = NetworkObjectId,
                     DestroyGameObject = !IsSceneObject.Value,
-                    IsDistributedAuthority = NetworkManager.DistributedAuthorityMode,
-                    IsTargetedDestroy = NetworkManager.DistributedAuthorityMode,
+                    IsDistributedAuthority = NetworkManagerOwner.DistributedAuthorityMode,
+                    IsTargetedDestroy = NetworkManagerOwner.DistributedAuthorityMode,
                     TargetClientId = clientId, // Just always populate this value whether we write it or not
                     DeferredDespawnTick = DeferredDespawnTick,
                 };
 
                 var size = 0;
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    if (!NetworkManager.DAHost)
+                    if (!NetworkManagerOwner.DAHost)
                     {
                         // Send destroy call to service or DAHost
-                        size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                        size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                     }
                     else // DAHost mocking service
                     {
                         // Send destroy call
-                        size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
+                        size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
                         // Broadcast the destroy to all clients so they can update their observers list
-                        foreach (var client in NetworkManager.ConnectionManager.ConnectedClientIds)
+                        foreach (var client in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
                         {
-                            if (client == clientId || client == NetworkManager.LocalClientId)
+                            if (client == clientId || client == NetworkManagerOwner.LocalClientId)
                             {
                                 continue;
                             }
-                            size += NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, client);
+                            size += NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, client);
                         }
                     }
                 }
                 else
                 {
                     // Send destroy call
-                    size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
+                    size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
                 }
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
+                NetworkManagerOwner.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
 
@@ -1661,7 +1680,7 @@ namespace Unity.Netcode
             for (int i = 0; i < networkObjects.Count; i++)
             {
                 var networkObject = networkObjects[i];
-                var networkManager = networkObject.NetworkManager;
+                var networkManager = networkObject.NetworkManagerOwner;
 
                 if (networkManager.DistributedAuthorityMode && clientId == networkObject.OwnerClientId)
                 {
@@ -1677,7 +1696,7 @@ namespace Unity.Netcode
                 // that the local instance does not own
                 if (!networkObjects[i].HasAuthority)
                 {
-                    if (networkObjects[i].NetworkManager.DistributedAuthorityMode)
+                    if (networkObjects[i].NetworkManagerOwner.DistributedAuthorityMode)
                     {
                         // It will log locally and to the "master-host".
                         NetworkLog.LogErrorServer($"Only the owner-authority can change hide a {nameof(NetworkObject)} when distributed authority mode is enabled!");
@@ -1700,9 +1719,9 @@ namespace Unity.Netcode
                     throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObjects[i].NetworkObjectId} is already hidden");
                 }
 
-                if (networkObjects[i].NetworkManager != networkManager)
+                if (networkObjects[i].NetworkManagerOwner != networkManager)
                 {
-                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManagerOwner));
                 }
             }
 
@@ -1714,6 +1733,7 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
+            // TODO Can we destroy an object before it is spawned?
             // If no NetworkManager is assigned, then just exit early
             if (!NetworkManager)
             {
