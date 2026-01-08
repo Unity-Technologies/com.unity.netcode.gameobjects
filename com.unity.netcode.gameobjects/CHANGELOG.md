@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Minimal supported editor was set to LTS version `0f1` which means that we do not guarantee that the package will work on alpha or beta versions of 6000.0
 
 ### Deprecated
 
