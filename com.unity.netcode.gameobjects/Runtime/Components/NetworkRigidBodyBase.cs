@@ -971,6 +971,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal void UpdateOwnershipAuthority()
         {
+            // TODO do we have a cached NetworkManager here? Should we create one?
             if (NetworkManager.DistributedAuthorityMode)
             {
                 // When in distributed authority mode, always use HasAuthority
@@ -980,6 +981,7 @@ namespace Unity.Netcode.Components
             {
                 if (NetworkTransform.IsServerAuthoritative())
                 {
+                    // TODO do we have a cached NetworkManager here? Should we create one
                     m_IsAuthority = NetworkManager.IsServer;
                 }
                 else
@@ -997,6 +999,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
+            // TODO do we have a cached NetworkManager here? Should we create one
             m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
             m_TickRate = NetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();

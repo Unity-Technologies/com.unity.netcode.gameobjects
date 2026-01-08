@@ -1619,7 +1619,7 @@ namespace Unity.Netcode.Components
         public bool CanCommitToTransform { get; protected set; }
 
         /// <summary>
-        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
@@ -1850,6 +1850,7 @@ namespace Unity.Netcode.Components
             if (!IsServerAuthoritative() && NetworkObject.OwnerClientId == targetClientId)
             {
                 // In distributed authority mode we want to synchronize the half float if we are the owner.
+                // TODO do we have a cached NetworkManager here? Should we create one?
                 return (!NetworkManager.DistributedAuthorityMode && NetworkObject.IsOwnedByServer) || (NetworkManager.DistributedAuthorityMode);
             }
             return true;
@@ -2092,12 +2093,14 @@ namespace Unity.Netcode.Components
             return CheckForStateChange(ref networkState);
         }
 
+        //private int m_CachedTickRateValue;
         /// <summary>
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CheckForStateChange(ref NetworkTransformState networkState, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
+            var cachedTickRateValue = (int)m_CachedNetworkManager.NetworkConfig.TickRate;
             var flagStates = networkState.FlagStates;
 
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
@@ -2112,9 +2115,8 @@ namespace Unity.Netcode.Components
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
             if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
             {
-                // TODO-CACHE: m_CachedNetworkManager.NetworkConfig.TickRate value
                 // Increment to the next frame synch tick position for this instance
-                m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
+                m_NextTickSync += cachedTickRateValue;
                 // If we are teleporting, we do not need to send a frame synch for this tick slot
                 // as a "frame synch" really is effectively just a teleport.
                 isAxisSync = !flagStates.IsTeleportingNextFrame;
@@ -3297,7 +3299,7 @@ namespace Unity.Netcode.Components
             }
 
             // Get the time when this new state was sent
-            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkTickSystem.TickRate, newState.NetworkTick).Time;
+            newState.SentTime = new NetworkTime(m_CachedNetworkTickRate, newState.NetworkTick).Time;
 
             if (LogStateUpdate)
             {
@@ -3526,7 +3528,7 @@ namespace Unity.Netcode.Components
             // Then we want to:
             // - Force the "IsSynchronizing" flag so the NetworkTransform has its state updated properly and runs through the initialization again.
             // - Make sure the SynchronizingState is updated to the instantiated prefab's default flags/settings.
-            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && !IsOwner && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
+            if (m_CachedNetworkManager.IsServer && !m_CachedNetworkManager.DistributedAuthorityMode && !IsOwner && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
             {
                 // Handle the first/root NetworkTransform slightly differently to have a sequenced synchronization of like authority nested NetworkTransform components
                 if (m_IsFirstNetworkTransform)
@@ -3569,6 +3571,7 @@ namespace Unity.Netcode.Components
         internal static InterpolationTypes DefaultInterpolationType;
 
         internal Transform CachedTransform;
+        private uint m_CachedNetworkTickRate;
 
         /// <summary>
         /// Create interpolators when first instantiated to avoid memory allocations if the
@@ -3599,6 +3602,7 @@ namespace Unity.Netcode.Components
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             m_CachedNetworkManager = networkManager;
+            m_CachedNetworkTickRate = m_CachedNetworkManager.NetworkTickSystem.TickRate;
             CachedTransform = transform;
             base.InternalOnNetworkPreSpawn(ref networkManager);
         }
@@ -3607,7 +3611,6 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
             m_ParentedChildren.Clear();
-            m_CachedNetworkManager = NetworkManager;
 
             Initialize();
 
@@ -3736,9 +3739,9 @@ namespace Unity.Netcode.Components
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
 
-            if (NetworkManager.DistributedAuthorityMode)
+            if (m_CachedNetworkManager.DistributedAuthorityMode)
             {
-                RegisterNetworkManagerForTickUpdate(NetworkManager);
+                RegisterNetworkManagerForTickUpdate(m_CachedNetworkManager);
             }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -4577,7 +4580,7 @@ namespace Unity.Netcode.Components
             {
                 // TODO: Investigate where this state should be applied or just discarded.
                 // For now, discard the state if we assumed ownership.
-                // Debug.Log($"[Client-{NetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
+                // Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
                 return;
             }
             // Store the previous/old state
@@ -4690,6 +4693,7 @@ namespace Unity.Netcode.Components
         /// Only valid on clients.
         /// </remarks>
         /// <returns>Returns the tick latency and local offset in seconds and as a float value.</returns>
+        /// Can this be called before spawn?
         public static float GetTickLatency()
         {
             return GetTickLatency(NetworkManager.Singleton);
@@ -4802,14 +4806,14 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void RegisterForTickUpdate(NetworkTransform networkTransform)
         {
-
-            if (!networkTransform.NetworkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            var networkManager = networkTransform.NetworkManager;
+            if (!networkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkManager))
             {
-                s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
+                s_NetworkTickRegistration.Add(networkManager, new NetworkTransformTickRegistration(networkManager));
             }
 
             networkTransform.RegisterForTickSynchronization();
-            s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Add(networkTransform);
+            s_NetworkTickRegistration[networkManager].NetworkTransforms.Add(networkTransform);
         }
 
         /// <summary>
@@ -4819,16 +4823,17 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
         {
-            if (networkTransform.NetworkManager == null)
+            var networkManager = networkTransform.NetworkManager;
+            if (!networkManager)
             {
                 return;
             }
-            if (s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            if (s_NetworkTickRegistration.ContainsKey(networkManager))
             {
-                s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Remove(networkTransform);
-                if (!networkTransform.NetworkManager.DistributedAuthorityMode && s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Count == 0)
+                s_NetworkTickRegistration[networkManager].NetworkTransforms.Remove(networkTransform);
+                if (!networkManager.DistributedAuthorityMode && s_NetworkTickRegistration[networkManager].NetworkTransforms.Count == 0)
                 {
-                    var registrationEntry = s_NetworkTickRegistration[networkTransform.NetworkManager];
+                    var registrationEntry = s_NetworkTickRegistration[networkManager];
                     registrationEntry.Remove();
                 }
             }

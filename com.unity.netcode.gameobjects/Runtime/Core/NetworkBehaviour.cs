@@ -88,6 +88,7 @@ namespace Unity.Netcode
         internal void __endSendServerRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
+            // Getting this ahead of time actually improves performance
             var networkManager = m_NetworkManager;
             var serverRpcMessage = new ServerRpcMessage
             {
@@ -167,6 +168,7 @@ namespace Unity.Netcode
         internal void __endSendClientRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
+            // Getting this ahead of time actually improves performance
             var networkManager = m_NetworkManager;
             var clientRpcMessage = new ClientRpcMessage
             {
@@ -215,7 +217,7 @@ namespace Unity.Netcode
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
-                rpcWriteSize = m_NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
+                rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -349,6 +351,7 @@ namespace Unity.Netcode
         internal void __endSendRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, RpcParams rpcParams, RpcAttribute.RpcAttributeParams attributeParams, SendTo defaultTarget, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
+            // Sould we create a local networkManager var to improve performance instead of using 2 times m_NetworkManager?
             var rpcMessage = new RpcMessage
             {
                 Metadata = new RpcMetadata
@@ -650,6 +653,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void UpdateNetworkProperties()
         {
+            // Getting these ahead of time actually improves performance
             var networkObject = m_NetworkObject;
             var networkManager = m_NetworkManager;
 

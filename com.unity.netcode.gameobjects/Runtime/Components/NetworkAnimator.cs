@@ -194,6 +194,7 @@ namespace Unity.Netcode.Components
         internal NetworkAnimatorStateChangeHandler(NetworkAnimator networkAnimator)
         {
             m_NetworkAnimator = networkAnimator;
+            // TODO can we use m_LocalNetworkManager here or other cached var?
             m_IsServer = networkAnimator.NetworkManager.IsServer;
             NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
         }
@@ -1505,7 +1506,7 @@ namespace Unity.Netcode.Components
                     }
                 }
                 // For reference, it is valid to have no transition information
-                //else if (NetworkManager.LogLevel == LogLevel.Developer)
+                //else if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
                 //{
                 //    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
                 //}
