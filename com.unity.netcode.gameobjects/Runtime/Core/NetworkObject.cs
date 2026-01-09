@@ -52,7 +52,13 @@ namespace Unity.Netcode
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
-        public uint PrefabIdHash => GlobalObjectIdHash;
+        public uint PrefabIdHash
+        {
+            get
+            {
+                return GlobalObjectIdHash;
+            }
+        }
 
         /// <summary>
         /// InstantiationData sent during the instantiation process.
@@ -351,7 +357,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the NetworkManager that owns this NetworkObject instance.
+        /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkManagerOwner ? NetworkManagerOwner : NetworkManager.Singleton;
 
@@ -595,15 +601,21 @@ namespace Unity.Netcode
         /// <returns>true or false depending upon lock operation's success</returns>
         public bool SetOwnershipLock(bool lockOwnership = true)
         {
+            if (!IsSpawned)
+            {
+                Debug.LogError($"Trying to add or remove ownership lock on [{name}] which is not spawned!");
+                return false;
+            }
+
             // If we don't have authority exit early
             if (!HasAuthority)
             {
-                NetworkLog.LogWarningServer($"[Attempted Lock Without Authority] Client-{NetworkManager.LocalClientId} is trying to lock ownership but does not have authority!");
+                NetworkLog.LogWarningServer($"[Attempted Lock Without Authority] Client-{NetworkManagerOwner.LocalClientId} is trying to lock ownership but does not have authority!");
                 return false;
             }
 
             // If we are not in distributed autority mode, then exit early
-            if (!NetworkManager.DistributedAuthorityMode)
+            if (!NetworkManagerOwner.DistributedAuthorityMode)
             {
                 Debug.LogError($"[Feature Not Allowed In Client-Server Mode] Ownership flags are a distributed authority feature only!");
                 return false;
@@ -756,15 +768,13 @@ namespace Unity.Netcode
             // An ownership change request can only be made if spawned.
             if (!IsSpawned)
             {
-
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"[{name}] is trying to perform an ownership request but the object is not spawned!");
+                    NetworkLog.LogWarning($"Trying to perform an ownership request but {name} is not spawned!");
                 }
 
                 return OwnershipRequestStatus.Invalid;
             }
-
             // Exit early the local client is already the owner
             if (OwnerClientId == NetworkManagerOwner.LocalClientId)
             {
@@ -872,7 +882,6 @@ namespace Unity.Netcode
                 // respond to any additional ownership request with OwnershipRequestResponseStatus.RequestInProgress.
                 AddOwnershipExtended(OwnershipStatusExtended.Requested);
 
-                // if OwnershipRequestStatus cannot be called before spawn
                 // This action is always authorized as long as the client still has authority.
                 // We need to pass in that this is a request approval ownership change.
                 NetworkManagerOwner.SpawnManager.ChangeOwnership(this, clientRequestingOwnership, HasAuthority, true);
@@ -1734,34 +1743,35 @@ namespace Unity.Netcode
         private void OnDestroy()
         {
             // TODO Can we destroy an object before it is spawned?
+            var networkManager = NetworkManager;
             // If no NetworkManager is assigned, then just exit early
-            if (!NetworkManager)
+            if (!networkManager)
             {
                 return;
             }
 
             // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
             // was marked as destroy pending scene event (which means the destroy with scene property was set).
-            var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
+            var isAuthorityDestroy = HasAuthority || networkManager.DAHost || DestroyPendingSceneEvent;
 
-            if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            if (IsSpawned && !isAuthorityDestroy && networkManager.IsListening &&
+                (IsSceneObject == null || IsSceneObject.Value != true))
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
-                NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+                networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
                 // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
                 // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
-                if (!NetworkManager.ShutdownInProgress)
+                if (!networkManager.ShutdownInProgress)
                 {
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
                     // If the NetworkObject's GameObject is not valid or the scene is no longer valid or loaded, then this was due to the
                     // unloading of a scene which is done by the authority...
                     if (gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded)
                     {
-                        if (NetworkManager.LogLevel <= LogLevel.Error)
+                        if (networkManager.LogLevel <= LogLevel.Error)
                         {
-                            if (NetworkManager.DistributedAuthorityMode)
+                            if (networkManager.DistributedAuthorityMode)
                             {
                                 NetworkLog.LogError($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-owner client is not valid during a distributed authority session. Call {nameof(Destroy)} or {nameof(Despawn)} on the client-owner instead.");
                             }
@@ -1782,13 +1792,13 @@ namespace Unity.Netcode
             }
 
             // Always attempt to remove from scene changed updates
-            NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
-            if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
-                    NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                    networkManager.SpawnManager.OnDespawnObject(networkObject, false);
                 }
             }
         }
@@ -1800,16 +1810,17 @@ namespace Unity.Netcode
             {
                 NetworkManagerOwner = NetworkManager.Singleton;
             }
-            if (!NetworkManager.IsListening)
+
+            if (!NetworkManagerOwner.IsListening)
             {
-                throw new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before spawning objects");
+                throw new NotListeningException($"{nameof(NetworkManagerOwner)} is not listening, start a server or host before spawning objects");
             }
 
-            if ((!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode) || (NetworkManager.DistributedAuthorityMode && !NetworkManager.LocalClient.IsSessionOwner && NetworkManager.LocalClientId != ownerClientId))
+            if ((!NetworkManagerOwner.IsServer && !NetworkManagerOwner.DistributedAuthorityMode) || (NetworkManagerOwner.DistributedAuthorityMode && !NetworkManagerOwner.LocalClient.IsSessionOwner && NetworkManagerOwner.LocalClientId != ownerClientId))
             {
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    throw new NotServerException($"When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManager.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!");
+                    throw new NotServerException($"When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManagerOwner.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!");
                 }
                 else
                 {
@@ -1817,19 +1828,19 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkManager.DistributedAuthorityMode)
+            if (NetworkManagerOwner.DistributedAuthorityMode)
             {
-                if (NetworkManager.LocalClient == null || !NetworkManager.IsConnectedClient || !NetworkManager.ConnectionManager.LocalClient.IsApproved)
+                if (NetworkManagerOwner.LocalClient == null || !NetworkManagerOwner.IsConnectedClient || !NetworkManagerOwner.ConnectionManager.LocalClient.IsApproved)
                 {
                     Debug.LogError($"Cannot spawn {name} until the client is fully connected to the session!");
                     return;
                 }
-                if (NetworkManager.NetworkConfig.EnableSceneManagement)
+                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement)
                 {
-                    if (!NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(gameObject.scene.handle))
+                    if (!NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(gameObject.scene.handle))
                     {
                         // Most likely this issue is due to an integration test
-                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                         {
                             NetworkLog.LogWarning($"Failed to find scene handle {gameObject.scene.handle} for {gameObject.name}!");
                         }
@@ -1838,43 +1849,43 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
+                        NetworkSceneHandle = NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
                     }
                 }
                 if (DontDestroyWithOwner && !IsOwnershipDistributable)
                 {
                     //Ownership |= OwnershipStatus.Distributable;
                     // DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel == LogLevel.Developer)
                     {
                         NetworkLog.LogWarning("DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set. For now, if the NetworkObject does not destroy with the owner it will set ownership to SessionOwner.");
                     }
                 }
             }
 
-            NetworkManager.SpawnManager.AuthorityLocalSpawn(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
+            NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
-            if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
+            if ((NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.DAHost) || (!NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.IsServer))
             {
-                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < NetworkManagerOwner.ConnectedClientsList.Count; i++)
                 {
-                    if (NetworkManager.ConnectedClientsList[i].ClientId == NetworkManager.ServerClientId)
+                    if (NetworkManagerOwner.ConnectedClientsList[i].ClientId == NetworkManager.ServerClientId)
                     {
                         continue;
                     }
-                    if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
+                    if (Observers.Contains(NetworkManagerOwner.ConnectedClientsList[i].ClientId))
                     {
-                        NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
+                        NetworkManagerOwner.SpawnManager.SendSpawnCallForObject(NetworkManagerOwner.ConnectedClientsList[i].ClientId, this);
                     }
                 }
             }
-            else if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
+            else if (NetworkManagerOwner.DistributedAuthorityMode && !NetworkManagerOwner.DAHost)
             {
                 // If spawning with observers or if not spawning with observers but the observer count is greater than 1 (i.e. owner/authority creating),
                 // then we want to send a spawn notification.
                 if (SpawnWithObservers || !SpawnWithObservers && Observers.Count > 1)
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this);
+                    NetworkManagerOwner.SpawnManager.SendSpawnCallForObject(NetworkManagerOwner.ServerClientId, this);
                 }
             }
             else
@@ -1963,7 +1974,8 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
-            var clientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
+            var networkManager = NetworkManager;
+            var clientId = networkManager.DistributedAuthorityMode ? networkManager.LocalClientId : NetworkManager.ServerClientId;
             SpawnInternal(destroyWithScene, clientId, false);
         }
 
@@ -2009,7 +2021,7 @@ namespace Unity.Netcode
             {
                 behavior.MarkVariablesDirty(false);
             }
-            NetworkManager.SpawnManager.DespawnObject(this, destroy);
+            NetworkManagerOwner.SpawnManager.DespawnObject(this, destroy);
         }
 
         internal void ResetOnDespawn()
@@ -2027,7 +2039,12 @@ namespace Unity.Netcode
         /// </summary>
         public void RemoveOwnership()
         {
-            NetworkManager.SpawnManager.RemoveOwnership(this);
+            if (!IsSpawned)
+            {
+                NetworkLog.LogErrorServer("Trying to remove ownership on an object that is not spawned!");
+                return;
+            }
+            NetworkManagerOwner.SpawnManager.RemoveOwnership(this);
         }
 
         /// <summary>
@@ -2036,7 +2053,13 @@ namespace Unity.Netcode
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
-            NetworkManager.SpawnManager.ChangeOwnership(this, newOwnerClientId, HasAuthority);
+            if (!IsSpawned)
+            {
+                NetworkLog.LogWarning("Trying to change ownership on an not spawned object!");
+                return;
+            }
+
+            NetworkManagerOwner.SpawnManager.ChangeOwnership(this, newOwnerClientId, HasAuthority);
         }
 
         /// <summary>
@@ -2045,14 +2068,20 @@ namespace Unity.Netcode
         /// </summary>
         internal void InvokeBehaviourOnOwnershipChanged(ulong originalOwnerClientId, ulong newOwnerClientId)
         {
-            var distributedAuthorityMode = NetworkManager.DistributedAuthorityMode;
-            var isServer = NetworkManager.IsServer;
-            var isPreviousOwner = originalOwnerClientId == NetworkManager.LocalClientId;
-            var isNewOwner = newOwnerClientId == NetworkManager.LocalClientId;
+            if (!IsSpawned)
+            {
+                NetworkLog.LogWarning("Trying to change ownership on an not spawned object!");
+                return;
+            }
+
+            var distributedAuthorityMode = NetworkManagerOwner.DistributedAuthorityMode;
+            var isServer = NetworkManagerOwner.IsServer;
+            var isPreviousOwner = originalOwnerClientId == NetworkManagerOwner.LocalClientId;
+            var isNewOwner = newOwnerClientId == NetworkManagerOwner.LocalClientId;
 
             if (distributedAuthorityMode || isPreviousOwner)
             {
-                NetworkManager.SpawnManager.UpdateOwnershipTable(this, originalOwnerClientId, true);
+                NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, originalOwnerClientId, true);
             }
 
             foreach (var childBehaviour in ChildNetworkBehaviours)
@@ -2064,7 +2093,7 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManager.SpawnManager.UpdateOwnershipTable(this, newOwnerClientId);
+            NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, newOwnerClientId);
 
             if (distributedAuthorityMode || isServer || isNewOwner)
             {
@@ -2177,11 +2206,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns>Whether or not re-parenting was successful.</returns>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             // If we are removing ourself from a parent
-            if (!parent)
+            if (parent == null)
             {
                 return TrySetParent((NetworkObject)null, worldPositionStays);
             }
@@ -2241,13 +2270,7 @@ namespace Unity.Netcode
         /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (!AutoObjectParentSync)
-            {
-                return false;
-            }
-
-            var networkManager = NetworkManager;
-            if (!networkManager || !networkManager.IsListening)
+            if (!AutoObjectParentSync || !IsSpawned || !NetworkManagerOwner.IsListening)
             {
                 return false;
             }
@@ -2258,7 +2281,7 @@ namespace Unity.Netcode
 
             // If we don't have authority, and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
-            if (!isAuthority && !networkManager.ShutdownInProgress)
+            if (!isAuthority && !NetworkManagerOwner.ShutdownInProgress)
             {
                 return false;
             }
@@ -2268,9 +2291,9 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (parent && (IsSpawned ^ parent.IsSpawned) && !NetworkManager.ShutdownInProgress)
+            if (parent && (IsSpawned ^ parent.IsSpawned) && !NetworkManagerOwner.ShutdownInProgress)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
                     var nameOfNotSpawnedObject = IsSpawned ? $" the parent ({parent.name})" : $"the child ({name})";
                     NetworkLog.LogWarning($"Parenting failed because {nameOfNotSpawnedObject} is not spawned!");
@@ -2296,6 +2319,7 @@ namespace Unity.Netcode
 
         private void OnTransformParentChanged()
         {
+            // Shouldn't we do our if not spawned check here?
             if (!AutoObjectParentSync)
             {
                 return;
@@ -2306,9 +2330,10 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!IsSpawned || !NetworkManager.IsListening)
+            var networkManager = NetworkManager;
+            if (!IsSpawned || !networkManager.IsListening)
             {
-                if (NetworkManager.ShutdownInProgress)
+                if (networkManager.ShutdownInProgress)
                 {
                     return;
                 }
@@ -2320,7 +2345,7 @@ namespace Unity.Netcode
                     return;
                 }
                 transform.parent = m_CachedParent;
-                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before re-parenting"));
+                Debug.LogException(new NotListeningException($"{nameof(networkManager)} is not listening, start a server or host before re-parenting"));
                 return;
             }
             var isAuthority = false;
@@ -2329,8 +2354,8 @@ namespace Unity.Netcode
             isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
             var distributedAuthority = NetworkManagerOwner.DistributedAuthorityMode;
 
-            // If we do not have authority and we are spawned
-            if (!isAuthority && IsSpawned)
+            // If we do not have authority
+            if (!isAuthority)
             {
                 // If the cached parent has not already been set, and we are in distributed authority mode, then log an exception and exit early as a non-authority instance
                 // is trying to set the parent.
@@ -2347,6 +2372,8 @@ namespace Unity.Netcode
                 return;
             }
 
+
+            //Shouldn't this be done first? if the object is not, spawned we enter the first if (!IsSpawned || !NetworkManager.IsListening)
             if (!IsSpawned)
             {
                 AuthorityAppliedParenting = false;
@@ -2368,7 +2395,7 @@ namespace Unity.Netcode
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
-                if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
+                if (!parentTransform.TryGetComponent(out NetworkObject parentObject))
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
@@ -2398,7 +2425,7 @@ namespace Unity.Netcode
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                IsLatestParentSet = m_LatestParent is not null && m_LatestParent.HasValue,
+                IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
                 LatestParent = m_LatestParent,
                 RemoveParent = removeParent,
                 AuthorityApplied = authorityApplied,
@@ -2417,7 +2444,7 @@ namespace Unity.Netcode
             }
 
             // If we're not the server, we should tell the server about this parent change
-            if (!NetworkManager.IsServer)
+            if (!NetworkManagerOwner.IsServer)
             {
                 // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
                 if (distributedAuthority && Observers.Count <= 1)
@@ -2425,12 +2452,12 @@ namespace Unity.Netcode
                     return;
                 }
 
-                NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 return;
             }
 
             // Otherwise we are a Server (client-server or DAHost). Send to all observers
-            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId)
                 {
@@ -2438,7 +2465,7 @@ namespace Unity.Netcode
                 }
                 if (Observers.Contains(clientId))
                 {
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
+                    NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
@@ -2475,7 +2502,7 @@ namespace Unity.Netcode
             // has been set, this will not be entered into again (i.e. the later code will be invoked and
             // users will get notifications when the parent changes).
             var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            if (transform.parent && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
+            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
@@ -2483,7 +2510,7 @@ namespace Unity.Netcode
                 // attached. Under this case, we preserve the hierarchy, but we don't keep track of the parenting.
                 // Note: We only start tracking parenting if the user removes the child from the standard GameObject
                 // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
-                if (!parentNetworkObject)
+                if (parentNetworkObject == null)
                 {
                     // If we are parented under a GameObject, go ahead and mark the world position stays as false
                     // so clients synchronize their transform in local space. (only for in-scene placed NetworkObjects)
@@ -2499,7 +2526,7 @@ namespace Unity.Netcode
                 else
                 {
                     // If we made it this far, go ahead and set the network parenting values
-                    // with the WorldPositionSays value set to false.
+                    // with the WorldPoisitonSays value set to false
                     // Note: Since in-scene placed NetworkObjects are parented in the scene
                     // the default "assumption" is that children are parenting local space
                     // relative.
@@ -2512,7 +2539,7 @@ namespace Unity.Netcode
                 }
             }
 
-            // If we are removing the parent or our latest parent is not set, then remove the parent.
+            // If we are removing the parent or our latest parent is not set, then remove the parent
             // removeParent is only set when:
             //  - The server-side NetworkObject.OnTransformParentChanged is invoked and the parent is being removed
             //  - The client-side when handling a ParentSyncMessage
@@ -2533,16 +2560,17 @@ namespace Unity.Netcode
                 return true;
             }
 
+            var networkManager = NetworkManager;
             // If we have a latest parent id but it hasn't been spawned yet, then add this instance to the orphanChildren
             // HashSet and return false (i.e. parenting not applied yet)
-            if (m_LatestParent.HasValue && !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
+            if (m_LatestParent.HasValue && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
                 OrphanChildren.Add(this);
                 return false;
             }
 
             // If we made it here, then parent this instance under the parentObject
-            var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
+            var parentObject = networkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             // If we are handling an orphaned child and its parent is orphaned too, then don't parent yet.
             if (orphanedChildPass)
@@ -2588,7 +2616,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkSpawn()
         {
-            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+            if (!IsSpawned)
+            {
+                Debug.LogError("Not spawned!");
+                return;
+            }
+            NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
             // Always invoke all InternalOnNetworkSpawn methods on each child NetworkBehaviour
             // ** before ** invoking OnNetworkSpawn.
@@ -2653,14 +2686,19 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            if (!IsSpawned)
+            {
+                Debug.LogError("Cannot despawn if is not spawned!");
+                return;
+            }
             // Invoke OnNetworkPreDespawn on all child behaviours
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkPreDespawn();
             }
 
-            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
-            NetworkManager.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            NetworkManagerOwner.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
@@ -2742,6 +2780,11 @@ namespace Unity.Netcode
         /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
         internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
+            if (!IsSpawned)
+            {
+                Debug.LogError("Cannot synchronize network variables if not spawned!");
+                return;
+            }
             var currentOwnerId = OwnerClientId;
             OwnerClientId = originalOwnerId;
             PreviousOwnerId = originalPreviousOwnerId;
@@ -2760,7 +2803,7 @@ namespace Unity.Netcode
 
             // Force send a state update for all owner read NetworkVariables  and any currently dirty
             // owner write NetworkVariables.
-            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
@@ -2976,6 +3019,7 @@ namespace Unity.Netcode
 
             public void Serialize(FastBufferWriter writer)
             {
+                // CHECK should we check if OwnerObject.IsSpawned here?
                 if (OwnerObject.NetworkManager.DistributedAuthorityMode)
                 {
                     HasOwnershipFlags = true;
@@ -3191,9 +3235,10 @@ namespace Unity.Netcode
 
         internal SceneObject GetMessageSceneObject(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
         {
+            // CHECK can we use NetworkManagerOwner here? if we do, also replace here:CheckForGlobalObjectIdHashOverride
             var obj = new SceneObject
             {
-                HasParent = m_CachedParent is not null,
+                HasParent = transform.parent != null,
                 WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
@@ -3438,9 +3483,9 @@ namespace Unity.Netcode
         /// </summary>
         private void CurrentlyActiveSceneChanged(Scene current, Scene next)
         {
-            // Early exit if the NetworkManager is shutting down, the NetworkObject
-            // is not spawned, or an in-scene placed NetworkObject
-            if (!IsSpawned || IsSceneObject != false || NetworkManager.ShutdownInProgress)
+            // Early exit if the NetworkObject is not spawned, is an in-scene placed NetworkObject,
+            // or the NetworkManager is shutting down.
+            if (!IsSpawned || IsSceneObject != false || NetworkManagerOwner.ShutdownInProgress)
             {
                 return;
             }
@@ -3463,13 +3508,14 @@ namespace Unity.Netcode
         /// </summary>
         internal void SceneChangedUpdate(Scene scene, bool notify = false)
         {
+            //CHECK
             // Avoiding edge case scenarios, if no NetworkSceneManager exit early
-            if (NetworkManager.SceneManager == null || !IsSpawned)
+            if (NetworkManagerOwner.SceneManager == null || !IsSpawned)
             {
                 return;
             }
 
-            if (NetworkManager.SceneManager.IsSceneEventInProgress())
+            if (NetworkManagerOwner.SceneManager.IsSceneEventInProgress())
             {
                 return;
             }
@@ -3478,17 +3524,17 @@ namespace Unity.Netcode
             SceneOriginHandle = scene.handle;
 
             // non-authority needs to update the NetworkSceneHandle
-            if (!isAuthority && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
+            if (!isAuthority && NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
             {
-                NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+                NetworkSceneHandle = NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
             }
             else if (isAuthority)
             {
                 // Since the authority is the source of truth for the NetworkSceneHandle,
                 // the NetworkSceneHandle is the same as the SceneOriginHandle.
-                if (NetworkManager.DistributedAuthorityMode && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
+                if (NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
                 {
-                    NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+                    NetworkSceneHandle = NetworkManagerOwner.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
                 }
                 else
                 {
@@ -3496,13 +3542,13 @@ namespace Unity.Netcode
                 }
             }
             else // Otherwise, the client did not find the client to server scene handle
-            if (NetworkManager.LogLevel == LogLevel.Developer)
+            if (NetworkManagerOwner.LogLevel == LogLevel.Developer)
             {
                 // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
                 // into, but that scenario seemed very edge case and under most instances a user should be notified that this
                 // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
                 // the server-side too.
-                NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{gameObject.name}] Server - " +
+                NetworkLog.LogWarningServer($"[Client-{NetworkManagerOwner.LocalClientId}][{gameObject.name}] Server - " +
                     $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
                     $"has no associated server side (network) scene handle!");
             }
@@ -3511,7 +3557,7 @@ namespace Unity.Netcode
             // Only the authority side will notify clients of non-parented NetworkObject scene changes
             if (isAuthority && notify && !m_CachedParent)
             {
-                NetworkManager.SceneManager.NotifyNetworkObjectSceneChanged(this);
+                NetworkManagerOwner.SceneManager.NotifyNetworkObjectSceneChanged(this);
             }
         }
 
@@ -3614,7 +3660,7 @@ namespace Unity.Netcode
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (NetworkManager?.LogLevel == LogLevel.Developer)
+                if (NetworkManagerOwner?.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
