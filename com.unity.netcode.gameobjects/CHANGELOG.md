@@ -14,10 +14,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Improve performance of `NetworkObject`. (#3820)
-- Rename pass:
-    - SceneObject -- > SerializedObject
-    - GetMessageSceneObject --> Serialize
-    - AddSceneObject --> Deserialize (#3820)
 
 ### Deprecated
 

@@ -38,6 +38,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
+
             byte bitset = 0x00;
             if (WorldPositionStays) { bitset |= k_WorldPositionStays; }
             if (IsLatestParentSet) { bitset |= k_IsLatestParentSet; }
