@@ -1885,7 +1885,7 @@ namespace Unity.Netcode
                 // then we want to send a spawn notification.
                 if (SpawnWithObservers || !SpawnWithObservers && Observers.Count > 1)
                 {
-                    NetworkManagerOwner.SpawnManager.SendSpawnCallForObject(NetworkManagerOwner.ServerClientId, this);
+                    NetworkManagerOwner.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this);
                 }
             }
             else
