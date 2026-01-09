@@ -52,7 +52,13 @@ namespace Unity.Netcode
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
-        public uint PrefabIdHash => GlobalObjectIdHash;
+        public uint PrefabIdHash
+        {
+            get
+            {
+                return GlobalObjectIdHash;
+            }
+        }
 
         /// <summary>
         /// InstantiationData sent during the instantiation process.
