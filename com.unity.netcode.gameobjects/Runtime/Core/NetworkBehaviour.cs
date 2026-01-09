@@ -574,7 +574,7 @@ namespace Unity.Netcode
         {
             get
             {
-                if (m_NetworkObject)
+                if (m_NetworkObject != null)
                 {
                     return m_NetworkObject;
                 }
@@ -594,7 +594,7 @@ namespace Unity.Netcode
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
                 // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
-                if (IsSpawned && !m_NetworkObject && (!m_NetworkManager || !m_NetworkManager.ShutdownInProgress))
+                if (IsSpawned && m_NetworkObject == null && (m_NetworkManager == null || !m_NetworkManager.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
