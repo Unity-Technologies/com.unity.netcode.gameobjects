@@ -178,13 +178,13 @@ validation_editors:
     default:
         - trunk
     all:
-        - 6000.0.0f1
+        - 6000.0.23f1
         - 6000.0
         - 6000.3
         - 6000.4
         - trunk
     minimal:
-        - 6000.0.0f1
+        - 6000.0.23f1
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
