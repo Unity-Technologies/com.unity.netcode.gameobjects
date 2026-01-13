@@ -27,6 +27,23 @@ class GithubUtils:
             if ghe.status == 404:
                 return False # Branch does not exist
             raise Exception(f"An error occurred with the GitHub API: {ghe.status}", data=ghe.data)
+            
+    def create_pull_request(self, title, body, head, base):
+        try:
+            return self.repo.create_pull(title=title, body=body, head=head, base=base)
+
+        except GithubException as ghe:
+            raise Exception(f"Failed to create pull request: {ghe.status}", ghe.data) from ghe
+    
+    def request_reviews(self, pr, reviewers):
+        if not reviewers:
+            return
+    
+        try:
+            pr.create_review_request(reviewers=reviewers)
+        except GithubException as ghe:
+            raise Exception(f"Failed to request reviews: {ghe.status}", ghe.data) from ghe
+
 
 class ReleaseConfig:
     """A simple class to hold all shared configuration."""
@@ -45,7 +62,17 @@ class ReleaseConfig:
 
         self.package_version = get_package_version_from_manifest(self.manifest_path)
         self.release_branch_name = f"release/{self.package_version}" # Branch from which we want to release
-        self.commit_message = f"Updated changelog and package version for Netcode in anticipation of v{self.package_version} release"
+        
+        self.release_commit_message = f"Updated changelog and package version for Netcode in anticipation of v{self.package_version} release"
+        
+        self.pr_branch_name = f"netcode-update-after-{self.package_version}-release-branch-creation" # Branch from which we will create PR to default branch with relevant changes after release branch is created
+        self.pr_commit_message = f"chore: Updated aspects of Netcode package in anticipation of v{self.package_version} release"
+        self.pr_body = f"This PR was created in sync with branching of {self.release_branch_name}. It includes changes that should land on the default Netcode branch ({self.default_repo_branch}) to reflect the new state of the package after the v{self.package_version} release:\n" \
+            f"1) Updated CHANGELOG.md by adding new [Unreleased] section template at the top and cleaning the Changelog for the current release.\n" \
+            f"2) Updated package version in package.json by incrementing the patch version to signify the current state of the package.\n" \
+            f"3) Updated package version in ValidationExceptions.json to match the new package version.\n\n" \
+            f"Please review and merge this PR to keep the default branch up to date with the latest package state after the release. Those changes can land immediately OR after the release was finalized but make sure that the Changelog will be merged correctly as sometimes some discrepancies may be introduced due to new entries being introduced meantime\n"
+        self.pr_reviewers = ["michal-chrobot"]
 
         GITHUB_TOKEN_NAME = "NETCODE_GITHUB_TOKEN"
         YAMATO_API_KEY_NAME = "NETCODE_YAMATO_API_KEY"
