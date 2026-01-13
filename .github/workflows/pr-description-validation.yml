@@ -29,6 +29,21 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const body = pr.body || '';
+            
+            // List of users to skip description validation
+            // This should be automations where we don't care that much about the description format
+            const skipUsersPrefixes = [
+              'unity-renovate',
+              'svc-'
+            ];
+            
+            // If PR author is in the skip list, exit early
+            const author = pr.user.login;
+            console.log(`PR author: ${author}`);
+            if (skipUsersPrefixes.some(prefix => author.startsWith(prefix))) {
+              console.log(`Skipping PR description check for user: ${author}`);
+              return;
+            }
 
             // List of mandatory PR sections
             const requiredSections = [
