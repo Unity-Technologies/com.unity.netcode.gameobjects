@@ -16,6 +16,7 @@
     # base --> Indicates the base operating system for build operations (e.g., win, mac)
     # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
 
+
 # SMALL AGENT CONFIGURATION---------------------------------------------------------------------------------------------------
 # The small agent was created to handle jobs that don't involve running Unity and are in general super light when it comes to resource usage (for example pack job).
 # It uses ubuntu since Linux VMs are faster and cheaper to provision than Mac or Windows Virtual Machines (VMs).
@@ -213,7 +214,6 @@ projects:
 
 # UNIFIED TEST RUNNER CONFIGURATIONS--------------------------------------------------------------------
 # Shared settings for the UnifiedTestRunner
-utr_version: 1.46.0
 
 # Configures the number of times a failed test is retried before it is considered failed.
 # Helps handle flaky tests
