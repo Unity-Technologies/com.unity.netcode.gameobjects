@@ -1,0 +1,14 @@
+﻿schema-version: 1.0.0
+defaults:
+  repo:
+    apt:
+      url: https://artifactory-slo.bf.unity3d.com/artifactory/unity-apt-local
+      key-url: https://artifactory-slo.bf.unity3d.com/artifactory/api/gpg/key/public
+      distribution: focal
+      components: [main]
+packages:
+  - name: utr
+    origins:
+      apt:
+        package-version: 1.45.0
+        package-id: StandaloneUTR

@@ -1,0 +1,15 @@
+﻿schema-version: 1.0.0
+defaults:
+  repo:
+    brew:
+      tap: https://github.cds.internal.unity3d.com/unity/homebrew-unity
+      artifactory-url: https://artifactory-slo.bf.unity3d.com/artifactory/unity-brew-local
+packages:
+  - name: utr
+    origins:
+      brew:
+        package-version: 1.45.0
+        package-id: StandaloneUTR
+        repo:
+          tap: https://github.cds.internal.unity3d.com/unity/cds.brew.formulas
+          artifactory-url: https://artifactory-slo.bf.unity3d.com/artifactory/unity-brew-local
