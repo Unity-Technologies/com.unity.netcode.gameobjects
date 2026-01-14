@@ -43,13 +43,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-{% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
+    - pinned-package-installer install -c Tools/CI/ppi-{{ platform.name }}.yml
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
@@ -86,13 +80,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
   commands:
-{% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
+    - pinned-package-installer install -c Tools/CI/ppi-{{ platform.name }}.yml
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:

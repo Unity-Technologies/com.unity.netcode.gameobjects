@@ -42,13 +42,7 @@ package_pack_-_ngo_{{ platform.name }}:
   variables:
     XRAY_PROFILE: "gold ./pvpExceptions.json"
   commands:
-{% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
+    - pinned-package-installer install -c Tools/CI/ppi-{{ platform.name }}.yml
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing

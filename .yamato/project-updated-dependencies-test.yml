@@ -35,13 +35,7 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-{% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
+    - pinned-package-installer install -c Tools/CI/ppi-{{ platform.name }}.yml
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
@@ -66,13 +60,7 @@ project_pack_-_{{ project.name }}_{{ platform.name }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-{% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
+    - pinned-package-installer install -c Tools/CI/ppi-{{ platform.name }}.yml
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - upm-ci project pack --project-path {{ project.path }}
   artifacts:
