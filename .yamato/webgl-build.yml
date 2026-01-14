@@ -38,7 +38,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
 {% if platform.name == "win" %}
-    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.name == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% elif platform.name == "ubuntu" %}

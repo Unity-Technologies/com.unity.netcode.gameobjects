@@ -44,7 +44,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% endif %}
   commands:
 {% if platform.name == "win" %}
-    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.name == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% elif platform.name == "ubuntu" %}
@@ -87,7 +87,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 
   commands:
 {% if platform.name == "win" %}
-    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.name == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% elif platform.name == "ubuntu" %}
