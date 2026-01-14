@@ -39,13 +39,6 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
     UTR_VERSION: {{ utr_version }}
   commands:
-{% if platform.name == "win" %}
-    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
-{% elif platform.name == "mac" %}
-    - pinned-package-installer install -c Tools/CI/ppi-macos.yml
-{% elif platform.name == "ubuntu" %}
-    - pinned-package-installer install -c Tools/CI/ppi-ubuntu.yml
-{% endif %}
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor for tests execution
     - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
