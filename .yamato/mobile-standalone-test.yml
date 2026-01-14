@@ -55,7 +55,7 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNITY_HANDLEUIINTERRUPTIONS: 1
   commands:
 {% if platform.base == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.base == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% endif %}
@@ -89,7 +89,7 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   commands:
     # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required
 {% if platform.base == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.base == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% endif %}

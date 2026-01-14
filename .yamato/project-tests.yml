@@ -40,7 +40,7 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UTR_VERSION: {{ utr_version }}
   commands:
 {% if platform.name == "win" %}
-    - pinned-package-installer install -c Tools/CI/ppi-windows.yml
+    - %GSUDO% pinned-package-installer install -c Tools/CI/ppi-windows.yml
 {% elif platform.name == "mac" %}
     - pinned-package-installer install -c Tools/CI/ppi-macos.yml
 {% elif platform.name == "ubuntu" %}
