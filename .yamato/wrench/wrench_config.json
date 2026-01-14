@@ -25,14 +25,14 @@
   ],
   "jobs_to_monitor": {
     "com.unity.netcode.gameobjects": [
-      ".yamato\\wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_6000_0_-_windows",
-      ".yamato\\wrench/preview-a-p-v.yml#all_preview_apv_jobs",
-      ".yamato\\wrench/promotion-jobs.yml#publish_dry_run_netcode_gameobjects"
+      ".yamato/wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_6000_0_-_windows",
+      ".yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs",
+      ".yamato/wrench/promotion-jobs.yml#publish_dry_run_netcode_gameobjects"
     ]
   },
-  "publishing_job": ".yamato\\wrench/promotion-jobs.yml#publish_netcode_gameobjects",
+  "publishing_job": ".yamato/wrench/promotion-jobs.yml#publish_netcode_gameobjects",
   "branch_pattern": "ReleaseSlash",
-  "wrench_version": "1.4.5.0",
+  "wrench_version": "1.4.7.0",
   "pvp_exemption_path": ".yamato/wrench/pvp-exemptions.json",
   "cs_project_path": "Tools/CI/NGO.Cookbook.csproj"
 }
