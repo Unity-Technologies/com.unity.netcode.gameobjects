@@ -49,7 +49,7 @@ pr_minimal_required_checks:
   name: Minimal PR checks
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.2
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
   triggers:
     expression: |-
       (pull_request.comment eq "ngo" OR
@@ -128,7 +128,7 @@ develop_nightly:
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.2
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
     - .yamato/project-standards.yml#standards_ubuntu_testproject_2022.3
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
@@ -186,4 +186,4 @@ develop_weekly_trunk:
     # Build player for webgl platform on 6000.2 (latest supported editor)
     - .yamato/_run-all.yml#run_all_webgl_builds
     # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_6000.2
+    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
