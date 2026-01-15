@@ -30,9 +30,9 @@ run_all_package_tests:
 {% endfor -%}
 
 
-# Runs all package tests on 6000.2 editor (latest supported editor)
-run_all_package_tests_6000.2:
-  name: Run All Package Tests [6000.2 only]
+# Runs all package tests on default editor (latest supported editor)
+run_all_package_tests_{{ validation_editors.default }}:
+  name: Run All Package Tests [{{ validation_editors.default }} only]
   dependencies:
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.default -%}
@@ -40,12 +40,12 @@ run_all_package_tests_6000.2:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all package tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
-run_all_package_tests_2022:
-  name: Run All Package Tests [2022.3]
+# Runs all package tests on minimal supported editor
+run_all_package_tests_{{ validation_editors.minimal }}:
+  name: Run All Package Tests [{{ validation_editors.minimal }}]
   dependencies:
 {% for platform in test_platforms.desktop -%}
-    - .yamato/package-tests.yml#package_test_-_ngo_2022.3_{{ platform.name }}
+    - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.minimal }}_{{ platform.name }}
 {% endfor -%}
 
 
@@ -64,9 +64,9 @@ run_all_project_tests:
 {% endfor -%}
 
 
-# Runs all projects tests on 6000.2 editor (latest supported editor)
-run_all_project_tests_6000.2:
-  name: Run All Project Tests [6000.2 only]
+# Runs all projects tests on default editor (latest supported editor)
+run_all_project_tests_{{ validation_editors.default }}:
+  name: Run All Project Tests [{{ validation_editors.default }} only]
   dependencies:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
@@ -78,14 +78,14 @@ run_all_project_tests_6000.2:
 {% endif -%}
 {% endfor -%}
 
-# Runs all projects tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
-run_all_project_tests_2022:
-  name: Run All Project Tests [2022.3]
+# Runs all projects tests on minimal supported editor
+run_all_project_tests_{{ validation_editors.minimal }}:
+  name: Run All Project Tests [{{ validation_editors.minimal }}]
   dependencies:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_2022.3
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.minimal }}
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -117,9 +117,9 @@ run_all_webgl_builds:
 {% endfor -%}
 
 
-# Runs all WebGL builds on 6000.2 editor (latest supported editor)
-run_all_webgl_builds_6000.2:
-  name: Run All WebGl Build [6000.2 only]
+# Runs all WebGL builds on default editor (latest supported editor)
+run_all_webgl_builds_{{ validation_editors.default }}:
+  name: Run All WebGl Build [{{ validation_editors.default }} only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -129,13 +129,13 @@ run_all_webgl_builds_6000.2:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all WebGL builds on 2022.3 editor (2022.3 will soon be a minimum supported editor)
-run_all_webgl_builds_2022:
-  name: Run All WebGl Build [2022.3]
+# Runs all WebGL builds on minimal supported editor
+run_all_webgl_builds_{{ validation_editors.minimal }}:
+  name: Run All WebGl Build [{{ validation_editors.minimal }}]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_2022.3
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ validation_editors.minimal }}
 {% endfor -%}
 {% endfor -%}
 
@@ -155,9 +155,9 @@ run_all_project_tests_desktop_standalone:
 {% endfor -%}
 
 
-# Runs all Desktop tests on 6000.2 editor (latest supported editor)
-run_all_project_tests_desktop_standalone_6000.2:
-  name: Run All Standalone Tests - Desktop [6000.2 only]
+# Runs all Desktop tests on default editor (latest supported editor)
+run_all_project_tests_desktop_standalone_{{ validation_editors.default }}:
+  name: Run All Standalone Tests - Desktop [{{ validation_editors.default }} only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -169,14 +169,14 @@ run_all_project_tests_desktop_standalone_6000.2:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Desktop tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
-run_all_project_tests_desktop_standalone_2022:
-  name: Run All Standalone Tests - Desktop [2022.3]
+# Runs all Desktop tests on minimal supported editor
+run_all_project_tests_desktop_standalone_{{ validation_editors.minimal }}:
+  name: Run All Standalone Tests - Desktop [{{ validation_editors.minimal }}]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for backend in scripting_backends -%}
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_2022.3
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.minimal }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -194,9 +194,9 @@ run_all_project_tests_mobile_standalone:
 {% endfor -%}
 
 
-# Runs all Mobile tests on 6000.2 editor (latest supported editor)
-run_all_project_tests_mobile_standalone_6000.2:
-  name: Run All Standalone Tests - Mobile [6000.2 only]
+# Runs all Mobile tests on default editor (latest supported editor)
+run_all_project_tests_mobile_standalone_{{ validation_editors.default }}:
+  name: Run All Standalone Tests - Mobile [{{ validation_editors.default }} only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
@@ -206,13 +206,13 @@ run_all_project_tests_mobile_standalone_6000.2:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Mobile tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
-run_all_project_tests_mobile_standalone_2022:
-  name: Run All Standalone Tests - Mobile [2022.3]
+# Runs all Mobile tests on minimal supported editor
+run_all_project_tests_mobile_standalone_{{ validation_editors.minimal }}:
+  name: Run All Standalone Tests - Mobile [{{ validation_editors.minimal }}]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_2022.3
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.minimal }}
 {% endfor -%}
 {% endfor -%}
 
@@ -230,9 +230,9 @@ run_all_project_tests_console_standalone:
 {% endfor -%}
 
 
-# Runs all Console tests on 6000.2 editor (latest supported editor)
-run_all_project_tests_console_standalone_6000.2:
-  name: Run All Standalone Tests - Console [6000.2 only]
+# Runs all Console tests on default editor (latest supported editor)
+run_all_project_tests_console_standalone_{{ validation_editors.default }}:
+  name: Run All Standalone Tests - Console [{{ validation_editors.default }} only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
@@ -242,12 +242,12 @@ run_all_project_tests_console_standalone_6000.2:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Console tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
-run_all_project_tests_console_standalone_2022:
-  name: Run All Standalone Tests - Console [2022.3]
+# Runs all Console tests on minimal supported editor
+run_all_project_tests_console_standalone_{{ validation_editors.minimal }}:
+  name: Run All Standalone Tests - Console [{{ validation_editors.minimal }}]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_2022.3
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.minimal }}
 {% endfor -%}
 {% endfor -%}
