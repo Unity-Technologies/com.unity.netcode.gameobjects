@@ -1,4 +1,3 @@
-using Unity.Netcode.Components;
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
 #endif
