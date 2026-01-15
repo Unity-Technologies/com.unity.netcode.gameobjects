@@ -11,7 +11,7 @@ namespace Unity.Netcode.Runtime
         public const string NetworkObject = BaseManualUrl + "components/core/networkobject.html";
         public const string NetworkAnimator = BaseManualUrl + "components/helper/networkanimator.html";
         public const string NetworkRigidbody = BaseManualUrl + "components/helper/networkrigidbody.html";
-        public const string NetworkRigidbody2D = BaseManualUrl + "components/helper/networkrigidbody.html";
+        public const string NetworkRigidbody2D = BaseManualUrl + "components/helper/networkrigidbody.html#networkrigidbody2d";
         public const string RigidbodyContactEventManager = BaseApiUrl + ".Components.RigidbodyContactEventManager.html";
         public const string NetworkTransform = BaseManualUrl + "components/helper/networktransform.html";
         public const string AnticipatedNetworkTransform = BaseManualUrl + "advanced-topics/client-anticipation.html";
