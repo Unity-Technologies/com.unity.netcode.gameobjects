@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Minimal supported editor was set to first 6000.0 LTS version `6000.0.23f1` to clarify that we do not guarantee that the package will work on alpha or beta versions of 6000.0
+- Minimal supported editor was set to first 6000.0 LTS version `6000.0.0f1` to clarify that we do not guarantee that the package will work on alpha or beta versions of 6000.0
 
 ### Deprecated
 
