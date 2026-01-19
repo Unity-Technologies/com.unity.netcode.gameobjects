@@ -84,6 +84,7 @@ test_platforms:
           type: Unity::VM::osx
           image: package-ci/macos-13:v4
           flavor: m1.mac
+          larger_flavor: m1.mac
           standalone: IOS
           base: mac
           architecture: arm64
@@ -175,10 +176,9 @@ test_platforms:
 
 validation_editors:
     default:
-        - trunk
+        - 6000.3
     all:
         - 6000.0
-        - 6000.2
         - 6000.3
         - 6000.4
         - trunk
