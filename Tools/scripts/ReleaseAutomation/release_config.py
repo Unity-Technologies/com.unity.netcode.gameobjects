@@ -99,12 +99,12 @@ class ReleaseConfig:
                 ]
             },
             {
-                "job_name": "Build Sample for Windows with latest functional editor (6000.2), burst ON, IL2CPP",
+                "job_name": "Build Sample for Windows with latest functional editor (6000.3), burst ON, IL2CPP",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "on" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "win64" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "6000.2" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
+                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
                 ]
             },
             {
@@ -117,12 +117,12 @@ class ReleaseConfig:
                 ]
             },
             {
-                "job_name": "Build Sample for MacOS with latest functional editor (6000.2), burst OFF, Mono",
+                "job_name": "Build Sample for MacOS with latest functional editor (6000.3), burst OFF, Mono",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "off" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "mac" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "mono" },
-                    { "key": "UNITY_VERSION", "value": "6000.2" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
+                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
                 ]
             },
             {
@@ -135,12 +135,12 @@ class ReleaseConfig:
                 ]
             },
             {
-                "job_name": "Build Sample for Android with latest functional editor (6000.2), burst ON, IL2CPP",
+                "job_name": "Build Sample for Android with latest functional editor (6000.3), burst ON, IL2CPP",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "on" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "android" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "6000.2" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
+                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
                 ]
             }
         ]
