@@ -403,7 +403,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel == LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"[Attempted deferred despawn while un-spawned]");
+                    NetworkLog.LogErrorServer("[Attempted deferred despawn while un-spawned]");
                 }
 
                 return;
@@ -411,13 +411,13 @@ namespace Unity.Netcode
 
             if (!NetworkManagerOwner.DistributedAuthorityMode)
             {
-                NetworkLog.LogError($"This method is only available in distributed authority mode.");
+                NetworkLog.LogErrorServer("This method is only available in distributed authority mode.");
                 return;
             }
 
             if (!HasAuthority)
             {
-                NetworkLog.LogError($"Only the authority can invoke {nameof(DeferDespawn)} and local Client-{NetworkManagerOwner.LocalClientId} is not the authority of {name}!");
+                NetworkLog.LogErrorServer($"Only the authority can invoke {nameof(DeferDespawn)} and local Client-{NetworkManagerOwner.LocalClientId} is not the authority of {name}!");
                 return;
             }
 
@@ -1139,15 +1139,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool InternalHasAuthority()
         {
-            if (!IsSpawned)
-            {
-                if (NetworkManager.LogLevel == LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer("[Attempted authority check while un-spawned]");
-                }
-                return false;
-            }
-            return NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
+            var networkManager = NetworkManager;
+            return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;
         }
 
         /// <summary>
@@ -1536,7 +1529,6 @@ namespace Unity.Netcode
 
                 if (!networkObject.IsSpawned)
                 {
-                    // CHECK replace this by  NetworkLog.LogWarning($"Trying to show object but is not spawned!"); continue; (change all in another PR)
                     throw new SpawnStateException("Object is not spawned");
                 }
 
@@ -1726,7 +1718,6 @@ namespace Unity.Netcode
                     }
                 }
 
-                // CHECK, should I address this comment and replace all exceptions with log warnings/errors? (yes, in another PR, same as the comment below)
                 // CLIENT SPAWNING TODO: Log error and continue as opposed to throwing an exception
                 if (!networkObject.IsSpawned)
                 {
@@ -1761,9 +1752,7 @@ namespace Unity.Netcode
 
             // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
             // was marked as destroy pending scene event (which means the destroy with scene property was set).
-            var isAuthorityDestroy = HasAuthority || networkManager.DAHost || DestroyPendingSceneEvent;
-
-            if (IsSpawned && !isAuthorityDestroy && networkManager.IsListening &&
+            if (IsSpawned && !(HasAuthority || networkManager.DAHost || DestroyPendingSceneEvent) && networkManager.IsListening &&
                 (IsSceneObject == null || IsSceneObject.Value != true))
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
@@ -1790,11 +1779,6 @@ namespace Unity.Netcode
                             }
                         }
                         return;
-                    }
-                    else
-                    {
-                        // If the destroy was authority scene event triggered, then mark this destroy as authority triggered.
-                        isAuthorityDestroy = true;
                     }
                 }
                 // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
@@ -2343,7 +2327,8 @@ namespace Unity.Netcode
 
         private void OnTransformParentChanged()
         {
-            if (!AutoObjectParentSync)
+            var networkManager = NetworkManager;
+            if (!AutoObjectParentSync || networkManager.ShutdownInProgress)
             {
                 return;
             }
@@ -2353,45 +2338,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            var networkManager = NetworkManager;
-            if (!IsSpawned || !networkManager.IsListening)
+            if (networkManager == null || !networkManager.IsListening)
             {
-                if (networkManager.ShutdownInProgress)
-                {
-                    return;
-                }
                 // DANGO-TODO: Review as to whether we want to provide a better way to handle changing parenting of objects when the
                 // object is not spawned. Really, we shouldn't care about these types of changes.
-                if (NetworkManager.DistributedAuthorityMode && m_CachedParent != null && transform.parent == null)
+                if (networkManager.DistributedAuthorityMode && m_CachedParent != null && transform.parent == null)
                 {
                     m_CachedParent = null;
                     return;
                 }
                 transform.parent = m_CachedParent;
                 Debug.LogException(new NotListeningException($"{nameof(networkManager)} is not listening, start a server or host before reparenting"));
-                return;
-            }
-            var isAuthority = false;
-            // With distributed authority, we need to track "valid authoritative" parenting changes.
-            // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
-            isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
-            var distributedAuthority = NetworkManagerOwner.DistributedAuthorityMode;
-
-            // If we do not have authority
-            if (!isAuthority)
-            {
-                // If the cached parent has not already been set, and we are in distributed authority mode, then log an exception and exit early as a non-authority instance
-                // is trying to set the parent.
-                if (distributedAuthority)
-                {
-                    transform.parent = m_CachedParent;
-                    NetworkLog.LogError($"[Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can reparent it!");
-                }
-                else
-                {
-                    transform.parent = m_CachedParent;
-                    Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
-                }
                 return;
             }
 
@@ -2412,11 +2369,32 @@ namespace Unity.Netcode
                 }
                 return;
             }
+
+            // With distributed authority, we need to track "valid authoritative" parenting changes.
+            // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
+            // If we do not have authority and we are spawned
+            if (!(HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner)))
+            {
+                transform.parent = m_CachedParent;
+                if (networkManager.LogLevel >= LogLevel.Normal)
+                {
+                    if (networkManager.DistributedAuthorityMode)
+                    {
+                        NetworkLog.LogError($"[Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can reparent it!");
+                    }
+                    else
+                    {
+                        Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                    }
+                }
+                return;
+            }
+
             var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
-                if (!parentTransform.TryGetComponent(out NetworkObject parentObject))
+                if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
@@ -2465,20 +2443,20 @@ namespace Unity.Netcode
             }
 
             // If we're not the server, we should tell the server about this parent change
-            if (!NetworkManagerOwner.IsServer)
+            if (!networkManager.IsServer)
             {
                 // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
-                if (distributedAuthority && Observers.Count <= 1)
+                if (networkManager.DistributedAuthorityMode && Observers.Count <= 1)
                 {
                     return;
                 }
 
-                NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 return;
             }
 
             // Otherwise we are a Server (client-server or DAHost). Send to all observers
-            foreach (var clientId in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId)
                 {
@@ -2486,7 +2464,7 @@ namespace Unity.Netcode
                 }
                 if (Observers.Contains(clientId))
                 {
-                    NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
@@ -2702,15 +2680,6 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
-            if (!IsSpawned)
-            {
-                if (NetworkManager.LogLevel == LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer("[Attempted network despawn behavior invoke while un-spawned]");
-                }
-
-                return;
-            }
             // Invoke OnNetworkPreDespawn on all child behaviours
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
