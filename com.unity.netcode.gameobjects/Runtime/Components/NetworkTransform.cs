@@ -4693,7 +4693,6 @@ namespace Unity.Netcode.Components
         /// Only valid on clients.
         /// </remarks>
         /// <returns>Returns the tick latency and local offset in seconds and as a float value.</returns>
-        /// Can this be called before spawn?
         public static float GetTickLatency()
         {
             return GetTickLatency(NetworkManager.Singleton);
