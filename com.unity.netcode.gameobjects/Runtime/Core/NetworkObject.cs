@@ -1750,42 +1750,36 @@ namespace Unity.Netcode
                 return;
             }
 
-            // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
-            // was marked as destroy pending scene event (which means the destroy with scene property was set).
-            if (IsSpawned && !(HasAuthority || networkManager.DAHost || DestroyPendingSceneEvent) && networkManager.IsListening &&
-                (IsSceneObject == null || IsSceneObject.Value != true))
-            {
-                // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
-                networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
-
-                // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
-                // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
-                if (!networkManager.ShutdownInProgress)
-                {
-                    // Since we still have a session connection, log locally and on the server to inform user of this issue.
-                    // If the NetworkObject's GameObject is not valid or the scene is no longer valid or loaded, then this was due to the
-                    // unloading of a scene which is done by the authority...
-                    if (gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded)
-                    {
-                        if (networkManager.LogLevel <= LogLevel.Error)
-                        {
-                            if (networkManager.DistributedAuthorityMode)
-                            {
-                                NetworkLog.LogError($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-owner client is not valid during a distributed authority session. Call {nameof(Destroy)} or {nameof(Despawn)} on the client-owner instead.");
-                            }
-                            else
-                            {
-                                NetworkLog.LogErrorServer($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
-                            }
-                        }
-                        return;
-                    }
-                }
-                // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
-            }
-
             // Always attempt to remove from scene changed updates
             networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+
+            if (IsSpawned && !networkManager.ShutdownInProgress)
+            {
+                // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
+                // was marked as destroy pending scene event (which means the destroy with scene property was set).
+                var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
+
+                // If the NetworkObject's GameObject is still valid and the scene is still valid and loaded, then we are still valid
+                var isStillValid = gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded;
+
+                // If we're not the authority and everything is valid and dynamically spawned, then the destroy is not valid.
+                if (!isAuthorityDestroy && IsSceneObject == false && isStillValid)
+                {
+                    if (networkManager.LogLevel <= LogLevel.Error)
+                    {
+                        if (networkManager.DistributedAuthorityMode)
+                        {
+                            NetworkLog.LogError($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-owner client is not valid during a distributed authority session. Call {nameof(Destroy)} or {nameof(Despawn)} on the client-owner instead.");
+                        }
+                        else
+                        {
+                            NetworkLog.LogErrorServer($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                        }
+                    }
+
+                    return;
+                }
+            }
 
             if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
