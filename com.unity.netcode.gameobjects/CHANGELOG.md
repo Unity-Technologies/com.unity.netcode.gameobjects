@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `NetworkObject`. (#3820)
 - If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabled. (#3810)
 
 ### Deprecated
@@ -23,7 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where maxCapacity calculation overflows if a developer sets a very, very high (large) m_DisconnectTimeoutMS in the Editor for Unity Transport. (#3810)
+- Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
 
 ### Security
 

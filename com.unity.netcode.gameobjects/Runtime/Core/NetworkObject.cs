@@ -2842,46 +2842,38 @@ namespace Unity.Netcode
             return ChildNetworkBehaviours[index];
         }
 
-        internal struct SceneObject
+        /// <summary>
+        /// The serialized representation of a NetworkObject.
+        /// Used for synchronizing clients on NetworkObject spawn.
+        /// </summary>
+        internal struct SerializedObject
         {
-            private ushort m_BitField;
             public uint Hash;
             public ulong NetworkObjectId;
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
 
-            public bool IsPlayerObject
-            {
-                get => ByteUtility.GetBit(m_BitField, 0);
-                set => ByteUtility.SetBit(ref m_BitField, 0, value);
-            }
-            public bool HasParent
-            {
-                get => ByteUtility.GetBit(m_BitField, 1);
-                set => ByteUtility.SetBit(ref m_BitField, 1, value);
-            }
-            public bool IsSceneObject
-            {
-                get => ByteUtility.GetBit(m_BitField, 2);
-                set => ByteUtility.SetBit(ref m_BitField, 2, value);
-            }
-            public bool HasTransform
-            {
-                get => ByteUtility.GetBit(m_BitField, 3);
-                set => ByteUtility.SetBit(ref m_BitField, 3, value);
-            }
+            private const ushort k_IsPlayerObject = 0x001;
+            private const ushort k_HasParent = 0x002;
+            private const ushort k_IsSceneObject = 0x004;
+            private const ushort k_HasTransform = 0x008;
+            private const ushort k_IsLatestParentSet = 0x010;
+            private const ushort k_WorldPositionStays = 0x020;
+            private const ushort k_DestroyWithScene = 0x040;
+            private const ushort k_DontDestroyWithOwner = 0x080;
+            private const ushort k_HasOwnershipFlags = 0x100;
+            private const ushort k_SyncObservers = 0x200;
+            private const ushort k_SpawnWithObservers = 0x400;
+            private const ushort k_HasInstantiationData = 0x800;
 
-            public bool IsLatestParentSet
-            {
-                get => ByteUtility.GetBit(m_BitField, 4);
-                set => ByteUtility.SetBit(ref m_BitField, 4, value);
-            }
+            public bool IsPlayerObject;
+            public bool HasParent;
+            public bool IsSceneObject;
+            public bool HasTransform;
 
-            public bool WorldPositionStays
-            {
-                get => ByteUtility.GetBit(m_BitField, 5);
-                set => ByteUtility.SetBit(ref m_BitField, 5, value);
-            }
+            public bool IsLatestParentSet;
+
+            public bool WorldPositionStays;
 
             /// <summary>
             /// Even though the server sends notifications for NetworkObjects that get
@@ -2889,40 +2881,52 @@ namespace Unity.Netcode
             /// the client side can use it as part of a filter for automatically migrating
             /// to the current active scene when its scene is unloaded. (only for dynamically spawned)
             /// </summary>
-            public bool DestroyWithScene
+            public bool DestroyWithScene;
+
+            public bool DontDestroyWithOwner;
+
+            public bool HasOwnershipFlags;
+
+            public bool SyncObservers;
+
+            public bool SpawnWithObservers;
+
+            public bool HasInstantiationData;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal ushort GetBitsetRepresentation()
             {
-                get => ByteUtility.GetBit(m_BitField, 6);
-                set => ByteUtility.SetBit(ref m_BitField, 6, value);
+                ushort bitset = 0;
+                if (IsPlayerObject) { bitset |= k_IsPlayerObject; };
+                if (HasParent) { bitset |= k_HasParent; };
+                if (IsSceneObject) { bitset |= k_IsSceneObject; };
+                if (HasTransform) { bitset |= k_HasTransform; };
+                if (IsLatestParentSet) { bitset |= k_IsLatestParentSet; };
+                if (WorldPositionStays) { bitset |= k_WorldPositionStays; };
+                if (DestroyWithScene) { bitset |= k_DestroyWithScene; };
+                if (DontDestroyWithOwner) { bitset |= k_DontDestroyWithOwner; };
+                if (HasOwnershipFlags) { bitset |= k_HasOwnershipFlags; };
+                if (SyncObservers) { bitset |= k_SyncObservers; };
+                if (SpawnWithObservers) { bitset |= k_SpawnWithObservers; };
+                if (HasInstantiationData) { bitset |= k_HasInstantiationData; };
+                return bitset;
             }
 
-            public bool DontDestroyWithOwner
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal void SetStateFromBitset(ushort bitset)
             {
-                get => ByteUtility.GetBit(m_BitField, 7);
-                set => ByteUtility.SetBit(ref m_BitField, 7, value);
-            }
-
-            public bool HasOwnershipFlags
-            {
-                get => ByteUtility.GetBit(m_BitField, 8);
-                set => ByteUtility.SetBit(ref m_BitField, 8, value);
-            }
-
-            public bool SyncObservers
-            {
-                get => ByteUtility.GetBit(m_BitField, 9);
-                set => ByteUtility.SetBit(ref m_BitField, 9, value);
-            }
-
-            public bool SpawnWithObservers
-            {
-                get => ByteUtility.GetBit(m_BitField, 10);
-                set => ByteUtility.SetBit(ref m_BitField, 10, value);
-            }
-
-            public bool HasInstantiationData
-            {
-                get => ByteUtility.GetBit(m_BitField, 11);
-                set => ByteUtility.SetBit(ref m_BitField, 11, value);
+                IsPlayerObject = (bitset & k_IsPlayerObject) != 0;
+                HasParent = (bitset & k_HasParent) != 0;
+                IsSceneObject = (bitset & k_IsSceneObject) != 0;
+                HasTransform = (bitset & k_HasTransform) != 0;
+                IsLatestParentSet = (bitset & k_IsLatestParentSet) != 0;
+                WorldPositionStays = (bitset & k_WorldPositionStays) != 0;
+                DestroyWithScene = (bitset & k_DestroyWithScene) != 0;
+                DontDestroyWithOwner = (bitset & k_DontDestroyWithOwner) != 0;
+                HasOwnershipFlags = (bitset & k_HasOwnershipFlags) != 0;
+                SyncObservers = (bitset & k_SyncObservers) != 0;
+                SpawnWithObservers = (bitset & k_SpawnWithObservers) != 0;
+                HasInstantiationData = (bitset & k_HasInstantiationData) != 0;
             }
 
             // When handling the initial synchronization of NetworkObjects,
@@ -2961,7 +2965,8 @@ namespace Unity.Netcode
                     HasOwnershipFlags = true;
                     SpawnWithObservers = OwnerObject.SpawnWithObservers;
                 }
-                writer.WriteValueSafe(m_BitField);
+
+                writer.WriteValueSafe(GetBitsetRepresentation());
                 writer.WriteValueSafe(Hash);
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
                 BytePacker.WriteValueBitPacked(writer, OwnerClientId);
@@ -3041,7 +3046,8 @@ namespace Unity.Netcode
 
             public void Deserialize(FastBufferReader reader)
             {
-                reader.ReadValueSafe(out m_BitField);
+                reader.ReadValueSafe(out ushort bitset);
+                SetStateFromBitset(bitset);
                 reader.ReadValueSafe(out Hash);
                 ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
                 ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
@@ -3169,9 +3175,9 @@ namespace Unity.Netcode
             }
         }
 
-        internal SceneObject GetMessageSceneObject(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
+        internal SerializedObject Serialize(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
         {
-            var obj = new SceneObject
+            var obj = new SerializedObject
             {
                 HasParent = transform.parent != null,
                 WorldPositionStays = m_CachedWorldPositionStays,
@@ -3225,7 +3231,7 @@ namespace Unity.Netcode
                     syncScaleLocalSpaceRelative = obj.HasParent;
                 }
 
-                obj.Transform = new SceneObject.TransformData
+                obj.Transform = new SerializedObject.TransformData
                 {
                     // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
@@ -3244,27 +3250,27 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to deserialize a serialized scene object which occurs
+        /// Used to deserialize a serialized <see cref="SerializedObject"/> which occurs
         /// when the client is approved or during a scene transition
         /// </summary>
-        /// <param name="sceneObject">Deserialized scene object data</param>
+        /// <param name="serializedObject">Deserialized scene object data</param>
         /// <param name="reader">FastBufferReader for the NetworkVariable data</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <param name="invokedByMessage">will be true if invoked by CreateObjectMessage</param>
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
-        internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
+        internal static NetworkObject Deserialize(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
-            var endOfSynchronizationData = reader.Position + sceneObject.SynchronizationDataSize;
+            var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 
             byte[] instantiationData = null;
-            if (sceneObject.HasInstantiationData)
+            if (serializedObject.HasInstantiationData)
             {
                 reader.ReadValueSafe(out instantiationData);
             }
 
 
             // Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationData);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(serializedObject, instantiationData);
 
 
             if (networkObject == null)
@@ -3272,7 +3278,7 @@ namespace Unity.Netcode
                 // Log the error that the NetworkObject failed to construct
                 if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Hash}.");
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
                 }
 
                 try
@@ -3293,7 +3299,7 @@ namespace Unity.Netcode
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
-            networkObject.OwnerClientId = sceneObject.OwnerClientId;
+            networkObject.OwnerClientId = serializedObject.OwnerClientId;
 
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
             networkObject.InvokeBehaviourNetworkPreSpawn();
@@ -3321,7 +3327,7 @@ namespace Unity.Netcode
             // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
             // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
             // the in-scene placed Networkobject changes several times over different sessions.
-            if (sceneObject.IsSceneObject && !sceneObject.HasParent && networkObject.m_LatestParent.HasValue)
+            if (serializedObject.IsSceneObject && !serializedObject.HasParent && networkObject.m_LatestParent.HasValue)
             {
                 networkObject.m_LatestParent = null;
             }
@@ -3334,11 +3340,11 @@ namespace Unity.Netcode
 
             // Invoke the non-authority local spawn method
             // (It also invokes post spawn and handles processing derferred messages)
-            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, sceneObject, sceneObject.DestroyWithScene);
+            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, serializedObject, serializedObject.DestroyWithScene);
 
-            if (sceneObject.SyncObservers)
+            if (serializedObject.SyncObservers)
             {
-                foreach (var observer in sceneObject.Observers)
+                foreach (var observer in serializedObject.Observers)
                 {
                     networkObject.Observers.Add(observer);
                 }
@@ -3346,7 +3352,7 @@ namespace Unity.Netcode
 
             if (networkManager.DistributedAuthorityMode)
             {
-                networkObject.SpawnWithObservers = sceneObject.SpawnWithObservers;
+                networkObject.SpawnWithObservers = serializedObject.SpawnWithObservers;
             }
 
             // If this was not invoked by a message handler, we are in distributed authority mode, and we are spawning with observers or
