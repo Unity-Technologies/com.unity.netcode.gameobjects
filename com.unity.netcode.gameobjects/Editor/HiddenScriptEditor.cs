@@ -1,9 +1,12 @@
+#pragma warning disable IDE0005
+using Unity.Netcode.Components;
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
 #endif
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEngine;
+#pragma warning restore IDE0005
 
 namespace Unity.Netcode.Editor
 {
