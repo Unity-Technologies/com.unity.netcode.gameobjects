@@ -349,7 +349,7 @@ namespace Unity.Netcode
                     return true;
                 }
 
-                if (m_CachedParent.parent != null)
+                if (parent.parent != null)
                 {
                     return HasParentNetworkObject(parent);
                 }
@@ -399,19 +399,19 @@ namespace Unity.Netcode
         /// <param name="destroy">Defaults to true, determines whether the <see cref="NetworkObject"/> will be destroyed.</param>
         public void DeferDespawn(int tickOffset, bool destroy = true)
         {
-            if (!IsSpawned)
+            if (!NetworkManager.DistributedAuthorityMode)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer("[Attempted deferred despawn while un-spawned]");
-                }
-
+                NetworkLog.LogErrorServer("This method is only available in distributed authority mode.");
                 return;
             }
 
-            if (!NetworkManagerOwner.DistributedAuthorityMode)
+            if (!IsSpawned)
             {
-                NetworkLog.LogErrorServer("This method is only available in distributed authority mode.");
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogErrorServer($"Cannot defer despawning {name} because it is not spawned!");
+                }
+
                 return;
             }
 
@@ -608,9 +608,9 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer("[Attempted Lock While un-spawned]");
+                    NetworkLog.LogErrorServer("[Attempted Lock While not spawned]");
                 }
 
                 return false;
@@ -1201,7 +1201,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => OwnerClientId == NetworkManager.ServerClientId;
+        public bool IsOwnedByServer => IsSpawned && OwnerClientId == NetworkManager.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
@@ -1843,7 +1843,7 @@ namespace Unity.Netcode
                 {
                     //Ownership |= OwnershipStatus.Distributable;
                     // DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set
-                    if (NetworkManagerOwner.LogLevel == LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning("DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set. For now, if the NetworkObject does not destroy with the owner it will set ownership to SessionOwner.");
                     }
@@ -2000,7 +2000,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer($"[Attempted despawn while un-spawned]");
                 }
@@ -2032,7 +2032,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer("[Attempted ownership removal while un-spawned]");
                 }
@@ -2049,7 +2049,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer("[Attempted ownership change while un-spawned]");
                 }
@@ -2068,7 +2068,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer($"[Attempted behavior invoke on ownership changed while un-spawned]");
                 }
@@ -2366,8 +2366,9 @@ namespace Unity.Netcode
 
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
+            var isParentingAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
             // If we do not have authority and we are spawned
-            if (!(HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner)))
+            if (!isParentingAuthority)
             {
                 transform.parent = m_CachedParent;
                 if (networkManager.LogLevel >= LogLevel.Normal)
@@ -3242,7 +3243,7 @@ namespace Unity.Netcode
             // Handle Parenting
             if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
-                var parentNetworkObject = m_CachedParent.GetComponent<NetworkObject>();
+                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
                 if (parentNetworkObject)
                 {
@@ -3523,7 +3524,7 @@ namespace Unity.Netcode
                 }
             }
             else // Otherwise, the client did not find the client to server scene handle
-            if (NetworkManagerOwner.LogLevel == LogLevel.Developer)
+            if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
             {
                 // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
                 // into, but that scenario seemed very edge case and under most instances a user should be notified that this
@@ -3642,7 +3643,7 @@ namespace Unity.Netcode
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (NetworkManagerOwner?.LogLevel == LogLevel.Developer)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
