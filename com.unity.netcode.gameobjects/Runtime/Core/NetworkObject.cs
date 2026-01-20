@@ -1520,56 +1520,6 @@ namespace Unity.Netcode
                 NetworkLog.LogErrorServer($"At least one {nameof(NetworkObject)} has to be provided when showing a list of {nameof(NetworkObject)}s!");
                 return;
             }
-
-            // Do the safety loop first to prevent putting the netcode in an invalid state.
-            for (int i = 0; i < networkObjects.Count; i++)
-            {
-                var networkObject = networkObjects[i];
-                var networkManager = networkObject.NetworkManagerOwner;
-
-                if (!networkObject.IsSpawned)
-                {
-                    throw new SpawnStateException("Object is not spawned");
-                }
-
-                if (networkManager.DistributedAuthorityMode && clientId == networkObject.OwnerClientId)
-                {
-                    NetworkLog.LogErrorServer($"Cannot hide an object from the owner when distributed authority mode is enabled! (Skipping {networkObject.gameObject.name})");
-                }
-                else if (!networkManager.DistributedAuthorityMode && clientId == NetworkManager.ServerClientId)
-                {
-                    NetworkLog.LogErrorServer("Cannot hide an object from the server!");
-                    continue;
-                }
-
-                // Distributed authority mode adjustments to log a network error and continue when trying to show a NetworkObject
-                // that the local instance does not own
-                if (!networkObject.HasAuthority)
-                {
-                    if (networkManager.DistributedAuthorityMode)
-                    {
-                        // It will log locally and to the "master-host".
-                        NetworkLog.LogErrorServer("Only the owner-authority can change visibility when distributed authority mode is enabled!");
-                        continue;
-                    }
-                    else
-                    {
-                        throw new NotServerException("Only server can change visibility");
-                    }
-                }
-
-
-                if (networkObject.Observers.Contains(clientId))
-                {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObject.NetworkObjectId} is already visible");
-                }
-
-                if (networkObject.NetworkManagerOwner != networkManager)
-                {
-                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(networkManager));
-                }
-            }
-
             foreach (var networkObject in networkObjects)
             {
                 networkObject.NetworkShow(clientId);
@@ -1685,56 +1635,6 @@ namespace Unity.Netcode
                 NetworkLog.LogErrorServer($"At least one {nameof(NetworkObject)} has to be provided when hiding a list of {nameof(NetworkObject)}s!");
                 return;
             }
-
-            // Do the safety loop first to prevent putting the netcode in an invalid state.
-            for (int i = 0; i < networkObjects.Count; i++)
-            {
-                var networkObject = networkObjects[i];
-                var networkManager = networkObject.NetworkManagerOwner;
-
-                if (networkManager.DistributedAuthorityMode && clientId == networkObject.OwnerClientId)
-                {
-                    NetworkLog.LogErrorServer($"Cannot hide an object from the owner when distributed authority mode is enabled! (Skipping {networkObject.gameObject.name})");
-                }
-                else if (!networkManager.DistributedAuthorityMode && clientId == NetworkManager.ServerClientId)
-                {
-                    NetworkLog.LogErrorServer("Cannot hide an object from the server!");
-                    continue;
-                }
-
-                // Distributed authority mode adjustments to log a network error and continue when trying to show a NetworkObject
-                // that the local instance does not own
-                if (!networkObject.HasAuthority)
-                {
-                    if (networkObject.NetworkManagerOwner.DistributedAuthorityMode)
-                    {
-                        // It will log locally and to the "master-host".
-                        NetworkLog.LogErrorServer($"Only the owner-authority can change hide a {nameof(NetworkObject)} when distributed authority mode is enabled!");
-                        continue;
-                    }
-                    else
-                    {
-                        throw new NotServerException("Only server can change visibility!");
-                    }
-                }
-
-                // CLIENT SPAWNING TODO: Log error and continue as opposed to throwing an exception
-                if (!networkObject.IsSpawned)
-                {
-                    throw new SpawnStateException("Object is not spawned");
-                }
-
-                if (!networkObject.Observers.Contains(clientId))
-                {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObject.NetworkObjectId} is already hidden");
-                }
-
-                if (networkObject.NetworkManagerOwner != networkManager)
-                {
-                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(networkManager));
-                }
-            }
-
             foreach (var networkObject in networkObjects)
             {
                 networkObject.NetworkHide(clientId);
