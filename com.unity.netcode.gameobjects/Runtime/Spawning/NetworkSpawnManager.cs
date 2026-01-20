@@ -661,15 +661,15 @@ namespace Unity.Netcode
         }
 
 
-        internal bool HasPrefab(NetworkObject.SceneObject sceneObject)
+        internal bool HasPrefab(NetworkObject.SerializedObject serializedObject)
         {
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
             {
-                if (NetworkManager.PrefabHandler.ContainsHandler(sceneObject.Hash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(serializedObject.Hash))
                 {
                     return true;
                 }
-                if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.TryGetValue(sceneObject.Hash, out var networkPrefab))
+                if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.TryGetValue(serializedObject.Hash, out var networkPrefab))
                 {
                     switch (networkPrefab.Override)
                     {
@@ -684,7 +684,7 @@ namespace Unity.Netcode
 
                 return false;
             }
-            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(sceneObject.Hash, sceneObject.NetworkSceneHandle);
+            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(serializedObject.Hash, serializedObject.NetworkSceneHandle);
             return networkObject != null;
         }
 
@@ -891,24 +891,24 @@ namespace Unity.Netcode
         /// For most cases this is client-side only, with the exception of when the server
         /// is spawning a player.
         /// </remarks>
-        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject, byte[] instantiationData = null)
+        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null)
         {
             NetworkObject networkObject = null;
-            var globalObjectIdHash = sceneObject.Hash;
-            var position = sceneObject.HasTransform ? sceneObject.Transform.Position : default;
-            var rotation = sceneObject.HasTransform ? sceneObject.Transform.Rotation : default;
-            var scale = sceneObject.HasTransform ? sceneObject.Transform.Scale : default;
-            var parentNetworkId = sceneObject.HasParent ? sceneObject.ParentObjectId : default;
-            var worldPositionStays = (!sceneObject.HasParent) || sceneObject.WorldPositionStays;
+            var globalObjectIdHash = serializedObject.Hash;
+            var position = serializedObject.HasTransform ? serializedObject.Transform.Position : default;
+            var rotation = serializedObject.HasTransform ? serializedObject.Transform.Rotation : default;
+            var scale = serializedObject.HasTransform ? serializedObject.Transform.Scale : default;
+            var parentNetworkId = serializedObject.HasParent ? serializedObject.ParentObjectId : default;
+            var worldPositionStays = (!serializedObject.HasParent) || serializedObject.WorldPositionStays;
 
             // If scene management is disabled or the NetworkObject was dynamically spawned
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
             {
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationData);
+                networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
             }
             else // Get the in-scene placed NetworkObject
             {
-                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
+                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
                 if (networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
@@ -927,10 +927,10 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
-                networkObject.DestroyWithScene = sceneObject.DestroyWithScene;
-                networkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
-                networkObject.DontDestroyWithOwner = sceneObject.DontDestroyWithOwner;
-                networkObject.Ownership = (NetworkObject.OwnershipStatus)sceneObject.OwnershipFlags;
+                networkObject.DestroyWithScene = serializedObject.DestroyWithScene;
+                networkObject.NetworkSceneHandle = serializedObject.NetworkSceneHandle;
+                networkObject.DontDestroyWithOwner = serializedObject.DontDestroyWithOwner;
+                networkObject.Ownership = (NetworkObject.OwnershipStatus)serializedObject.OwnershipFlags;
 
                 var nonNetworkObjectParent = false;
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
@@ -940,12 +940,12 @@ namespace Unity.Netcode
                 // the parent has changed.
                 // For this we will want to remove the parent before spawning and setting the transform values based
                 // on several possible scenarios.
-                if (sceneObject.IsSceneObject && networkObject.transform.parent != null)
+                if (serializedObject.IsSceneObject && networkObject.transform.parent != null)
                 {
                     var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // special case to handle being parented under a GameObject with no NetworkObject
-                    nonNetworkObjectParent = !parentNetworkObject && sceneObject.HasParent;
+                    nonNetworkObjectParent = !parentNetworkObject && serializedObject.HasParent;
 
                     // If the in-scene placed NetworkObject has a parent NetworkObject...
                     if (parentNetworkObject)
@@ -955,18 +955,18 @@ namespace Unity.Netcode
                         // - The auhtority says we have a parent but either of the two are true:
                         // -- It isn't the same parent.
                         // -- It was parented using world position stays.
-                        if (!sceneObject.HasParent || (sceneObject.IsLatestParentSet
-                            && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays)))
+                        if (!serializedObject.HasParent || (serializedObject.IsLatestParentSet
+                            && (serializedObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || serializedObject.WorldPositionStays)))
                         {
                             // If parenting without notifications then we are temporarily removing the parent to set the transform
                             // values before reparenting under the current parent.
-                            networkObject.ApplyNetworkParenting(true, true, enableNotification: !sceneObject.HasParent);
+                            networkObject.ApplyNetworkParenting(true, true, enableNotification: !serializedObject.HasParent);
                         }
                     }
                 }
 
                 // Set the transform only if the sceneObject includes transform information.
-                if (sceneObject.HasTransform)
+                if (serializedObject.HasTransform)
                 {
                     // If world position stays is true or we have auto object parent synchronization disabled
                     // then we want to apply the position and rotation values world space relative
@@ -986,7 +986,7 @@ namespace Unity.Netcode
                     // the network prefab used to represent the player.
                     // Note: not doing this would set the player's scale to zero since
                     // that is the default value of Vector3.
-                    if (!sceneObject.IsPlayerObject)
+                    if (!serializedObject.IsPlayerObject)
                     {
                         // Since scale is always applied to local space scale, we do the transform
                         // space logic during serialization such that it works out whether AutoObjectParentSync
@@ -995,12 +995,12 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (sceneObject.HasParent)
+                if (serializedObject.HasParent)
                 {
                     // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
                     // (we always want to set worldPositionStays)
                     ulong? parentId = null;
-                    if (sceneObject.IsLatestParentSet)
+                    if (serializedObject.IsLatestParentSet)
                     {
                         parentId = parentNetworkId;
                     }
@@ -1009,7 +1009,7 @@ namespace Unity.Netcode
 
                 // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
                 // until the scene is loaded. They are then migrated back into the newly loaded and currently active scene.
-                if (!sceneObject.IsSceneObject && NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
+                if (!serializedObject.IsSceneObject && NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
                 {
                     UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
@@ -1104,9 +1104,9 @@ namespace Unity.Netcode
         /// is only invoked by: <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>
         /// </summary>
         /// <remarks>
-        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
+        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.Deserialize"/>.
         /// </remarks>
-        internal void NonAuthorityLocalSpawn([NotNull] NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
+        internal void NonAuthorityLocalSpawn([NotNull] NetworkObject networkObject, in NetworkObject.SerializedObject serializedObject, bool destroyWithScene)
         {
             if (networkObject.IsSpawned)
             {
@@ -1115,7 +1115,7 @@ namespace Unity.Netcode
             }
 
             // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
-            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
+            SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsSceneObject, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
 
             // It is ok to invoke NetworkBehaviour.OnPostSpawn methods
             networkObject.InvokeBehaviourNetworkPostSpawn();
@@ -1283,7 +1283,7 @@ namespace Unity.Netcode
             }
             var message = new CreateObjectMessage
             {
-                ObjectInfo = networkObject.GetMessageSceneObject(clientId, NetworkManager.DistributedAuthorityMode),
+                ObjectInfo = networkObject.Serialize(clientId, NetworkManager.DistributedAuthorityMode),
                 IncludesSerializedObject = true,
                 UpdateObservers = NetworkManager.DistributedAuthorityMode,
                 ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
@@ -1305,7 +1305,7 @@ namespace Unity.Netcode
 
             var message = new CreateObjectMessage
             {
-                ObjectInfo = networkObject.GetMessageSceneObject(),
+                ObjectInfo = networkObject.Serialize(),
                 ObserverIds = networkObject.Observers.ToArray(),
                 NewObserverIds = newObservers.ToArray(),
                 IncludesSerializedObject = true,
