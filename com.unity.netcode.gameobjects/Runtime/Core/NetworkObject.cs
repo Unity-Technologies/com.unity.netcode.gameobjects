@@ -1345,6 +1345,15 @@ namespace Unity.Netcode
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void AddObserver(ulong clientId)
+        {
+#if NETCODE_DEBUG_OBSERVERS
+            Debug.Log($"[{nameof(NetworkObject)}][{name}-{NetworkObjectId}] Adding Client-{clientId} as an observer.");
+#endif
+            Observers.Add(clientId);
+        }
+
 #if MULTIPLAYER_TOOLS
         private string m_CachedNameForMetrics;
 #endif
@@ -1494,7 +1503,7 @@ namespace Unity.Netcode
                 return;
             }
             NetworkManagerOwner.SpawnManager.MarkObjectForShowingTo(this, clientId);
-            Observers.Add(clientId);
+            AddObserver(clientId);
         }
 
 
@@ -3288,7 +3297,7 @@ namespace Unity.Netcode
             {
                 foreach (var observer in serializedObject.Observers)
                 {
-                    networkObject.Observers.Add(observer);
+                    networkObject.AddObserver(observer);
                 }
             }
 
@@ -3308,11 +3317,11 @@ namespace Unity.Netcode
                     if (networkObject.IsPlayerObject)
                     {
                         // If it is another player, then make sure the local player is aware of the player
-                        playerObject.Observers.Add(networkObject.OwnerClientId);
+                        playerObject.AddObserver(networkObject.OwnerClientId);
                     }
 
                     // Assure the local player has observability
-                    networkObject.Observers.Add(playerObject.OwnerClientId);
+                    networkObject.AddObserver(playerObject.OwnerClientId);
 
                     // If it is a player object, then add it to all known spawned NetworkObjects that spawn with observers
                     if (networkObject.IsPlayerObject)
@@ -3321,7 +3330,7 @@ namespace Unity.Netcode
                         {
                             if (netObject.Value.SpawnWithObservers)
                             {
-                                netObject.Value.Observers.Add(networkObject.OwnerClientId);
+                                netObject.Value.AddObserver(networkObject.OwnerClientId);
                             }
                         }
                     }
@@ -3333,7 +3342,7 @@ namespace Unity.Netcode
                         // Add all known players to the observers list if they don't already exist
                         foreach (var player in networkManager.SpawnManager.PlayerObjects)
                         {
-                            networkObject.Observers.Add(player.OwnerClientId);
+                            networkObject.AddObserver(player.OwnerClientId);
                         }
                     }
                 }
