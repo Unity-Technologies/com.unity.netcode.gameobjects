@@ -81,18 +81,25 @@ namespace Unity.Netcode
                 }
             }
 
+            var cmbService = NetworkManager.CMBServiceConnection;
+            var sceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement;
+
             foreach (var player in m_PlayerObjects)
             {
+                // When connected to the CMB service, scene management is disabled, and it is the local player, we do
+                // not want to add the newly connected player to the observers list of the local player as that will be
+                // done when the local client shows the NetworkObject to the newly connected client.
+                var shouldAddObserver = cmbService && !sceneManagement ? !player.IsLocalPlayer : true;
                 // If the player's SpawnWithObservers is not set then do not add the new player object's owner as an observer.
-                if (player.SpawnWithObservers)
+                if (player.SpawnWithObservers && shouldAddObserver)
                 {
-                    player.Observers.Add(playerObject.OwnerClientId);
+                    player.AddObserver(playerObject.OwnerClientId);
                 }
 
                 // If the new player object's SpawnWithObservers is not set then do not add this player as an observer to the new player object.
                 if (playerObject.SpawnWithObservers)
                 {
-                    playerObject.Observers.Add(player.OwnerClientId);
+                    playerObject.AddObserver(player.OwnerClientId);
                 }
             }
 
@@ -100,7 +107,7 @@ namespace Unity.Netcode
             // the owner as an observer.
             if (playerObject.SpawnWithObservers || (NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClientId == playerObject.OwnerClientId))
             {
-                playerObject.Observers.Add(playerObject.OwnerClientId);
+                playerObject.AddObserver(playerObject.OwnerClientId);
             }
 
             m_PlayerObjects.Add(playerObject);
@@ -1066,7 +1073,7 @@ namespace Unity.Netcode
                 // (authority should not take into consideration networkObject.CheckObjectVisibility when SpawnWithObservers is false)
                 if (!networkObject.SpawnWithObservers)
                 {
-                    networkObject.Observers.Add(ownerClientId);
+                    networkObject.AddObserver(ownerClientId);
                 }
                 else
                 {
@@ -1077,7 +1084,7 @@ namespace Unity.Netcode
                         {
                             continue;
                         }
-                        networkObject.Observers.Add(clientId);
+                        networkObject.AddObserver(clientId);
                     }
 
                     // Sanity check to make sure the owner is always included
@@ -1085,7 +1092,7 @@ namespace Unity.Netcode
                     if (!networkObject.Observers.Contains(ownerClientId))
                     {
                         Debug.LogError($"Client-{ownerClientId} is the owner of {networkObject.name} but is not an observer! Adding owner, but there is a bug in observer synchronization!");
-                        networkObject.Observers.Add(ownerClientId);
+                        networkObject.AddObserver(ownerClientId);
                     }
                 }
             }
@@ -1174,7 +1181,7 @@ namespace Unity.Netcode
                 // If running as a server only, then make sure to always add the server's client identifier
                 if (!NetworkManager.IsHost)
                 {
-                    networkObject.Observers.Add(NetworkManager.LocalClientId);
+                    networkObject.AddObserver(NetworkManager.LocalClientId);
                 }
 
                 // Add client observers
@@ -1185,7 +1192,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    networkObject.Observers.Add(NetworkManager.ConnectedClientsIds[i]);
+                    networkObject.AddObserver(NetworkManager.ConnectedClientsIds[i]);
                 }
             }
 
@@ -1738,7 +1745,7 @@ namespace Unity.Netcode
                     // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server/host/DAHost
                     if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
                     {
-                        sobj.Observers.Add(clientId);
+                        sobj.AddObserver(clientId);
                     }
                 }
                 else
@@ -1746,7 +1753,7 @@ namespace Unity.Netcode
                     // CheckObject visibility overrides SpawnWithObservers under this condition
                     if (sobj.CheckObjectVisibility(clientId))
                     {
-                        sobj.Observers.Add(clientId);
+                        sobj.AddObserver(clientId);
                     }
                     else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
                     {

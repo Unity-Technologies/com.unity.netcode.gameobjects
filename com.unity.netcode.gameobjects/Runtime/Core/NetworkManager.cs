@@ -313,11 +313,11 @@ namespace Unity.Netcode
 
         private void UpdateTopology()
         {
-            var transportTopology = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
+            var transportTopology = IsListening && IsConnectedClient ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
             if (transportTopology != NetworkConfig.NetworkTopology)
             {
-                NetworkLog.LogErrorServer($"[Topology Mismatch] Transport detected an issue with the topology ({transportTopology} | {NetworkConfig.NetworkTopology}) usage or setting! Disconnecting from session.");
-                Shutdown();
+                NetworkLog.LogErrorServer($"[Topology Mismatch][{transportTopology}:{transportTopology.GetType().Name}][NetworkManager.NetworkConfig:{NetworkConfig.NetworkTopology}] Transport detected an issue with the topology usage or setting! Disconnecting from session.");
+                Shutdown(true);
             }
             else
             {
@@ -504,6 +504,7 @@ namespace Unity.Netcode
                                 ShutdownInternal();
                             }
                         }
+
                     }
                     break;
             }
