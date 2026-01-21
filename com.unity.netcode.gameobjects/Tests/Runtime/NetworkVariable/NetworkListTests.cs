@@ -27,6 +27,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private ulong m_TestObjectId;
 
+        protected override IEnumerator OnSetup()
+        {
+            IsOwnerWriteTest = false;
+            return base.OnSetup();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_ListObjectPrefab = CreateNetworkObjectPrefab("ListObject");
@@ -285,6 +291,136 @@ namespace Unity.Netcode.RuntimeTests
             // This will do a shuffle of the list
             return list.OrderBy(_ => rng.Next()).ToArray();
         }
+
+        private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
+        internal const int SpawnCount = 10;
+        internal bool IsOwnerWriteTest;
+        internal NetworkManager LateJoinedClient;
+
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            if (IsOwnerWriteTest)
+            {
+                LateJoinedClient = networkManager;
+            }
+            else
+            {
+                LateJoinedClient = null;
+            }
+            base.OnNewClientCreated(networkManager);
+        }
+
+        [UnityTest]
+        public IEnumerator OwnerWriteTests()
+        {
+            IsOwnerWriteTest = true;
+            var authorityBetworkManager = GetAuthorityNetworkManager();
+            m_SpawnedObjects.Clear();
+            m_ExpectedValues.Clear();
+            // Set our initial expected values as 0 - 9
+            for (int i = 0; i < SpawnCount; i++)
+            {
+                m_ExpectedValues.Add(i);
+            }
+
+            // Each spawned instance will be owned by each NetworkManager instance in order
+            // to validate owner write NetworkLists.
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                m_SpawnedObjects.Add(SpawnObject(m_ListObjectPrefab, networkManager).GetComponent<NetworkObject>());
+            }
+
+            // Verify all NetworkManager instances spawned the objects
+            yield return WaitForSpawnedOnAllOrTimeOut(m_SpawnedObjects);
+            AssertOnTimeout("Not all instances were spawned on all clients!");
+
+            // Verify all spawned object instances have the expected owner write NetworkList values
+            yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
+            AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
+
+            // Late join a client 
+            yield return CreateAndStartNewClient();
+
+            // Spawn an instance with the new client being the owner
+            m_SpawnedObjects.Add(SpawnObject(m_ListObjectPrefab, LateJoinedClient).GetComponent<NetworkObject>());
+
+            // Verify all NetworkManager instances spawned the objects
+            yield return WaitForSpawnedOnAllOrTimeOut(m_SpawnedObjects);
+            AssertOnTimeout("Not all instances were spawned on all clients!");
+
+            // Verify all spawned object instances have the expected owner write NetworkList values
+            yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
+            AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
+
+            // Now have all of the clients update their list values to randomly assigned values
+            // in order to verify changes to owner write NetworkLists are synchronized properly.
+            m_ExpectedValues.Clear();
+            for (int i = 0; i < SpawnCount; i++)
+            {
+                m_ExpectedValues.Add(Random.Range(10, 100));
+            }
+            UpdateOwnerWriteValues();
+
+            // Verify all spawned object instances have the expected owner write NetworkList values
+            yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
+            AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
+        }
+
+        private void UpdateOwnerWriteValues()
+        {
+            foreach (var spawnedObject in m_SpawnedObjects)
+            {
+                var owningNetworkManager = m_NetworkManagers.Where((c) => c.LocalClientId == spawnedObject.OwnerClientId).First();
+                var networkObjectId = spawnedObject.NetworkObjectId;
+                var listComponent = owningNetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetComponent<NetworkListTest>();
+                for (int i = 0; i < SpawnCount; i++)
+                {
+                    listComponent.OwnerWriteList[i] = m_ExpectedValues[i];
+                }
+            }
+        }
+
+        private bool OnVerifyOwnerWriteData(StringBuilder errorLog)
+        {
+            foreach (var spawnedObject in m_SpawnedObjects)
+            {
+                var networkObjectId = spawnedObject.NetworkObjectId;
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"[Client-{networkManager.LocalClientId}] Does not have an instance of spawned object NetworkObjectId: {networkObjectId}");
+                        return false;
+                    }
+                    var listComponent = networkManager.SpawnManager.SpawnedObjects[networkObjectId].GetComponent<NetworkListTest>();
+
+                    if (listComponent == null)
+                    {
+                        errorLog.Append($"[Client-{networkManager.LocalClientId}] List component was not found");
+                        return false;
+                    }
+
+                    if (listComponent.OwnerWriteList.Count != SpawnCount)
+                    {
+                        errorLog.Append($"[Client-{networkManager.LocalClientId}] List component has the incorrect number of items. Expected: {SpawnCount}, Have: {listComponent.TheList.Count}");
+                        return false;
+                    }
+
+                    for (int i = 0; i < SpawnCount; i++)
+                    {
+                        var actual = listComponent.OwnerWriteList[i];
+                        var expected = m_ExpectedValues[i];
+                        if (expected != actual)
+                        {
+                            errorLog.Append($"[Client-{networkManager.LocalClientId}] Incorrect value at index {i}, expected: {expected}, actual: {actual}");
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 
     internal class NetworkListTest : NetworkBehaviour
@@ -292,6 +428,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkList<int> TheList = new();
         public readonly NetworkList<StructUsedOnlyInNetworkList> TheStructList = new();
         public readonly NetworkList<FixedString128Bytes> TheLargeList = new();
+        public readonly NetworkList<int> OwnerWriteList = new NetworkList<int>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -307,6 +444,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             TheList.OnListChanged -= ListChanged;
             base.OnDestroy();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsOwner)
+            {
+                for (int i = 0; i < NetworkListTests.SpawnCount; i++)
+                {
+                    OwnerWriteList.Add(i);
+                }
+            }
+            base.OnNetworkSpawn();
         }
 
         public bool ListDelegateTriggered;
