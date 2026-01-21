@@ -338,7 +338,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
             AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
 
-            // Late join a client 
+            // Late join a client
             yield return CreateAndStartNewClient();
 
             // Spawn an instance with the new client being the owner
