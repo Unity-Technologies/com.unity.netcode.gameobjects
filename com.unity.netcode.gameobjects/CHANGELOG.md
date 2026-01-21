@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- general documentation update
 
 ### Security
 
