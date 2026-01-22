@@ -80,7 +80,7 @@ namespace Unity.Netcode
         /// Set to true if this instance is the original/first instance created and spawned which
         /// means the <see cref="CreateObjectMessage"/> was generated from this instance and sent
         /// to all other clients.
-        /// 
+        ///
         /// Client-Server: This will be true for all instances on the server or host.
         /// Distributed Authority: This will be true on the client that created the first instance
         /// and spawned it (even if spawning with ownership being assigned to a different client).
