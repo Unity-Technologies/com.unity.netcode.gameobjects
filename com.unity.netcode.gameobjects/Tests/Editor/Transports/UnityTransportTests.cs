@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
