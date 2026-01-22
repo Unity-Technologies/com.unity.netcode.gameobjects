@@ -243,17 +243,19 @@ namespace Unity.Netcode.EditorTests
                 var settings = transport.GetDefaultNetworkSettings();
                 driver = NetworkDriver.Create(new IPCNetworkInterface(), settings);
 
+#if MULTIPLAYER_TOOLS
                 driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
 
                 transport.GetDefaultPipelineConfigurations(
                     out var unreliableFragmentedPipelineStages,
                     out var unreliableSequencedFragmentedPipelineStages,
                     out var reliableSequencedPipelineStages);
 
-                    unreliableFragmentedPipeline = driver.CreatePipeline(unreliableFragmentedPipelineStages);
-                    unreliableSequencedFragmentedPipeline = driver.CreatePipeline(unreliableSequencedFragmentedPipelineStages);
-                    reliableSequencedPipeline = driver.CreatePipeline(reliableSequencedPipelineStages);
-                }
+                unreliableFragmentedPipeline = driver.CreatePipeline(unreliableFragmentedPipelineStages);
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(unreliableSequencedFragmentedPipelineStages);
+                reliableSequencedPipeline = driver.CreatePipeline(reliableSequencedPipelineStages);
+            }
         }
 
         [Test]
