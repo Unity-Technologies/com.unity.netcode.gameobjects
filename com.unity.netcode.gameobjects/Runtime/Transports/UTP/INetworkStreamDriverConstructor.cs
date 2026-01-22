@@ -35,6 +35,8 @@ namespace Unity.Netcode.Transports.UTP
     ///         {
     ///             var settings = transport.GetDefaultNetworkSettings();
     ///             driver = NetworkDriver.Create(new IPCNetworkInterface(), settings);
+    /// 
+    ///             driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
     ///
     ///             transport.GetDefaultPipelineConfigurations(
     ///                 out var unreliableFragmentedPipelineStages,

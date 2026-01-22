@@ -1234,13 +1234,28 @@ namespace Unity.Netcode.Transports.UTP
                 return;
             }
 
-            //Don't need to dispose of the buffers, they are filled with data pointers.
-            m_Driver.GetPipelineBuffers(pipeline,
-                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-                networkConnection,
-                out _,
-                out _,
-                out var sharedBuffer);
+            try
+            {
+                // Don't need to dispose of the buffers, they are filled with data pointers.
+                m_Driver.GetPipelineBuffers(pipeline,
+                    NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+                    networkConnection,
+                    out _,
+                    out _,
+                    out var sharedBuffer);
+            }
+            catch (InvalidOperationException)
+            {
+                // Can happen if using a custom driver that isn't configured with the metrics stage.
+                return;
+            }
+
+            // That InvalidOperationException above is only thrown in the editor. In runtime builds
+            // we instead get default return values when the pipeline stage is invalid.
+            if (sharedBuffer == default)
+            {
+                return;
+            }
 
             unsafe
             {
