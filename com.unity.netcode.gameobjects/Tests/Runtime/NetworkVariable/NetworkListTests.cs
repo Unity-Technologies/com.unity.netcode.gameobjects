@@ -293,9 +293,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
-        internal const int SpawnCount = 10;
+        internal const int ValueCount = 10;
         internal bool IsOwnerWriteTest;
         internal NetworkManager LateJoinedClient;
+        internal static List<int> OwnerWriteExpectedValues = new List<int>();
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
@@ -314,13 +315,13 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator OwnerWriteTests()
         {
             IsOwnerWriteTest = true;
-            var authorityBetworkManager = GetAuthorityNetworkManager();
+            var authorityNetworkManager = GetAuthorityNetworkManager();
             m_SpawnedObjects.Clear();
-            m_ExpectedValues.Clear();
+            OwnerWriteExpectedValues.Clear();
             // Set our initial expected values as 0 - 9
-            for (int i = 0; i < SpawnCount; i++)
+            for (int i = 0; i < ValueCount; i++)
             {
-                m_ExpectedValues.Add(i);
+                OwnerWriteExpectedValues.Add(i);
             }
 
             // Each spawned instance will be owned by each NetworkManager instance in order
@@ -354,16 +355,40 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now have all of the clients update their list values to randomly assigned values
             // in order to verify changes to owner write NetworkLists are synchronized properly.
-            m_ExpectedValues.Clear();
-            for (int i = 0; i < SpawnCount; i++)
+            OwnerWriteExpectedValues.Clear();
+            for (int i = 0; i < ValueCount; i++)
             {
-                m_ExpectedValues.Add(Random.Range(10, 100));
+                OwnerWriteExpectedValues.Add(Random.Range(10, 100));
             }
             UpdateOwnerWriteValues();
 
             // Verify all spawned object instances have the expected owner write NetworkList values
             yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
             AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
+
+            // Verifies that spawning with ownership in distributed authority mode work properly.
+            // Where:
+            // Client-A spawns with ownership assigned to Client-B
+            // Client-B applies values at spawn.
+            // All clients then should be updated with those new values applied.
+            if (m_DistributedAuthority)
+            {
+                var prefabNetworkObject = m_ListObjectPrefab.GetComponent<NetworkObject>();
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    var instance = Object.Instantiate(m_ListObjectPrefab).GetComponent<NetworkObject>();
+                    SpawnInstanceWithOwnership(instance, authorityNetworkManager, networkManager.LocalClientId);
+                    m_SpawnedObjects.Add(instance);
+                }
+
+                // Verify all NetworkManager instances spawned the objects
+                yield return WaitForSpawnedOnAllOrTimeOut(m_SpawnedObjects);
+                AssertOnTimeout("Not all instances were spawned on all clients!");
+
+                // Verify all spawned object instances have the expected owner write NetworkList values
+                yield return WaitForConditionOrTimeOut(OnVerifyOwnerWriteData);
+                AssertOnTimeout("Detected invalid count or value on one of the spawned instances!");
+            }
         }
 
         private void UpdateOwnerWriteValues()
@@ -373,9 +398,9 @@ namespace Unity.Netcode.RuntimeTests
                 var owningNetworkManager = m_NetworkManagers.Where((c) => c.LocalClientId == spawnedObject.OwnerClientId).First();
                 var networkObjectId = spawnedObject.NetworkObjectId;
                 var listComponent = owningNetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetComponent<NetworkListTest>();
-                for (int i = 0; i < SpawnCount; i++)
+                for (int i = 0; i < ValueCount; i++)
                 {
-                    listComponent.OwnerWriteList[i] = m_ExpectedValues[i];
+                    listComponent.OwnerWriteList[i] = OwnerWriteExpectedValues[i];
                 }
             }
         }
@@ -400,16 +425,16 @@ namespace Unity.Netcode.RuntimeTests
                         return false;
                     }
 
-                    if (listComponent.OwnerWriteList.Count != SpawnCount)
+                    if (listComponent.OwnerWriteList.Count != ValueCount)
                     {
-                        errorLog.Append($"[Client-{networkManager.LocalClientId}] List component has the incorrect number of items. Expected: {SpawnCount}, Have: {listComponent.TheList.Count}");
+                        errorLog.Append($"[Client-{networkManager.LocalClientId}] List component has the incorrect number of items. Expected: {ValueCount}, Have: {listComponent.TheList.Count}");
                         return false;
                     }
 
-                    for (int i = 0; i < SpawnCount; i++)
+                    for (int i = 0; i < ValueCount; i++)
                     {
                         var actual = listComponent.OwnerWriteList[i];
-                        var expected = m_ExpectedValues[i];
+                        var expected = OwnerWriteExpectedValues[i];
                         if (expected != actual)
                         {
                             errorLog.Append($"[Client-{networkManager.LocalClientId}] Incorrect value at index {i}, expected: {expected}, actual: {actual}");
@@ -450,9 +475,9 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (IsOwner)
             {
-                for (int i = 0; i < NetworkListTests.SpawnCount; i++)
+                for (int i = 0; i < NetworkListTests.ValueCount; i++)
                 {
-                    OwnerWriteList.Add(i);
+                    OwnerWriteList.Add(NetworkListTests.OwnerWriteExpectedValues[i]);
                 }
             }
             base.OnNetworkSpawn();
@@ -473,8 +498,6 @@ namespace Unity.Netcode.RuntimeTests
         private readonly NetworkListTest m_AuthorityInstance;
 
         private readonly NetworkListTest m_NonAuthorityInstance;
-
-        private string m_TestStageFailedMessage;
 
         /// <summary>
         /// Determines if the condition has been reached for the current NetworkListTestState

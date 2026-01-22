@@ -71,7 +71,7 @@ namespace Unity.Netcode
             // the dirty related properties and last sent time to prevent duplicate entries from
             // being sent (i.e. CreateObjectMessage will contain the changes so we don't need to
             // send a proceeding NetworkVariableDeltaMessage).
-            if (IsDirty() && CanSend() && m_NetworkBehaviour.HasAuthority)
+            if (IsDirty() && CanSend() && m_NetworkObject.IsSpawnAuthority)
             {
                 UpdateLastSentTime();
                 ResetDirty();
