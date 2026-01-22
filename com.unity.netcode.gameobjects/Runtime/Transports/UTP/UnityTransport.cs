@@ -1234,6 +1234,8 @@ namespace Unity.Netcode.Transports.UTP
                 return;
             }
 
+            var sharedBuffer = default(NativeArray<byte>);
+
             try
             {
                 // Don't need to dispose of the buffers, they are filled with data pointers.
@@ -1242,7 +1244,7 @@ namespace Unity.Netcode.Transports.UTP
                     networkConnection,
                     out _,
                     out _,
-                    out var sharedBuffer);
+                    out sharedBuffer);
             }
             catch (InvalidOperationException)
             {
