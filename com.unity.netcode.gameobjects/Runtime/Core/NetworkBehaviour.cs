@@ -1,8 +1,10 @@
+#pragma warning disable IDE0005
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
+#pragma warning restore IDE0005
 
 namespace Unity.Netcode
 {
