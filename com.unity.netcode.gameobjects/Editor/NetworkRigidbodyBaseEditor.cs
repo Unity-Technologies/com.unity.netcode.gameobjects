@@ -36,7 +36,8 @@ namespace Unity.Netcode.Editor
             void SetExpanded(bool expanded)
             {
                 networkRigidbodyBase.NetworkRigidbodyBaseExpanded = expanded;
-            };
+            }
+
             DrawFoldOutGroup<NetworkRigidbodyBase>(networkRigidbodyBase.GetType(), DisplayNetworkRigidbodyProperties, networkRigidbodyBase.NetworkRigidbodyBaseExpanded, SetExpanded);
             base.OnInspectorGUI();
         }

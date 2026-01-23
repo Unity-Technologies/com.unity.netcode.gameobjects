@@ -310,7 +310,8 @@ namespace Unity.Netcode.Editor
             void SetExpanded(bool expanded)
             {
                 networkTransform.NetworkTransformExpanded = expanded;
-            };
+            }
+
             DrawFoldOutGroup<NetworkTransform>(networkTransform.GetType(), DisplayNetworkTransformProperties, networkTransform.NetworkTransformExpanded, SetExpanded);
             base.OnInspectorGUI();
         }
