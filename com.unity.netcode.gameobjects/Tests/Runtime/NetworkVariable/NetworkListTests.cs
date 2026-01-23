@@ -294,7 +294,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         internal const int ValueCount = 10;
-        internal bool IsOwnerWriteTest;
+        internal static bool IsOwnerWriteTest;
         internal NetworkManager LateJoinedClient;
         internal static List<int> OwnerWriteExpectedValues = new List<int>();
 
@@ -473,7 +473,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner)
+            if (NetworkListTests.IsOwnerWriteTest && IsOwner)
             {
                 for (int i = 0; i < NetworkListTests.ValueCount; i++)
                 {
