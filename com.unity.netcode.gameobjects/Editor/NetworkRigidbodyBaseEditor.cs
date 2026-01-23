@@ -33,7 +33,10 @@ namespace Unity.Netcode.Editor
         public override void OnInspectorGUI()
         {
             var networkRigidbodyBase = target as NetworkRigidbodyBase;
-            void SetExpanded(bool expanded) { networkRigidbodyBase.NetworkRigidbodyBaseExpanded = expanded; };
+            void SetExpanded(bool expanded)
+            {
+                networkRigidbodyBase.NetworkRigidbodyBaseExpanded = expanded;
+            };
             DrawFoldOutGroup<NetworkRigidbodyBase>(networkRigidbodyBase.GetType(), DisplayNetworkRigidbodyProperties, networkRigidbodyBase.NetworkRigidbodyBaseExpanded, SetExpanded);
             base.OnInspectorGUI();
         }
