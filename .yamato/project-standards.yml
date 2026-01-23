@@ -48,6 +48,7 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloads basic editor
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
     - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix # Auto-fix formatting issues
+    - git checkout -- {{ project.path }}/Packages/manifest.json {{ project.path }}/Packages/packages-lock.json 2>/dev/null || true # Restore package files that Unity may have modified (we only want to check code formatting)
     - 'git diff --exit-code || (echo "ERROR: Code formatting issues found. Run dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix locally and commit the changes." && exit 1)' # Fail if formatter made any changes
 {% endfor -%}
 {% endfor -%}
