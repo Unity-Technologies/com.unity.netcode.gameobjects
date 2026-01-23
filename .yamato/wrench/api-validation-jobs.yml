@@ -55,8 +55,8 @@ api_validation_-_netcode_gameobjects_-_6000_0_-_windows:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.7.0
+    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.7.0
+    Wrench: 1.4.8.0
 
