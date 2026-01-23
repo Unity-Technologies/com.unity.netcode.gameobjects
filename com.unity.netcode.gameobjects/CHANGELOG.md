@@ -24,7 +24,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue when using a client-server topology where a `NetworkList` with owner write permissions was resetting sent time and dirty flags after having been spawned on owning clients that were not the spawn authority. (#3850)
 - Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
+
 
 ### Security
 
