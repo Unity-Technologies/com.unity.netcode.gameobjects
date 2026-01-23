@@ -29,6 +29,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Obsolete
 
 
+## [1.15.1] - 2026-01-21
+
+### Fixed
+
+- general documentation update
+
 ## [1.15.0] - 2025-11-14
 
 ### Changed
