@@ -9,6 +9,7 @@ using Random = UnityEngine.Random;
 namespace Unity.Netcode.RuntimeTests
 {
 
+    [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-14172
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.DAHost)]
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Host)]

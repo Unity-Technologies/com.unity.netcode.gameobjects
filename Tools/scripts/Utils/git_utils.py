@@ -41,7 +41,7 @@ def get_latest_git_revision(branch_name):
     except subprocess.CalledProcessError as e:
         raise Exception(f"Failed to get the latest revision for branch '{branch_name}'.") from e
 
-def create_branch_execute_commands_and_push(config: ReleaseConfig):
+def create_release_branch(config: ReleaseConfig):
     """
     Creates a new branch with the specified name, performs specified action, commits the current changes and pushes it to the repo.
     Note that command_to_run_on_release_branch (within the Config) should be a single command that will be executed using subprocess.run. For multiple commands consider using a Python script file.
@@ -67,7 +67,7 @@ def create_branch_execute_commands_and_push(config: ReleaseConfig):
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)
 
-        repo.index.commit(config.commit_message, author=author, committer=committer, skip_hooks=True)
+        repo.index.commit(config.release_commit_message, author=author, committer=committer, skip_hooks=True)
         repo.git.push("origin", config.release_branch_name)
 
         print(f"Successfully created, updated and pushed new branch: {config.release_branch_name}")
