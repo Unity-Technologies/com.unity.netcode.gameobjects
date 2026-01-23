@@ -1119,7 +1119,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key),
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.Serialize(clientPair.Key),
                     IncludesSerializedObject = true,
                 };
 
