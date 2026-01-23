@@ -2,7 +2,7 @@ namespace Unity.Netcode
 {
     internal interface IIndividualRpcTarget
     {
-        void SetClientId(ulong clientId);
-        BaseRpcTarget Target { get; }
+        public void SetClientId(ulong clientId);
+        public BaseRpcTarget Target { get; }
     }
 }

@@ -63,19 +63,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Test the conditions of the test to be reached
         /// </summary>
         /// <returns><see cref="true"/> or <see cref="false"/></returns>
-        bool HasConditionBeenReached();
+        public bool HasConditionBeenReached();
 
         /// <summary>
         /// Wait for condition has started
         /// </summary>
-        void Started();
+        public void Started();
 
         /// <summary>
         /// Wait for condition has finished: <br />
         /// Condition(s) met or timed out
         /// </summary>
         /// <param name="timedOut"><see cref="true"/> or <see cref="false"/></param>
-        void Finished(bool timedOut);
+        public void Finished(bool timedOut);
 
     }
 }
