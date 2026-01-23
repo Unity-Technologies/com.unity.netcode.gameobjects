@@ -1054,6 +1054,9 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+
+            networkObject.IsSpawnAuthority = true;
+
             // Invoke NetworkBehaviour.OnPreSpawn methods
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();

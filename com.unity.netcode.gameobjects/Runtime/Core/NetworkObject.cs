@@ -76,6 +76,16 @@ namespace Unity.Netcode
         /// </remarks>
         public List<NetworkTransform> NetworkTransforms { get; private set; }
 
+        /// <summary>
+        /// Set to true if this instance is the original/first instance created and spawned which
+        /// means the <see cref="CreateObjectMessage"/> was generated from this instance and sent
+        /// to all other clients.
+        ///
+        /// Client-Server: This will be true for all instances on the server or host.
+        /// Distributed Authority: This will be true on the client that created the first instance
+        /// and spawned it (even if spawning with ownership being assigned to a different client).
+        /// </summary>
+        internal bool IsSpawnAuthority;
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         /// <summary>
@@ -2008,6 +2018,7 @@ namespace Unity.Netcode
         {
             // Always clear out the observers list when despawned
             Observers.Clear();
+            IsSpawnAuthority = false;
             IsSpawned = false;
             DeferredDespawnTick = 0;
             m_LatestParent = null;

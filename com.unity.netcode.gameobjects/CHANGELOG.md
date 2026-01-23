@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [2.8.1] - 2025-1-23
+
+### Fixed
+
+- Fixed issue when using a client-server topology where a `NetworkList` with owner write permissions was resetting sent time and dirty flags after having been spawned on owning clients that were not the spawn authority. (#3850)
+
 
 ## [2.8.0] - 2025-12-15
 
