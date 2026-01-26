@@ -166,6 +166,15 @@ namespace Unity.Netcode
                 return;
             }
 
+            if (!networkObject.IsSpawned)
+            {
+                if (networkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError($"[{networkObject.name}] Ownership change received for network object that is not yet spawned.");
+                }
+                return;
+            }
+
             // If ownership is changing (either a straight change or a request approval), then run through the ownership changed sequence
             // Note: There is some extended ownership script at the bottom of HandleOwnershipChange
             // If not in distributed authority mode, ChangeMessageType will always be OwnershipChanging.
