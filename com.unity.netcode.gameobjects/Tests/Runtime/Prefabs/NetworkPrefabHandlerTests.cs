@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using static Unity.Netcode.RuntimeTests.AddNetworkPrefabTest;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -198,13 +199,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             //Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
-
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).ToList();
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
-#endif
-
+            var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
             var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
             foreach (var networkObject in networkObjectsList)
             {

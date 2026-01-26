@@ -77,7 +77,7 @@ namespace TestProject.RuntimeTests
                 return false;
             }
 #if UNITY_2023_1_OR_NEWER
-            m_NetworkObjectTestComponent = Object.FindFirstObjectByType<NetworkObjectTestComponent>();
+            m_NetworkObjectTestComponent = Object.FindAnyObjectByType<NetworkObjectTestComponent>();
 #else
             m_NetworkObjectTestComponent = Object.FindObjectOfType<NetworkObjectTestComponent>();
 #endif
