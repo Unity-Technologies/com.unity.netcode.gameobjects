@@ -348,7 +348,15 @@ namespace TestProject.ManualTests
         {
             m_LabelEnabled = isVisible;
             NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
-            var labels = FindObjects.FindObjectsByType<NetworkObjectLabel>();
+#if UNITY_6000_4_OR_NEWER
+            var labels = FindObjectsByType<NetworkObjectLabel>();
+#else
+#if UNITY_2023_1_OR_NEWER
+            var labels = FindObjectsByType<NetworkObjectLabel>(FindObjectsSortMode.None);
+#else
+            var labels = FindObjectsOfType<NetworkObjectLabel>();
+#endif
+#endif
 
             foreach (var label in labels)
             {
