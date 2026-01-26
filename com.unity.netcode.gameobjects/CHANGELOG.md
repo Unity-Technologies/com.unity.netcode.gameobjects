@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions. (#3827)
 - Improve performance of `NetworkObject`. (#3820)
 - If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabled. (#3810)
 
