@@ -7,5 +7,13 @@
         "Unity.Netcode.Components",
         "Unity.Collections",
         "Unity.Mathematics"
-    ]
+    ],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "6000.4.0b5",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
+        }
+    ],
+    "noEngineReferences": false
 }
