@@ -4,7 +4,6 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using static Unity.Netcode.RuntimeTests.AddNetworkPrefabTest;
 
 namespace Unity.Netcode.RuntimeTests
 {

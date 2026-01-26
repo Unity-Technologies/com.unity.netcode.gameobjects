@@ -4,7 +4,6 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 
-
 namespace Unity.Netcode.RuntimeTests
 {
     internal class NetworkVariableAnticipationComponent : NetworkBehaviour
