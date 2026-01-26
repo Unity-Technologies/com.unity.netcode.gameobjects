@@ -1,9 +1,11 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
     internal static class FindObjects
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T[] FindObjectsByType<T>() where T : Object
         {
 #if NGO_FINDOBJECTS_NOSORTING
