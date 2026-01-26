@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public static class FindObjects
+    internal static class FindObjects
     {
         public static T[] FindObjectsByType<T>() where T : Object
         {
