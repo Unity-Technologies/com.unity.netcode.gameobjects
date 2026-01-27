@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariableAnticipationComponent GetServerComponent()
         {
-            var objects = FindObjects.FindObjectsByType<NetworkVariableAnticipationComponent>();
+            var objects = FindObjects.ByType<NetworkVariableAnticipationComponent>();
             foreach (var obj in objects)
             {
                 if (obj.NetworkManager == m_ServerNetworkManager && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
@@ -92,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariableAnticipationComponent GetOtherClientComponent()
         {
-            var objects = FindObjects.FindObjectsByType<NetworkVariableAnticipationComponent>();
+            var objects = FindObjects.ByType<NetworkVariableAnticipationComponent>();
             foreach (var obj in objects)
             {
                 if (obj.NetworkManager == m_ClientNetworkManagers[1] && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)

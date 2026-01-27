@@ -90,7 +90,12 @@
         },
         {
             "name": "Unity",
-            "expression": "6000.4.0b5",
+            "expression": "[6000.4.0b5,6000.5.0a1)",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.5.0a6",
             "define": "NGO_FINDOBJECTS_NOSORTING"
         }
     ],

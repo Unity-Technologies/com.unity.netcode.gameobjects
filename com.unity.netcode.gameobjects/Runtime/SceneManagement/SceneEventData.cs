@@ -368,7 +368,7 @@ namespace Unity.Netcode
         {
             m_DespawnedInSceneObjectsSync.Clear();
             // Find all active and non-active in-scene placed NetworkObjects
-            var inSceneNetworkObjects = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.NetworkManager == m_NetworkManager);
+            var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(true, true).Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
@@ -912,7 +912,7 @@ namespace Unity.Netcode
 
             if (networkObjectsToRemove.Length > 0)
             {
-                var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+                var networkObjects = FindObjects.ByType<NetworkObject>();
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
@@ -1040,7 +1040,7 @@ namespace Unity.Netcode
                             var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
 
                             // Find all active and non-active in-scene placed NetworkObjects
-                            var inSceneNetworkObjects = FindObjects.FindObjectsByType<NetworkObject>().Where((c) =>
+                            var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(true, true).Where((c) =>
                             c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                             foreach (var inSceneObject in inSceneNetworkObjects)

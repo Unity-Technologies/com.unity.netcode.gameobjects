@@ -1167,7 +1167,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
+            var clientPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -1183,7 +1183,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             // For late joining clients, add the remaining (if any) cloned versions of each client's player
-            clientPlayerClones = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+            clientPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -1207,7 +1207,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_UseHost)
             {
-                var clientSideServerPlayerClones = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == NetworkManager.ServerClientId);
+                var clientSideServerPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == NetworkManager.ServerClientId);
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
                 {
                     // When the server is not the host this needs to be done
@@ -1316,7 +1316,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     if (m_UseHost || authorityManager.IsHost)
                     {
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
+                        var serverPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
                             if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
@@ -1404,7 +1404,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (m_UseHost || authorityManager.IsHost)
                     {
-                        var serverPlayerClones = FindObjects.FindObjectsByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
+                        var serverPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
                             if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
@@ -1658,7 +1658,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         private void DestroyNetworkManagers()
         {
-            var networkManagers = FindObjects.FindObjectsByType<NetworkManager>();
+            var networkManagers = FindObjects.ByType<NetworkManager>();
             foreach (var networkManager in networkManagers)
             {
                 Object.DestroyImmediate(networkManager.gameObject);
@@ -1727,7 +1727,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {
-            var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
                 // This can sometimes be null depending upon order of operations
@@ -2633,7 +2633,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (!string.IsNullOrEmpty(methodName))
                 {
-                    var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+                    var networkObjects = FindObjects.ByType<NetworkObject>();
                     foreach (var obj in networkObjects)
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);

@@ -45,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private EmptyComponent GetObjectForClient(ulong clientId)
         {
-            var emptyComponents = FindObjects.FindObjectsByType<EmptyComponent>();
+            var emptyComponents = FindObjects.ByType<EmptyComponent>();
             foreach (var component in emptyComponents)
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)

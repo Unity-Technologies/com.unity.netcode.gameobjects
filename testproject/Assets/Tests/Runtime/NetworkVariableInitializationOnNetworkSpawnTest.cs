@@ -97,7 +97,7 @@ namespace TestProject.RuntimeTests
             const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>();
 
             while (networkObjects.Length != expectedNetworkObjects)
             {
@@ -113,7 +113,7 @@ namespace TestProject.RuntimeTests
                 }
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-                networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+                networkObjects = FindObjects.ByType<NetworkObject>();
             }
 
             serverObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient;

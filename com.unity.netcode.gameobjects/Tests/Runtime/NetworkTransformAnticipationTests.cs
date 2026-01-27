@@ -89,7 +89,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public AnticipatedNetworkTransform GetServerComponent()
         {
-            var anticipatedNetworkTransforms = FindObjects.FindObjectsByType<AnticipatedNetworkTransform>();
+            var anticipatedNetworkTransforms = FindObjects.ByType<AnticipatedNetworkTransform>();
             foreach (var obj in anticipatedNetworkTransforms)
             {
                 if (obj.NetworkManager == m_ServerNetworkManager && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
@@ -103,7 +103,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public AnticipatedNetworkTransform GetOtherClientComponent()
         {
-            var anticipatedNetworkTransforms = FindObjects.FindObjectsByType<AnticipatedNetworkTransform>();
+            var anticipatedNetworkTransforms = FindObjects.ByType<AnticipatedNetworkTransform>();
             foreach (var obj in anticipatedNetworkTransforms)
             {
                 if (obj.NetworkManager == m_ClientNetworkManagers[1] && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)

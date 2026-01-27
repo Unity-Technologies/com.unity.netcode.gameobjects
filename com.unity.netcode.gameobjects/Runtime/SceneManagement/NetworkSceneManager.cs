@@ -2729,7 +2729,7 @@ namespace Unity.Netcode
             {
                 ScenePlacedObjects.Clear();
             }
-            var networkObjects = FindObjects.FindObjectsByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>();
 
             // Just add every NetworkObject found that isn't already in the list
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value

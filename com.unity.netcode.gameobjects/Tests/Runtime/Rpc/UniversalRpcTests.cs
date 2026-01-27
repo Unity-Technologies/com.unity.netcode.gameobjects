@@ -585,7 +585,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         protected void Clear()
         {
-            var objects = FindObjects.FindObjectsByType<UniversalRpcNetworkBehaviour>();
+            var objects = FindObjects.ByType<UniversalRpcNetworkBehaviour>();
             foreach (var obj in objects)
             {
                 obj.Received = string.Empty;
@@ -610,7 +610,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             if (ownerClientId == NetworkManager.ServerClientId && !m_ServerNetworkManager.IsHost)
             {
-                var objects = FindObjects.FindObjectsByType<UniversalRpcNetworkBehaviour>();
+                var objects = FindObjects.ByType<UniversalRpcNetworkBehaviour>();
                 foreach (var obj in objects)
                 {
                     if (obj.name.StartsWith("Server Object") && obj.OwnerClientId == ownerClientId && obj.NetworkManager.LocalClientId == onClient)
