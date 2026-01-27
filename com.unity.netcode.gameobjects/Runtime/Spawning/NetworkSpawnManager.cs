@@ -1170,7 +1170,7 @@ namespace Unity.Netcode
             // If this the player and the client is the owner, then lock ownership by default
             if (NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClientId == ownerClientId && playerObject)
             {
-                networkObject.SetOwnershipLock();
+                networkObject.AddOwnershipExtended(NetworkObject.OwnershipStatusExtended.Locked);
             }
 
             networkObject.IsSpawned = true;
@@ -1410,46 +1410,53 @@ namespace Unity.Netcode
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
 
-            for (int i = 0; i < networkObjects.Length; i++)
+            foreach (var networkObject in networkObjects)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                // We are not the authority of this NetworkObject
+                // Mostly used for integration testing
+                if (networkObject.NetworkManager != NetworkManager)
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
-                    {
-                        OnDespawnObject(networkObjects[i], false);
-                        // Leave destruction up to the handler
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                    }
-                    else
-                    {
-                        // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
-                        // is unloaded. Otherwise, despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value));
+                    continue;
+                }
 
-                        // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
-                        if (shouldDestroy)
+                // The NetworkManagerOwner field must be set before calling OnDespawnObject
+                networkObject.NetworkManagerOwner = NetworkManager;
+
+                if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
+                {
+                    OnDespawnObject(networkObject, false);
+                    // Leave destruction up to the handler
+                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                }
+                else
+                {
+                    // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
+                    // is unloaded. Otherwise, despawn and destroy it.
+                    var shouldDestroy = !(networkObject.IsSceneObject == null || (networkObject.IsSceneObject != null && networkObject.IsSceneObject.Value));
+
+                    // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
+                    if (shouldDestroy)
+                    {
+                        // Check to see if there are any in-scene placed children that are marked to be destroyed with the scene
+                        var childrenObjects = networkObject.GetComponentsInChildren<NetworkObject>();
+                        foreach (var childObject in childrenObjects)
                         {
-                            // Check to see if there are any in-scene placed children that are marked to be destroyed with the scene
-                            var childrenObjects = networkObjects[i].GetComponentsInChildren<NetworkObject>();
-                            foreach (var childObject in childrenObjects)
+                            if (childObject == networkObject)
                             {
-                                if (childObject == networkObjects[i])
-                                {
-                                    continue;
-                                }
+                                continue;
+                            }
 
-                                // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
-                                // and set its parent to root
-                                if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
-                                {
-                                    childObject.TryRemoveParent(childObject.WorldPositionStays());
-                                }
+                            // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
+                            // and set its parent to root
+                            if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
+                            {
+                                childObject.TryRemoveParent(childObject.WorldPositionStays());
                             }
                         }
-
-                        //Despawn and potentially destroy.
-                        OnDespawnObject(networkObjects[i], shouldDestroy);
                     }
+
+                    //Despawn and potentially destroy.
+                    OnDespawnObject(networkObject, shouldDestroy);
                 }
             }
         }
