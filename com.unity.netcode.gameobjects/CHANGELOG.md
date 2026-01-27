@@ -11,10 +11,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - The `NetworkMetricsPipelineStage` for Unity Transport is now part of the public API. This allows using it in custom implementations of `INetworkStreamDriverConstructor` that want to maintain compatibility with the multiplayer tools package. (#3853)
+- Added stricter checks on `InSpawned` within `NetworkObject`. (#3831)
+- Added a new `InvalidOperation` status to `OwnershipRequestStatus`. (#3831)
 
 ### Changed
 
-- Improve performance of `NetworkObject`. (#3820)
+- Ensure logs in `NetworkObject` log the `NetworkObject.name` wherever possible. (#3831)
+- Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions. (#3827)
+- Improve performance of `NetworkObject`. (#3820, #3831)
 - If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabled. (#3810)
 
 ### Deprecated
@@ -26,7 +30,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Prevented a `NullReferenceException` in `UnityTransport` when using a custom `INetworkStreamDriverConstructor` that doesn't use all the default pipelines and the multiplayer tools package is installed. (#3853)
+- Fixed issue when using a client-server topology where a `NetworkList` with owner write permissions was resetting sent time and dirty flags after having been spawned on owning clients that were not the spawn authority. (#3850)
 - Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
+
 
 ### Security
 

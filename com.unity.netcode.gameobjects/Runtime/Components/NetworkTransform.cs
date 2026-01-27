@@ -3719,14 +3719,9 @@ namespace Unity.Netcode.Components
             {
                 if (CanCommitToTransform)
                 {
-                    if (NetworkObject.HasParentNetworkObject(transform))
-                    {
-                        InLocalSpace = true;
-                    }
-                    else
-                    {
-                        InLocalSpace = false;
-                    }
+                    // If our NetworkObject has a parent NetworkObject, then we are in netcode local space.
+                    // GetComponentsInParent will get the networkObject on cachedNetworkObject as well, so we have a parent if we have more than one returned NetworkObject.
+                    InLocalSpace = m_CachedNetworkObject.transform.GetComponentsInParent<NetworkObject>().Length > 1;
                 }
 
                 // Always apply this if SwitchTransformSpaceWhenParented is set.
