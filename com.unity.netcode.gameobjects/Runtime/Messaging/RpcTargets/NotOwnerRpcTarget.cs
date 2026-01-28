@@ -12,11 +12,8 @@ namespace Unity.Netcode
             m_ServerRpcTarget.Dispose();
             m_LocalSendRpcTarget.Dispose();
             m_NotAuthorityRpcTarget.Dispose();
-            if (m_GroupSendTarget != null)
-            {
-                m_GroupSendTarget.Target.Dispose();
-                m_GroupSendTarget = null;
-            }
+            m_GroupSendTarget?.Target.Dispose();
+            m_GroupSendTarget = null;
         }
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)

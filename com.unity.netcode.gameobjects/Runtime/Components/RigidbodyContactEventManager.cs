@@ -38,7 +38,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Should return a <see cref="Rigidbody"/>.
         /// </summary>
-        Rigidbody GetRigidbody();
+        public Rigidbody GetRigidbody();
 
         /// <summary>
         /// Invoked by the <see cref="RigidbodyContactEventManager"/> instance.
@@ -49,7 +49,7 @@ namespace Unity.Netcode.Components
         /// <param name="contactPoint">The world space location of the contact event.</param>
         /// <param name="hasCollisionStay">Will be set if this is a collision stay contact event (i.e. it is not the first contact event and continually has contact)</param>
         /// <param name="averagedCollisionStayNormal">The average normal of the collision stay contact over time.</param>
-        void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
+        public void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ namespace Unity.Netcode.Components
         /// Invoked by <see cref="RigidbodyContactEventManager"/> for each set of contact events it is processing (prior to processing).
         /// </summary>
         /// <returns><see cref="ContactEventHandlerInfo"/></returns>
-        ContactEventHandlerInfo GetContactEventHandlerInfo();
+        public ContactEventHandlerInfo GetContactEventHandlerInfo();
     }
 
     /// <summary>

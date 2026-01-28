@@ -4,6 +4,6 @@ namespace Unity.Netcode
 {
     internal interface INetworkMessageProvider
     {
-        List<NetworkMessageManager.MessageWithHandler> GetMessages();
+        public List<NetworkMessageManager.MessageWithHandler> GetMessages();
     }
 }
