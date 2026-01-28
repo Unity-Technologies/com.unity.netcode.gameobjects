@@ -1323,7 +1323,17 @@ namespace Unity.Netcode
             }
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
-            Initialize(true);
+            try
+            {
+                Initialize(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
+                return false;
+            }
 
             try
             {
@@ -1342,11 +1352,13 @@ namespace Unity.Netcode
 
                 ConnectionManager.TransportFailureEventHandler(true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
                 ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
-                throw;
             }
 
             return IsListening;
@@ -1373,7 +1385,16 @@ namespace Unity.Netcode
                 return false;
             }
 
-            Initialize(false);
+            try
+            {
+                Initialize(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                ShutdownInternal();
+                return false;
+            }
 
             try
             {
@@ -1419,7 +1440,18 @@ namespace Unity.Netcode
                 return false;
             }
 
-            Initialize(true);
+            try
+            {
+                Initialize(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
+                return false;
+            }
+
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1437,6 +1469,8 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
                 ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
             }
