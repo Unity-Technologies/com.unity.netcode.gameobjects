@@ -709,7 +709,7 @@ namespace Unity.Netcode.Components
         private static byte[] s_EmptyArray = new byte[] { };
         private List<int> m_ParametersToUpdate;
         private RpcParams m_RpcParams;
-        private RpcTargetGroup m_TargetGroup;
+        private IGroupRpcTarget m_TargetGroup;
         private AnimationMessage m_AnimationMessage;
         private NetworkAnimatorStateChangeHandler m_NetworkAnimatorStateChangeHandler;
 
@@ -762,7 +762,7 @@ namespace Unity.Netcode.Components
         {
             SpawnCleanup();
 
-            m_TargetGroup?.Dispose();
+            m_TargetGroup?.Target?.Dispose();
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
@@ -928,12 +928,13 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogWarningServer($"[{gameObject.name}][{nameof(NetworkAnimator)}] {nameof(Animator)} is not assigned! Animation synchronization will not work for this instance!");
             }
 
-            m_TargetGroup = RpcTarget.Group(new List<ulong>(128), RpcTargetUse.Persistent) as RpcTargetGroup;
+            m_TargetGroup = RpcTarget.Group(new List<ulong>(128), RpcTargetUse.Persistent) as IGroupRpcTarget;
             m_RpcParams = new RpcParams()
             {
                 Send = new RpcSendParams()
                 {
-                    Target = m_TargetGroup
+                    // FIX: Use m_TargetGroup.Target to get the BaseRpcTarget
+                    Target = m_TargetGroup?.Target
                 }
             };
 
@@ -1219,7 +1220,7 @@ namespace Unity.Netcode.Components
                         }
                         m_TargetGroup.Add(clientId);
                     }
-                    m_RpcParams.Send.Target = m_TargetGroup;
+                    m_RpcParams.Send.Target = m_TargetGroup.Target;
                     SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
                 }
             }
@@ -1555,7 +1556,7 @@ namespace Unity.Netcode.Components
                     m_TargetGroup.Add(clientId);
                 }
 
-                m_RpcParams.Send.Target = m_TargetGroup;
+                m_RpcParams.Send.Target = m_TargetGroup.Target;
                 m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_RpcParams);
             }
         }
@@ -1621,7 +1622,7 @@ namespace Unity.Netcode.Components
                     }
                     m_TargetGroup.Add(clientId);
                 }
-                m_RpcParams.Send.Target = m_TargetGroup;
+                m_RpcParams.Send.Target = m_TargetGroup.Target;
                 m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animationMessage, m_RpcParams);
             }
         }
