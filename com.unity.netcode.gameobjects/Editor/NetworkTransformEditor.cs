@@ -307,7 +307,11 @@ namespace Unity.Netcode.Editor
         public override void OnInspectorGUI()
         {
             var networkTransform = target as NetworkTransform;
-            void SetExpanded(bool expanded) { networkTransform.NetworkTransformExpanded = expanded; };
+            void SetExpanded(bool expanded)
+            {
+                networkTransform.NetworkTransformExpanded = expanded;
+            }
+
             DrawFoldOutGroup<NetworkTransform>(networkTransform.GetType(), DisplayNetworkTransformProperties, networkTransform.NetworkTransformExpanded, SetExpanded);
             base.OnInspectorGUI();
         }

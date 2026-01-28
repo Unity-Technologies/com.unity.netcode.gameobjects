@@ -7,17 +7,10 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
-            if (m_AuthorityTarget != null)
-            {
-                m_AuthorityTarget.Dispose();
-                m_AuthorityTarget = null;
-            }
-
-            if (m_DirectSendTarget != null)
-            {
-                m_DirectSendTarget.Dispose();
-                m_DirectSendTarget = null;
-            }
+            m_AuthorityTarget?.Dispose();
+            m_AuthorityTarget = null;
+            m_DirectSendTarget?.Dispose();
+            m_DirectSendTarget = null;
 
             base.Dispose();
         }

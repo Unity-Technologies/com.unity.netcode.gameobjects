@@ -15,7 +15,7 @@ namespace Unity.Netcode
         /// <param name="clientId">The destination clientId</param>
         /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
-        void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage;
+        public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage;
 
         /// <summary>
         /// Called after an individual message is sent.
@@ -24,7 +24,7 @@ namespace Unity.Netcode
         /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
         /// <param name="messageSizeBytes">Number of bytes in the message, not including the message header</param>
-        void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage;
+        public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage;
 
         /// <summary>
         /// Called before an individual message is received.
@@ -32,7 +32,7 @@ namespace Unity.Netcode
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageType">The type of the message being sent</param>
         /// <param name="messageSizeBytes">Number of bytes in the message, not including the message header</param>
-        void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes);
+        public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes);
 
         /// <summary>
         /// Called after an individual message is received.
@@ -40,7 +40,7 @@ namespace Unity.Netcode
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageType">The type of the message being sent</param>
         /// <param name="messageSizeBytes">Number of bytes in the message, not including the message header</param>
-        void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes);
+        public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes);
 
         /// <summary>
         /// Called before a batch of messages is sent
@@ -49,7 +49,7 @@ namespace Unity.Netcode
         /// <param name="messageCount">Number of messages in the batch</param>
         /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         /// <param name="delivery"></param>
-        void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
+        public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
 
         /// <summary>
         /// Called after a batch of messages is sent
@@ -58,7 +58,7 @@ namespace Unity.Netcode
         /// <param name="messageCount">Number of messages in the batch</param>
         /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         /// <param name="delivery"></param>
-        void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
+        public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
 
         /// <summary>
         /// Called before a batch of messages is received
@@ -66,7 +66,7 @@ namespace Unity.Netcode
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
         /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
-        void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
+        public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
 
         /// <summary>
         /// Called after a batch of messages is received
@@ -74,7 +74,7 @@ namespace Unity.Netcode
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
         /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
-        void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
+        public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
 
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Unity.Netcode
         /// <param name="messageType">The type of the message</param>
         /// <param name="delivery"></param>
         /// <returns></returns>
-        bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery);
+        public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery);
 
         /// <summary>
         /// Called before a message is received. If this returns false, the message will be discarded.
@@ -94,7 +94,7 @@ namespace Unity.Netcode
         /// <param name="messageContent">The FastBufferReader containing the message</param>
         /// <param name="context">The NetworkContext the message is being processed in</param>
         /// <returns></returns>
-        bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context);
+        public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context);
 
         /// <summary>
         /// Called after a message is serialized, but before it's handled.
@@ -103,7 +103,7 @@ namespace Unity.Netcode
         /// <param name="message">The message object</param>
         /// <param name="context">The network context the message is being ahandled in</param>
         /// <typeparam name="T"></typeparam>
-        void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
+        public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
 
         /// <summary>
         /// Called after a message is serialized and handled.
@@ -112,6 +112,6 @@ namespace Unity.Netcode
         /// <param name="message">The message object</param>
         /// <param name="context">The network context the message is being ahandled in</param>
         /// <typeparam name="T"></typeparam>
-        void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
+        public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
     }
 }
