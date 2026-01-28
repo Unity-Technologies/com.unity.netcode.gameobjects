@@ -10,10 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added stricter checks on `InSpawned` within `NetworkObject`. (#3831)
+- Added a new `InvalidOperation` status to `OwnershipRequestStatus`. (#3831)
 
 ### Changed
 
-- Improve performance of `NetworkObject`. (#3820)
+- Ensure logs in `NetworkObject` log the `NetworkObject.name` wherever possible. (#3831)
+- Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions. (#3827)
+- Improve performance of `NetworkObject`. (#3820, #3831)
 - If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabled. (#3810)
 
 ### Deprecated
