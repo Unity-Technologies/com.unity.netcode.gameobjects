@@ -1400,7 +1400,7 @@ namespace Unity.Netcode
 
         internal void DespawnAndDestroyNetworkObjects()
         {
-            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier:true);
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
 
             foreach (var networkObject in networkObjects)
             {
