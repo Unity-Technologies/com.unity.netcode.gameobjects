@@ -64,6 +64,6 @@ public class SceneReference : ScriptableObject, ISceneReference
 
 public interface ISceneReference
 {
-    string GetDisplayName();
-    List<string> GetReferencedScenes();
+    public string GetDisplayName();
+    public List<string> GetReferencedScenes();
 }

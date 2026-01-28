@@ -15,7 +15,7 @@ namespace Unity.Netcode
         /// The update method that is being executed in the context of related <see cref="NetworkUpdateStage"/>.
         /// </summary>
         /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> that is being executed.</param>
-        void NetworkUpdate(NetworkUpdateStage updateStage);
+        public void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 
     /// <summary>
