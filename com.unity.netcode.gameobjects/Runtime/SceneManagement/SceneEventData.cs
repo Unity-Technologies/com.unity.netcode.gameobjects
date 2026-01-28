@@ -912,7 +912,7 @@ namespace Unity.Netcode
 
             if (networkObjectsToRemove.Length > 0)
             {
-                var networkObjects = FindObjects.ByType<NetworkObject>();
+                var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {

@@ -1455,7 +1455,7 @@ namespace Unity.Netcode
 
         internal void DestroySceneObjects()
         {
-            var networkObjects = FindObjects.ByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -1486,7 +1486,7 @@ namespace Unity.Netcode
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
-            var networkObjects = FindObjects.ByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
             var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
