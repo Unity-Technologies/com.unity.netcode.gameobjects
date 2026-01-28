@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Updating usage of deprecated FindObjectsByType(FindObjectsSortMode) and enum FindObjectSortMode in 6000.4 and 6000.5. (#3857)
 - Ensure logs in `NetworkObject` log the `NetworkObject.name` wherever possible. (#3831)
 - Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions. (#3827)
 - Improve performance of `NetworkObject`. (#3820, #3831)
