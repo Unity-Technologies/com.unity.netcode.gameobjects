@@ -933,7 +933,6 @@ namespace Unity.Netcode.Components
             {
                 Send = new RpcSendParams()
                 {
-                    // FIX: Use m_TargetGroup.Target to get the BaseRpcTarget
                     Target = m_TargetGroup?.Target
                 }
             };
