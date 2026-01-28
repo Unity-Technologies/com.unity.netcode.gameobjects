@@ -1369,7 +1369,7 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-            var networkObjects = FindObjects.ByType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
             foreach (var sobj in networkObjects)
             {
                 sobj.IsSpawned = false;
@@ -1400,7 +1400,7 @@ namespace Unity.Netcode
 
         internal void DespawnAndDestroyNetworkObjects()
         {
-            var networkObjects = FindObjects.ByType<NetworkObject>();
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier:true);
 
             foreach (var networkObject in networkObjects)
             {
