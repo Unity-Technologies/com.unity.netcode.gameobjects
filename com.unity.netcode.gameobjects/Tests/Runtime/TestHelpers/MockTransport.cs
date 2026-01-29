@@ -112,6 +112,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override void Shutdown()
         {
+            TransportId = ulong.MaxValue;
         }
 
         protected override NetworkTopologyTypes OnCurrentTopology()
