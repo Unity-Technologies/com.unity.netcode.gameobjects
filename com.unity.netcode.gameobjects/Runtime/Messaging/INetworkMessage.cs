@@ -39,10 +39,10 @@ namespace Unity.Netcode
     /// </summary>
     internal interface INetworkMessage
     {
-        void Serialize(FastBufferWriter writer, int targetVersion);
-        bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion);
-        void Handle(ref NetworkContext context);
-        int Version { get; }
+        public void Serialize(FastBufferWriter writer, int targetVersion);
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion);
+        public void Handle(ref NetworkContext context);
+        public int Version { get; }
     }
 
 

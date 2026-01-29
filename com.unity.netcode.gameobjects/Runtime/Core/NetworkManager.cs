@@ -1623,12 +1623,8 @@ namespace Unity.Netcode
 
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
-
-            if (MessageManager != null)
-            {
-                MessageManager.Dispose();
-                MessageManager = null;
-            }
+            MessageManager?.Dispose();
+            MessageManager = null;
 
             // Let the NetworkSceneManager clean up its two SceneEvenData instances
             SceneManager?.Dispose();
@@ -1745,9 +1741,9 @@ namespace Unity.Netcode
         /// </summary>
         internal interface INetworkManagerHelper
         {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            public bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
 
-            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+            public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
 
             internal NetcodeAnalytics Analytics();
         }
