@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(StartType.Server)]
     [TestFixture(StartType.Host)]
     [TestFixture(StartType.Client)]
-    internal class StartupExceptionTests : NetcodeIntegrationTest
+    internal class NetworkManagerStartExceptionTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
 
@@ -23,7 +23,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private StartType m_StartType;
-        public StartupExceptionTests(StartType startType) : base(startType == StartType.Server ? HostOrServer.Server : HostOrServer.Host)
+        public NetworkManagerStartExceptionTests(StartType startType) : base(startType == StartType.Server ? HostOrServer.Server : HostOrServer.Host)
         {
             m_StartType = startType;
         }
