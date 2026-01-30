@@ -3055,9 +3055,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Could not serialize SceneObject: Out of buffer space.");
+                        NetworkLog.LogError("Could not serialize NetworkObject: Out of buffer space.");
                     }
-                    return;
                 }
 
                 if (HasTransform)
@@ -3146,9 +3145,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Could not deserialize SceneObject: Reading past the end of the buffer.");
+                        NetworkLog.LogError("Could not deserialize NetworkObject: Reading past the end of the buffer.");
                     }
-                    return;
                 }
 
                 if (HasTransform)
