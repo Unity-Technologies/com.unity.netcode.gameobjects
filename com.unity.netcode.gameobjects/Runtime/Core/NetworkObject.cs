@@ -1473,6 +1473,7 @@ namespace Unity.Netcode
         /// Usage: Use to start sending updates for a previously hidden <see cref="NetworkObject"/> to the targeted client.<br />
         /// <br />
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client side.<br />
+        /// CHECK comment, is a despawned object spawned on the client side? I thought it wasn't
         /// In-Scene Placed: The instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client side.<br />
         /// <br />
         /// See Also:<br />
@@ -1484,9 +1485,9 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogWarning($"Trying to show {name} but is not spawned!");
+                    NetworkLog.LogErrorServer($"Trying to show {name} but it is not spawned!");
                 }
             }
 
@@ -1494,16 +1495,16 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogWarning($"Only the owner-authority of {name} can change it's visibility when distributed authority mode is enabled!");
+                        NetworkLog.LogError($"[{name}] Only the owner-authority can change visibility when distributed authority mode is enabled!");
                     }
                 }
                 else
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogWarning($"Only the authority of {name} can change it's visibility!");
+                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
                     }
                 }
             }
@@ -1513,17 +1514,18 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"The object {name} is already visible to Client-{clientId}!");
+                        NetworkLog.LogErrorServer($"The object {name} is already visible to Client-{clientId}!");
                     }
                     return;
                 }
                 else
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogWarning($"Only the server of {name} can change it's visibility!");
+                        NetworkLog.LogError($"[{name}] Only the server can change visibility!");
+                        return;
                     }
                 }
             }
@@ -1589,7 +1591,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"[{name}][Attempted NetworkHide while {nameof(NetworkObject)} is not spawned!]");
+                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkHide while {nameof(NetworkObject)} is not spawned!");
                 }
             }
 
@@ -1599,14 +1601,14 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogErrorServer($"[{name}][Only the owner-authority can change visibility when distributed authority mode is enabled!]");
+                        NetworkLog.LogError($"[{name}] Only the owner-authority can change visibility when distributed authority mode is enabled!");
                     }
                 }
                 else
                 {
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogErrorServer($"[{name}][Only the authority can change visibility!]");
+                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
                     }
                 }
             }
@@ -1617,7 +1619,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogWarning($"[{name}][{nameof(NetworkObject)} already hidden from Client-{clientId}! (ignoring)]");
+                        NetworkLog.LogWarning($"[{name}] {nameof(NetworkObject)} already hidden from Client-{clientId}! (ignoring)");
                     }
                     return;
                 }
@@ -1752,9 +1754,9 @@ namespace Unity.Netcode
 
             if (!NetworkManagerOwner.IsListening)
             {
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"[{name}][{nameof(NetworkManagerOwner)} is not listening, start a server or host before spawning objects]");
+                    NetworkLog.LogError($"[{name}] {nameof(NetworkManagerOwner)} is not listening, start a server or host before spawning objects.");
                 }
             }
 
@@ -1762,16 +1764,16 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}][When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManagerOwner.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!]");
+                        NetworkLog.LogError($"[{name}] When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManagerOwner.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!");
                     }
                 }
                 else
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}][Only server can spawn {nameof(NetworkObject)}s]");
+                        NetworkLog.LogError($"[{name}] Only server can spawn {nameof(NetworkObject)}s.");
                     }
                 }
             }
@@ -2293,9 +2295,9 @@ namespace Unity.Netcode
                     return;
                 }
                 transform.parent = m_CachedParent;
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting");
+                    NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 }
                 return;
             }
@@ -2313,9 +2315,9 @@ namespace Unity.Netcode
                 else
                 {
                     transform.parent = m_CachedParent;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
+                        NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
                     }
                 }
                 return;
@@ -2332,16 +2334,16 @@ namespace Unity.Netcode
                 {
                     if (networkManager.DistributedAuthorityMode)
                     {
-                        if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                        if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                         {
                             NetworkLog.LogError($"[{name}][Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can re-parent it!");
                         }
                     }
                     else
                     {
-                        if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                        if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"[{name}] Only the server can re-parent {nameof(NetworkObject)}s");
+                            NetworkLog.LogError($"[{name}] Only the server can re-parent {nameof(NetworkObject)}s.");
                         }
                     }
                 }
@@ -2356,9 +2358,9 @@ namespace Unity.Netcode
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent");
+                        NetworkLog.LogErrorServer($"[{name}] Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent");
                     }
                     return;
                 }
@@ -2366,9 +2368,9 @@ namespace Unity.Netcode
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] {nameof(NetworkObject)} can only be re-parented under another spawned {nameof(NetworkObject)}");
+                        NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented under another spawned {nameof(NetworkObject)}.");
                     }
                     return;
                 }
@@ -3388,7 +3390,7 @@ namespace Unity.Netcode
             // Spawn the NetworkObject
             if (networkObject.IsSpawned)
             {
-                if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
                 }
