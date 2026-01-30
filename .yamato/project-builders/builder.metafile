@@ -24,7 +24,7 @@ BuildProjects:
         manifestPath: Packages/manifest.json
         projectPath: '.'
         localPackageName: com.unity.netcode.gameobjects
-        localPackagePath: Packages/com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
         minUnityVersion: 6000.0.52f1
     Asteroids:
         GithubRepo: "https://github.cds.internal.unity3d.com/unity/Asteroids-CMB-NGO-Sample.git"
@@ -32,7 +32,7 @@ BuildProjects:
         manifestPath: Packages/manifest.json
         projectPath: '.'
         localPackageName: com.unity.netcode.gameobjects
-        localPackagePath: Packages/com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
         minUnityVersion: 6000.2.9f1
     SocialHub:
         GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize.git"
@@ -40,5 +40,21 @@ BuildProjects:
         manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
         projectPath: 'Basic/DistributedAuthoritySocialHub'
         localPackageName: com.unity.netcode.gameobjects
-        localPackagePath: Packages/com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
         minUnityVersion: 6000.0.24f1
+    NGOtemplate:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/com.unity.template.multiplayer.ngo.git"
+        defaultBranch: main-unity-6
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.0.33f1
+    StarterKits:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/StarterKits-GameplayNGO.git"
+        defaultBranch: main
+        manifestPath: StarterKits/Packages/manifest.json
+        projectPath: StarterKits/
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.3.2f1
