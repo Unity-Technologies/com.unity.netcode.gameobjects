@@ -1357,7 +1357,6 @@ namespace Unity.Netcode
                 Debug.LogException(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
-                ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
             }
 
@@ -1412,7 +1411,7 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                ConnectionManager.LocalClient.SetRole(false, false);
+                ShutdownInternal();
                 IsListening = false;
             }
 
@@ -1471,7 +1470,6 @@ namespace Unity.Netcode
                 Debug.LogException(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
-                ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
             }
 
