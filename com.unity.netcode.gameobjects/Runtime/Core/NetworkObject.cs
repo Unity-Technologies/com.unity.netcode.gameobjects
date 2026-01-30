@@ -1473,7 +1473,6 @@ namespace Unity.Netcode
         /// Usage: Use to start sending updates for a previously hidden <see cref="NetworkObject"/> to the targeted client.<br />
         /// <br />
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client side.<br />
-        /// CHECK comment, is a despawned object spawned on the client side? I thought it wasn't
         /// In-Scene Placed: The instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client side.<br />
         /// <br />
         /// See Also:<br />
@@ -1487,7 +1486,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"Trying to show {name} but it is not spawned!");
+                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkShow while not spawned.");
                 }
             }
 
@@ -1504,12 +1503,11 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
+                        NetworkLog.LogError($"[{name}] Only the authority can change visibility.");
                     }
                 }
             }
 
-            //CHECK this logic
             if (Observers.Contains(clientId))
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
@@ -1524,7 +1522,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Only the server can change visibility!");
+                        NetworkLog.LogError($"[{name}] Only the server can change visibility.");
                         return;
                     }
                 }
@@ -1591,7 +1589,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkHide while {nameof(NetworkObject)} is not spawned!");
+                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkHide while {nameof(NetworkObject)} is not spawned.");
                 }
             }
 
@@ -2588,7 +2586,7 @@ namespace Unity.Netcode
             // This assures all NetworkVariables and RPC related tables have been initialized
             // prior to invoking OnNetworkSpawn so cross NetworkBehaviour:
             // - accessing of NetworkVariables will work correctly.
-            // - invocation of RPCs will work properly (and not throw exception under certain scenarios) CHECK this comment about exceptions
+            // - invocation of RPCs will work properly (and not throw exception under certain scenarios)
             foreach (var childBehaviour in ChildNetworkBehaviours)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
@@ -3052,7 +3050,6 @@ namespace Unity.Netcode
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
-                    //CHECK should we remove this exception?
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
 
@@ -3140,7 +3137,6 @@ namespace Unity.Netcode
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
-                    //CHECK should we remove this exception too?
                     throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
 
@@ -3342,7 +3338,6 @@ namespace Unity.Netcode
                 }
                 catch (Exception ex)
                 {
-                    //CHECK exception too
                     Debug.LogException(ex);
                 }
 
