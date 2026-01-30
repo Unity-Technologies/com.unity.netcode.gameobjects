@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added better exception handling around the startup sequence. (#3864)
 - Added stricter checks on `InSpawned` within `NetworkObject`. (#3831)
 - Added a new `InvalidOperation` status to `OwnershipRequestStatus`. (#3831)
 
