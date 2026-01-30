@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added better exception handling around the startup sequence. (#3864)
 - Added stricter checks on `InSpawned` within `NetworkObject`. (#3831)
 - Added a new `InvalidOperation` status to `OwnershipRequestStatus`. (#3831)
 
@@ -29,6 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkManager` was not cleaning itself up if an exception was thrown while starting. (#3864)
 - Fixed memory leak in `NetworkAnimator` on clients where `RpcTarget` groups were not being properly disposed due to incorrect type casting of `ProxyRpcTargetGroup` to `RpcTargetGroup`.
 - Fixed issue when using a client-server topology where a `NetworkList` with owner write permissions was resetting sent time and dirty flags after having been spawned on owning clients that were not the spawn authority. (#3850)
 - Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
