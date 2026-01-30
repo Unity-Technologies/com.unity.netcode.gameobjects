@@ -12,37 +12,37 @@ namespace Unity.Netcode
         /// <summary>
         /// Check whether this implementation is a "reader" - if it's been constructed to deserialize data
         /// </summary>
-        bool IsReader { get; }
+        public bool IsReader { get; }
         /// <summary>
         /// Check whether this implementation is a "writer" - if it's been constructed to serialize data
         /// </summary>
-        bool IsWriter { get; }
+        public bool IsWriter { get; }
 
         /// <summary>
         /// Get the underlying FastBufferReader struct.
         /// Only valid when IsReader == true
         /// </summary>
         /// <returns>underlying FastBufferReader</returns>
-        FastBufferReader GetFastBufferReader();
+        public FastBufferReader GetFastBufferReader();
         /// <summary>
         /// Get the underlying FastBufferWriter struct.
         /// Only valid when IsWriter == true
         /// </summary>
         /// <returns>underlying FastBufferWriter</returns>
-        FastBufferWriter GetFastBufferWriter();
+        public FastBufferWriter GetFastBufferWriter();
 
         /// <summary>
         /// Read or write a string
         /// </summary>
         /// <param name="s">The value to read/write</param>
         /// <param name="oneByteChars">If true, characters will be limited to one-byte ASCII characters</param>
-        void SerializeValue(ref string s, bool oneByteChars = false);
+        public void SerializeValue(ref string s, bool oneByteChars = false);
 
         /// <summary>
         /// Read or write a single byte
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref byte value);
+        public void SerializeValue(ref byte value);
 
         /// <summary>
         /// Read or write a primitive value (int, bool, etc)
@@ -52,7 +52,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
         /// <summary>
         /// Read or write an array of primitive values (int, bool, etc)
@@ -62,7 +62,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
+        public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
         /// <summary>
         /// Read or write an enum value
@@ -70,7 +70,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
         /// <summary>
         /// Read or write an array of enum values
@@ -78,7 +78,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
+        public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
         /// <summary>
         /// Read or write a struct value implementing ISerializeByMemcpy
@@ -86,7 +86,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
         /// <summary>
         /// Read or write an array of struct values implementing ISerializeByMemcpy
@@ -94,7 +94,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
         /// <summary>
         /// Read or write a NativeArray of struct values implementing ISerializeByMemcpy
@@ -103,7 +103,7 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
@@ -112,7 +112,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 #endif
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
 
         /// <summary>
         /// Read or write an array of struct or class values implementing INetworkSerializable
@@ -129,7 +129,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
+        public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
 
         /// <summary>
         /// Read or write a FixedString value
@@ -137,7 +137,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to read/write</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -155,7 +155,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         /// <typeparam name="T">The type being serialized</typeparam>
-        void SerializeValue<T>(ref NativeList<T> value)
+        public void SerializeValue<T>(ref NativeList<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 #endif
 
@@ -163,133 +163,133 @@ namespace Unity.Netcode
         /// Read or write a Vector2 value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Vector2 value);
+        public void SerializeValue(ref Vector2 value);
 
         /// <summary>
         /// Read or write an array of Vector2 values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Vector2[] value);
+        public void SerializeValue(ref Vector2[] value);
 
         /// <summary>
         /// Read or write a Vector3 value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Vector3 value);
+        public void SerializeValue(ref Vector3 value);
 
         /// <summary>
         /// Read or write an array of Vector3 values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Vector3[] value);
+        public void SerializeValue(ref Vector3[] value);
 
         /// <summary>
         /// Read or write a Vector2Int value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Vector2Int value);
+        public void SerializeValue(ref Vector2Int value);
 
         /// <summary>
         /// Read or write an array of Vector2Int values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Vector2Int[] value);
+        public void SerializeValue(ref Vector2Int[] value);
 
         /// <summary>
         /// Read or write a Vector3Int value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Vector3Int value);
+        public void SerializeValue(ref Vector3Int value);
 
         /// <summary>
         /// Read or write an array of Vector3Int values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Vector3Int[] value);
+        public void SerializeValue(ref Vector3Int[] value);
 
         /// <summary>
         /// Read or write a Vector4 value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Vector4 value);
+        public void SerializeValue(ref Vector4 value);
 
         /// <summary>
         /// Read or write an array of Vector4 values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Vector4[] value);
+        public void SerializeValue(ref Vector4[] value);
 
         /// <summary>
         /// Read or write a Quaternion value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Quaternion value);
+        public void SerializeValue(ref Quaternion value);
 
         /// <summary>
         /// Read or write an array of Quaternion values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Quaternion[] value);
+        public void SerializeValue(ref Quaternion[] value);
 
         /// <summary>
         /// Read or write a Pose value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Pose value);
+        public void SerializeValue(ref Pose value);
 
         /// <summary>
         /// Read or write an array of Pose values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Pose[] value);
+        public void SerializeValue(ref Pose[] value);
 
         /// <summary>
         /// Read or write a Color value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Color value);
+        public void SerializeValue(ref Color value);
 
         /// <summary>
         /// Read or write an array of Color values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Color[] value);
+        public void SerializeValue(ref Color[] value);
 
         /// <summary>
         /// Read or write a Color32 value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Color32 value);
+        public void SerializeValue(ref Color32 value);
 
         /// <summary>
         /// Read or write an array of Color32 values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Color32[] value);
+        public void SerializeValue(ref Color32[] value);
 
         /// <summary>
         /// Read or write a Ray value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Ray value);
+        public void SerializeValue(ref Ray value);
 
         /// <summary>
         /// Read or write an array of Ray values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Ray[] value);
+        public void SerializeValue(ref Ray[] value);
 
         /// <summary>
         /// Read or write a Ray2D value
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref Ray2D value);
+        public void SerializeValue(ref Ray2D value);
 
         /// <summary>
         /// Read or write an array of Ray2D values
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValue(ref Ray2D[] value);
+        public void SerializeValue(ref Ray2D[] value);
 
         /// <summary>
         /// Read or write a NetworkSerializable value.
@@ -297,7 +297,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         /// <typeparam name="T">The network serializable type</typeparam>
-        void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
 
         /// <summary>
         /// Performs an advance check to ensure space is available to read/write one or more values.
@@ -310,7 +310,7 @@ namespace Unity.Netcode
         /// True if there is sufficient space for the specified amount of bytes.
         /// False if there isn't enough space available.
         /// </returns>
-        bool PreCheck(int amount);
+        public bool PreCheck(int amount);
 
         /// <summary>
         /// Serialize a string, "pre-checked", which skips buffer checks.
@@ -320,7 +320,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="s">The value to read/write</param>
         /// <param name="oneByteChars">If true, characters will be limited to one-byte ASCII characters</param>
-        void SerializeValuePreChecked(ref string s, bool oneByteChars = false);
+        public void SerializeValuePreChecked(ref string s, bool oneByteChars = false);
 
         /// <summary>
         /// Serialize a byte, "pre-checked", which skips buffer checks.
@@ -329,7 +329,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref byte value);
+        public void SerializeValuePreChecked(ref byte value);
 
         /// <summary>
         /// Serialize a primitive, "pre-checked", which skips buffer checks.
@@ -340,7 +340,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
+        public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
         /// <summary>
         /// Serialize an array of primitives, "pre-checked", which skips buffer checks.
@@ -351,7 +351,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
+        public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
         /// <summary>
         /// Serialize an enum, "pre-checked", which skips buffer checks.
@@ -362,7 +362,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
+        public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
         /// <summary>
         /// Serialize an array of enums, "pre-checked", which skips buffer checks.
@@ -373,7 +373,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
+        public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
         /// <summary>
         /// Serialize a struct, "pre-checked", which skips buffer checks.
@@ -384,7 +384,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
         /// <summary>
         /// Serialize an array of structs, "pre-checked", which skips buffer checks.
@@ -395,7 +395,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
         /// <summary>
         /// Serialize a NativeArray of structs, "pre-checked", which skips buffer checks.
@@ -407,7 +407,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
@@ -419,7 +419,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 #endif
 
         /// <summary>
@@ -431,7 +431,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
-        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+        public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
         /// <summary>
@@ -441,7 +441,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector2 value);
+        public void SerializeValuePreChecked(ref Vector2 value);
 
         /// <summary>
         /// Serialize a Vector2 array, "pre-checked", which skips buffer checks.
@@ -450,7 +450,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValuePreChecked(ref Vector2[] value);
+        public void SerializeValuePreChecked(ref Vector2[] value);
 
         /// <summary>
         /// Serialize a Vector3, "pre-checked", which skips buffer checks.
@@ -459,7 +459,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector3 value);
+        public void SerializeValuePreChecked(ref Vector3 value);
 
         /// <summary>
         /// Serialize a Vector3 array, "pre-checked", which skips buffer checks.
@@ -468,7 +468,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValuePreChecked(ref Vector3[] value);
+        public void SerializeValuePreChecked(ref Vector3[] value);
 
         /// <summary>
         /// Serialize a Vector2Int, "pre-checked", which skips buffer checks.
@@ -477,7 +477,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector2Int value);
+        public void SerializeValuePreChecked(ref Vector2Int value);
 
         /// <summary>
         /// Serialize a Vector2Int array, "pre-checked", which skips buffer checks.
@@ -486,7 +486,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The values to read/write</param>
-        void SerializeValuePreChecked(ref Vector2Int[] value);
+        public void SerializeValuePreChecked(ref Vector2Int[] value);
 
         /// <summary>
         /// Serialize a Vector3Int, "pre-checked", which skips buffer checks.
@@ -495,7 +495,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector3Int value);
+        public void SerializeValuePreChecked(ref Vector3Int value);
 
         /// <summary>
         /// Serialize a Vector3Int array, "pre-checked", which skips buffer checks.
@@ -504,7 +504,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector3Int[] value);
+        public void SerializeValuePreChecked(ref Vector3Int[] value);
 
         /// <summary>
         /// Serialize a Vector4, "pre-checked", which skips buffer checks.
@@ -513,7 +513,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector4 value);
+        public void SerializeValuePreChecked(ref Vector4 value);
 
         /// <summary>
         /// Serialize a Vector4 array, "pre-checked", which skips buffer checks.
@@ -522,7 +522,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Vector4[] value);
+        public void SerializeValuePreChecked(ref Vector4[] value);
 
         /// <summary>
         /// Serialize a Quaternion, "pre-checked", which skips buffer checks.
@@ -531,7 +531,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Quaternion value);
+        public void SerializeValuePreChecked(ref Quaternion value);
 
         /// <summary>
         /// Serialize a Quaternion array, "pre-checked", which skips buffer checks.
@@ -540,7 +540,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Quaternion[] value);
+        public void SerializeValuePreChecked(ref Quaternion[] value);
 
         /// <summary>
         /// Serialize a Pose, "pre-checked", which skips buffer checks.
@@ -549,7 +549,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Pose value);
+        public void SerializeValuePreChecked(ref Pose value);
 
         /// <summary>
         /// Serialize a Pose array, "pre-checked", which skips buffer checks.
@@ -558,7 +558,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Pose[] value);
+        public void SerializeValuePreChecked(ref Pose[] value);
 
         /// <summary>
         /// Serialize a Color, "pre-checked", which skips buffer checks.
@@ -567,7 +567,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Color value);
+        public void SerializeValuePreChecked(ref Color value);
 
         /// <summary>
         /// Serialize a Color array, "pre-checked", which skips buffer checks.
@@ -576,7 +576,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Color[] value);
+        public void SerializeValuePreChecked(ref Color[] value);
 
         /// <summary>
         /// Serialize a Color32, "pre-checked", which skips buffer checks.
@@ -585,7 +585,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Color32 value);
+        public void SerializeValuePreChecked(ref Color32 value);
 
         /// <summary>
         /// Serialize a Color32 array, "pre-checked", which skips buffer checks.
@@ -594,7 +594,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Color32[] value);
+        public void SerializeValuePreChecked(ref Color32[] value);
 
         /// <summary>
         /// Serialize a Ray, "pre-checked", which skips buffer checks.
@@ -603,7 +603,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Ray value);
+        public void SerializeValuePreChecked(ref Ray value);
 
         /// <summary>
         /// Serialize a Ray array, "pre-checked", which skips buffer checks.
@@ -612,7 +612,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Ray[] value);
+        public void SerializeValuePreChecked(ref Ray[] value);
 
         /// <summary>
         /// Serialize a Ray2D, "pre-checked", which skips buffer checks.
@@ -621,7 +621,7 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Ray2D value);
+        public void SerializeValuePreChecked(ref Ray2D value);
 
         /// <summary>
         /// Serialize a Ray2D array, "pre-checked", which skips buffer checks.
@@ -630,6 +630,6 @@ namespace Unity.Netcode
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
         /// <param name="value">The value to read/write</param>
-        void SerializeValuePreChecked(ref Ray2D[] value);
+        public void SerializeValuePreChecked(ref Ray2D[] value);
     }
 }

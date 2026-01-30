@@ -508,7 +508,8 @@ namespace Unity.Netcode
         /// In order for this status to be applied, the the <see cref="NetworkObject"/> must have the <see cref="OwnershipStatus.RequestRequired"/>
         /// flag set and a non-owner client must have sent a request via <see cref="RequestOwnership"/>.
         /// </summary>
-        public bool IsRequestInProgress => ((OwnershipStatusExtended)Ownership).HasFlag(OwnershipStatusExtended.Requested);
+        public bool IsRequestInProgress =>
+            ((OwnershipStatusExtended)Ownership).HasFlag(OwnershipStatusExtended.Requested);
 
         /// <summary>
         /// Determines whether a NetworkObject can be distributed to other clients during
@@ -2852,18 +2853,54 @@ namespace Unity.Netcode
             internal ushort GetBitsetRepresentation()
             {
                 ushort bitset = 0;
-                if (IsPlayerObject) { bitset |= k_IsPlayerObject; };
-                if (HasParent) { bitset |= k_HasParent; };
-                if (IsSceneObject) { bitset |= k_IsSceneObject; };
-                if (HasTransform) { bitset |= k_HasTransform; };
-                if (IsLatestParentSet) { bitset |= k_IsLatestParentSet; };
-                if (WorldPositionStays) { bitset |= k_WorldPositionStays; };
-                if (DestroyWithScene) { bitset |= k_DestroyWithScene; };
-                if (DontDestroyWithOwner) { bitset |= k_DontDestroyWithOwner; };
-                if (HasOwnershipFlags) { bitset |= k_HasOwnershipFlags; };
-                if (SyncObservers) { bitset |= k_SyncObservers; };
-                if (SpawnWithObservers) { bitset |= k_SpawnWithObservers; };
-                if (HasInstantiationData) { bitset |= k_HasInstantiationData; };
+                if (IsPlayerObject)
+                {
+                    bitset |= k_IsPlayerObject;
+                }
+                if (HasParent)
+                {
+                    bitset |= k_HasParent;
+                }
+                if (IsSceneObject)
+                {
+                    bitset |= k_IsSceneObject;
+                }
+                if (HasTransform)
+                {
+                    bitset |= k_HasTransform;
+                }
+                if (IsLatestParentSet)
+                {
+                    bitset |= k_IsLatestParentSet;
+                }
+                if (WorldPositionStays)
+                {
+                    bitset |= k_WorldPositionStays;
+                }
+                if (DestroyWithScene)
+                {
+                    bitset |= k_DestroyWithScene;
+                }
+                if (DontDestroyWithOwner)
+                {
+                    bitset |= k_DontDestroyWithOwner;
+                }
+                if (HasOwnershipFlags)
+                {
+                    bitset |= k_HasOwnershipFlags;
+                }
+                if (SyncObservers)
+                {
+                    bitset |= k_SyncObservers;
+                }
+                if (SpawnWithObservers)
+                {
+                    bitset |= k_SpawnWithObservers;
+                }
+                if (HasInstantiationData)
+                {
+                    bitset |= k_HasInstantiationData;
+                }
                 return bitset;
             }
 
