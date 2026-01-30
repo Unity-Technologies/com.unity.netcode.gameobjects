@@ -18,80 +18,68 @@
 # Note that for now all of those builds are being made on Windows machine (so for example combination of macOS + il2cpp is expected to fail)
 # TODO: for now all builds are being made on Windows machine, but it would be nice to have a Mac build as well.
 # TODO: add iOS support
-{% for netcodeProject in NetcodeProjects -%}
-build_{{ netcodeProject[0] }}_project:
-  name: {{ netcodeProject[0] }}
+  {% for buildProject in BuildProjects -%}
+build_{{ buildProject[0] }}_project:
+  name: {{ buildProject[0] }}
   agent:
     type: Unity::VM
     image: package-ci/win10:v4
     flavor: b1.xlarge
-  variables:
-    UNITY_VERSION: trunk
-    SCRIPTING_BACKEND_IL2CPP_MONO: il2cpp
-    BURST_ON_OFF: on
-    PLATFORM_WIN64_MAC_ANDROID: win64
-    SAMPLE_BRANCH: {{ netcodeProject[1].defaultBranch }}
-  commands:
-    # Validate inputs passed via Yamato variables
-    - python Tools/scripts/BuildAutomation/validate_params.py
-    - echo Building {{ netcodeProject[0] }} project from branch %SAMPLE_BRANCH% with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
+variables:
+  UNITY_VERSION: {{ buildProject[1].minUnityVersion }}
+  SCRIPTING_BACKEND_IL2CPP_MONO: il2cpp
+  BURST_ON_OFF: on
+  PLATFORM_WIN64_MAC_ANDROID: win64
+  SAMPLE_BRANCH: {{ buildProject[1].defaultBranch }}
+commands:
+  - echo Building {{ buildProject[0] }} project from branch %SAMPLE_BRANCH% with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
+  
+  # Validate inputs passed via Yamato variables
+  - python Tools/CI/scripts/BuildAutomation/validate_params.py
+  
+  # Clone the external project repository into a specific directory. Notice that branch is also specified.
+  - git clone --single-branch --branch %SAMPLE_BRANCH% {{ buildProject[1].GithubRepo }} {{ ClonedProjectRoot }}
+  
+  # Replace file: references in the manifest with latest released versions from Unity Package Vision API.
+  # This replaces the need for maintaining separate release-manifest.json files in each project.
+  - python Tools/CI/scripts/BuildAutomation/resolve_file_references.py --manifest-path C:/ClonedProject/{{ buildProject[1].manifestPath }}
+  
+  # Modify the external project's manifest to use the local N4E package from current branch on which this Yamato job is running. (requires python that should be preinstalled in the image)
+  - python Tools/CI/scripts/BuildAutomation/manifest_update.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }} --package-name {{ buildProject[1].localPackageName }} --local-package-path %YAMATO_SOURCE_DIR%/{{ buildProject[1].localPackagePath }}{% if buildProject[1].remove %} --remove-folder {{ buildProject[1].remove }}{% endif %} --cloned-project-root {{ ClonedProjectRoot }}
+  
+  # Run python script to update ProjectSettings.asset in order to connect the project to Unity Services/set proper values.
+  # Notice that if a project has this already set up then in theory we don't need to run this script.
+  - python Tools/CI/scripts/BuildAutomation/connect_services.py --project-settings-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}/ProjectSettings/ProjectSettings.asset
+  
+  # Enable or disable Burst compilation. This step is specific to Netcode package (or any package that uses Burst)
+  - IF "%BURST_ON_OFF%"=="on" (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --enable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
+    ELSE (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --disable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
+  
+  # Download the Unity Editor version specified in the UNITY_VERSION variable. Il2cpp component is downloaded only if the SCRIPTING_BACKEND_IL2CPP_MONO is set to "il2cpp".
+  # TODO: we could download components only if needed
+  - unity-downloader-cli --fast --wait -u %UNITY_VERSION% -p C:/TestingEditor -c Editor -c il2cpp -c Android -c macOS
+  
+  # Add BuilderScript.cs to the project so we can modify and build the project using Unity Editor.
+  # This requires proper assembly definition in order for those scripts to compile properly.
+  - python Tools/CI/scripts/BuildAutomation/setup_build_scripts.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }} --source-dir %YAMATO_SOURCE_DIR%
+  
+  # Build the project using Unity Editor. This calls the appropriate static BuilderScripts method.
+  - python Tools/CI/scripts/BuildAutomation/get_build_method.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}
+  
+  # Print manifest dependencies after Unity Editor has processed the manifest to verify package overrides.
+  - python Tools/CI/scripts/BuildAutomation/print_manifest_info.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }}
+  
+  # Copy build artifacts to source directory for Yamato artifact collection.
+  # TODO: This can be omitted if building directly in YAMATO_SOURCE_DIR instead of ClonedProjectRoot
+  - python -c "import os, shutil; os.makedirs('./build', exist_ok=True); shutil.copytree('{{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}/build', './build', dirs_exist_ok=True)"
 
-    # Clone the external project repository into a specific directory. Notice that branch is also specified.
-    - git clone --single-branch --branch %SAMPLE_BRANCH% {{ netcodeProject[1].GithubRepo }} C:/ClonedProject
-
-    # Modify the external project's manifest to use the local N4E package from current branch on which this Yamato job is running. (requires python that should be preinstalled in the image)
-    - python Tools/scripts/BuildAutomation/manifest_update.py --manifest-path C:/ClonedProject/{{ netcodeProject[1].manifestPath }} --local-package-path %YAMATO_SOURCE_DIR%/com.unity.netcode.gameobjects
-
-    # Run python script to update ProjectSettings.asset in order to connect the project to Unity Services/set proper values.
-    # Notice that if a project has this already set up then in theory we don't need to run this script.
-    - python Tools/scripts/BuildAutomation/connect_services.py --project-settings-path C:/ClonedProject/{{ netcodeProject[1].projectPath }}/ProjectSettings/ProjectSettings.asset
-
-    # Enable or disable Burst compilation. This step is specific to Netcode package (or any package that uses Burst)
-    - IF "%BURST_ON_OFF%"=="on" (python Tools/scripts/BuildAutomation/disable-enable-burst.py --enable-burst --project-path C:/ClonedProject/{{ netcodeProject[1].projectPath }})
-      ELSE (python Tools/scripts/BuildAutomation/disable-enable-burst.py --disable-burst --project-path C:/ClonedProject/{{ netcodeProject[1].projectPath }})
-
-    # Download the Unity Editor version specified in the UNITY_VERSION variable. Il2cpp component is downloaded only if the SCRIPTING_BACKEND_IL2CPP_MONO is set to "il2cpp".
-    # TODO: we could download components only if needed
-    - unity-downloader-cli --fast --wait -u %UNITY_VERSION% -p C:/TestingEditor -c Editor -c il2cpp -c Android -c macOS
-
-    # Add BuilderScript.cs to the project so we can modify and build the project using Unity Editor.
-    # This is a bit tricky step, notice that we also need to include proper assembly definition in order for those scripts to compile properly.
-    # TODO: the asmdef file can be simplified
-    - python Tools/scripts/BuildAutomation/FileCopy.py "C:/ClonedProject/{{ netcodeProject[1].projectPath }}"
-
-    # Build the project using Unity Editor. This will call the given static BuilderScripts method.
-    # Ideally, it would be nice to parametrize the BuilderScripts (for example to pass scripting backend as parameter) but -executeMethod only calls static methods without parameters so for now we will have multiple configurations
-    # Notice that for Android platform even if mono is selected, il2cpp will be used since mono is not supported for Android builds.
-    - IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
-        IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
-          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
-        ) ELSE (
-          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
-        )
-      )
-      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
-          IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
-            C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
-          ) ELSE (
-            C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
-          )
-      )
-      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
-          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget android -executeMethod BuilderScripts.BuildAndroidIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
-      )
-
-    # Because of this we need to ensure that all files are copied to the source directory.
-    # TODO: this can be omitted if I can somehow build the project in the source directory (YAMATO_SOURCE_DIR) instead of C:/CompetitiveAction
-    - python -c "import os; os.makedirs('./build', exist_ok=True)" # --> Create the build directory if it doesn't exist
-    - python -c "import shutil; shutil.copytree('C:/ClonedProject/{{ netcodeProject[1].projectPath }}/build', './build', dirs_exist_ok=True)" # --> Copy the build directory to the source directory (YAMATO_SOURCE_DIR). Remember to copy entire directory and not only exe file
-
-  artifacts:
-    logs:
-      paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-    players:
-      paths:
-        - build/**/*
-{% endfor -%}
+artifacts:
+  logs:
+    paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+  players:
+    paths:
+      - build/**/*
+  {% endfor -%}
