@@ -100,6 +100,8 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(isListening, Is.False, "Should not have started after exception during startup");
             Assert.That(transport.GetNetworkDriver().IsCreated, Is.False, "NetworkDriver should not be created.");
+            Assert.False(toTest.IsServer, "IsServer should be false when NetworkManager failed to start");
+            Assert.False(toTest.IsClient, "IsClient should be false when NetworkManager failed to start");
 
             toTest.OnClientStarted -= ThrowExceptionAction;
             toTest.OnServerStarted -= ThrowExceptionAction;
