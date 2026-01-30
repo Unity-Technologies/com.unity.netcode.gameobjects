@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new Hooks<ConnectionApprovedMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when a connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(m_ClientNetworkManagers.ToList());
         }
