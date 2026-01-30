@@ -576,7 +576,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         internal static bool StartServer(bool host, NetworkManager server)
         {
-            return StartInternal(host, server, new NetworkManager[]{});
+            return StartInternal(host, server, new NetworkManager[] { });
         }
 
 

@@ -291,7 +291,7 @@ namespace Unity.Netcode
                     {
                         networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Debug.LogException(ex);
                         return null;
@@ -309,7 +309,7 @@ namespace Unity.Netcode
                 {
                     networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogException(ex);
                     return null;

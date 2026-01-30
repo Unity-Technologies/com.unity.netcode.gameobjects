@@ -5,7 +5,6 @@ using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = System.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -40,23 +39,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             throw new Exception(k_ExceptionText);
         }
-
-        private void OnPeerConnectedException(NetworkManager networkManager, ConnectionEventData connectionEventData)
-        {
-            if (connectionEventData.EventType == ConnectionEvent.PeerConnected)
-            {
-                ThrowExceptionAction();
-            }
-        }
-
-        private void OnClientConnectedException(NetworkManager networkManager, ConnectionEventData connectionEventData)
-        {
-            if (connectionEventData.EventType == ConnectionEvent.ClientConnected)
-            {
-                ThrowExceptionAction();
-            }
-        }
-
 
         [UnityTest]
         public IEnumerator VerifyNetworkManagerHandlesExceptionDuringStart()
@@ -124,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
 
             if (startType == StartType.Client)
             {
-                 // Start the client fully to ensure startup still works with no exceptions
+                // Start the client fully to ensure startup still works with no exceptions
                 yield return StartClient(toTest);
 
                 Assert.That(toTest.IsListening, Is.True, "Client failed to start");
