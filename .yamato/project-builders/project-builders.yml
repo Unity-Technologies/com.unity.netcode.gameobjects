@@ -35,25 +35,25 @@ build_{{ buildProject[0] }}_project:
     - echo Building {{ buildProject[0] }} project from branch %SAMPLE_BRANCH% with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
   
     # Validate inputs passed via Yamato variables
-    - python Tools/CI/scripts/BuildAutomation/validate_params.py
+    - python Tools/scripts/BuildAutomation/validate_params.py
   
     # Clone the external project repository into a specific directory. Notice that branch is also specified.
     - git clone --single-branch --branch %SAMPLE_BRANCH% {{ buildProject[1].GithubRepo }} {{ ClonedProjectRoot }}
   
     # Replace file: references in the manifest with latest released versions from Unity Package Vision API.
     # This replaces the need for maintaining separate release-manifest.json files in each project.
-    - python Tools/CI/scripts/BuildAutomation/resolve_file_references.py --manifest-path C:/ClonedProject/{{ buildProject[1].manifestPath }}
+    - python Tools/scripts/BuildAutomation/resolve_file_references.py --manifest-path C:/ClonedProject/{{ buildProject[1].manifestPath }}
   
     # Modify the external project's manifest to use the local N4E package from current branch on which this Yamato job is running. (requires python that should be preinstalled in the image)
-    - python Tools/CI/scripts/BuildAutomation/manifest_update.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }} --package-name {{ buildProject[1].localPackageName }} --local-package-path %YAMATO_SOURCE_DIR%/{{ buildProject[1].localPackagePath }}{% if buildProject[1].remove %} --remove-folder {{ buildProject[1].remove }}{% endif %} --cloned-project-root {{ ClonedProjectRoot }}
+    - python Tools/scripts/BuildAutomation/manifest_update.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }} --package-name {{ buildProject[1].localPackageName }} --local-package-path %YAMATO_SOURCE_DIR%/{{ buildProject[1].localPackagePath }}{% if buildProject[1].remove %} --remove-folder {{ buildProject[1].remove }}{% endif %} --cloned-project-root {{ ClonedProjectRoot }}
   
     # Run python script to update ProjectSettings.asset in order to connect the project to Unity Services/set proper values.
     # Notice that if a project has this already set up then in theory we don't need to run this script.
-    - python Tools/CI/scripts/BuildAutomation/connect_services.py --project-settings-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}/ProjectSettings/ProjectSettings.asset
+    - python Tools/scripts/BuildAutomation/connect_services.py --project-settings-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}/ProjectSettings/ProjectSettings.asset
   
     # Enable or disable Burst compilation. This step is specific to Netcode package (or any package that uses Burst)
-    - IF "%BURST_ON_OFF%"=="on" (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --enable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
-      ELSE (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --disable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
+    - IF "%BURST_ON_OFF%"=="on" (python Tools/scripts/BuildAutomation/disable-enable-burst.py --enable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
+      ELSE (python Tools/scripts/BuildAutomation/disable-enable-burst.py --disable-burst --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }})
   
     # Download the Unity Editor version specified in the UNITY_VERSION variable. Il2cpp component is downloaded only if the SCRIPTING_BACKEND_IL2CPP_MONO is set to "il2cpp".
     # TODO: we could download components only if needed
@@ -61,13 +61,13 @@ build_{{ buildProject[0] }}_project:
   
     # Add BuilderScript.cs to the project so we can modify and build the project using Unity Editor.
     # This requires proper assembly definition in order for those scripts to compile properly.
-    - python Tools/CI/scripts/BuildAutomation/setup_build_scripts.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }} --source-dir %YAMATO_SOURCE_DIR%
+    - python Tools/scripts/BuildAutomation/setup_build_scripts.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }} --source-dir %YAMATO_SOURCE_DIR%
   
     # Build the project using Unity Editor. This calls the appropriate static BuilderScripts method.
-    - python Tools/CI/scripts/BuildAutomation/get_build_method.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}
+    - python Tools/scripts/BuildAutomation/get_build_method.py --project-path {{ ClonedProjectRoot }}/{{ buildProject[1].projectPath }}
   
     # Print manifest dependencies after Unity Editor has processed the manifest to verify package overrides.
-    - python Tools/CI/scripts/BuildAutomation/print_manifest_info.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }}
+    - python Tools/scripts/BuildAutomation/print_manifest_info.py --manifest-path {{ ClonedProjectRoot }}/{{ buildProject[1].manifestPath }}
   
     # Copy build artifacts to source directory for Yamato artifact collection.
     # TODO: This can be omitted if building directly in YAMATO_SOURCE_DIR instead of ClonedProjectRoot
