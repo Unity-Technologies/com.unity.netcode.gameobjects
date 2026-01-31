@@ -221,19 +221,21 @@ namespace Unity.Netcode
 
         internal void SetSessionOwner(ulong sessionOwner)
         {
-            var previousSessionOwner = CurrentSessionOwner;
             CurrentSessionOwner = sessionOwner;
-            LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
-            if (LocalClient.IsSessionOwner)
+            var isSessionOwner = LocalClientId == sessionOwner;
+            LocalClient.IsSessionOwner = isSessionOwner;
+
+            foreach (var networkObject in SpawnManager.SpawnedObjects.Values)
             {
-                foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
+                if (isSessionOwner)
                 {
-                    var networkObject = networkObjectEntry.Value;
                     if (networkObject.IsOwnershipSessionOwner && networkObject.OwnerClientId != LocalClientId)
                     {
                         SpawnManager.ChangeOwnership(networkObject, LocalClientId, true);
                     }
                 }
+
+                networkObject.InvokeSessionOwnerPromoted(isSessionOwner);
             }
 
             OnSessionOwnerPromoted?.Invoke(sessionOwner);
@@ -316,11 +318,11 @@ namespace Unity.Netcode
 
         private void UpdateTopology()
         {
-            var transportTopology = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
+            var transportTopology = IsListening && IsConnectedClient ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
             if (transportTopology != NetworkConfig.NetworkTopology)
             {
-                NetworkLog.LogErrorServer($"[Topology Mismatch] Transport detected an issue with the topology ({transportTopology} | {NetworkConfig.NetworkTopology}) usage or setting! Disconnecting from session.");
-                Shutdown();
+                NetworkLog.LogErrorServer($"[Topology Mismatch][{transportTopology}:{transportTopology.GetType().Name}][NetworkManager.NetworkConfig:{NetworkConfig.NetworkTopology}] Transport detected an issue with the topology usage or setting! Disconnecting from session.");
+                Shutdown(true);
             }
             else
             {
@@ -516,6 +518,7 @@ namespace Unity.Netcode
                                 ShutdownInternal();
                             }
                         }
+
                     }
                     break;
             }
@@ -1766,12 +1769,8 @@ namespace Unity.Netcode
 
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
-
-            if (MessageManager != null)
-            {
-                MessageManager.Dispose();
-                MessageManager = null;
-            }
+            MessageManager?.Dispose();
+            MessageManager = null;
 
             // Let the NetworkSceneManager clean up its two SceneEvenData instances
             SceneManager?.Dispose();
@@ -1906,9 +1905,9 @@ namespace Unity.Netcode
         /// </summary>
         internal interface INetworkManagerHelper
         {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            public bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
 
-            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+            public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
 
             internal NetcodeAnalytics Analytics();
         }

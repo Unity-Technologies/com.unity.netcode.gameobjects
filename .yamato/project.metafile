@@ -10,6 +10,7 @@
     # image --> Defines the package-ci Bokken image to use for the environment (e.g., package-ci/ubuntu-22.04:v4). This is basically a device configuration
     # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
     # smaller_flavor --> An override for flavor that determines the VM size/resources for lighter weight jobs that can run on a smaller vm
+    # larger_flavor --> An override for flavor that determines the VM size/resources for heavier weight jobs that can need a bigger vm
     # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
     # model --> Defines specific hardware model requirements (e.g., rtx2080, iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
     # base --> Indicates the base operating system for build operations (e.g., win, mac)
@@ -23,7 +24,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.77.0
+      image: package-ci/ubuntu-22.04:v4.81.0
       flavor: b1.small
 
 
@@ -38,15 +39,16 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.77.0
+          image: package-ci/ubuntu-22.04:v4.81.0
           flavor: b1.large
           standalone: StandaloneLinux64
     desktop:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.77.0
+          image: package-ci/ubuntu-22.04:v4.81.0
           flavor: b1.large
           smaller_flavor: b1.medium
+          larger_flavor: b1.xlarge
           standalone: StandaloneLinux64
           model: rtx2080
         - name: win
@@ -54,13 +56,16 @@ test_platforms:
           image: package-ci/win10:v4
           flavor: b1.large
           smaller_flavor: b1.medium
+          larger_flavor: b1.xlarge
           standalone: StandaloneWindows64
           model: rtx2080
         - name: mac
           type: Unity::VM::osx
           image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
           flavor: m1.mac
-          smaller_flavor: m1.mac # mac doesn't have a smaller vm size. We define it anyway as it simplifies the yaml templating to have it defined.
+          # mac doesn't have a different vm sizes. We define it anyway as it simplifies the yaml templating to have it defined.
+          smaller_flavor: m1.mac
+          larger_flavor: m1.mac
           standalone: StandaloneOSX
           model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
@@ -70,6 +75,7 @@ test_platforms:
           type: Unity::VM
           image: package-ci/win10:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: Android
           base: win
           architecture: armv7
@@ -78,6 +84,7 @@ test_platforms:
           type: Unity::VM::osx
           image: package-ci/macos-13:v4
           flavor: m1.mac
+          larger_flavor: m1.mac
           standalone: IOS
           base: mac
           architecture: arm64
@@ -86,6 +93,7 @@ test_platforms:
           type: Unity::mobile::shield
           image: package-ci/win10:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: Android
           base: win
           architecture: armv7
@@ -93,6 +101,7 @@ test_platforms:
           type: Unity::mobile::iPhone
           image: package-ci/macos-13-arm64:v4
           flavor: m1.mac
+          larger_flavor: m1.mac
           model: 13
           standalone: IOS
           base: mac
@@ -102,53 +111,63 @@ test_platforms:
           type: Unity::VM
           image: package-ci/win10-ps4:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: PS4
         # - name: ps5 --> SEE MTT-12118
         #  type: Unity::VM
         #  image: package-ci/win10-ps5:v4
         #  flavor: b1.large
+        #  larger_flavor: b1.xlarge
         #  standalone: PS5
         - name: switch
           type: Unity::VM
           image: package-ci/win10-switch:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: Switch
         - name: GameCoreXboxOne
           type: Unity::VM
           image: package-ci/win10-xbox:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: GameCoreXboxOne
         - name: GameCoreScarlett
           type: Unity::VM
           image: package-ci/win10-xbox:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: GameCoreScarlett
     console_test:
         - name: ps4
           type: Unity::console::ps4
           image: package-ci/win10-ps4:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: PS4
         #- name: ps5 --> SEE MTT-12118
         #  type:  Unity::console::ps5
         #  image: package-ci/win10-ps5:v4
         #  flavor: b1.large
+        #  larger_flavor: b1.xlarge
         #  standalone: PS5
         - name: switch
           type: Unity::console::switch
           image: package-ci/win10-switch:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: Switch
           base: win
         - name: GameCoreXboxOne
           type: Unity::console::xbox
           image: package-ci/win10-xbox:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: GameCoreXboxOne
         - name: GameCoreScarlett
           type: Unity::console::scarlett
           image: package-ci/win10-xbox:v4
           flavor: b1.large
+          larger_flavor: b1.xlarge
           standalone: GameCoreScarlett
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
@@ -157,10 +176,9 @@ test_platforms:
 
 validation_editors:
     default:
-        - trunk
+        - 6000.3
     all:
         - 6000.0
-        - 6000.2
         - 6000.3
         - 6000.4
         - trunk

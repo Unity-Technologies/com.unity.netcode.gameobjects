@@ -1,3 +1,4 @@
+#pragma warning disable IDE0005
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -5,6 +6,7 @@ using Unity.Collections;
 using System.Runtime.CompilerServices;
 #endif
 using UnityEngine;
+#pragma warning restore IDE0005
 
 namespace Unity.Netcode
 {
@@ -517,7 +519,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether the client is the distributed authority mode session owner.
         /// </summary>
-        public bool IsSessionOwner { get; private set; }
+        public bool IsSessionOwner { get; internal set; }
 
         /// <summary>
         /// Gets whether the server (local or remote) is a host.

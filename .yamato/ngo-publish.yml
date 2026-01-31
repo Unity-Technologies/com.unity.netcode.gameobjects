@@ -5,7 +5,6 @@ ngo_release_preparation:
     recurring:
       - branch: develop-2.0.0 # We make new releases from this branch
         frequency: "10 ? * 1" # Runs every Sunday at 10:00 AM
-  rerun: always
   commands:
     - pip install PyGithub
     - pip install GitPython

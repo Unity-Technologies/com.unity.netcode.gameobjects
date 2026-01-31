@@ -96,16 +96,16 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Common code to initialize a UnityTransport that logs its events.
-        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
+        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, int disconnectTimeout = NetworkParameterConstants.DisconnectTimeoutMS)
         {
-            InitializeTransport(out transport, out events, string.Empty, maxPayloadSize, maxSendQueueSize, family);
+            InitializeTransport(out transport, out events, string.Empty, maxPayloadSize, maxSendQueueSize, family, disconnectTimeout);
         }
 
         /// <summary>
-        /// Interanl version with identifier parameter
+        /// Internal version with identifier parameter
         /// </summary>
         internal static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, string identifier,
-            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
+            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, int disconnectTimeout = NetworkParameterConstants.DisconnectTimeoutMS)
         {
             var logger = new TransportEventLogger()
             {
@@ -118,6 +118,7 @@ namespace Unity.Netcode.RuntimeTests
             transport.OnTransportEvent += logger.HandleEvent;
             transport.MaxPayloadSize = maxPayloadSize;
             transport.MaxSendQueueSize = maxSendQueueSize;
+            transport.DisconnectTimeoutMS = disconnectTimeout;
 
             if (family == NetworkFamily.Ipv6)
             {

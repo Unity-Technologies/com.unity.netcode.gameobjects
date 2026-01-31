@@ -7,9 +7,9 @@ PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
 from ReleaseAutomation.release_config import ReleaseConfig
-from Utils.git_utils import create_branch_execute_commands_and_push
+from Utils.git_utils import create_release_branch
 from Utils.verifyReleaseConditions import verifyReleaseConditions
-from Utils.commitChangelogAndPackageVersionUpdates import commitChangelogAndPackageVersionUpdates
+from Utils.createPrAfterRelease import createPrAfterRelease
 from Utils.triggerYamatoJobsForReleasePreparation import trigger_release_preparation_jobs
 
 def PrepareNetcodePackageForRelease():
@@ -27,13 +27,13 @@ def PrepareNetcodePackageForRelease():
     
     try:
         print("\nStep 2: Creating release branch...")
-        create_branch_execute_commands_and_push(config)
+        create_release_branch(config)
 
         print("\nStep 3: Triggering Yamato validation jobs...")
         trigger_release_preparation_jobs(config)
 
-        print("\nStep 4: Committing changelog and version updates...")
-        commitChangelogAndPackageVersionUpdates(config)
+        print("\nStep 4: Creating PR with needed changes to default branch...")
+        createPrAfterRelease(config)
 
     except Exception as e:
         print("\n--- ERROR: Netcode release process failed ---", file=sys.stderr)

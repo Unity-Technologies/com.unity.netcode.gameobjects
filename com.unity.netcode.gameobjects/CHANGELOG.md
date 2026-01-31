@@ -10,9 +10,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added stricter checks on `InSpawned` within `NetworkObject`. (#3831)
+- Added a new `InvalidOperation` status to `OwnershipRequestStatus`. (#3831)
 
 ### Changed
 
+- Ensure logs in `NetworkObject` log the `NetworkObject.name` wherever possible. (#3831)
+- Improved performance of NetworkBehaviour ILPostProcessor by omitting unnecessary type and assembly resolutions. (#3827)
+- Improve performance of `NetworkObject`. (#3820, #3831)
+- If the Unity Transport Disconnect Timeout is set to 0 in the Editor, the timeout will be entirely disabled. (#3810)
 
 ### Deprecated
 
@@ -22,13 +28,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Duplicate transport connection events for the same connection will now do nothing. (#3863)
+- Fixed memory leak in `NetworkAnimator` on clients where `RpcTarget` groups were not being properly disposed due to incorrect type casting of `ProxyRpcTargetGroup` to `RpcTargetGroup`.
+- Fixed issue when using a client-server topology where a `NetworkList` with owner write permissions was resetting sent time and dirty flags after having been spawned on owning clients that were not the spawn authority. (#3850)
+- Fixed an integer overflow that occurred when configuring a large disconnect timeout with Unity Transport. (#3810)
+
 
 ### Security
 
 
 ### Obsolete
 
-## [2.8.0] - 2025-12-08
+
+## [2.8.0] - 2025-12-15
 
 ### Added
 
@@ -40,6 +52,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `ParentSyncMessage`. (#3814)
 - Improve performance of `DestroyObjectMessage`. (#3801)
 - Improve performance of `CreateObjectMessage`. (#3800)
 - First pass of CoreCLR engine API changes. (#3799)
@@ -49,6 +62,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Ensure `NetworkBehaviour.IsSessionOwner` is correctly set when a new session owner is promoted. (#3817)
+- Fixed issue where spawning a player in distributed authority mode via a client, typically session owner, other than the newly connected client and scene management is disabled then the already spawned players will not properly get synchronized by each owning client due to the newly connected client's identifier already being added prior to synchronization. (#3816)
+- Reset extended ownership flags on `NetworkObject` despawn. (#3817)
 - Fixed issues with the "Client-server quickstart for Netcode for GameObjects" script having static methods and properties. (#3787)
 - Fixed issue where a warning message was being logged upon a client disconnecting from a server when the log level is set to developer. (#3786)
 - Fixed issue where the server or host would no longer have access to the transport id to client id table when processing a transport level client disconnect event. (#3786)

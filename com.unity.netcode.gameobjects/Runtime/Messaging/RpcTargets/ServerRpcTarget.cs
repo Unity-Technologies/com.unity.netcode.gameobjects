@@ -8,17 +8,10 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
-            if (m_UnderlyingTarget != null)
-            {
-                m_UnderlyingTarget.Dispose();
-                m_UnderlyingTarget = null;
-            }
-
-            if (m_ProxyRpcTarget != null)
-            {
-                m_ProxyRpcTarget.Dispose();
-                m_ProxyRpcTarget = null;
-            }
+            m_UnderlyingTarget?.Dispose();
+            m_UnderlyingTarget = null;
+            m_ProxyRpcTarget?.Dispose();
+            m_ProxyRpcTarget = null;
         }
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)

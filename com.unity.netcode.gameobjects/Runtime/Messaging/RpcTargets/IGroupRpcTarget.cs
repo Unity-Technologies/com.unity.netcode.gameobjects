@@ -2,8 +2,8 @@ namespace Unity.Netcode
 {
     internal interface IGroupRpcTarget
     {
-        void Add(ulong clientId);
-        void Clear();
-        BaseRpcTarget Target { get; }
+        public void Add(ulong clientId);
+        public void Clear();
+        public BaseRpcTarget Target { get; }
     }
 }

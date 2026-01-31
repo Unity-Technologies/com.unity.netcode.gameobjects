@@ -10,29 +10,29 @@ namespace Unity.Netcode
     /// </summary>
     internal interface ISceneManagerHandler
     {
-        AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress);
+        public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress);
 
-        AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress);
+        public AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress);
 
-        void PopulateLoadedScenes(ref Dictionary<NetworkSceneHandle, Scene> scenesLoaded, NetworkManager networkManager = null);
-        Scene GetSceneFromLoadedScenes(string sceneName, NetworkManager networkManager = null);
+        public void PopulateLoadedScenes(ref Dictionary<NetworkSceneHandle, Scene> scenesLoaded, NetworkManager networkManager = null);
+        public Scene GetSceneFromLoadedScenes(string sceneName, NetworkManager networkManager = null);
 
-        bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager = null);
+        public bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager = null);
 
-        void StopTrackingScene(NetworkSceneHandle handle, string name, NetworkManager networkManager = null);
+        public void StopTrackingScene(NetworkSceneHandle handle, string name, NetworkManager networkManager = null);
 
-        void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager = null);
+        public void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager = null);
 
-        void ClearSceneTracking(NetworkManager networkManager = null);
+        public void ClearSceneTracking(NetworkManager networkManager = null);
 
-        void UnloadUnassignedScenes(NetworkManager networkManager = null);
+        public void UnloadUnassignedScenes(NetworkManager networkManager = null);
 
-        void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene);
+        public void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene);
 
-        void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
+        public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
 
-        bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager);
+        public bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager);
 
-        bool IsIntegrationTest();
+        public bool IsIntegrationTest();
     }
 }

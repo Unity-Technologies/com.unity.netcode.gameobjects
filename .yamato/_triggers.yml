@@ -51,7 +51,7 @@
 pr_minimal_required_checks:
   name: Minimal PR checks
   dependencies:
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
     - .yamato/package-pack.yml#package_pack_-_ngo_win
   triggers:
     expression: |-
@@ -87,10 +87,8 @@ pr_code_changes_checks:
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
     # desktop_standalone_test and cmb_service_standalone_test are both reusing desktop_standalone_build dependency so we run those in the same configuration on PRs to reduce waiting time.
     # Note that our daily tests will anyway run both test configurations in "minimal supported" and "trunk" configurations
-
-    # TODO: Move these tests back to trunk once CMB Service has addressed https://jira.unity3d.com/browse/MTTB-1680
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_6000.4
-    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_6000.4
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_trunk
+    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_trunk
   triggers:
     expression: |-
       (pull_request.comment eq "ngo" OR
@@ -130,7 +128,7 @@ develop_nightly:
         rerun: always
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 6000.0
@@ -190,4 +188,4 @@ develop_weekly_trunk:
     # Run Runtime tests against CMB service
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service
     # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_trunk
+    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
