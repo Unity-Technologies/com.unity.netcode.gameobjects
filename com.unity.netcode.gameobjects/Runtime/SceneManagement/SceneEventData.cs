@@ -1146,23 +1146,23 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
                     // TODO-UNIFIED: This is a temporary POC fix to handle synchronizing hybrid spawned objects where the Ghost instance might not yet exist.
-                    if (sceneObject.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(sceneObject.NetworkObjectId))
+                    if (serializedObject.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(serializedObject.NetworkObjectId))
                     {
                         if (networkManager.LogLevel == LogLevel.Developer)
                         {
-                            UnityEngine.Debug.Log($"[{nameof(SceneEventData)}][{nameof(SynchronizeSceneNetworkObjects)}] Deferring creation of NetworkObjectId-{sceneObject.NetworkObjectId} to wait for Ghost.");
+                            UnityEngine.Debug.Log($"[{nameof(SceneEventData)}][{nameof(SynchronizeSceneNetworkObjects)}] Deferring creation of NetworkObjectId-{serializedObject.NetworkObjectId} to wait for Ghost.");
                         }
 
                         var newEntry = new PendingGhostSpawnEntry()
                         {
                             RegistrationTime = UnityEngine.Time.realtimeSinceStartup,
-                            SceneObject = sceneObject,
-                            Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, sceneObject.SynchronizationDataSize)
+                            SerializedObject = serializedObject,
+                            Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, serializedObject.SynchronizationDataSize)
                         };
 
                         spawnManager.RegisterGhostPendingSynchronization(newEntry);
 
-                        InternalBuffer.Seek(InternalBuffer.Position + sceneObject.SynchronizationDataSize);
+                        InternalBuffer.Seek(InternalBuffer.Position + serializedObject.SynchronizationDataSize);
                         continue;
                     }
 #endif
@@ -1459,7 +1459,7 @@ namespace Unity.Netcode
     {
         public float RegistrationTime;
         public FastBufferReader Buffer;
-        public NetworkObject.SceneObject SceneObject;
+        public NetworkObject.SerializedObject SerializedObject;
 
     }
 #endif

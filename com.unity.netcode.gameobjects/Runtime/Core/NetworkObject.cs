@@ -394,7 +394,7 @@ namespace Unity.Netcode
                 {
                     // Keep moving until it can't go higher
                 }
-                
+
                 EditorUtility.SetDirty(gameObject);
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
@@ -2913,18 +2913,21 @@ namespace Unity.Netcode
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
 
-            private const ushort k_IsPlayerObject = 0x001;
-            private const ushort k_HasParent = 0x002;
-            private const ushort k_IsSceneObject = 0x004;
-            private const ushort k_HasTransform = 0x008;
-            private const ushort k_IsLatestParentSet = 0x010;
-            private const ushort k_WorldPositionStays = 0x020;
-            private const ushort k_DestroyWithScene = 0x040;
-            private const ushort k_DontDestroyWithOwner = 0x080;
-            private const ushort k_HasOwnershipFlags = 0x100;
-            private const ushort k_SyncObservers = 0x200;
-            private const ushort k_SpawnWithObservers = 0x400;
-            private const ushort k_HasInstantiationData = 0x800;
+            private const ushort k_IsPlayerObject = 0x0001;
+            private const ushort k_HasParent = 0x0002;
+            private const ushort k_IsSceneObject = 0x0004;
+            private const ushort k_HasTransform = 0x0008;
+            private const ushort k_IsLatestParentSet = 0x0010;
+            private const ushort k_WorldPositionStays = 0x0020;
+            private const ushort k_DestroyWithScene = 0x0040;
+            private const ushort k_DontDestroyWithOwner = 0x0080;
+            private const ushort k_HasOwnershipFlags = 0x0100;
+            private const ushort k_SyncObservers = 0x0200;
+            private const ushort k_SpawnWithObservers = 0x0400;
+            private const ushort k_HasInstantiationData = 0x0800;
+#if UNIFIED_NETCODE
+            private const ushort k_HasGhost = 0x1000;
+#endif
 
             public bool IsPlayerObject;
             public bool HasParent;
@@ -2952,6 +2955,9 @@ namespace Unity.Netcode
             public bool SpawnWithObservers;
 
             public bool HasInstantiationData;
+#if UNIFIED_NETCODE
+            public bool HasGhost;
+#endif
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal ushort GetBitsetRepresentation()
@@ -3001,10 +3007,19 @@ namespace Unity.Netcode
                 {
                     bitset |= k_SpawnWithObservers;
                 }
+
                 if (HasInstantiationData)
                 {
                     bitset |= k_HasInstantiationData;
                 }
+
+#if UNIFIED_NETCODE
+                if (HasGhost)
+                {
+                    bitset |= k_HasGhost;
+                }
+
+#endif
                 return bitset;
             }
 
@@ -3023,15 +3038,10 @@ namespace Unity.Netcode
                 SyncObservers = (bitset & k_SyncObservers) != 0;
                 SpawnWithObservers = (bitset & k_SpawnWithObservers) != 0;
                 HasInstantiationData = (bitset & k_HasInstantiationData) != 0;
-            }
-
 #if UNIFIED_NETCODE
-            public bool HasGhost
-            {
-                get => ByteUtility.GetBit(m_BitField, 12);
-                set => ByteUtility.SetBit(ref m_BitField, 12, value);
-            }
+                HasGhost = (bitset & k_HasGhost) != 0;
 #endif
+            }
 
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.

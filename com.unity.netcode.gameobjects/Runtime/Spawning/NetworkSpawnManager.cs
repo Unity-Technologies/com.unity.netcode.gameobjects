@@ -65,7 +65,7 @@ namespace Unity.Netcode
         internal readonly Dictionary<ulong, PendingGhostSpawnEntry> GhostsPendingSynchronization = new Dictionary<ulong, PendingGhostSpawnEntry>();
         internal void RegisterGhostPendingSynchronization(PendingGhostSpawnEntry pendingGhostSpawnEntry)
         {
-            var networkObjectId = pendingGhostSpawnEntry.SceneObject.NetworkObjectId;
+            var networkObjectId = pendingGhostSpawnEntry.SerializedObject.NetworkObjectId;
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {nameof(NetworkObject)}-{networkObjectId} for pending synchronization.");
@@ -77,20 +77,20 @@ namespace Unity.Netcode
         internal void ProcessGhostPendingSynchronization(ulong networkObjectId, bool removeUponSpawn = true)
         {
             var ghostPendingSynch = GhostsPendingSynchronization[networkObjectId];
-            var sceneObject = ghostPendingSynch.SceneObject;
+            var serializedObject = ghostPendingSynch.SerializedObject;
             var reader = ghostPendingSynch.Buffer;
             if (removeUponSpawn)
             {
                 GhostsPendingSynchronization.Remove(networkObjectId);
             }
 
-            if (sceneObject.IsSceneObject)
+            if (serializedObject.IsSceneObject)
             {
-                NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
+                NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
             }
-            var networkObject = NetworkObject.AddSceneObject(sceneObject, reader, NetworkManager);
+            var networkObject = NetworkObject.Deserialize(serializedObject, reader, NetworkManager);
             // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
-            //if (sceneObject.IsSceneObject)
+            //if (serializedObject.IsSceneObject)
             //{
             //    networkObject.InternalInSceneNetworkObjectsSpawned();
             //}
@@ -115,11 +115,11 @@ namespace Unity.Netcode
             }
             foreach (var ghost in GhostsPendingSynchronization)
             {
-                var networkObjectId = ghost.Value.SceneObject.NetworkObjectId;
+                var networkObjectId = ghost.Value.SerializedObject.NetworkObjectId;
                 if (GhostsPendingSpawn.ContainsKey(networkObjectId))
                 {
                     // Process it, but don't remove it as we handle that a little later
-                    ProcessGhostPendingSynchronization(ghost.Value.SceneObject.NetworkObjectId, false);
+                    ProcessGhostPendingSynchronization(ghost.Value.SerializedObject.NetworkObjectId, false);
                     m_GhostSynchronizationPendingRemoval.Add(networkObjectId);
                 }
                 else
@@ -134,7 +134,7 @@ namespace Unity.Netcode
                 }
             }
 
-            foreach(var networkObjectId in m_GhostSynchronizationPendingRemoval)
+            foreach (var networkObjectId in m_GhostSynchronizationPendingRemoval)
             {
                 var entry = GhostsPendingSynchronization[networkObjectId];
                 GhostsPendingSynchronization.Remove(networkObjectId);
@@ -1025,30 +1025,30 @@ namespace Unity.Netcode
             var worldPositionStays = (!serializedObject.HasParent) || serializedObject.WorldPositionStays;
 
 #if UNIFIED_NETCODE
-            if (sceneObject.HasGhost)
+            if (serializedObject.HasGhost)
             {
                 // TODO-UNIFIED: Get this working somehow (or if not possible prevent this from happening prior to getting to this point)
-                if (sceneObject.HasInstantiationData)
+                if (serializedObject.HasInstantiationData)
                 {
                     Debug.LogError($"[{nameof(NetworkObject)}] Pre-spawn instantiation data does not work in this version!");
                 }
-                networkObject = GetGhostNetworkObjectForSpawn(sceneObject.NetworkObjectId);
+                networkObject = GetGhostNetworkObjectForSpawn(serializedObject.NetworkObjectId);
                 if (networkObject == null)
                 {
-                    throw new Exception($"[{name}] Failed to get spawned Ghost object!");
+                    throw new Exception($"Failed to get spawned Ghost object!");
                 }
             }
             else
 #endif
             {
                 // If scene management is disabled or the NetworkObject was dynamically spawned
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
                 {
-                    networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationData);
+                    networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
                 }
                 else // Get the in-scene placed NetworkObject
                 {
-                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
+                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
                     if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
