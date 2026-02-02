@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -229,5 +230,46 @@ namespace Unity.Netcode.EditorTests
             transport.Shutdown();
         }
 #endif
+
+        private class IPCDriverConstructor : INetworkStreamDriverConstructor
+        {
+            public void CreateDriver(
+                UnityTransport transport,
+                out NetworkDriver driver,
+                out NetworkPipeline unreliableFragmentedPipeline,
+                out NetworkPipeline unreliableSequencedFragmentedPipeline,
+                out NetworkPipeline reliableSequencedPipeline)
+            {
+                var settings = transport.GetDefaultNetworkSettings();
+                driver = NetworkDriver.Create(new IPCNetworkInterface(), settings);
+
+#if MULTIPLAYER_TOOLS
+                driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
+
+                transport.GetDefaultPipelineConfigurations(
+                    out var unreliableFragmentedPipelineStages,
+                    out var unreliableSequencedFragmentedPipelineStages,
+                    out var reliableSequencedPipelineStages);
+
+                unreliableFragmentedPipeline = driver.CreatePipeline(unreliableFragmentedPipelineStages);
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(unreliableSequencedFragmentedPipelineStages);
+                reliableSequencedPipeline = driver.CreatePipeline(reliableSequencedPipelineStages);
+            }
+        }
+
+        [Test]
+        public void UnityTransport_CustomDriverConstructorWithDefaultPipelines()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            UnityTransport.s_DriverConstructor = new IPCDriverConstructor();
+            transport.Initialize();
+
+            Assert.True(transport.StartServer());
+
+            transport.Shutdown();
+
+            UnityTransport.s_DriverConstructor = null;
+        }
     }
 }
