@@ -571,17 +571,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             s_IsStarted = true;
+            return StartInternal(host, server, clients, callback, startServer);
+        }
+
+        internal static bool StartServer(bool host, NetworkManager server)
+        {
+            return StartInternal(host, server, new NetworkManager[] { });
+        }
+
+
+        private static bool StartInternal(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
+        {
             s_ClientCount = clients.Length;
             var hooks = (MultiInstanceHooks)null;
             if (startServer)
             {
-                if (host)
+                var isListening = host ? server.StartHost() : server.StartServer();
+
+                if (!isListening)
                 {
-                    server.StartHost();
-                }
-                else
-                {
-                    server.StartServer();
+                    return false;
                 }
 
                 hooks = new MultiInstanceHooks();

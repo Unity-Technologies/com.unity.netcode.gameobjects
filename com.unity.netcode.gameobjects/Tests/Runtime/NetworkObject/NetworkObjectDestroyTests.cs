@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests calling destroy on spawned / unspawned <see cref="NetworkObject"/>s. Expected behavior:
     /// - Server or client destroy on unspawned => Object gets destroyed, no exceptions
-    /// - Server destroy spawned => Object gets destroyed and despawned/destroyed on all clients. Server does not run <see cref="NetworkPrefaInstanceHandler.HandleNetworkPrefabDestroy"/>. Client runs it.
+    /// - Server destroy spawned => Object gets destroyed and despawned/destroyed on all clients. Server does not run <see cref="NetworkPrefabInstanceHandler.HandleNetworkPrefabDestroy"/>. Client runs it.
     /// - Client destroy spawned => throw exception.
     /// </summary>
 
