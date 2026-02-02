@@ -40,8 +40,27 @@ namespace Unity.Netcode.RuntimeTests
             var newExpectedClients = m_UseHost ? NumberOfClients + 1 : NumberOfClients;
             yield return WaitForConditionOrTimeOut(() => otherClient.ConnectedClientsIds.Count == newExpectedClients);
             AssertOnTimeout($"Incorrect number of connected clients. Expected: {newExpectedClients}, have: {otherClient.ConnectedClientsIds.Count}");
+        }
 
+        [UnityTest]
+        public IEnumerator MultipleConnectMessagesNoop()
+        {
+            var clientToConnect = GetNonAuthorityNetworkManager(0);
+            var clientTransport = clientToConnect.NetworkConfig.NetworkTransport;
 
+            var otherClient = GetNonAuthorityNetworkManager(1);
+
+            var currentConnectedClients = m_UseHost ? NumberOfClients + 1 : NumberOfClients;
+
+            clientTransport.StartClient();
+            clientTransport.StartClient();
+
+            // Start a new client to ensure everything is still working
+            yield return CreateAndStartNewClient();
+
+            var newExpectedClients = currentConnectedClients + 1;
+            yield return WaitForConditionOrTimeOut(() => otherClient.ConnectedClientsIds.Count == newExpectedClients);
+            AssertOnTimeout($"Incorrect number of connected clients. Expected: {newExpectedClients}, have: {otherClient.ConnectedClientsIds.Count}");
         }
     }
 }
