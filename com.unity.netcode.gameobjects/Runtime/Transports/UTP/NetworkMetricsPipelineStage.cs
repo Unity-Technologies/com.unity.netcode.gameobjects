@@ -7,27 +7,32 @@ using Unity.Networking.Transport;
 
 namespace Unity.Netcode.Transports.UTP
 {
+    /// <summary>
+    /// A pipeline stage that tracks some internal metrics that are then used by the multiplayer
+    /// tools package. This should only be used when creating a custom <see cref="NetworkDriver"/>
+    /// with <see cref="INetworkStreamDriverConstructor"/> if compatibility with the multiplayer
+    /// tools package is desired. In that situation, this stage needs to be registered with the
+    /// constructed driver with <see cref="NetworkDriver.RegisterPipelineStage{T}"/>.
+    /// </summary>
     [BurstCompile]
-    internal unsafe struct NetworkMetricsPipelineStage : INetworkPipelineStage
+    public unsafe struct NetworkMetricsPipelineStage : INetworkPipelineStage
     {
-        private static TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate> s_ReceiveFunction = new TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate>(Receive);
-        private static TransportFunctionPointer<NetworkPipelineStage.SendDelegate> s_SendFunction = new TransportFunctionPointer<NetworkPipelineStage.SendDelegate>(Send);
-        private static TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate> s_InitializeConnectionFunction = new TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate>(InitializeConnection);
-
+        /// <inheritdoc/>
         public NetworkPipelineStage StaticInitialize(byte* staticInstanceBuffer,
             int staticInstanceBufferLength,
             NetworkSettings settings)
         {
             return new NetworkPipelineStage(
-                s_ReceiveFunction,
-                s_SendFunction,
-                s_InitializeConnectionFunction,
+                new TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate>(Receive),
+                new TransportFunctionPointer<NetworkPipelineStage.SendDelegate>(Send),
+                new TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate>(InitializeConnection),
                 ReceiveCapacity: 0,
                 SendCapacity: 0,
                 HeaderCapacity: 0,
                 SharedStateCapacity: UnsafeUtility.SizeOf<NetworkMetricsContext>());
         }
 
+        /// <inheritdoc/>
         public int StaticSize => 0;
 
         [BurstCompile(DisableDirectCall = true)]
