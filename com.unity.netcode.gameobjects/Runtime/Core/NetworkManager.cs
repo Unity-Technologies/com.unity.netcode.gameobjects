@@ -1134,6 +1134,8 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+            UnityEngine.Assertions.Assert.IsNotNull(Singleton);
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (!DisableNotOptimizedSerializedType)
             {
