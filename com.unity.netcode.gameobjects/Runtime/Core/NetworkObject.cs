@@ -368,7 +368,7 @@ namespace Unity.Netcode
         [HideInInspector]
         [SerializeField]
         internal bool HadBridge;
-
+#if UNITY_EDITOR
         private void UnifiedValidation()
         {
             NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
@@ -396,6 +396,7 @@ namespace Unity.Netcode
                 }
 
                 EditorUtility.SetDirty(gameObject);
+
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
             {
@@ -403,6 +404,7 @@ namespace Unity.Netcode
                 SynchronizeTransform = true;
             }
         }
+#endif
 #endif
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance

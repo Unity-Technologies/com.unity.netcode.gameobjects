@@ -2109,7 +2109,6 @@ namespace Unity.Netcode
         public static OnConnectDelegate OnNetCodeConnect;
         public static OnDisconnectDelegate OnNetCodeDisconnect;
 
-#if UNITY_EDITOR
         // TODO-UNIFIED: For POC only (centralizing)
         public static MPPMCheckInfo MPPMCheck => MPPMCheckInternal;
         internal static MPPMCheckInfo MPPMCheckInternal = new MPPMCheckInfo();
@@ -2120,7 +2119,7 @@ namespace Unity.Netcode
             public bool HasClientTag;
             internal void Initialize()
             {
-#if UNITY_MULTIPLAYER_PLAYMODE
+#if UNITY_MULTIPLAYER_PLAYMODE && UNITY_EDITOR
                 Installed = true;
                 var tags = Multiplayer.PlayMode.CurrentPlayer.Tags;
                 foreach (var tag in tags)
@@ -2139,7 +2138,6 @@ namespace Unity.Netcode
 #endif
             }
         }
-#endif
 #endif
     }
 }
