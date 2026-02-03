@@ -23,6 +23,7 @@ public class NGOSettings : AnnotatedSettingsBase
             new PackageOptions()
             {
                 ReleaseOptions = new ReleaseOptions() { IsReleasing = true },
+                MaximumEditorVersion = "6000.3", // This maximum version was set to enable the release of 2.9.0 due to breaking editor changes introduced in 6000.4/6000.5 editors which we will resolve as soon as trunk PR lands
                 ValidationOptions = validationOptions
             }
         }
