@@ -16,7 +16,7 @@
         },
         {
             "name": "Unity",
-            "expression": "6000.5.0a8",
+            "expression": "6000.5.0a7",
             "define": "NGO_FINDOBJECTS_NOSORTING"
         }
     ],
