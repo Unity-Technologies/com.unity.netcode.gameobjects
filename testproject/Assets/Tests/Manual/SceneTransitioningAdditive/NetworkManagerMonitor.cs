@@ -1,28 +1,33 @@
 using Unity.Netcode;
 using UnityEngine;
 
-/// <summary>
-/// This can be added to the same GameObject the NetworkManager component is assigned to in order to prevent
-/// multiple NetworkManager instances from being instantiated if the same scene is loaded.
-/// </summary>
-public class NetworkManagerMonitor : MonoBehaviour
+namespace TestProject.ManualTests
 {
-    // Start is called before the first frame update
-    private void Start()
+    /// <summary>
+    /// This can be added to the same GameObject the NetworkManager component is assigned to in order to prevent
+    /// multiple NetworkManager instances from being instantiated if the same scene is loaded.
+    /// </summary>
+    public class NetworkManagerMonitor : MonoBehaviour
     {
-#if UNITY_2023_1_OR_NEWER
-        var networkManagerInstances = FindObjectsByType<NetworkManager>(FindObjectsSortMode.InstanceID);
-#else
-        var networkManagerInstances = FindObjectsOfType<NetworkManager>();
-#endif
-        foreach (var instance in networkManagerInstances)
+        // Start is called before the first frame update
+        private void Start()
         {
-            if (instance.IsListening)
+#if NGO_FINDOBJECTS_NOSORTING
+            var networkManagerInstances = FindObjectsByType<NetworkManager>();
+#elif UNITY_2023_1_OR_NEWER
+            var networkManagerInstances = FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+#else
+            var networkManagerInstances = FindObjectsOfType<NetworkManager>();
+#endif
+            foreach (var instance in networkManagerInstances)
             {
-                if (gameObject != instance.gameObject)
+                if (instance.IsListening)
                 {
-                    var networkManager = GetComponent<NetworkManager>();
-                    Destroy(gameObject);
+                    if (gameObject != instance.gameObject)
+                    {
+                        var networkManager = GetComponent<NetworkManager>();
+                        Destroy(gameObject);
+                    }
                 }
             }
         }
