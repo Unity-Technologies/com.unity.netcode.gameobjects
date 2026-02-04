@@ -155,21 +155,21 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void UnityTransport_EmptySecurityStringsShouldThrow([Values("", null)] string cert, [Values("", null)] string secret)
         {
-            var supportingGO = new GameObject();
+            var supportingGo = new GameObject();
             try
             {
-                var networkManager = supportingGO.AddComponent<NetworkManager>(); // NM is required for UTP to work with certificates.
+                var networkManager = supportingGo.AddComponent<NetworkManager>(); // NM is required for UTP to work with certificates.
                 networkManager.NetworkConfig = new NetworkConfig();
-                UnityTransport transport = supportingGO.AddComponent<UnityTransport>();
+                UnityTransport transport = supportingGo.AddComponent<UnityTransport>();
                 networkManager.NetworkConfig.NetworkTransport = transport;
-                transport.Initialize();
+                transport.Initialize(networkManager);
                 transport.SetServerSecrets(serverCertificate: cert, serverPrivateKey: secret);
 
                 // Use encryption, but don't set certificate and check for exception
                 transport.UseEncryption = true;
                 Assert.Throws<System.Exception>(() =>
                 {
-                    networkManager.StartServer();
+                    transport.StartServer();
                 });
                 // Make sure StartServer failed
                 Assert.False(transport.GetNetworkDriver().IsCreated);
@@ -178,9 +178,9 @@ namespace Unity.Netcode.EditorTests
             }
             finally
             {
-                if (supportingGO != null)
+                if (supportingGo != null)
                 {
-                    Object.DestroyImmediate(supportingGO);
+                    Object.DestroyImmediate(supportingGo);
                 }
             }
         }

@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -93,11 +94,11 @@ namespace Unity.Netcode.RuntimeTests
         private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
         [Test]
-        public void NetworkPrefabHandlerClass([Values] bool distributedAuthority)
+        public void NetworkPrefabHandlerClass([Values] NetworkTopologyTypes topologyType)
         {
             var networkConfig = new NetworkConfig()
             {
-                NetworkTopology = distributedAuthority ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer,
+                NetworkTopology = topologyType,
             };
 
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _, networkConfig: networkConfig));
@@ -107,13 +108,13 @@ namespace Unity.Netcode.RuntimeTests
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
 
             var networkPrefabHandler = new NetworkPrefabHandler();
-            var networkPrefaInstanceHandler = new NetworkPrefaInstanceHandler(baseObject);
+            var networkPrefabInstanceHandler = new NetworkPrefabInstanceHandler(baseObject);
 
             var prefabPosition = new Vector3(1.0f, 5.0f, 3.0f);
             var prefabRotation = new Quaternion(1.0f, 0.5f, 0.4f, 0.1f);
 
             //Register via GameObject
-            var gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.gameObject, networkPrefaInstanceHandler);
+            var gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.gameObject, networkPrefabInstanceHandler);
 
             //Test result of registering via GameObject reference
             Assert.True(gameObjectRegistered);
@@ -134,7 +135,7 @@ namespace Unity.Netcode.RuntimeTests
             networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             //Register via NetworkObject
-            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject, networkPrefaInstanceHandler);
+            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject, networkPrefabInstanceHandler);
 
             //Test result of registering via NetworkObject reference
             Assert.True(gameObjectRegistered);
@@ -159,7 +160,7 @@ namespace Unity.Netcode.RuntimeTests
             networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             //Register via GlobalObjectIdHash
-            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefaInstanceHandler);
+            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefabInstanceHandler);
 
             //Test result of registering via GlobalObjectIdHash reference
             Assert.True(gameObjectRegistered);
@@ -183,7 +184,21 @@ namespace Unity.Netcode.RuntimeTests
             networkPrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
             networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
-            Assert.False(networkPrefaInstanceHandler.StillHasInstances());
+            // Register a handler that throws an exception
+            var networkPrefabExceptionThrower = new NetworkPrefabExceptionThrower();
+            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject, networkPrefabExceptionThrower);
+            //Test result of registering exception handler
+            Assert.True(gameObjectRegistered);
+
+            LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
+            spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
+
+            // No object should have been spawned, but test should have continued
+            Assert.Null(spawnedObject);
+
+            networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
+
+            Assert.False(networkPrefabInstanceHandler.StillHasInstances());
         }
 
         [SetUp]
@@ -210,7 +225,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// The Prefab instance handler to use for this test
     /// </summary>
-    internal class NetworkPrefaInstanceHandler : INetworkPrefabInstanceHandler
+    internal class NetworkPrefabInstanceHandler : INetworkPrefabInstanceHandler
     {
         private NetworkObject m_NetworkObject;
 
@@ -237,10 +252,26 @@ namespace Unity.Netcode.RuntimeTests
             return (m_Instances.Count > 0);
         }
 
-        public NetworkPrefaInstanceHandler(NetworkObject networkObject)
+        public NetworkPrefabInstanceHandler(NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
             m_Instances = new List<NetworkObject>();
+        }
+    }
+
+    /// <summary>
+    /// Causes an exception during client connection
+    /// </summary>
+    internal class NetworkPrefabExceptionThrower : INetworkPrefabInstanceHandler
+    {
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            throw new Exception("exception while instantiating");
+        }
+
+        public void Destroy(NetworkObject networkObject)
+        {
+            UnityEngine.Object.Destroy(networkObject.gameObject);
         }
     }
 }
