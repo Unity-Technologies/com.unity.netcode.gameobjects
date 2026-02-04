@@ -75,12 +75,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(serverBehaviour.IsOwnedByServer);
             Assert.AreEqual(m_ClientNetworkManagers[0].LocalClientId, serverBehaviour.OwnerClientId);
 
-#if UNITY_2023_1_OR_NEWER
-            var clientObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((obj) => obj.NetworkManagerOwner == m_ClientNetworkManagers[0]).FirstOrDefault();
-#else
-            var clientObject = Object.FindObjectsOfType<NetworkObject>().Where((obj) => obj.NetworkManagerOwner == m_ClientNetworkManagers[0]).FirstOrDefault();
-#endif
-
+            var clientObject = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((obj) => obj.NetworkManagerOwner == m_ClientNetworkManagers[0]).FirstOrDefault();
 
             Assert.IsNotNull(clientObject);
             Assert.IsTrue(clientObject.IsOwner);

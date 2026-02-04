@@ -104,7 +104,7 @@ namespace Unity.Netcode.RuntimeTests
             authorityComponent.TheVariable.Value = newValue;
             // We expect a timeout for this condition
             yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
-            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!\n {m_ErrorLog.ToString()}");
 
             // Now we expect this to not timeout
             yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
