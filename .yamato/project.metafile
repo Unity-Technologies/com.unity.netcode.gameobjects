@@ -157,11 +157,10 @@ test_platforms:
 
 validation_editors:
     default:
-        - 6000.2
+        - 6000.0
     all:
         - 2022.3
         - 6000.0
-        - 6000.2
     minimal:
         - 2022.3
 
