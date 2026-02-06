@@ -608,8 +608,8 @@ namespace Unity.Netcode
         /// </summary>
         internal interface INetworkManagerHelper
         {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
-            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+            public bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
         }
 
         internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
@@ -1255,11 +1255,8 @@ namespace Unity.Netcode
 
             CustomMessagingManager = null;
 
-            if (MessageManager != null)
-            {
-                MessageManager.Dispose();
-                MessageManager = null;
-            }
+            MessageManager?.Dispose();
+            MessageManager = null;
 
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two

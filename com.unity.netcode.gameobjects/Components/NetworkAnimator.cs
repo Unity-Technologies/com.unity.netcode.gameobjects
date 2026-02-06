@@ -533,11 +533,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void SpawnCleanup()
         {
-            if (m_NetworkAnimatorStateChangeHandler != null)
-            {
-                m_NetworkAnimatorStateChangeHandler.DeregisterUpdate();
-                m_NetworkAnimatorStateChangeHandler = null;
-            }
+            m_NetworkAnimatorStateChangeHandler?.DeregisterUpdate();
+            m_NetworkAnimatorStateChangeHandler = null;
         }
 
         public override void OnDestroy()
