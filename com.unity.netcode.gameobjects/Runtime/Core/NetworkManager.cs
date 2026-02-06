@@ -4,6 +4,7 @@ using System.Linq;
 using Unity.Collections;
 #if UNIFIED_NETCODE
 using Unity.Entities;
+using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
@@ -14,7 +15,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
-using Unity.NetCode;
+
 
 
 namespace Unity.Netcode
