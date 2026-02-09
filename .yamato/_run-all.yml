@@ -226,7 +226,6 @@ run_all_project_tests_console_standalone_{{ validation_editors.default }}:
     - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
-{% endfor -%}
 
 # Runs all Console tests on mimimum supported editor
 run_all_project_tests_console_standalone_{{ validation_editors.minimal }}:
