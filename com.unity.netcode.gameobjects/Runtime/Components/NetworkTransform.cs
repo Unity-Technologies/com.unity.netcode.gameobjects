@@ -1370,6 +1370,7 @@ namespace Unity.Netcode.Components
         /// are sent using a reliable fragmented sequenced network delivery.
         /// </summary>
         /// <remarks>
+        /// Cannot be used when <see cref="SwitchTransformSpaceWhenParented"/> is enabled. <br />
         /// The following more critical state updates are still sent as reliable fragmented sequenced:<br />
         /// <list type="bullet">
         /// <item><description>The initial synchronization state update.</description></item>
@@ -1570,6 +1571,7 @@ namespace Unity.Netcode.Components
         /// When de-parented: Automatically transitions into world space and coverts any pending interpolation states to the relative local space on non-authority instances.<br />
         /// </summary>
         /// <remarks>
+        /// Cannot be used if <see cref="UseUnreliableDeltas"/> is enabled. <br />
         /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
         /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
         /// This field is auto-synchronized with non-authority clients when changed by the authority instance.
