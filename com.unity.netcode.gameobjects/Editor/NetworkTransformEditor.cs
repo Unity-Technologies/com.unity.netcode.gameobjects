@@ -185,7 +185,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
             // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
-            // precedence. 
+            // precedence.
             if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
             {
                 networkTransform.UseUnreliableDeltas = false;
