@@ -1961,13 +1961,25 @@ namespace Unity.Netcode.Components
             }
 #endif
             // Authority check to assure that UseUnreliableDeltas is not set during runtime while using SwitchTransformSpaceWhenParented.
-            if (SwitchTransformSpaceWhenParented && UseUnreliableDeltas && !m_LocalAuthoritativeNetworkState.FlagStates.UnreliableFrameSync)
+            if (SwitchTransformSpaceWhenParented && UseUnreliableDeltas)
             {
-                if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                // If we didn't have UseUnreliableDeltas previously set...
+                if (!m_LocalAuthoritativeNetworkState.FlagStates.UnreliableFrameSync)
                 {
-                    Debug.LogWarning($"Reverting {nameof(UseUnreliableDeltas)} back to fals as it cannot be enable while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
+                    if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        Debug.LogWarning($"Reverting {nameof(UseUnreliableDeltas)} back to false as it cannot be enable while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
+                    }
+                    UseUnreliableDeltas = false;
                 }
-                UseUnreliableDeltas = false;
+                else // Otherwise SwitchTransformSpaceWhenParented has changed while UseUnreliableDeltas was already set.
+                {
+                    if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        Debug.LogWarning($"Reverting {nameof(SwitchTransformSpaceWhenParented)} back to false as it cannot be enable while {nameof(UseUnreliableDeltas)} is enabled!");
+                    }
+                    SwitchTransformSpaceWhenParented = false;
+                }
             }
 
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
