@@ -73,7 +73,7 @@ pr_code_changes_checks:
     - .yamato/vetting-test.yml#vetting_test
 
     # Run package EditMode and Playmode package tests on default editor (latest supported editor) and an older supported editor
-    - .yamato/package-tests.yml#package_test_-_ngo_{{{ validation_editors.default }}_mac
+    - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.default }}_mac
     - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.minimal }}_win
 
     # Run testproject EditMode and Playmode project tests on default editor (latest supported editor) and an older supported editor
