@@ -282,7 +282,7 @@ namespace Unity.Netcode.Components
             {
                 ForceDetach();
             }
-            base.OnNetworkDespawn();
+            base.OnNetworkPreDespawn();
         }
 
         /// <summary>
