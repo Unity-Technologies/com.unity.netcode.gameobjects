@@ -1958,6 +1958,16 @@ namespace Unity.Netcode.Components
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
 #endif
+            // Authority check to assure that UseUnreliableDeltas is not set during runtime while using SwitchTransformSpaceWhenParented.
+            if (SwitchTransformSpaceWhenParented && UseUnreliableDeltas && !m_LocalAuthoritativeNetworkState.FlagStates.UnreliableFrameSync)
+            {
+                if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    Debug.LogWarning($"Reverting {nameof(UseUnreliableDeltas)} back to fals as it cannot be enable while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
+                }
+                UseUnreliableDeltas = false;
+            }
+
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, synchronize, forceState: settingState))
             {
