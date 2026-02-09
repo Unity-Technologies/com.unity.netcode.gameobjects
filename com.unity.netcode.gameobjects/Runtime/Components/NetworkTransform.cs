@@ -1968,7 +1968,7 @@ namespace Unity.Netcode.Components
                 {
                     if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
                     {
-                        Debug.LogWarning($"Reverting {nameof(UseUnreliableDeltas)} back to false as it cannot be enable while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
+                        Debug.LogWarning($"Reverting {nameof(UseUnreliableDeltas)} back to false as it cannot be enabled while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
                     }
                     UseUnreliableDeltas = false;
                 }
@@ -1976,7 +1976,7 @@ namespace Unity.Netcode.Components
                 {
                     if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
                     {
-                        Debug.LogWarning($"Reverting {nameof(SwitchTransformSpaceWhenParented)} back to false as it cannot be enable while {nameof(UseUnreliableDeltas)} is enabled!");
+                        Debug.LogWarning($"Reverting {nameof(SwitchTransformSpaceWhenParented)} back to false as it cannot be enabled while {nameof(UseUnreliableDeltas)} is enabled!");
                     }
                     SwitchTransformSpaceWhenParented = false;
                 }
