@@ -407,5 +407,11 @@ namespace Unity.Netcode
                 base.WriteFieldSynchronization(writer);
             }
         }
+
+        internal override void OnSpawned()
+        {
+            m_NetworkBehaviour.PostNetworkVariableWrite(true);
+            base.OnSpawned();
+        }
     }
 }
