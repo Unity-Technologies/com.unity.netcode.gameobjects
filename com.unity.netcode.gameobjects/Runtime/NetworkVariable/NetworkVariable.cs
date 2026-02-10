@@ -413,7 +413,7 @@ namespace Unity.Netcode
         /// </summary>
         internal override void OnSpawned()
         {
-            // Assure any changes made to any NetworkVariable during spawn or post-spawn are
+            // Assure any changes made to this NetworkVariable during spawn or post-spawn are
             // serialized with the CreateObjectMessage.
             if (IsDirty() && CanSend())
             {
