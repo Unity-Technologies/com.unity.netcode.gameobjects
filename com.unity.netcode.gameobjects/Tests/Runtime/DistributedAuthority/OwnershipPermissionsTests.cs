@@ -659,7 +659,8 @@ namespace Unity.Netcode.RuntimeTests
             {
                 NetworkObject.OnOwnershipRequested = null;
                 NetworkObject.OnOwnershipRequestResponse = null;
-                base.OnNetworkSpawn();
+                NetworkObject.OnOwnershipPermissionsFailure = null;
+                base.OnNetworkDespawn();
             }
 
             protected override void OnOwnershipChanged(ulong previous, ulong current)
