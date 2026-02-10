@@ -415,7 +415,12 @@ namespace Unity.Netcode
         {
             // Assure any changes made to any NetworkVariable during spawn or post-spawn are
             // serialized with the CreateObjectMessage.
-            m_NetworkBehaviour.PostNetworkVariableWrite(true);
+            if (IsDirty() && CanSend())
+            {
+                UpdateLastSentTime();
+                ResetDirty();
+                SetDirty(false);
+            }
             base.OnSpawned();
         }
     }
