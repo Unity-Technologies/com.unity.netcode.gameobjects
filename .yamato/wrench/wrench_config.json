@@ -16,7 +16,8 @@
       "coverageCommands": [
         "generateAdditionalMetrics;generateHtmlReport;assemblyFilters:ASSEMBLY_NAME;pathReplacePatterns:@*,,**/PackageCache/,;sourcePaths:YAMATO_SOURCE_DIR/Packages;"
       ],
-      "dependantsToIgnoreInPreviewApv": {}
+      "dependantsToIgnoreInPreviewApv": {},
+      "postPackCommands": []
     }
   },
   "releasing_packages": [
@@ -31,7 +32,7 @@
   },
   "publishing_job": ".yamato/wrench/promotion-jobs.yml#publish_netcode_gameobjects",
   "branch_pattern": "ReleaseSlash",
-  "wrench_version": "1.3.0.0",
+  "wrench_version": "1.4.8.0",
   "pvp_exemption_path": ".yamato/wrench/pvp-exemptions.json",
   "cs_project_path": "Tools/CI/NGO.Cookbook.csproj"
 }

@@ -26,7 +26,7 @@ build_{{ netcodeProject[0] }}_project:
     image: package-ci/win10:v4
     flavor: b1.xlarge
   variables:
-    UNITY_VERSION: 6000.2
+    UNITY_VERSION: 6000.0
     SCRIPTING_BACKEND_IL2CPP_MONO: il2cpp
     BURST_ON_OFF: on
     PLATFORM_WIN64_MAC_ANDROID: win64

@@ -30,7 +30,7 @@ run_all_package_tests:
 {% endfor -%}
 
 
-# Runs all package tests on default editor
+# Runs all package tests on default editor (latest supported editor)
 run_all_package_tests_{{ validation_editors.default }}:
   name: Run All Package Tests [{{ validation_editors.default }} only]
   dependencies:
@@ -38,7 +38,7 @@ run_all_package_tests_{{ validation_editors.default }}:
     - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.default }}_{{ platform.name }}
 {% endfor -%}
 
-# Runs all package tests on mimimum supported editor
+# Runs all package tests on minimal supported editor
 run_all_package_tests_{{ validation_editors.minimal }}:
   name: Run All Package Tests [{{ validation_editors.minimal }}]
   dependencies:
@@ -74,7 +74,7 @@ run_all_project_tests_{{ validation_editors.default }}:
 {% endif -%}
 {% endfor -%}
 
-# Runs all projects tests on mimimal supported editor
+# Runs all projects tests on minimal supported editor
 run_all_project_tests_{{ validation_editors.minimal }}:
   name: Run All Project Tests [{{ validation_editors.minimal }}]
   dependencies:
@@ -111,7 +111,7 @@ run_all_webgl_builds:
 {% endfor -%}
 
 
-# Runs all WebGL builds on default editor
+# Runs all WebGL builds on default editor (latest supported editor)
 run_all_webgl_builds_{{ validation_editors.default }}:
   name: Run All WebGl Build [{{ validation_editors.default }} only]
   dependencies:
@@ -121,7 +121,7 @@ run_all_webgl_builds_{{ validation_editors.default }}:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all WebGL builds on 2022.3 editor 
+# Runs all WebGL builds on minimal supported editor
 run_all_webgl_builds_{{ validation_editors.minimal }}:
   name: Run All WebGl Build [{{ validation_editors.minimal }}]
   dependencies:
@@ -147,6 +147,7 @@ run_all_project_tests_desktop_standalone:
 {% endfor -%}
 
 
+# Runs all Desktop tests on default editor (latest supported editor)
 run_all_project_tests_desktop_standalone_{{ validation_editors.default }}:
   name: Run All Standalone Tests - Desktop [{{ validation_editors.default }} only]
   dependencies:
@@ -158,7 +159,7 @@ run_all_project_tests_desktop_standalone_{{ validation_editors.default }}:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Desktop tests on mimimum supported editor
+# Runs all Desktop tests on minimal supported editor
 run_all_project_tests_desktop_standalone_{{ validation_editors.minimal }}:
   name: Run All Standalone Tests - Desktop [{{ validation_editors.minimal }}]
   dependencies:
@@ -193,7 +194,7 @@ run_all_project_tests_mobile_standalone_{{ validation_editors.default }}:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Mobile tests on mimimum supported editor
+# Runs all Mobile tests on minimal supported editor
 run_all_project_tests_mobile_standalone_{{ validation_editors.minimal }}:
   name: Run All Standalone Tests - Mobile [{{ validation_editors.minimal }}]
   dependencies:
@@ -227,7 +228,7 @@ run_all_project_tests_console_standalone_{{ validation_editors.default }}:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Console tests on mimimum supported editor
+# Runs all Console tests on minimal supported editor
 run_all_project_tests_console_standalone_{{ validation_editors.minimal }}:
   name: Run All Standalone Tests - Console [{{ validation_editors.minimal }}]
   dependencies:
