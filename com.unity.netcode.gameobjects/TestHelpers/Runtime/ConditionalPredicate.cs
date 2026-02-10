@@ -43,18 +43,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Test the conditions of the test to be reached
         /// </summary>
-        bool HasConditionBeenReached();
+        public bool HasConditionBeenReached();
 
         /// <summary>
         /// Wait for condition has started
         /// </summary>
-        void Started();
+        public void Started();
 
         /// <summary>
         /// Wait for condition has finished:
         /// Condition(s) met or timed out
         /// </summary>
-        void Finished(bool timedOut);
+        public void Finished(bool timedOut);
 
     }
 }

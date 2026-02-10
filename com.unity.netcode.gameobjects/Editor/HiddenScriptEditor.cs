@@ -1,5 +1,6 @@
 #pragma warning disable IDE0005
 using Unity.Netcode.Components;
+#pragma warning restore IDE0005
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
 #endif

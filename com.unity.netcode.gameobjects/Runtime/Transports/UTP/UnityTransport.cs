@@ -44,7 +44,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
         /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
         /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
-        void CreateDriver(
+        public void CreateDriver(
             UnityTransport transport,
             out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,

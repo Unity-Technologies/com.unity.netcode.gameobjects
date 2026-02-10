@@ -35,9 +35,7 @@ run_all_package_tests_{{ validation_editors.default }}:
   name: Run All Package Tests [{{ validation_editors.default }} only]
   dependencies:
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/package-tests.yml#package_test_-_ngo_{{ editor }}_{{ platform.name }}
-{% endfor -%}
+    - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.default }}_{{ platform.name }}
 {% endfor -%}
 
 # Runs all package tests on minimal supported editor
@@ -71,9 +69,7 @@ run_all_project_tests_{{ validation_editors.default }}:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -97,9 +93,7 @@ run_all_projects_standards:
   dependencies:
 {% for platform in test_platforms.default -%}
 {% for project in projects.all -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/project-standards.yml#standards_{{ platform.name }}_{{ project.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/project-standards.yml#standards_{{ platform.name }}_{{ project.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
 
@@ -123,9 +117,7 @@ run_all_webgl_builds_{{ validation_editors.default }}:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
 
@@ -161,10 +153,8 @@ run_all_project_tests_desktop_standalone_{{ validation_editors.default }}:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
 {% for backend in scripting_backends -%}
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endfor -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -200,9 +190,7 @@ run_all_project_tests_mobile_standalone_{{ validation_editors.default }}:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
 
@@ -236,9 +224,7 @@ run_all_project_tests_console_standalone_{{ validation_editors.default }}:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-{% for editor in validation_editors.default -%}
-    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}
 {% endfor -%}
 {% endfor -%}
 

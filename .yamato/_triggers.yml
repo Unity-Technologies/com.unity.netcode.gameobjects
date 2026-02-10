@@ -109,11 +109,6 @@ pr_code_changes_checks:
     cancel_old_ci: true
 
 
-
-
-
-
-
 # Run all tests on {{ validation_editors.default }} (latest supported editor) on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
 # Those tests are all running on {{ validation_editors.default }} (latest supported editor) since it's daily and running all of them would add a lot of overhead
