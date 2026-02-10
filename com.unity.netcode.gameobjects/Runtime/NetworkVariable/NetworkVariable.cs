@@ -408,8 +408,13 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Notification we have fully spawned the associated <see cref="NetworkObject"/>.
+        /// </summary>
         internal override void OnSpawned()
         {
+            // Assure any changes made to any NetworkVariable during spawn or post-spawn are
+            // serialized with the CreateObjectMessage.
             m_NetworkBehaviour.PostNetworkVariableWrite(true);
             base.OnSpawned();
         }

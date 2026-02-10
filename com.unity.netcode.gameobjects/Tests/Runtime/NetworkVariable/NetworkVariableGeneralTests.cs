@@ -49,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 else
                 {
-                    // Only set these values during OnNetworkSpawn to 
+                    // Only set these values during OnNetworkSpawn to
                     // verify this value is valid for non-authority instances.
                     OnNetworkSpawnValue = TestValueOnSpawn.Value;
                     OnNetworkPostSpawnValue = TestValueOnPostSpawn.Value;
