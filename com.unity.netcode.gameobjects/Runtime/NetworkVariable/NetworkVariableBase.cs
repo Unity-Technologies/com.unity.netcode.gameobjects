@@ -140,27 +140,37 @@ namespace Unity.Netcode
             }
         }
 
-        /// TODO-API: After further vetting and alignment on these, we might make them part of the public API.
-        /// Could actually be like an interface that gets automatically registered for these kinds of notifications
-        /// without having to be a NetworkBehaviour.
-        #region OnSpawn and OnPreDespawn (ETC)
-
         /// <summary>
         /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPostSpawn"/> has been invoked.
         /// </summary>
-        internal virtual void OnSpawned()
+        internal void InternalOnSpawned()
         {
-
+            // If the NetworkVariableBase derived class is:
+            // - On the spawn authority side.
+            // - Dirty.
+            // - State updates can be sent:
+            // -- The instance has write permissions.
+            // -- The last sent time plus the max send time period is less than the current time.
+            // - User script has modified the list during spawn.
+            // When the NetworkObject is finished spawning (on the same frame), go ahead and reset
+            // the dirty related properties and last sent time to prevent duplicate updates from
+            // being sent (i.e. CreateObjectMessage will contain the changes so we don't need to
+            // send a proceeding NetworkVariableDeltaMessage).
+            if (m_NetworkObject.IsSpawnAuthority && IsDirty() && CanWrite() && CanSend())
+            {
+                UpdateLastSentTime();
+                ResetDirty();
+                SetDirty(false);
+            }
         }
 
         /// <summary>
         /// Invoked after the associated <see cref="NetworkBehaviour.OnNetworkPreDespawn"/> has been invoked.
         /// </summary>
-        internal virtual void OnPreDespawn()
+        internal void InternalOnPreDespawn()
         {
 
         }
-        #endregion
 
         /// <summary>
         /// Deinitialize is invoked when a NetworkObject is despawned.
