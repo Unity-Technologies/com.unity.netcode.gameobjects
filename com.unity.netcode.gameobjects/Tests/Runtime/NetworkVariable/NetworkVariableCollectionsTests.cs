@@ -831,7 +831,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     // Server-side add same key and SerializableObject prior to being added to the owner side
                     compDictionaryServer.ListCollectionOwner.Value.Add(newEntry.Item1, newEntry.Item2);
-                    // Checking if dirty on server side should revert back to origina known current dictionary state
+                    // Checking if dirty on server side should revert back to original known current dictionary state
                     compDictionaryServer.ListCollectionOwner.IsDirty();
                     yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                     AssertOnTimeout($"Server add to owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
@@ -840,7 +840,6 @@ namespace Unity.Netcode.RuntimeTests
                     // Server-side add a completely new key and SerializableObject to to owner write permission property
                     compDictionaryServer.ListCollectionOwner.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
                     // Both should be overridden by the owner-side update
-
                 }
                 VerboseDebug($"[{compDictionary.name}][Owner] Adding Key: {newEntry.Item1}");
                 // Add key and SerializableObject to owner side
@@ -852,15 +851,17 @@ namespace Unity.Netcode.RuntimeTests
                 //////////////////////////////////
                 // Server Add SerializableObject Entry
                 newEntry = (GetNextKey(), SerializableObject.GetRandomObject());
+
                 // Only test restore on non-host clients (otherwise a host is both server and client/owner)
                 if (!client.IsServer)
                 {
                     // Client-side add same key and SerializableObject to server write permission property
                     compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
-                    // Checking if dirty on client side should revert back to origina known current dictionary state
+                    // Checking if dirty on client side should revert back to original known current dictionary state
                     compDictionary.ListCollectionServer.IsDirty();
                     yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                     AssertOnTimeout($"Client-{client.LocalClientId} add to server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+
                     // Client-side add the same key and SerializableObject to server write permission property (would throw key exists exception too if previous failed)
                     compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
                     // Client-side add a completely new key and SerializableObject to to server write permission property
@@ -892,7 +893,6 @@ namespace Unity.Netcode.RuntimeTests
 
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
                 AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
-
                 ValidateClientsFlat(client);
                 ////////////////////////////////////
                 // Owner Change SerializableObject Entry
@@ -915,7 +915,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // Server-side update same key value prior to being updated to the owner side
                         compDictionaryServer.ListCollectionOwner.Value[valueInt] = randomObject;
-                        // Checking if dirty on server side should revert back to origina known current dictionary state
+                        // Checking if dirty on server side should revert back to original known current dictionary state
                         compDictionaryServer.ListCollectionOwner.IsDirty();
                         yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                         AssertOnTimeout($"Server update collection entry value to local owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
@@ -956,7 +956,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         // Owner-side update same key value prior to being updated to the server side
                         compDictionary.ListCollectionServer.Value[valueInt] = randomObject;
-                        // Checking if dirty on owner side should revert back to origina known current dictionary state
+                        // Checking if dirty on owner side should revert back to original known current dictionary state
                         compDictionary.ListCollectionServer.IsDirty();
                         yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                         AssertOnTimeout($"Client-{client.LocalClientId} update collection entry value to local server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
@@ -1841,10 +1841,10 @@ namespace Unity.Netcode.RuntimeTests
             var deltaTypes = Enum.GetValues(typeof(DeltaTypes)).OfType<DeltaTypes>().ToList();
             foreach (var deltaType in deltaTypes)
             {
-                LogMessage($"Comparing {deltaType}:");
+                LogMessage($"[Comparing {deltaType}] Local: {local[deltaType].Count} | Other: {other[deltaType].Count}");
                 if (local[deltaType].Count != other[deltaType].Count)
                 {
-                    LogMessage($"{deltaType}s count did not match!");
+                    LogMessage($"[Client-{clientId}] Local {deltaType}s count of {local[deltaType].Count} did not match the other's count of {other[deltaType].Count}!");
                     return false;
                 }
                 if (!CompareDictionaries(clientId, local[deltaType], other[deltaType]))
@@ -1970,6 +1970,18 @@ namespace Unity.Netcode.RuntimeTests
             contextTable[DeltaTypes.Removed] = whatWasRemoved;
             contextTable[DeltaTypes.Changed] = whatChanged;
             contextTable[DeltaTypes.UnChanged] = whatRemainedTheSame;
+
+            // Log all incoming changes when debug mode is enabled
+            if (!IsOwner && IsDebugMode)
+            {
+                LogMessage($"[{NetworkManager.name}][TrackChanges-> Client-{OwnerClientId}] Collection was updated!");
+                LogMessage($"Added: {whatWasAdded.Count} ");
+                LogMessage($"Removed: {whatWasRemoved.Count} ");
+                LogMessage($"Changed: {whatChanged.Count} ");
+                LogMessage($"UnChanged: {whatRemainedTheSame.Count} ");
+                UnityEngine.Debug.Log($"{GetLog()}");
+                LogStart();
+            }
         }
 
         public void OnServerListValuesChanged(Dictionary<int, SerializableObject> previous, Dictionary<int, SerializableObject> current)
@@ -2016,8 +2028,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNetworkPostSpawn()
         {
-            TrackRelativeInstances();
 
+            TrackRelativeInstances();
             ListCollectionServer.OnValueChanged += OnServerListValuesChanged;
             ListCollectionOwner.OnValueChanged += OnOwnerListValuesChanged;
 
@@ -2025,6 +2037,8 @@ namespace Unity.Netcode.RuntimeTests
             {
                 InitValues();
             }
+
+            base.OnNetworkPostSpawn();
         }
 
         public void InitValues()
@@ -2032,13 +2046,24 @@ namespace Unity.Netcode.RuntimeTests
             if (IsServer)
             {
                 ListCollectionServer.Value = OnSetServerValues();
-                ListCollectionOwner.CheckDirtyState();
+                ListCollectionServer.CheckDirtyState();
             }
 
             if (IsOwner)
             {
                 ListCollectionOwner.Value = OnSetOwnerValues();
                 ListCollectionOwner.CheckDirtyState();
+            }
+
+            // When running a host, the changes being tracked will not match because clients will be synchronized with changes
+            // already applied. This fixing this issue by injecting "added" server targeted changes during initialization on
+            // the connected clients' side.
+            if (!IsServer)
+            {
+                if (ListCollectionServer.Value.Count > 0 && NetworkVariableChanges[Targets.Server][DeltaTypes.Added].Count == 0)
+                {
+                    TrackChanges(Targets.Server, new Dictionary<int, SerializableObject>(), ListCollectionServer.Value);
+                }
             }
         }
 

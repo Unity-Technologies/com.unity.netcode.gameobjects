@@ -838,7 +838,7 @@ namespace Unity.Netcode
             // all spawn related methods have been invoked.
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                NetworkVariableFields[i].OnSpawned();
+                NetworkVariableFields[i].InternalOnSpawned();
             }
         }
 
@@ -891,7 +891,7 @@ namespace Unity.Netcode
             // all spawn related methods have been invoked.
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                NetworkVariableFields[i].OnPreDespawn();
+                NetworkVariableFields[i].InternalOnPreDespawn();
             }
         }
 
