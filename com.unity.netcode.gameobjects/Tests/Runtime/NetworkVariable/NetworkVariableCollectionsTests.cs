@@ -780,11 +780,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_Clients.Insert(0, m_ServerNetworkManager);
             }
 
-            foreach (var client in m_Clients)
-            {
-                client.LogLevel = LogLevel.Developer;
-            }
-
             m_CurrentKey = 1000;
             if (m_EnableDebug)
             {
