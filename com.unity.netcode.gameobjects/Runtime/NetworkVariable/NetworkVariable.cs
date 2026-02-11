@@ -407,30 +407,5 @@ namespace Unity.Netcode
                 base.WriteFieldSynchronization(writer);
             }
         }
-
-        /// <summary>
-        /// Notification we have fully spawned the associated <see cref="NetworkObject"/>.
-        /// </summary>
-        internal override void OnSpawned()
-        {
-            // If the NetworkVariable is:
-            // - On the spawn authority side.
-            // - Dirty.
-            // - State updates can be sent:
-            // -- The instance has write permissions.
-            // -- The last sent time plus the max send time period is less than the current time.
-            // - User script has modified the list during spawn.
-            // When the NetworkObject is finished spawning (on the same frame), go ahead and reset
-            // the dirty related properties and last sent time to prevent duplicate updates from
-            // being sent (i.e. CreateObjectMessage will contain the changes so we don't need to
-            // send a proceeding NetworkVariableDeltaMessage).
-            if (m_NetworkObject.IsSpawnAuthority && IsDirty() && CanWrite() && CanSend())
-            {
-                UpdateLastSentTime();
-                ResetDirty();
-                SetDirty(false);
-            }
-            base.OnSpawned();
-        }
     }
 }
