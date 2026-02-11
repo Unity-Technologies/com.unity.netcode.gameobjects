@@ -859,29 +859,8 @@ namespace Unity.Netcode.RuntimeTests
                     compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
                     // Checking if dirty on client side should revert back to original known current dictionary state
                     compDictionary.ListCollectionServer.IsDirty();
-                    if (!m_ServerNetworkManager.IsHost)
-                    {
-                        yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
-                        AssertOnTimeout($"Client-{client.LocalClientId} add to server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
-                    }
-                    else // Host, for some reason, does not have changes tracked but the dictionaries match... ????
-                    {
-                        // TODO: Need to track down why host is the only failing test.
-                        // NOTES: It seems only the host doesn't track changes made on the owner write permissions (i.e. issue with test itself?),
-                        // but when comparing the values of the dictionaries everything passes (i.e. dictionaries are synchronized)
-                        var compDictionaryTest = (DictionaryTestHelper)null;
-                        var compDictionaryServerTest = (DictionaryTestHelper)null;
-                        var classNameTest = $"{nameof(DictionaryTestHelper)}";
-                        foreach (var clientTest in m_Clients)
-                        {
-                            ///////////////////////////////////////////////////////////////////////////
-                            // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
-                            compDictionaryTest = clientTest.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
-                            compDictionaryServerTest = m_PlayerNetworkObjects[NetworkManager.ServerClientId][clientTest.LocalClientId].GetComponent<DictionaryTestHelper>();
-                            Assert.True(compDictionaryTest.ValidateInstances(), $"[Owner] Not all instances of client-{compDictionaryTest.OwnerClientId}'s {classNameTest} {compDictionaryTest.name} component match! {compDictionaryTest.GetLog()}");
-                            Assert.True(compDictionaryServerTest.ValidateInstances(), $"[Server] Not all instances of client-{compDictionaryServerTest.OwnerClientId}'s {classNameTest} {compDictionaryServerTest.name} component match! {compDictionaryServerTest.GetLog()}");
-                        }
-                    }
+                    yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} add to server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
 
                     // Client-side add the same key and SerializableObject to server write permission property (would throw key exists exception too if previous failed)
                     compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
@@ -1865,7 +1844,7 @@ namespace Unity.Netcode.RuntimeTests
             var deltaTypes = Enum.GetValues(typeof(DeltaTypes)).OfType<DeltaTypes>().ToList();
             foreach (var deltaType in deltaTypes)
             {
-                LogMessage($"Comparing {deltaType}:");
+                LogMessage($"[Comparing {deltaType}] Local: {local[deltaType].Count} | Other: {other[deltaType].Count}");
                 if (local[deltaType].Count != other[deltaType].Count)
                 {
                     LogMessage($"[Client-{clientId}] Local {deltaType}s count of {local[deltaType].Count} did not match the other's count of {other[deltaType].Count}!");
@@ -1994,6 +1973,18 @@ namespace Unity.Netcode.RuntimeTests
             contextTable[DeltaTypes.Removed] = whatWasRemoved;
             contextTable[DeltaTypes.Changed] = whatChanged;
             contextTable[DeltaTypes.UnChanged] = whatRemainedTheSame;
+
+            // Log all incoming changes when debug mode is enabled
+            if (!IsOwner && IsDebugMode)
+            {
+                LogMessage($"[{NetworkManager.name}][TrackChanges-> Client-{OwnerClientId}] Collection was updated!");
+                LogMessage($"Added: {whatWasAdded.Count} ");
+                LogMessage($"Removed: {whatWasRemoved.Count} ");
+                LogMessage($"Changed: {whatChanged.Count} ");
+                LogMessage($"UnChanged: {whatRemainedTheSame.Count} ");
+                UnityEngine.Debug.Log($"{GetLog()}");
+                LogStart();
+            }
         }
 
         public void OnServerListValuesChanged(Dictionary<int, SerializableObject> previous, Dictionary<int, SerializableObject> current)
@@ -2058,13 +2049,24 @@ namespace Unity.Netcode.RuntimeTests
             if (IsServer)
             {
                 ListCollectionServer.Value = OnSetServerValues();
-                //ListCollectionOwner.CheckDirtyState();
+                ListCollectionServer.CheckDirtyState();
             }
 
             if (IsOwner)
             {
                 ListCollectionOwner.Value = OnSetOwnerValues();
-                //ListCollectionOwner.CheckDirtyState();
+                ListCollectionOwner.CheckDirtyState();
+            }
+
+            // When running a host, the changes being tracked will not match because clients will be synchronized with changes
+            // already applied. This fixing this issue by injecting "added" server targeted changes during initialization on
+            // the connected clients' side.
+            if (!IsServer)
+            {
+                if (ListCollectionServer.Value.Count > 0 && NetworkVariableChanges[Targets.Server][DeltaTypes.Added].Count == 0)
+                {
+                    TrackChanges(Targets.Server, new Dictionary<int, SerializableObject>(), ListCollectionServer.Value);
+                }
             }
         }
 
