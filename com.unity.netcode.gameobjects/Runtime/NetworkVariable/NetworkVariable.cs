@@ -413,9 +413,18 @@ namespace Unity.Netcode
         /// </summary>
         internal override void OnSpawned()
         {
-            // Assure any changes made to this NetworkVariable during spawn or post-spawn are
-            // serialized with the CreateObjectMessage.
-            if (IsDirty() && CanSend())
+            // If the NetworkVariable is:
+            // - On the spawn authority side.
+            // - Dirty.
+            // - State updates can be sent:
+            // -- The instance has write permissions.
+            // -- The last sent time plus the max send time period is less than the current time.
+            // - User script has modified the list during spawn.
+            // When the NetworkObject is finished spawning (on the same frame), go ahead and reset
+            // the dirty related properties and last sent time to prevent duplicate updates from
+            // being sent (i.e. CreateObjectMessage will contain the changes so we don't need to
+            // send a proceeding NetworkVariableDeltaMessage).
+            if (m_NetworkObject.IsSpawnAuthority && IsDirty() && CanWrite() && CanSend())
             {
                 UpdateLastSentTime();
                 ResetDirty();
