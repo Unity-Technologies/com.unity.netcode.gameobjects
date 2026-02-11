@@ -1014,9 +1014,6 @@ namespace Unity.Netcode.RuntimeTests
                     m_Stage = 0;
                 }
             }
-
-            m_EnableDebug = false;
-            m_EnableVerboseDebug = false;
         }
 
         [UnityTest]
