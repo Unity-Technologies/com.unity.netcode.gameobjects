@@ -154,20 +154,26 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(OwnerModifiedObject.Updates > 20);
         }
 
-
-        private ChangeValueOnAuthority m_SessionAuthorityInstance;
         private ChangeValueOnAuthority m_InstanceAuthority;
 
         private bool NetworkVariablesMatch(StringBuilder errorLog)
         {
             foreach (var networkManager in m_NetworkManagers)
             {
+                var changeValue = networkManager.SpawnManager.SpawnedObjects[m_InstanceAuthority.NetworkObjectId].GetComponent<ChangeValueOnAuthority>();
                 if (networkManager == m_InstanceAuthority.NetworkManager)
                 {
+                    if (m_InstanceAuthority.SomeIntValue.Value != 2)
+                    {
+                        errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {changeValue.name} value is {changeValue.SomeIntValue.Value} but was expecting 2!");
+                    }
                     continue;
                 }
+                if (changeValue.SomeIntValue.Value != 2)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {changeValue.name} value is {changeValue.SomeIntValue.Value} but was expecting 2!");
+                }
 
-                var changeValue = networkManager.SpawnManager.SpawnedObjects[m_InstanceAuthority.NetworkObjectId].GetComponent<ChangeValueOnAuthority>();
                 if (changeValue.SomeIntValue.Value != m_InstanceAuthority.SomeIntValue.Value)
                 {
                     errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {changeValue.name} value is {changeValue.SomeIntValue.Value} but was expecting {m_InstanceAuthority.SomeIntValue.Value}!");
@@ -185,19 +191,15 @@ namespace Unity.Netcode.RuntimeTests
         {
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
-            m_SessionAuthorityInstance = Object.Instantiate(m_SpawnObject).GetComponent<ChangeValueOnAuthority>();
+            // If running in distributed authority mode, we use the nonauthority (i.e. not SessionOwner) instance to spawn.
+            var spawnAuthority = m_DistributedAuthority ? nonAuthority : authority;
+            m_InstanceAuthority = SpawnObject(m_SpawnObject, spawnAuthority).GetComponent<ChangeValueOnAuthority>();
 
-            SpawnInstanceWithOwnership(m_SessionAuthorityInstance.GetComponent<NetworkObject>(), authority, nonAuthority.LocalClientId);
-            yield return WaitForSpawnedOnAllOrTimeOut(m_SessionAuthorityInstance.NetworkObjectId);
-            AssertOnTimeout($"Failed to spawn {m_SessionAuthorityInstance.name} on all clients!");
-
-            m_InstanceAuthority = nonAuthority.SpawnManager.SpawnedObjects[m_SessionAuthorityInstance.NetworkObjectId].GetComponent<ChangeValueOnAuthority>();
+            yield return WaitForSpawnedOnAllOrTimeOut(m_InstanceAuthority.NetworkObjectId);
+            AssertOnTimeout($"Failed to spawn {m_InstanceAuthority.name} on all clients!");
 
             yield return WaitForConditionOrTimeOut(NetworkVariablesMatch);
             AssertOnTimeout($"The {nameof(ChangeValueOnAuthority.SomeIntValue)} failed to synchronize on all clients!");
-
-            Assert.IsTrue(m_SessionAuthorityInstance.SomeIntValue.Value == 2, "No values were updated on the spawn authority instance!");
-            Assert.IsTrue(m_InstanceAuthority.SomeIntValue.Value == 2, "No values were updated on the owner's instance!");
         }
     }
 }
