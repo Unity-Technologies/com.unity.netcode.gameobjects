@@ -20,7 +20,7 @@ namespace Unity.Netcode.GameObjects.Editor
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
-
+        
         private static readonly string[] k_HiddenFields = { "m_Script" };
 
         private void Initialize()
@@ -32,6 +32,9 @@ namespace Unity.Netcode.GameObjects.Editor
 
             m_Initialized = true;
             m_NetworkObject = (NetworkObject)target;
+#if UNIFIED_NETCODE
+            m_NetworkObject.UnifiedValidation();
+#endif
         }
 
         /// <inheritdoc/>
