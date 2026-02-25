@@ -1791,6 +1791,19 @@ namespace Unity.Netcode.Components
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
         }
+
+#if UNIFIED_NETCODE
+        internal void UnregisterRigidbody()
+        {
+            if (m_NetworkRigidbodyInternal)
+            {
+                NetworkManager.NetworkTransformRegistration(NetworkObject, false, false);
+                NetworkManager.NetworkTransformRegistration(NetworkObject, true, true);
+                m_NetworkRigidbodyInternal = null;
+                m_UseRigidbodyForMotion = false;
+            }
+        }
+#endif
 #endif
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
@@ -3594,6 +3607,8 @@ namespace Unity.Netcode.Components
             }
 
             CachedTransform = transform;
+
+
         }
 
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
@@ -3606,6 +3621,12 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+#if UNIFIED_NETCODE
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             m_ParentedChildren.Clear();
             m_CachedNetworkManager = NetworkManager;
 
@@ -3700,6 +3721,13 @@ namespace Unity.Netcode.Components
         /// <param name="isOwnershipChange"></param>
         private void InternalInitialization(bool isOwnershipChange = false)
         {
+
+#if UNIFIED_NETCODE
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             if (!IsSpawned)
             {
                 return;
@@ -3808,7 +3836,7 @@ namespace Unity.Netcode.Components
         {
             InternalInitialization();
         }
-        #endregion
+#endregion
 
         #region PARENTING AND OWNERSHIP
         /// <inheritdoc/>

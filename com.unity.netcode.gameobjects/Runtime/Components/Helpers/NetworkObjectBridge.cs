@@ -79,7 +79,6 @@ namespace Unity.Netcode
             Instance = this;
             AutoConnectPort = Port;
             CreateDefaultClientServerWorlds();
-
             var initialized = base.Initialize(defaultWorldName);
             OnInitialized?.Invoke(initialized);
             return initialized;

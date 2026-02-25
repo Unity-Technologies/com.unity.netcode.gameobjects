@@ -47,6 +47,11 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
+#if UNIFIED_NETCODE
+        [NonSerialized]
+        internal Dictionary<uint, NetworkPrefab> PrefabTable = new Dictionary<uint, NetworkPrefab>();
+#endif
+
         [NonSerialized]
         private List<NetworkPrefab> m_RuntimeAddedPrefabs = new List<NetworkPrefab>();
 
@@ -57,12 +62,21 @@ namespace Unity.Netcode
                 // Don't add this to m_RuntimeAddedPrefabs
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
                 m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                {
+                    PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+                }
+#endif
             }
         }
 
         private void RemoveTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
         {
             m_Prefabs.Remove(networkPrefab);
+#if UNIFIED_NETCODE
+            PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+#endif
         }
 
         /// <summary>
@@ -95,6 +109,9 @@ namespace Unity.Netcode
         {
             m_Prefabs.Clear();
             NetworkPrefabsLists.RemoveAll(x => x == null);
+#if UNIFIED_NETCODE
+            PrefabTable.Clear();
+#endif
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
@@ -127,10 +144,22 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                    if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                    {
+                        PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+                    }
+#endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                    if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                    {
+                        PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+                    }
+#endif
                 }
             }
 
@@ -139,10 +168,22 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                    if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                    {
+                        PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+                    }
+#endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                    if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                    {
+                        PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+                    }
+#endif
                 }
             }
 
@@ -175,6 +216,12 @@ namespace Unity.Netcode
             {
                 m_Prefabs.Add(networkPrefab);
                 m_RuntimeAddedPrefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE
+                if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                {
+                    PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+                }
+#endif
                 return true;
             }
 
@@ -202,6 +249,12 @@ namespace Unity.Netcode
             m_RuntimeAddedPrefabs.Remove(prefab);
             OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
+#if UNIFIED_NETCODE
+            if (PrefabTable.ContainsKey(prefab.SourcePrefabGlobalObjectIdHash))
+            {
+                PrefabTable.Remove(prefab.SourcePrefabGlobalObjectIdHash);
+            }
+#endif
         }
 
         /// <summary>
