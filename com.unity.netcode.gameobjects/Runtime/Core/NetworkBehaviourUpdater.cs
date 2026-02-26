@@ -56,9 +56,9 @@ namespace Unity.Netcode
                 if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
                 {
                     // Sync just the variables for just the objects this client sees
-                    for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                    foreach(var childBehaviour in dirtyObj.ChildNetworkBehaviours)
                     {
-                        dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
+                        childBehaviour.Value.NetworkVariableUpdate(client.ClientId, forceSend);
                     }
                 }
             }
@@ -73,9 +73,9 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
         {
-            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+            foreach (var childBehaviour in dirtyObj.ChildNetworkBehaviours)
             {
-                dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
+                childBehaviour.Value.NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
             }
         }
 
@@ -86,9 +86,9 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PostProcessDirtyObject(NetworkObject dirtyObj)
         {
-            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+            foreach (var behaviourEntry in dirtyObj.ChildNetworkBehaviours)
             {
-                var behaviour = dirtyObj.ChildNetworkBehaviours[k];
+                var behaviour = behaviourEntry.Value;
                 for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                 {
                     // Set to true for NetworkVariable to ignore duplication of the
@@ -116,7 +116,7 @@ namespace Unity.Netcode
         {
             foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
             {
-                behaviour.PostNetworkVariableWrite(forceSend);
+                behaviour.Value.PostNetworkVariableWrite(forceSend);
             }
         }
 
@@ -164,9 +164,9 @@ namespace Unity.Netcode
             }
 
             // Pre-variable update
-            for (int k = 0; k < networkObject.ChildNetworkBehaviours.Count; k++)
+            foreach (var childBehaviour in networkObject.ChildNetworkBehaviours)
             {
-                networkObject.ChildNetworkBehaviours[k].PreVariableUpdate();
+                childBehaviour.Value.PreVariableUpdate();
             }
 
             // Server sends updates to all clients where a client sends updates

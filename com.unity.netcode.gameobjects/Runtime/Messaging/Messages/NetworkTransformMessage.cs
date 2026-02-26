@@ -71,7 +71,8 @@ namespace Unity.Netcode
             }
             var currentPosition = reader.Position;
             var networkObjectId = (ulong)0;
-            var networkBehaviourId = 0;
+            var networkBehaviourId = (ushort)0;
+            var networkBehaviourIdRead = 0;
 
             ByteUnpacker.ReadValueBitPacked(reader, out networkObjectId);
             var isSpawnedLocally = networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId);
@@ -91,12 +92,13 @@ namespace Unity.Netcode
             var ownerAuthoritativeServerSide = false;
 
             // Get the behaviour index
-            ByteUnpacker.ReadValueBitPacked(reader, out networkBehaviourId);
+            ByteUnpacker.ReadValueBitPacked(reader, out networkBehaviourIdRead);
+            networkBehaviourId = (ushort)networkBehaviourIdRead;
 
             if (isSpawnedLocally)
             {
                 networkObject = networkManager.SpawnManager.SpawnedObjects[networkObjectId];
-                if (networkObject.ChildNetworkBehaviours.Count <= networkBehaviourId || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
+                if (!networkObject.ChildNetworkBehaviours.ContainsKey(networkBehaviourId) || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
                 {
                     Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
                     return false;
