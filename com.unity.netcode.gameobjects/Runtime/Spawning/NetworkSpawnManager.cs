@@ -459,9 +459,10 @@ namespace Unity.Netcode
             // then notify the user they could potentially lose state updates if developer logging is enabled.
             if (NetworkManager.LogLevel == LogLevel.Developer && !distributedAuthorityMode && m_LastChangeInOwnership.ContainsKey(networkObject.NetworkObjectId) && m_LastChangeInOwnership[networkObject.NetworkObjectId] > Time.realtimeSinceStartup)
             {
-                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                foreach (var childBehaviour in networkObject.ChildNetworkBehaviours)
                 {
-                    if (networkObject.ChildNetworkBehaviours[i].NetworkVariableFields.Count > 0)
+                    var behaviour = childBehaviour.Value;
+                    if (behaviour.NetworkVariableFields.Count > 0)
                     {
                         NetworkLog.LogWarningServer($"[Rapid Ownership Change Detected][Potential Loss in State] Detected a rapid change in ownership that exceeds a frequency less than {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate! Provide at least {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate between ownership changes to avoid NetworkVariable state loss.");
                         break;
