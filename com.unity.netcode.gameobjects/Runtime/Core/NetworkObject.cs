@@ -3140,10 +3140,7 @@ namespace Unity.Netcode
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
-                    if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError("Could not deserialize NetworkObject: Reading past the end of the buffer.");
-                    }
+                    throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
 
                 if (HasTransform)
