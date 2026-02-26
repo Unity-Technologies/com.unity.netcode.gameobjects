@@ -92,7 +92,7 @@ namespace Unity.Netcode.Editor
             var activeScene = SceneManager.GetActiveScene();
             var isSceneInBuildSettings = scenesList.Count((c) => c.path == activeScene.path) == 1;
 #if UNITY_2023_1_OR_NEWER
-            var networkManager = Object.FindFirstObjectByType<NetworkManager>();
+            var networkManager = Object.FindAnyObjectByType<NetworkManager>();
 #else
             var networkManager = Object.FindObjectOfType<NetworkManager>();
 #endif

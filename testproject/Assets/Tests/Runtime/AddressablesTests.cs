@@ -76,12 +76,7 @@ namespace TestProject.RuntimeTests
             var serverObj = Object.Instantiate(prefab);
             serverObj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObj.GetComponent<NetworkObject>().Spawn();
-
-#if UNITY_2023_1_OR_NEWER
-            var objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
-#else
-            var objs = Object.FindObjectsOfType<AddressableTestScript>();
-#endif
+            var objs = FindObjects.ByType<AddressableTestScript>();
 
             // Prefabs loaded by addressables actually don't show up in this search.
             // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
@@ -95,11 +90,7 @@ namespace TestProject.RuntimeTests
             {
                 // Since it's not added, after the CreateObjectMessage is received, it's not spawned yet
                 // Verify that to be the case as a precondition.
-#if UNITY_2023_1_OR_NEWER
-                objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
-#else
-                objs = Object.FindObjectsOfType<AddressableTestScript>();
-#endif
+                objs = FindObjects.ByType<AddressableTestScript>();
                 Assert.AreEqual(1, objs.Length);
                 WaitForConditionOrTimeOutWithTimeTravel(() => MockTimeProvider.StaticRealTimeSinceStartup - startTime >= m_ClientNetworkManagers[0].NetworkConfig.SpawnTimeout - 0.25);
                 foreach (var client in m_ClientNetworkManagers)
@@ -108,11 +99,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-#if UNITY_2023_1_OR_NEWER
-            objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
-#else
-            objs = Object.FindObjectsOfType<AddressableTestScript>();
-#endif
+            objs = FindObjects.ByType<AddressableTestScript>();
             Assert.AreEqual(NumberOfClients + 1, objs.Length);
             foreach (var obj in objs)
             {
