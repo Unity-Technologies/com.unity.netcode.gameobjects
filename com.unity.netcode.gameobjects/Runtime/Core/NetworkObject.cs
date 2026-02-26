@@ -3053,10 +3053,7 @@ namespace Unity.Netcode
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
-                    if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError("Could not serialize NetworkObject: Out of buffer space.");
-                    }
+                    throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
 
                 if (HasTransform)
