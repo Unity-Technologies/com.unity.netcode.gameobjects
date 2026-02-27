@@ -1399,7 +1399,8 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                NetCodeConfig.Global.HostWorldModeSelection = NetCodeConfig.HostWorldMode.SingleWorld;
+
+                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
                 return true;
             }
@@ -1473,7 +1474,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-
+                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
                 // TODO-UNIFIED: Need a way to signal everything completed.
                 return true;
@@ -1547,6 +1548,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
                 // TODO-UNIFIED: Need a way to signal everything completed.
                 return true;
