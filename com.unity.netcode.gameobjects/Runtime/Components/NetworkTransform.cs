@@ -1797,8 +1797,6 @@ namespace Unity.Netcode.Components
         {
             if (m_NetworkRigidbodyInternal)
             {
-                NetworkManager.NetworkTransformRegistration(NetworkObject, false, false);
-                NetworkManager.NetworkTransformRegistration(NetworkObject, true, true);
                 m_NetworkRigidbodyInternal = null;
                 m_UseRigidbodyForMotion = false;
             }
