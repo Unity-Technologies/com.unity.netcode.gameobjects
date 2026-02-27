@@ -78,7 +78,14 @@ namespace Unity.Netcode
         {
             Instance = this;
             AutoConnectPort = Port;
-            CreateDefaultClientServerWorlds();
+            if (NetworkManager.Singleton.IsServer)
+            {
+                CreateSingleWorldHost("ClientAndServerWorld");
+            }
+            else
+            {
+                CreateClientWorld("ClientWorld");
+            }
             var initialized = base.Initialize(defaultWorldName);
             OnInitialized?.Invoke(initialized);
             return initialized;

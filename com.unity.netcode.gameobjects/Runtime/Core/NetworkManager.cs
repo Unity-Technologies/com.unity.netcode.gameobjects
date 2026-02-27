@@ -1054,10 +1054,6 @@ namespace Unity.Netcode
 #endif
             // Notify we have instantiated a new instance of NetworkManager.
             OnInstantiated?.Invoke(this);
-
-#if UNIFIED_NETCODE && UNITY_MULTIPLAYER_PLAYMODE
-            MPPMCheckInternal.Initialize();
-#endif
         }
 
         private void OnEnable()
@@ -2107,36 +2103,6 @@ namespace Unity.Netcode
         public delegate void OnDisconnectDelegate(NetcodeConnection connection);
         public static OnConnectDelegate OnNetCodeConnect;
         public static OnDisconnectDelegate OnNetCodeDisconnect;
-
-        // TODO-UNIFIED: For POC only (centralizing)
-        public static MPPMCheckInfo MPPMCheck => MPPMCheckInternal;
-        internal static MPPMCheckInfo MPPMCheckInternal = new MPPMCheckInfo();
-        public class MPPMCheckInfo
-        {
-            public bool Installed { get; private set; }
-            public bool HasServerTag;
-            public bool HasClientTag;
-            internal void Initialize()
-            {
-#if UNITY_MULTIPLAYER_PLAYMODE && UNITY_EDITOR
-                Installed = true;
-                var tags = Multiplayer.PlayMode.CurrentPlayer.Tags;
-                foreach (var tag in tags)
-                {
-                    if (tag == "Server")
-                    {
-                        HasServerTag = true;
-                    }
-                    else if (tag == "Client")
-                    {
-                        HasClientTag = true;
-                    }
-                }
-#else
-                Installed = false;
-#endif
-            }
-        }
 #endif
     }
 }
