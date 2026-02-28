@@ -1157,7 +1157,7 @@ namespace Unity.Netcode
                         {
                             RegistrationTime = UnityEngine.Time.realtimeSinceStartup,
                             SerializedObject = serializedObject,
-                            Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, serializedObject.SynchronizationDataSize)
+                            Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, serializedObject.SynchronizationDataSize, InternalBuffer.Position)
                         };
 
                         spawnManager.RegisterGhostPendingSynchronization(newEntry);
@@ -1174,9 +1174,9 @@ namespace Unity.Netcode
                     }
                     var spawnedNetworkObject = NetworkObject.Deserialize(serializedObject, InternalBuffer, networkManager);
 
-                    var noStop = InternalBuffer.Position;
                     if (EnableSerializationLogs)
                     {
+                        var noStop = InternalBuffer.Position;
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
                         LogArray(InternalBuffer.ToArray(), noStart, noStop, builder);
                     }
