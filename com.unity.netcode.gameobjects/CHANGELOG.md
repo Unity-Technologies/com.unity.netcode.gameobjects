@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.10.0] - 2026-03-01
 
 ### Added
 
@@ -16,23 +16,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Updating usage of deprecated `FindObjectsByType(FindObjectsSortMode)` and enum `FindObjectSortMode` in 6000.4 and 6000.5. (#3857)
 
-### Deprecated
-
-
-### Removed
-
-
 ### Fixed
 
 - Fixed issue where `NetworkVariable` was not properly synchronizing to changes made by the spawn and write authority during `OnNetworkSpawn` and `OnNetworkPostSpawn`. (#3878)
 - Fixed issue where `NetworkManager` was not cleaning itself up if an exception was thrown while starting. (#3864)
 - Prevented a `NullReferenceException` in `UnityTransport` when using a custom `INetworkStreamDriverConstructor` that doesn't use all the default pipelines and the multiplayer tools package is installed. (#3853)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.9.0] - 2026-02-01
 
