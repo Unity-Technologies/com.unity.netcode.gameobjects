@@ -10,11 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- The `NetworkMetricsPipelineStage` for Unity Transport is now part of the public API. This allows using it in custom implementations of `INetworkStreamDriverConstructor` that want to maintain compatibility with the multiplayer tools package. (#3853)
 
 ### Changed
 
-- Updating usage of deprecated `FindObjectsByType(FindObjectsSortMode)` and enum `FindObjectSortMode` in 6000.4 and 6000.5. (#3857)
 
 ### Deprecated
 
@@ -24,15 +22,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where `NetworkVariable` was not properly synchronizing to changes made by the spawn and write authority during `OnNetworkSpawn` and `OnNetworkPostSpawn`. (#3878)
-- Fixed issue where `NetworkManager` was not cleaning itself up if an exception was thrown while starting. (#3864)
-- Prevented a `NullReferenceException` in `UnityTransport` when using a custom `INetworkStreamDriverConstructor` that doesn't use all the default pipelines and the multiplayer tools package is installed. (#3853)
 
 ### Security
 
 
 ### Obsolete
 
+
+## [2.10.0] - 2026-03-01
+
+### Added
+
+- The `NetworkMetricsPipelineStage` for Unity Transport is now part of the public API. This allows using it in custom implementations of `INetworkStreamDriverConstructor` that want to maintain compatibility with the multiplayer tools package. (#3853)
+
+### Changed
+
+- Updating usage of deprecated `FindObjectsByType(FindObjectsSortMode)` and enum `FindObjectSortMode` in 6000.4 and 6000.5. (#3857)
+
+### Fixed
+
+- Fixed issue where `NetworkVariable` was not properly synchronizing to changes made by the spawn and write authority during `OnNetworkSpawn` and `OnNetworkPostSpawn`. (#3878)
+- Fixed issue where `NetworkManager` was not cleaning itself up if an exception was thrown while starting. (#3864)
+- Prevented a `NullReferenceException` in `UnityTransport` when using a custom `INetworkStreamDriverConstructor` that doesn't use all the default pipelines and the multiplayer tools package is installed. (#3853)
 
 ## [2.9.0] - 2026-02-01
 
