@@ -1,4 +1,4 @@
-# NetworkBehaviour spawning and despawning
+# NetworkBehaviour
 
 [NetworkBehaviour](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html) is an abstract class that derives from [MonoBehaviour](https://docs.unity3d.com/ScriptReference/MonoBehaviour.html) and is primarily used to create unique netcode or game logic. To replicate any netcode-aware properties or send and receive RPCs, a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) must have a [NetworkObject](networkobject.md) component and at least one NetworkBehaviour component.
 
@@ -38,6 +38,7 @@ The diagram above represents how the spawn process works for two NetworkBehaviou
 NetworkObjects go through three states during the spawn process:
 
 **Spawn states**
+
 - Prespawning: Before any netcode-related properties have been set.
 - Spawning: Netcode-related properties have been set.
 - Spawned: All NetworkBehaviour components have completed their spawn logic.
@@ -98,7 +99,7 @@ private void Update()
 
 Alternatively, you can leverage the [NetworkUpdateLoop](../../advanced-topics/network-update-loop-system/index.md) system by making a NetworkBehaviour implement the `INetworkUpdateSystem` interface and register each instance for a specific `NetworkUpdateStage` during the `OnNetworkSpawn` or `OnNetworkPreSpawn` invocations, and then use your own script logic to determine which instance should be updating.
 
-This can be useful when you want only the owner, authority, or non-authority to be updating and can help to remove checks like the above. It can also reduce the performance cost of all instances that do not register for the update stage (depending upon how many instances are spawned).
+This can be useful when you want only the [owner](../../terms-concepts/ownership.md), [authority](../../terms-concepts/authority.md), or non-authority to be updating and can help to remove checks like the above. It can also reduce the performance cost of all instances that do not register for the update stage (depending upon how many instances are spawned).
 
 ### Dynamically spawned NetworkObjects
 

@@ -75,7 +75,7 @@ Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchroniz
 ## Additional resources
 
 - [NetworkObject parenting](../../advanced-topics/networkobject-parenting.md)
-- [NetworkObject ownership](../../advanced-topics/networkobject-ownership.md)
+- [NetworkObject ownership](./networkobject-ownership.md)
 - [In-scene placed NetworkObjects](../../basics/scenemanagement/inscene-placed-networkobjects.md)
 - [NetworkBehaviour](networkbehaviour.md)
 - [NetworkVariable](../../basics/networkvariable.md)

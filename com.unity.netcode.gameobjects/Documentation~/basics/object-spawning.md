@@ -30,7 +30,7 @@ When using a [server authoritative networking model](../terms-concepts/authority
 
 To spawn a network prefab, you must first create an instance of the network prefab and then invoke the spawn method on the NetworkObject component of the instance you created. In most cases, you will want to keep the NetworkObject component attached to the root GameObject of the network prefab.
 
-See [NetworkObject ownership](../advanced-topics/networkobject-ownership.md) for more information.
+See [NetworkObject ownership](../components/core/networkobject-ownership.md) for more information.
 
 The following is a basic example of how to spawn a network prefab instance:
 

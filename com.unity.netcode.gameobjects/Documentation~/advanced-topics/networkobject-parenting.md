@@ -35,14 +35,21 @@ If you aren't completely familiar with transform parenting in Unity, then it's h
 virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 ```
 
-> [!NOTE] Multi-generation children and scale
+> [!NOTE]
+> Multi-generation children and scale
 > If you are dealing with more than one generation of nested children where each parent and child have scale values other than `Vector3.one`, then mixing the `WorldPositionStays` value when parenting and removing a parent will impact how the final scale is calculated! If you want to keep the same values before parenting when removing a parent from a child, then you need to use the same `WorldPositionStays` value used when the child was parented.
 
 ### Who can parent NetworkObjects
 
-By default, only the [authority](../terms-concepts/authority.md) of an object can change the parenting of the object. This means in a client-server game, only the server (or host) can control NetworkObject component parenting. In a distributed authority game the owner of the object can always parent the object.
+#### Under a spawned NetworkObject
 
-To allow the [owner](../terms-concepts/ownership.md) to parent their owned object in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
+The [owner](../terms-concepts/ownership.md) of a NetworkObject can always parent that NetworkObject under any other spawned NetworkObject. This works regardless of who owns the other NetworkObject.
+
+#### Under other GameObjects
+
+By default, only the [authority](../terms-concepts/authority.md) of a NetworkObject can parent a NetworkObject under a non-networked object. This means in a client-server game, only the server (or host) can control NetworkObject component parenting. In a distributed authority game the [owner](../terms-concepts/ownership.md) of the object can always parent the object.
+
+To allow the owner to parent their owned object in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
 
 ![image](../images/networkobject/allowOwnerToParent.png)
 

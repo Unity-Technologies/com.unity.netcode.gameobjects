@@ -54,17 +54,17 @@ You can use this property to conditionally execute logic that should only run on
 
 ### Session owner objects
 
-For any game systems that should always be [owned](./ownership.md) by the session owner, you can set the object to have the `OwnershipStatus.SessionOwner` [ownership permission](../advanced-topics/networkobject-ownership.md). This will ensure the object always belongs to the current session owner. If that session owner disconnects or leaves the game, the ownership of that object will be automatically moved to the newly selected session owner.
+For any game systems that should always be [owned](./ownership.md) by the session owner, you can set the object to have the `OwnershipStatus.SessionOwner` [ownership permission](../components/core/networkobject-ownership.md#ownership-permissions-settings). This will ensure the object always belongs to the current session owner. If that session owner disconnects or leaves the game, the ownership of that object will be automatically moved to the newly selected session owner.
 
 ## Object distribution
 
-In a distributed authority setting, authority over NetworkObjects isn't bound to a single server, but distributed across clients depending on a NetworkObject's [ownership permission settings](../advanced-topics/networkobject-ownership.md#ownership-permissions-settings). NetworkObjects with the `OwnershipStatus.Distributable` permission set are automatically distributed amongst clients as clients connect and disconnect.
+In a distributed authority setting, authority over the game simulation isn't bound to a single server, but distributed across clients based on setting [ownership permission settings](../components/core/networkobject-ownership.md#ownership-permissions-settings). Any object with the `OwnershipStatus.Distributable` permission set are automatically distributed amongst clients as clients connect and disconnect.
 
-For example, when a client starts a distributed authority session it spawns its player with `OwnershipStatus.None` so that no other client can take ownership. , Then the client spawns some NetworkObjects for the game that are set with `OwnershipStatus.Distributable`. At this point, Client-A has full authority over the `OwnershipStatus.Distributable` spawned objects and its player object.
+For example, when a client starts a distributed authority session it spawns its player with `OwnershipStatus.None` so that no other client can take ownership. , Then the client spawns some objects for the game that are set with `OwnershipStatus.Distributable`. At this point, Client-A has full authority over the `OwnershipStatus.Distributable` spawned objects and its player object.
 
 ![Distributed authority start](../images/distributed-authority-start.jpg)
 
-When another player joins, as in the following diagram, authority over distributable objects is split between both clients. Distributing the NetworkObjects in this way reduces the processing and bandwidth load for both clients. The same distribution happens when a player leaves, either gracefully or unexpectedly. The ownership and last known state of the subset of objects owned by the leaving player is transferred over to the remaining connected clients with no interruption in gameplay.
+When another player joins, as in the following diagram, authority over distributable objects is split between both clients. Distributing the objects in this way reduces the processing and bandwidth load for both clients. The same distribution happens when a player leaves, either gracefully or unexpectedly. The ownership and last known state of the subset of objects owned by the leaving player is transferred over to the remaining connected clients with no interruption in gameplay.
 
 ![Distributed authority new client](../images/distributed-authority-new-client.jpg)
 
