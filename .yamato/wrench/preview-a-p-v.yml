@@ -5,23 +5,23 @@
 all_preview_apv_jobs:
   name: All Preview APV Jobs
   dependencies:
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_macos
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_ubuntu
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_windows
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_macos
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_ubuntu
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_windows
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_macos13
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_ubuntu1804
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_2022_3_-_win10
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_macos13
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_ubuntu2204
+  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_win10
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (MacOS).
-preview_apv_-_2022_3_-_macos:
-  name: Preview APV - 2022.3 - macos
+preview_apv_-_2022_3_-_macos13:
+  name: Preview APV - 2022.3 - macos13
   agent:
-    image: package-ci/macos-13:default
+    image: package-ci/macos-13:v4
     type: Unity::VM::osx
-    flavor: b1.xlarge
+    flavor: b1.large
   commands:
   - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-0_3978eda62a03e3dbc469ab77590d20f8832032d8e0b586550597b7f590baefec.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
@@ -68,16 +68,16 @@ preview_apv_-_2022_3_-_macos:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Ubuntu).
-preview_apv_-_2022_3_-_ubuntu:
-  name: Preview APV - 2022.3 - ubuntu
+preview_apv_-_2022_3_-_ubuntu1804:
+  name: Preview APV - 2022.3 - ubuntu1804
   agent:
-    image: package-ci/ubuntu-20.04:default
+    image: package-ci/ubuntu-18.04:v4
     type: Unity::VM
     flavor: b1.large
   commands:
@@ -126,18 +126,18 @@ preview_apv_-_2022_3_-_ubuntu:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Windows).
-preview_apv_-_2022_3_-_windows:
-  name: Preview APV - 2022.3 - windows
+preview_apv_-_2022_3_-_win10:
+  name: Preview APV - 2022.3 - win10
   agent:
-    image: package-ci/win10:default
+    image: package-ci/win10:v4
     type: Unity::VM
-    flavor: b1.large
+    flavor: b1.xlarge
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
   - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-0_3978eda62a03e3dbc469ab77590d20f8832032d8e0b586550597b7f590baefec.zip -o wrench-localapv.zip
@@ -185,18 +185,18 @@ preview_apv_-_2022_3_-_windows:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (MacOS).
-preview_apv_-_6000_0_-_macos:
-  name: Preview APV - 6000.0 - macos
+preview_apv_-_6000_0_-_macos13:
+  name: Preview APV - 6000.0 - macos13
   agent:
-    image: package-ci/macos-13:default
+    image: package-ci/macos-13:v4
     type: Unity::VM::osx
-    flavor: b1.xlarge
+    flavor: b1.large
   commands:
   - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-0_3978eda62a03e3dbc469ab77590d20f8832032d8e0b586550597b7f590baefec.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
@@ -243,14 +243,14 @@ preview_apv_-_6000_0_-_macos:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Ubuntu).
-preview_apv_-_6000_0_-_ubuntu:
-  name: Preview APV - 6000.0 - ubuntu
+preview_apv_-_6000_0_-_ubuntu2204:
+  name: Preview APV - 6000.0 - ubuntu2204
   agent:
     image: package-ci/ubuntu-22.04:v4
     type: Unity::VM
@@ -301,18 +301,18 @@ preview_apv_-_6000_0_-_ubuntu:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Windows).
-preview_apv_-_6000_0_-_windows:
-  name: Preview APV - 6000.0 - windows
+preview_apv_-_6000_0_-_win10:
+  name: Preview APV - 6000.0 - win10
   agent:
-    image: package-ci/win10:default
+    image: package-ci/win10:v4
     type: Unity::VM
-    flavor: b1.large
+    flavor: b1.xlarge
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
   - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-0_3978eda62a03e3dbc469ab77590d20f8832032d8e0b586550597b7f590baefec.zip -o wrench-localapv.zip
@@ -360,8 +360,8 @@ preview_apv_-_6000_0_-_windows:
     UNITY_LICENSING_SERVER_DELETE_NUL: 0
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
-    UPMPVP_CONTEXT_WRENCH: 1.4.8.0
+    UPMPVP_CONTEXT_WRENCH: 2.2.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 1.4.8.0
+    Wrench: 2.2.0.0
 
