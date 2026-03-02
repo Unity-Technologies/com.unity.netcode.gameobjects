@@ -1,5 +1,4 @@
 #if COM_UNITY_MODULES_PHYSICS
-using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
