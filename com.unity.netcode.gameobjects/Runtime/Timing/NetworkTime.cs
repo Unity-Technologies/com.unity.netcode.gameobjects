@@ -9,6 +9,9 @@ namespace Unity.Netcode
     /// Time is stored as a combination of amount of passed ticks + a duration offset.
     /// This struct is meant to replace the Unity <see cref="Time"/> API for multiplayer gameplay.
     /// </summary>
+#if NETCODE_UAC1001_CHECKS
+    [Serializable]
+#endif    
     public struct NetworkTime
     {
         private double m_TimeSec;

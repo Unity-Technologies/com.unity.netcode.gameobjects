@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private class NetworkVariableNameComponent : NetworkBehaviour
         {
-            internal NetworkList<ulong> NetworkVarList = new NetworkList<ulong>();
+            public NetworkList<ulong> NetworkVarList = new NetworkList<ulong>();
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class OwnerModifiedObject : NetworkBehaviour, INetworkUpdateSystem
     {
-        internal NetworkList<int> MyNetworkList;
+        public NetworkList<int> MyNetworkList;
 
         internal static int Updates = 0;
 

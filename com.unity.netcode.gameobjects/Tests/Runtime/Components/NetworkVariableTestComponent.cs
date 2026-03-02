@@ -208,31 +208,31 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariable<ManagedNetworkSerializableType> m_NetworkVariableManaged = new NetworkVariable<ManagedNetworkSerializableType>();
 
 
-        internal NetworkVariableHelper<bool> Bool_Var;
-        internal NetworkVariableHelper<byte> Byte_Var;
-        internal NetworkVariableHelper<Color> Color_Var;
-        internal NetworkVariableHelper<Color32> Color32_Var;
-        internal NetworkVariableHelper<double> Double_Var;
-        internal NetworkVariableHelper<float> Float_Var;
-        internal NetworkVariableHelper<int> Int_Var;
-        internal NetworkVariableHelper<long> Long_Var;
-        internal NetworkVariableHelper<sbyte> Sbyte_Var;
-        internal NetworkVariableHelper<Quaternion> Quaternion_Var;
-        internal NetworkVariableHelper<Pose> Pose_Var;
-        internal NetworkVariableHelper<short> Short_Var;
-        internal NetworkVariableHelper<Vector4> Vector4_Var;
-        internal NetworkVariableHelper<Vector3> Vector3_Var;
-        internal NetworkVariableHelper<Vector2> Vector2_Var;
-        internal NetworkVariableHelper<Ray> Ray_Var;
-        internal NetworkVariableHelper<ulong> Ulong_Var;
-        internal NetworkVariableHelper<uint> Uint_Var;
-        internal NetworkVariableHelper<ushort> Ushort_Var;
-        internal NetworkVariableHelper<FixedString32Bytes> FixedString32_Var;
-        internal NetworkVariableHelper<FixedString64Bytes> FixedString64_Var;
-        internal NetworkVariableHelper<FixedString128Bytes> FixedString128_Var;
-        internal NetworkVariableHelper<FixedString512Bytes> FixedString512_Var;
-        internal NetworkVariableHelper<FixedString4096Bytes> FixedString4096_Var;
-        internal NetworkVariableHelper<ManagedNetworkSerializableType> Managed_Var;
+        public NetworkVariableHelper<bool> Bool_Var;
+        public NetworkVariableHelper<byte> Byte_Var;
+        public NetworkVariableHelper<Color> Color_Var;
+        public NetworkVariableHelper<Color32> Color32_Var;
+        public NetworkVariableHelper<double> Double_Var;
+        public NetworkVariableHelper<float> Float_Var;
+        public NetworkVariableHelper<int> Int_Var;
+        public NetworkVariableHelper<long> Long_Var;
+        public NetworkVariableHelper<sbyte> Sbyte_Var;
+        public NetworkVariableHelper<Quaternion> Quaternion_Var;
+        public NetworkVariableHelper<Pose> Pose_Var;
+        public NetworkVariableHelper<short> Short_Var;
+        public NetworkVariableHelper<Vector4> Vector4_Var;
+        public NetworkVariableHelper<Vector3> Vector3_Var;
+        public NetworkVariableHelper<Vector2> Vector2_Var;
+        public NetworkVariableHelper<Ray> Ray_Var;
+        public NetworkVariableHelper<ulong> Ulong_Var;
+        public NetworkVariableHelper<uint> Uint_Var;
+        public NetworkVariableHelper<ushort> Ushort_Var;
+        public NetworkVariableHelper<FixedString32Bytes> FixedString32_Var;
+        public NetworkVariableHelper<FixedString64Bytes> FixedString64_Var;
+        public NetworkVariableHelper<FixedString128Bytes> FixedString128_Var;
+        public NetworkVariableHelper<FixedString512Bytes> FixedString512_Var;
+        public NetworkVariableHelper<FixedString4096Bytes> FixedString4096_Var;
+        public NetworkVariableHelper<ManagedNetworkSerializableType> Managed_Var;
 
 
         public bool EnableTesting;

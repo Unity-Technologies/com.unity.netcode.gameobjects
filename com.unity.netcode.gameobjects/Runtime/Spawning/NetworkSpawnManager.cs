@@ -11,6 +11,9 @@ namespace Unity.Netcode
     /// <summary>
     /// Class that handles object spawning
     /// </summary>
+#if NETCODE_UAC1001_CHECKS
+    [Serializable]
+#endif
     public class NetworkSpawnManager
     {
         // Stores the objects that need to be shown at end-of-frame

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -7,6 +8,9 @@ namespace Unity.Netcode.Components
     /// <summary>
     /// Used to synchromnize delta position when half float precision is enabled
     /// </summary>
+#if NETCODE_UAC1001_CHECKS
+    [Serializable]
+#endif
     public struct NetworkDeltaPosition : INetworkSerializable
     {
         internal const float MaxDeltaBeforeAdjustment = 64f;

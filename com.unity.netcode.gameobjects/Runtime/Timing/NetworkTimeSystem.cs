@@ -10,6 +10,9 @@ namespace Unity.Netcode
     /// as last received from the server plus an offset based on the current RTT - in other words, it is a best-guess
     /// effort at predicting what the server tick will be when a given network action is processed on the server.
     /// </summary>
+#if NETCODE_UAC1001_CHECKS
+    [Serializable]
+#endif
     public class NetworkTimeSystem
     {
         /// <remarks>
