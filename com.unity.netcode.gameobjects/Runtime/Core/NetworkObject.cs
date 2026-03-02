@@ -2816,11 +2816,13 @@ namespace Unity.Netcode
         /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         /// Convert ChildNetworkBehaviours to a
         /// table so removing won't impact things.
+        /// (Done)
+        ///
+        /// Find a place to do this initialization
+        /// somewhere else so we don't have a 
+        /// megalithic getter.
         /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         /// </summary>
-
-
-
         internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours
         {
             get
