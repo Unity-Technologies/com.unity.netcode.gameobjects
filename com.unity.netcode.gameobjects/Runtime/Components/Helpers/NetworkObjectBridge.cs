@@ -76,15 +76,24 @@ namespace Unity.Netcode
 
         public override bool Initialize(string defaultWorldName)
         {
+            var networkManager = NetworkManager.Singleton;
             Instance = this;
             AutoConnectPort = Port;
-            if (NetworkManager.Singleton.IsServer)
+            if (networkManager.IsServer)
             {
                 CreateSingleWorldHost("ClientAndServerWorld");
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    UnityEngine.Debug.Log("Creating world: ClientAndServerWorld");
+                }
             }
             else
             {
                 CreateClientWorld("ClientWorld");
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    UnityEngine.Debug.Log("Creating world: ClientWorld");
+                }
             }
             var initialized = base.Initialize(defaultWorldName);
             OnInitialized?.Invoke(initialized);

@@ -1323,7 +1323,11 @@ namespace Unity.Netcode
             {
                 yield return null;
             }
-
+            if (LogLevel <= LogLevel.Developer)
+            {
+                Debug.Log("All hybrid prefabs have been registered!");
+                Debug.Log("Finalizing NetworkManager start...");
+            }
             switch (startType)
             {
                 case StartType.Server:
@@ -1395,7 +1399,10 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-
+                if (LogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log("Creating world: Default world");
+                }
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
                 return true;
@@ -1470,6 +1477,10 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                if (LogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log("Creating world: Default world");
+                }
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
                 // TODO-UNIFIED: Need a way to signal everything completed.
@@ -1543,6 +1554,10 @@ namespace Unity.Netcode
                     m_ShuttingDown = true;
                     ShutdownInternal();
                     return false;
+                }
+                if (LogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log("Creating world: Default world");
                 }
                 DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
