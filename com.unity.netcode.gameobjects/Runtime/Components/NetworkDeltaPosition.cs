@@ -1,4 +1,6 @@
+#if NETCODE_UAC1001_CHECKS
 using System;
+#endif
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
