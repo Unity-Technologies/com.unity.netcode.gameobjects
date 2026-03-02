@@ -290,8 +290,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private class MyGameScript : MonoBehaviour, INetworkUpdateSystem
         {
-            public NetworkUpdateCallbacks UpdateCallbacks;
-            public MonoBehaviourCallbacks BehaviourCallbacks;
+            internal NetworkUpdateCallbacks UpdateCallbacks;
+            internal MonoBehaviourCallbacks BehaviourCallbacks;
 
             private void Awake()
             {

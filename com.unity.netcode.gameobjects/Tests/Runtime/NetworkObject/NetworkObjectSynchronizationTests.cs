@@ -399,7 +399,7 @@ namespace Unity.Netcode.RuntimeTests
         private const uint k_MaxDataBlocks = 64;
 
         // Add various types of NetworkVariables
-        public NetworkList<ulong> NetworkVariableData1;
+        internal NetworkList<ulong> NetworkVariableData1;
         public NetworkVariable<int> NetworkVariableData2;
         public NetworkVariable<long> NetworkVariableData3;
         public NetworkVariable<byte> NetworkVariableData4;
@@ -665,7 +665,7 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class NetworkBehaviourOnSynchronizeComponent : NetworkBehaviour
     {
-        public SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
+        internal SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
 
         internal struct SomeCustomSerializationData : INetworkSerializable
         {

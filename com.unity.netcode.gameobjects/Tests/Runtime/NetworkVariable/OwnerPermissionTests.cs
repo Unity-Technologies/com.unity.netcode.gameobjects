@@ -19,9 +19,9 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<int> MyNetworkVariableServer;
 
         // a client-owned NetworkVariable
-        public NetworkList<int> MyNetworkListOwner;
+        internal NetworkList<int> MyNetworkListOwner;
         // a server-owned NetworkVariable
-        public NetworkList<int> MyNetworkListServer;
+        internal NetworkList<int> MyNetworkListServer;
 
         // verifies two lists are identical
         public static void CheckLists(NetworkList<int> listA, NetworkList<int> listB)

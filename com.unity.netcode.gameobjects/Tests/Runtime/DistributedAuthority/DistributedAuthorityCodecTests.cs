@@ -74,7 +74,7 @@ namespace Unity.Netcode.RuntimeTests
 
         internal class TestNetworkComponent : NetworkBehaviour
         {
-            public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
+            internal NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
             public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
 
             [Rpc(SendTo.Authority)]
