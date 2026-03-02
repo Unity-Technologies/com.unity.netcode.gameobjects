@@ -25,6 +25,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Interface for network value containers
     /// </summary>
+    [Serializable]
     public abstract class NetworkVariableBase : IDisposable
     {
         [SerializeField]
