@@ -12,7 +12,7 @@ namespace Unity.Netcode
     /// <typeparam name="T">The type of interpolated value</typeparam>
 #if NETCODE_UAC1001_CHECKS
     [Serializable]
-#endif    
+#endif
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so

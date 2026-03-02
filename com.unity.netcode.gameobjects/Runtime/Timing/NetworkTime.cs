@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// </summary>
 #if NETCODE_UAC1001_CHECKS
     [Serializable]
-#endif    
+#endif
     public struct NetworkTime
     {
         private double m_TimeSec;
