@@ -7,6 +7,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Defines update timing constraints for NetworkVariables
     /// </summary>
+    [Serializable]
     public struct NetworkVariableUpdateTraits
     {
         /// <summary>
