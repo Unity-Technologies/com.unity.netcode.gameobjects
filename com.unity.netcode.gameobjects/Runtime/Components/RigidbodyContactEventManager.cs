@@ -12,9 +12,6 @@ namespace Unity.Netcode.Components
     /// Information a <see cref="Rigidbody"/> returns to <see cref="RigidbodyContactEventManager"/> via <see cref="IContactEventHandlerWithInfo.GetContactEventHandlerInfo"/> <br />
     /// if the <see cref="Rigidbody"/> registers itself with <see cref="IContactEventHandlerWithInfo"/> as opposed to <see cref="IContactEventHandler"/>.
     /// </summary>
-#if NETCODE_UAC1001_CHECKS
-    [Serializable]
-#endif
     public struct ContactEventHandlerInfo
     {
         /// <summary>
