@@ -8,6 +8,7 @@ using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
+using Unity.Netcode.Unified;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -1212,6 +1213,11 @@ namespace Unity.Netcode
 
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
+            
+#if UNIFIED_NETCODE
+            NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+#endif
+            
             MetricsManager.Initialize(this);
 
             {

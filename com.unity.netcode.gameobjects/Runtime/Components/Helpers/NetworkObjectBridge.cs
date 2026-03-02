@@ -99,6 +99,18 @@ namespace Unity.Netcode
             OnInitialized?.Invoke(initialized);
             return initialized;
         }
+        
+        public static void StopClient()
+        {
+            ClientWorld.Dispose();
+            ClientWorlds.Remove(ClientWorld);
+        }
+        
+        public static void StopServer()
+        {
+            ServerWorld.Dispose();
+            ServerWorlds.Remove(ServerWorld);
+        }
 
         ~UnifiedBootStrap()
         {
