@@ -348,6 +348,11 @@ namespace Unity.Netcode
                         {
                             NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
                         }
+
+                        if (!IsServer)
+                        {
+                            SpawnManager?.CheckGhostsPendingNetworkObjectId();
+                        }
 #endif
 
                         UpdateTopology();
