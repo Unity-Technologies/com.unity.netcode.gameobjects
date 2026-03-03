@@ -58,7 +58,7 @@ namespace Unity.Netcode.Components
                 // client has signaled that it has synchronized (or has been sent the synchronization data) we finalize the in-game connection state (or something along those lines).
                 if (!m_NewConnections.ContainsKey(networkId.Value))
                 {
-                    var delayTime = isServer ? 0.5f : 1.0f;
+                    var delayTime = isServer ? 0.05f : 0.1f;
                     var newConnection = new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value, ConnectedTime = UnityEngine.Time.realtimeSinceStartup + delayTime};
                     m_NewConnections.Add(networkId.Value, newConnection);
                 }
