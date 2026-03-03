@@ -34,46 +34,13 @@ namespace Unity.Netcode
 
         internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
 
-        internal readonly List<NetworkObject> GhostsPendingNetworkObjectId = new List<NetworkObject>();
-
-        internal void CheckGhostsPendingNetworkObjectId()
-        {
-            if (GhostsPendingNetworkObjectId.Count == 0)
-            {
-                return;
-            }
-
-            for(int i = GhostsPendingNetworkObjectId.Count - 1; i >= 0; i--)
-            {
-                var networkObject = GhostsPendingNetworkObjectId[i];
-                if (networkObject.IsGhostNetworkObjectIdValid())
-                {
-                    GhostsPendingNetworkObjectId.Remove(networkObject);
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} is valid. Re-registering.");
-                    }
-                    networkObject.RegisterGhostBridge();
-                }
-            }
-        }
-
         internal void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
         {
-            if (!networkObject.IsGhostNetworkObjectIdValid())
-            {
-                GhostsPendingNetworkObjectId.Add(networkObject);
-                if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} ({networkObjectId}) seems invalid. Adding to the pending NetworkObjectId list.");
-                }
-                return;
-            }
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
             }
-            if(GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
+            if (GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
             {
                 // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
                 // For now, move any pending object into the DDOL.
@@ -2041,8 +2008,6 @@ namespace Unity.Netcode
         internal void Shutdown()
         {
 #if UNIFIED_NETCODE
-            GhostsPendingNetworkObjectId.Clear();
-            GhostsPendingNetworkObjectId.Clear();
             GhostsPendingSpawn.Clear();
             GhostsPendingSynchronization.Clear();
 #endif
