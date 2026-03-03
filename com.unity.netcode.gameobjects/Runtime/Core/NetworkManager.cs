@@ -1392,7 +1392,17 @@ namespace Unity.Netcode
             }
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
-            Initialize(true);
+            try
+            {
+                Initialize(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
+                return false;
+            }
 
 #if UNIFIED_NETCODE
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
@@ -1440,11 +1450,12 @@ namespace Unity.Netcode
 
                 ConnectionManager.TransportFailureEventHandler(true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                ConnectionManager.LocalClient.SetRole(false, false);
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
                 IsListening = false;
-                throw;
             }
             return IsListening;
         }
@@ -1470,7 +1481,16 @@ namespace Unity.Netcode
                 return false;
             }
 
-            Initialize(false);
+            try
+            {
+                Initialize(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                ShutdownInternal();
+                return false;
+            }
 
 #if UNIFIED_NETCODE
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
@@ -1519,7 +1539,7 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                ConnectionManager.LocalClient.SetRole(false, false);
+                ShutdownInternal();
                 IsListening = false;
             }
 
@@ -1548,7 +1568,17 @@ namespace Unity.Netcode
                 return false;
             }
 
-            Initialize(true);
+            try
+            {
+                Initialize(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
+                return false;
+            }
 
 #if UNIFIED_NETCODE
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
@@ -1598,7 +1628,8 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                ConnectionManager.LocalClient.SetRole(false, false);
+                // Always shutdown to assure everything is cleaned up
+                ShutdownInternal();
                 IsListening = false;
             }
 
