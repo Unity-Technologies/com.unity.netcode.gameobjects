@@ -341,15 +341,6 @@ namespace Unity.Netcode
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
-#if UNIFIED_NETCODE
-                        // Temporary work around for handling the registration
-                        // of hybrid spawned objects.
-                        if (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
-                        {
-                            NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
-                        }
-#endif
-
                         UpdateTopology();
 
                         // Handle processing any new connections or transport events
@@ -1319,14 +1310,22 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
         private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
         {
+            DefaultWorldInitialization.Initialize("Default World", false);
+            var waitTime = new WaitForSeconds(0.016f);
+            // This should not be needed at this point, but here in the event something changes.
             while (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
             {
-                yield return null;
+                if (LogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Ghosts are still pending registration!");
+                }
+                NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
+                yield return waitTime;
             }
             if (LogLevel <= LogLevel.Developer)
             {
-                Debug.Log("All hybrid prefabs have been registered!");
-                Debug.Log("Finalizing NetworkManager start...");
+                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] All hybrid prefabs have been registered!");
+                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Finalizing NetworkManager start...");
             }
             switch (startType)
             {
@@ -1413,7 +1412,6 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
                 return true;
             }
@@ -1501,7 +1499,6 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
                 // TODO-UNIFIED: Need a way to signal everything completed.
                 return true;
@@ -1589,7 +1586,6 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                DefaultWorldInitialization.Initialize("Default World", false);
                 StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
                 // TODO-UNIFIED: Need a way to signal everything completed.
                 return true;
