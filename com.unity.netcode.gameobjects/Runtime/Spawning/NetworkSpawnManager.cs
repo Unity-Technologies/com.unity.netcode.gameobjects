@@ -40,7 +40,13 @@ namespace Unity.Netcode
             {
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
             }
-            GhostsPendingSpawn.TryAdd(networkObjectId, networkObject);
+            if(GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
+            {
+                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+                // For now, move any pending object into the DDOL.                
+                UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+            }
+
             NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
             if (GhostsArePendingSynchronization && GhostsPendingSynchronization.ContainsKey(networkObjectId))
             {
@@ -95,6 +101,9 @@ namespace Unity.Netcode
             //    networkObject.InternalInSceneNetworkObjectsSpawned();
             //}
 
+            // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+            // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
             if (removeUponSpawn)
             {
                 GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
