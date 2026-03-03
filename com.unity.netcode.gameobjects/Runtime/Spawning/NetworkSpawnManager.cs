@@ -34,16 +34,59 @@ namespace Unity.Netcode
 
         internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
 
-        public void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
+        internal readonly List<NetworkObject> GhostsPendingNetworkObjectId = new List<NetworkObject>();
+
+        internal void CheckGhostsPendingNetworkObjectId()
         {
+            if (GhostsPendingNetworkObjectId.Count == 0)
+            {
+                return;
+            }
+
+            for(int i = GhostsPendingNetworkObjectId.Count - 1; i >= 0; i--)
+            {
+                var networkObject = GhostsPendingNetworkObjectId[i];
+                if (networkObject.IsGhostNetworkObjectIdValid())
+                {
+                    GhostsPendingNetworkObjectId.Remove(networkObject);
+                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    {
+                        Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} is valid. Re-registering.");
+                    }
+                    networkObject.RegisterGhostBridge();
+                }
+            }
+        }
+
+        internal void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
+        {
+            if (!networkObject.IsGhostNetworkObjectIdValid())
+            {
+                GhostsPendingNetworkObjectId.Add(networkObject);
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} ({networkObjectId}) seems invalid. Adding to the pending NetworkObjectId list.");
+                }
+                return;
+            }
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
             }
-            GhostsPendingSpawn.TryAdd(networkObjectId, networkObject);
+            if(GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
+            {
+                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+                // For now, move any pending object into the DDOL.
+                UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+            }
+
             NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
             if (GhostsArePendingSynchronization && GhostsPendingSynchronization.ContainsKey(networkObjectId))
             {
+                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+                // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+
                 // When the object is spawned, it will invoke GetGhostNetworkObjectForSpawn below which removes the entry from GhostsPendingSpawn
                 ProcessGhostPendingSynchronization(networkObjectId);
             }
@@ -58,6 +101,9 @@ namespace Unity.Netcode
             }
             var networkObject = GhostsPendingSpawn[networkObjectId];
             GhostsPendingSpawn.Remove(networkObjectId);
+            // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+            // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
             return networkObject;
         }
 
@@ -94,7 +140,6 @@ namespace Unity.Netcode
             //{
             //    networkObject.InternalInSceneNetworkObjectsSpawned();
             //}
-
             if (removeUponSpawn)
             {
                 GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
@@ -2011,6 +2056,12 @@ namespace Unity.Netcode
 
         internal void Shutdown()
         {
+#if UNIFIED_NETCODE
+            GhostsPendingNetworkObjectId.Clear();
+            GhostsPendingNetworkObjectId.Clear();
+            GhostsPendingSpawn.Clear();
+            GhostsPendingSynchronization.Clear();
+#endif
             NetworkObjectsToSynchronizeSceneChanges.Clear();
             CleanUpDisposedObjects.Clear();
         }

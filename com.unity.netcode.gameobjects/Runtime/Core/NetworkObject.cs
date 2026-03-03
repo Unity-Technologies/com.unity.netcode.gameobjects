@@ -3854,13 +3854,27 @@ namespace Unity.Netcode
             }
         }
 
-        private void RegisterGhostBridge()
+        internal bool IsGhostNetworkObjectIdValid()
+        {
+            if (NetworkObjectBridge == null)
+            {
+                return false;
+            }
+            // TODO-UNIFIED: Sometimes the GhostField can be latent. Need a way to know the GhostField has been set.
+            return NetworkObjectBridge.NetworkObjectId.Value < 1000000;
+        }
+
+        internal void RegisterGhostBridge()
         {
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
             }
-            NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
+
+            if (!NetworkManager.IsServer)
+            {
+                NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
+            }
         }
 
         private void OnNetworkObjectIdChanged(ulong networkObjectId)
