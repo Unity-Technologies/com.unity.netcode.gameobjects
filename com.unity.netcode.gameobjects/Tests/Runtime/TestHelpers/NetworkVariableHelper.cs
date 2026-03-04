@@ -15,6 +15,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T">The type of value managed by the NetworkVariable</typeparam>
+    [Serializable]
     public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
@@ -89,6 +90,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// The number of times a specific NetworkVariable instance had its value changed (i.e. !Equal)
     /// Note: This could be expanded for future tests focuses around NetworkVariables
     /// </summary>
+    [Serializable]
     public class NetworkVariableBaseHelper
     {
         private static Dictionary<NetworkVariableBaseHelper, NetworkVariableBase> s_Instances;
