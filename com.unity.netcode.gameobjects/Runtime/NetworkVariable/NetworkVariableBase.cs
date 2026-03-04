@@ -7,6 +7,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Defines update timing constraints for NetworkVariables
     /// </summary>
+    [Serializable]
     public struct NetworkVariableUpdateTraits
     {
         /// <summary>
@@ -25,6 +26,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Interface for network value containers
     /// </summary>
+    [Serializable]
     public abstract class NetworkVariableBase : IDisposable
     {
         [SerializeField]
