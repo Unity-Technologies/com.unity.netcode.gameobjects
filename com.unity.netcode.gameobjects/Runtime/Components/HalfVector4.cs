@@ -1,6 +1,4 @@
-#if NETCODE_UAC1001_CHECKS
 using System;
-#endif
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -15,9 +13,7 @@ namespace Unity.Netcode.Components
     /// individual axis and the 16 bits of the half float are stored as <see cref="ushort"/> values since C# does not have
     /// a half float type.
     /// </remarks>
-#if NETCODE_UAC1001_CHECKS
     [Serializable]
-#endif
     public struct HalfVector4 : INetworkSerializable
     {
         internal const int Length = 4;

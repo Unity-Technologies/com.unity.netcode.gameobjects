@@ -10,9 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
     [GenerateSerializationForGenericParameter(0)]
-#if NETCODE_UAC1001_CHECKS
     [Serializable]
-#endif
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
