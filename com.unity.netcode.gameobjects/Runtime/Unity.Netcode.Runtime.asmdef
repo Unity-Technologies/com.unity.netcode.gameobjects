@@ -99,6 +99,16 @@
             "name": "com.unity.multiplayer.playmode",
             "expression": "0.1.0",
             "define": "UNITY_MULTIPLAYER_PLAYMODE"
+        },
+        {
+            "name": "Unity",
+            "expression": "[6000.4.0b5,6000.5.0a1)",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.5.0a7",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
         }
     ],
     "noEngineReferences": false

@@ -1,5 +1,6 @@
 #if UNIFIED_NETCODE
 using System;
+using Unity.Entities;
 using Unity.NetCode;
 
 namespace Unity.Netcode
@@ -14,52 +15,12 @@ namespace Unity.Netcode
     public partial class NetworkObjectBridge : GhostBehaviour
     {
         public Action<ulong> NetworkObjectIdChanged;
-        
+
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
 
         public void SetNetworkObjectId(ulong value)
         {
             NetworkObjectId.Value = value;
-        }
-        public override void Awake()
-        {
-            if (UnifiedBootStrap.Instance != null)
-            {
-                Initialize(true);
-            }
-            else
-            {
-                UnifiedBootStrap.OnInitialized += Initialize;
-            }
-        }
-
-        private void Initialize(bool initialized)
-        {
-            UnifiedBootStrap.OnInitialized -= Initialize;
-            if (gameObject != null)
-            {
-                base.Awake();
-                NetworkObjectId.ValueChanged += OnNetworkObjectIdChanged;
-            }
-        }
-
-        private void OnNetworkObjectIdChanged(ulong value)
-        {
-            NetworkObjectIdChanged?.Invoke(value);
-        }
-
-        internal void OnDespawn(bool shouldDestroy)
-        {
-            if (shouldDestroy)
-            {
-                UnifiedBootStrap.OnInitialized -= Initialize;
-            }
-        }
-
-        public override void OnDestroy()
-        {
-            UnifiedBootStrap.OnInitialized -= Initialize;
-            base.OnDestroy();
         }
     }
 
@@ -71,33 +32,53 @@ namespace Unity.Netcode
     internal class UnifiedBootStrap : ClientServerBootstrap
     {
         public static UnifiedBootStrap Instance { get; private set; }
-        public static Action<bool> OnInitialized;
+        public static Action OnInitialized;
         public static ushort Port = 7979;
+
+        public static World World { get; private set; }
 
         public override bool Initialize(string defaultWorldName)
         {
             var networkManager = NetworkManager.Singleton;
             Instance = this;
             AutoConnectPort = Port;
-            if (networkManager.IsServer)
+            if (base.Initialize(defaultWorldName))
             {
-                CreateSingleWorldHost("ClientAndServerWorld");
+                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] Auto-bootstrap is enabled!!! This will break the POC!");
+                return true;
+            }
+
+            World = networkManager.IsServer ? CreateSingleWorldHost("ClientAndServerWorld") : CreateClientWorld("ClientWorld");
+
+            if (World == null)
+            {
+                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World is null!");
+                return false;
+            }
+
+            if (!World.IsCreated)
+            {
+                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World was not created!");
+                return false;
+            }
+
+            if (networkManager.LogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Created world: {World.Name}");
+            }
+
+            if (networkManager.NetworkConfig.Prefabs.HasPendingGhostPrefabs)
+            {
                 if (networkManager.LogLevel <= LogLevel.Developer)
                 {
-                    UnityEngine.Debug.Log("Creating world: ClientAndServerWorld");
+                    NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Registering hybrid prefabs...");
                 }
+                networkManager.NetworkConfig.Prefabs.RegisterGhostPrefabs(networkManager);
             }
-            else
-            {
-                CreateClientWorld("ClientWorld");
-                if (networkManager.LogLevel <= LogLevel.Developer)
-                {
-                    UnityEngine.Debug.Log("Creating world: ClientWorld");
-                }
-            }
-            var initialized = base.Initialize(defaultWorldName);
-            OnInitialized?.Invoke(initialized);
-            return initialized;
+
+            OnInitialized?.Invoke();
+
+            return true;
         }
         
         public static void StopClient()

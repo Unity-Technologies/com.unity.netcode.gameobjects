@@ -34,46 +34,13 @@ namespace Unity.Netcode
 
         internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
 
-        internal readonly List<NetworkObject> GhostsPendingNetworkObjectId = new List<NetworkObject>();
-
-        internal void CheckGhostsPendingNetworkObjectId()
-        {
-            if (GhostsPendingNetworkObjectId.Count == 0)
-            {
-                return;
-            }
-
-            for(int i = GhostsPendingNetworkObjectId.Count - 1; i >= 0; i--)
-            {
-                var networkObject = GhostsPendingNetworkObjectId[i];
-                if (networkObject.IsGhostNetworkObjectIdValid())
-                {
-                    GhostsPendingNetworkObjectId.Remove(networkObject);
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} is valid. Re-registering.");
-                    }
-                    networkObject.RegisterGhostBridge();
-                }
-            }
-        }
-
         internal void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
         {
-            if (!networkObject.IsGhostNetworkObjectIdValid())
-            {
-                GhostsPendingNetworkObjectId.Add(networkObject);
-                if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] {networkObject.name}'s Ghost {nameof(NetworkObject.NetworkObjectId)} ({networkObjectId}) seems invalid. Adding to the pending NetworkObjectId list.");
-                }
-                return;
-            }
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
             }
-            if(GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
+            if (GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
             {
                 // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
                 // For now, move any pending object into the DDOL.
@@ -1556,11 +1523,7 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
             foreach (var sobj in networkObjects)
             {
                 sobj.IsSpawned = false;
@@ -1591,11 +1554,7 @@ namespace Unity.Netcode
 
         internal void DespawnAndDestroyNetworkObjects()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
 
             foreach (var networkObject in networkObjects)
             {
@@ -1650,11 +1609,7 @@ namespace Unity.Netcode
 
         internal void DestroySceneObjects()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -1685,11 +1640,7 @@ namespace Unity.Netcode
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
             var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -1913,7 +1864,6 @@ namespace Unity.Netcode
             // Let unified netcode handle destroying
             if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
             {
-                networkObject.NetworkObjectBridge.OnDespawn(destroyGameObject);
                 // exit early
                 return;
             }
@@ -2057,8 +2007,6 @@ namespace Unity.Netcode
         internal void Shutdown()
         {
 #if UNIFIED_NETCODE
-            GhostsPendingNetworkObjectId.Clear();
-            GhostsPendingNetworkObjectId.Clear();
             GhostsPendingSpawn.Clear();
             GhostsPendingSynchronization.Clear();
 #endif

@@ -3854,16 +3854,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal bool IsGhostNetworkObjectIdValid()
-        {
-            if (NetworkObjectBridge == null)
-            {
-                return false;
-            }
-            // TODO-UNIFIED: Sometimes the GhostField can be latent. Need a way to know the GhostField has been set.
-            return NetworkObjectBridge.NetworkObjectId.Value < 1000000;
-        }
-
         internal void RegisterGhostBridge()
         {
             if (NetworkManager.LogLevel == LogLevel.Developer)
