@@ -1310,6 +1310,10 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
         private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
         {
+            if (NetCode.Netcode.IsActive)
+            {
+                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Netcode is not active but has an instance at this point.");
+            }
             DefaultWorldInitialization.Initialize("Default World", false);
             var waitTime = new WaitForSeconds(0.016f);
             // This should not be needed at this point, but here in the event something changes.

@@ -15,52 +15,12 @@ namespace Unity.Netcode
     public partial class NetworkObjectBridge : GhostBehaviour
     {
         public Action<ulong> NetworkObjectIdChanged;
-        
+
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
 
         public void SetNetworkObjectId(ulong value)
         {
             NetworkObjectId.Value = value;
-        }
-        public override void Awake()
-        {
-            if (UnifiedBootStrap.Instance != null)
-            {
-                Initialize();
-            }
-            else
-            {
-                UnifiedBootStrap.OnInitialized += Initialize;
-            }
-        }
-
-        private void Initialize()
-        {
-            UnifiedBootStrap.OnInitialized -= Initialize;
-            if (gameObject != null)
-            {
-                base.Awake();
-                NetworkObjectId.ValueChanged += OnNetworkObjectIdChanged;
-            }
-        }
-
-        private void OnNetworkObjectIdChanged(ulong value)
-        {
-            NetworkObjectIdChanged?.Invoke(value);
-        }
-
-        internal void OnDespawn(bool shouldDestroy)
-        {
-            if (shouldDestroy)
-            {
-                UnifiedBootStrap.OnInitialized -= Initialize;
-            }
-        }
-
-        public override void OnDestroy()
-        {
-            UnifiedBootStrap.OnInitialized -= Initialize;
-            base.OnDestroy();
         }
     }
 

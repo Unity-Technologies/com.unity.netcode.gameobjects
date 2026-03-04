@@ -1864,7 +1864,6 @@ namespace Unity.Netcode
             // Let unified netcode handle destroying
             if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
             {
-                networkObject.NetworkObjectBridge.OnDespawn(destroyGameObject);
                 // exit early
                 return;
             }
