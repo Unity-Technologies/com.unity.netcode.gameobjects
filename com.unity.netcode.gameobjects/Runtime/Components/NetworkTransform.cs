@@ -1370,6 +1370,7 @@ namespace Unity.Netcode.Components
         /// are sent using a reliable fragmented sequenced network delivery.
         /// </summary>
         /// <remarks>
+        /// Cannot be used when <see cref="SwitchTransformSpaceWhenParented"/> is enabled. <br />
         /// The following more critical state updates are still sent as reliable fragmented sequenced:<br />
         /// <list type="bullet">
         /// <item><description>The initial synchronization state update.</description></item>
@@ -1570,6 +1571,7 @@ namespace Unity.Netcode.Components
         /// When de-parented: Automatically transitions into world space and coverts any pending interpolation states to the relative local space on non-authority instances.<br />
         /// </summary>
         /// <remarks>
+        /// Cannot be used if <see cref="UseUnreliableDeltas"/> is enabled. <br />
         /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
         /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
         /// This field is auto-synchronized with non-authority clients when changed by the authority instance.
@@ -1958,6 +1960,28 @@ namespace Unity.Netcode.Components
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
 #endif
+            // Authority check to assure that UseUnreliableDeltas is not set during runtime while using SwitchTransformSpaceWhenParented.
+            if (SwitchTransformSpaceWhenParented && UseUnreliableDeltas)
+            {
+                // If we didn't have UseUnreliableDeltas previously set...
+                if (!m_LocalAuthoritativeNetworkState.FlagStates.UnreliableFrameSync)
+                {
+                    if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"[{nameof(NetworkTransform)}][{name}] Reverting {nameof(UseUnreliableDeltas)} back to false as it cannot be enabled while {nameof(SwitchTransformSpaceWhenParented)} is enabled!");
+                    }
+                    UseUnreliableDeltas = false;
+                }
+                else // Otherwise SwitchTransformSpaceWhenParented has changed while UseUnreliableDeltas was already set.
+                {
+                    if (m_CachedNetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"[{nameof(NetworkTransform)}][{name}] Reverting {nameof(SwitchTransformSpaceWhenParented)} back to false as it cannot be enabled while {nameof(UseUnreliableDeltas)} is enabled!");
+                    }
+                    SwitchTransformSpaceWhenParented = false;
+                }
+            }
+
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, synchronize, forceState: settingState))
             {
