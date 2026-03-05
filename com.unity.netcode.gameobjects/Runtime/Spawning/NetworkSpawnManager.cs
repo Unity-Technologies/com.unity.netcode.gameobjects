@@ -83,10 +83,14 @@ namespace Unity.Netcode
                 return null;
             }
             var networkObject = GhostsPendingSpawn[networkObjectId];
+            
             GhostsPendingSpawn.Remove(networkObjectId);
-            // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
-            // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            if (networkObject != null)
+            {
+                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
+                // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            }
             return networkObject;
         }
 

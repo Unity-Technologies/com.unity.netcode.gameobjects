@@ -1740,9 +1740,11 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             spawnManager?.GhostsPendingSpawn.Remove(NetworkObjectId);
             spawnManager?.GhostsPendingSynchronization.Remove(NetworkObjectId);
-#endif
-
+            // N4E controls this on the client, allow this if there is a ghost
+            if (IsSpawned && !HasGhost && !networkManager.ShutdownInProgress)
+#else
             if (IsSpawned && !networkManager.ShutdownInProgress)
+#endif
             {
                 // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
                 // was marked as destroy pending scene event (which means the destroy with scene property was set).

@@ -82,21 +82,10 @@ namespace Unity.Netcode
 
             return true;
         }
-        
-        public static void StopClient()
-        {
-            ClientWorld.Dispose();
-            ClientWorlds.Remove(ClientWorld);
-        }
-        
-        public static void StopServer()
-        {
-            ServerWorld.Dispose();
-            ServerWorlds.Remove(ServerWorld);
-        }
 
         ~UnifiedBootStrap()
         {
+            World = null;
             Instance = null;
         }
     }

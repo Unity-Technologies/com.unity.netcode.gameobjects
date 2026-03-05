@@ -1204,11 +1204,11 @@ namespace Unity.Netcode
 
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
-            
+
 #if UNIFIED_NETCODE
             NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
 #endif
-            
+
             MetricsManager.Initialize(this);
 
             {
@@ -1320,18 +1320,27 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Netcode is not active but has an instance at this point.");
             }
+
+            /// !! Important !!
+            /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
+            NetCode.Netcode.Reset();
+
+            /// !! Initialize worlds here !!
+            /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
             DefaultWorldInitialization.Initialize("Default World", false);
-            var waitTime = new WaitForSeconds(0.016f);
-            // This should not be needed at this point, but here in the event something changes.
-            while (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
+
+            // This should not be needed at this point, but this is here in the event something changes.
+            if (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
             {
-                if (LogLevel <= LogLevel.Developer)
+                NetworkLog.LogWarning($"[{nameof(WaitForHybridPrefabRegistration)}] !!!!! (Ghosts are still pending registration) !!!!!");
+                var waitTime = new WaitForSeconds(0.016f);
+                while (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
                 {
-                    NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Ghosts are still pending registration!");
+                    NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
+                    yield return waitTime;
                 }
-                NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
-                yield return waitTime;
             }
+
             if (LogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] All hybrid prefabs have been registered!");

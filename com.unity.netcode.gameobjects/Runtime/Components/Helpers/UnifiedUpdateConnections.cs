@@ -31,15 +31,6 @@ namespace Unity.Netcode.Components
         private List<NetcodeConnection> m_TempConnections = new List<NetcodeConnection>();
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
-
-        public void MarkSync(int NetworkId)
-        {
-            if (m_NewConnections.TryGetValue(NetworkId, out var connection))
-            {
-                connection.IsSynced = true;
-                m_NewConnections[NetworkId] = connection;
-            }
-        }
         
         protected override void OnUpdate()
         {
