@@ -8,7 +8,9 @@ using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
+#if UNIFIED_NETCOE
 using Unity.Netcode.Unified;
+#endif
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
