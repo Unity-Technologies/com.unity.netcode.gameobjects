@@ -43,19 +43,35 @@ namespace Unity.Netcode
             if (GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
             {
                 // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
-                // For now, move any pending object into the DDOL.
-                UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                // Edge-Case scenario: During initial client synchronization (i.e. !NetworkManager.IsConnectedClient).
+                //
+                // Description: A client can receive snapshots before finishing the NGO synchronization process.
+                // This is when an edge case scenario can happen where the initial NGO synchronization information
+                // can include new scenes to load. If one of those scenes is configured to load in SingleMode, then
+                // any instantiated ghosts pending synchronization would be instantiated in whatever the currently
+                // active scene was when the client was processing the synchronization data. If the ghosts pending
+                // synchrpnization are in the currently active scene when the new scene is loaded in SingleMode, then
+                // they would be destroyed.
+                // 
+                // Current Fix:
+                // If the client is not yet synchronized, then any ghost pending spawn get migrated into the DDOL.
+                // 
+                // Further review:
+                // We need to make sure that we are migrating NetworkObjects into their assigned scene (if scene
+                // management is enabled). Currently, we assume all instances were in the DDOL and just migrate
+                // them into the currently active scene upon spawn.
+                if (!NetworkManager.IsConnectedClient && !GhostsPendingSynchronization.ContainsKey(networkObjectId))
+                {
+                    UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                }
+                else // There is matching spawn data for this pending Ghost, process the pending spawn for this hybrid instance.
+                {
+                    NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
+                }
             }
-
-            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
-            if (GhostsArePendingSynchronization && GhostsPendingSynchronization.ContainsKey(networkObjectId))
+            else
             {
-                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
-                // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
-                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
-
-                // When the object is spawned, it will invoke GetGhostNetworkObjectForSpawn below which removes the entry from GhostsPendingSpawn
-                ProcessGhostPendingSynchronization(networkObjectId);
+                Debug.LogError($"[{networkObject.name}-{networkObjectId}] Has already been registered as a pending ghost!");
             }
         }
 
@@ -109,6 +125,7 @@ namespace Unity.Netcode
             //}
             if (removeUponSpawn)
             {
+                GhostsPendingSynchronization.Remove(networkObjectId);
                 GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
                 ghostPendingSynch.Buffer.Dispose();
             }
