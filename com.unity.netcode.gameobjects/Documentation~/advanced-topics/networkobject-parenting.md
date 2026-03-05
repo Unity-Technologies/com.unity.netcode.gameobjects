@@ -2,14 +2,14 @@
 
 ## Overview
 
-If you aren't completely familiar with transform parenting in Unity, then it's highly recommended to [review over the existing Unity documentation](https://docs.unity3d.com/Manual/class-Transform.html) before reading further. To properly synchronize all connected clients with any change in a GameObject component's transform parented status, Netcode for GameObjects requires that the parent and child GameObject components have NetworkObject components attached to them. Otherwise, you can use the [AttachableBehaviour](../components/helper/attachablebehaviour.md) and [AttachableNode](../components/helper/attachablenode.md) helper components to synchronize other types of parenting.
+If you aren't familiar with transform parenting in Unity, then it's recommended that you [review the existing Unity documentation](https://docs.unity3d.com/Manual/class-Transform.html) before reading further. To properly synchronize all connected clients with any change in a GameObject component's transform parented status, Netcode for GameObjects requires that the parent and child GameObject components have NetworkObject components attached to them. Otherwise, you can use the [AttachableBehaviour](../components/helper/attachablebehaviour.md) and [AttachableNode](../components/helper/attachablenode.md) helper components to synchronize other types of parenting.
 
 ## Parenting rules
 
 - Setting the parent of a child's `Transform` directly (that is, `transform.parent = childTransform;`) always uses the default `WorldPositionStays` value of `true`.
   - It's recommended to always use the `NetworkObject.TrySetParent` method when parenting if you plan on changing the `WorldPositionStays` default value.
   - Likewise, it's also recommended to use the `NetworkObject.TryRemoveParent` method to remove a parent from a child.
-- When an [authority](../terms-concepts/authority.md) parents a spawned NetworkObject component under another spawned NetworkObject component during a Netcode game session this parent child relationship replicates across the network to all connected and future late joining clients.
+- When an [authority](../terms-concepts/authority.md) parents a spawned NetworkObject component under another spawned NetworkObject component during a Netcode game session, this parent-child relationship replicates across the network to all connected and future late-joining clients.
 - If, while editing a scene, you place an in-scene placed NetworkObject component under a GameObject component that doesn't have a NetworkObject component attached to it, Netcode for GameObjects preserves that parenting relationship.
   - During runtime, this parent-child hierarchy remains true unless the user code removes the GameObject parent from the child NetworkObject component.
     - **Note**: Once removed, Netcode for GameObjects won't allow you to re-parent the NetworkObject component back under the same or another GameObject component that with no NetworkObject component attached to it.
@@ -49,7 +49,7 @@ The [owner](../terms-concepts/ownership.md) of a NetworkObject can always parent
 
 By default, only the [authority](../terms-concepts/authority.md) of a NetworkObject can parent a NetworkObject under a non-networked object. This means in a client-server game, only the server (or host) can control NetworkObject component parenting. In a distributed authority game the [owner](../terms-concepts/ownership.md) of the object can always parent the object.
 
-To allow the owner to parent their owned object in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
+To allow the [owner](../terms-concepts/ownership.md) to parent their owned NetworkObject in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
 
 ![image](../images/networkobject/allowOwnerToParent.png)
 

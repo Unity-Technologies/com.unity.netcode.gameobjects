@@ -9,11 +9,11 @@ The owner of each NetworkBehaviour in your game is decided by the owner of that 
 > [!NOTE]
 > The following properties are only valid if the NetworkBehaviour has been spawned. Use [`NetworkBehaviour.IsSpawned`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_IsSpawned) to check the spawned status of the NetworkBehaviour
 
-To see if the local client is the owner of a NetworkBehaviour, you can check the[`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_IsOwner) property.
+To identify whether the local client is the owner of a NetworkBehaviour, you can check the[`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_IsOwner) property.
 
-To see if the server owns a NetworkBehaviour, you can check the [`NetworkBehaviour.IsOwnedByServer`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_IsOwnedByServer) property.
+To identify whether the server owns a NetworkBehaviour, you can check the [`NetworkBehaviour.IsOwnedByServer`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_IsOwnedByServer) property.
 
-To see if the local client has authority of a NetworkBehaviour, you can check the[`NetworkBehaviour.HasAuthority`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_HasAuthority) property.
+To identify whether the local client has authority of a NetworkBehaviour, you can check the[`NetworkBehaviour.HasAuthority`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_HasAuthority) property.
 
 ## Detecting ownership changes
 
