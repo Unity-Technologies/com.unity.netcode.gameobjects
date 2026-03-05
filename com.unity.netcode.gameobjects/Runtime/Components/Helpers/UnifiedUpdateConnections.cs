@@ -13,9 +13,6 @@ namespace Unity.Netcode.Components
         internal Entity Entity;
         public int NetworkId;
 
-        internal float ConnectedTime;
-        internal bool IsSynced;
-
         public bool IsServer => World.IsServer();
         public void GoInGame()
         {
@@ -48,6 +45,8 @@ namespace Unity.Netcode.Components
         {
             var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+            var networkManager = NetworkManager.Singleton;
+
             foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
                 commandBuffer.RemoveComponent<ConnectionState>(entity);
@@ -60,16 +59,12 @@ namespace Unity.Netcode.Components
 
             m_TempConnections.Clear();
 
-
+            // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
             foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>().WithNone<NetworkStreamInGame>().WithEntityAccess())
             {
-                // TODO-Unified: For new connections, we have a delay before the N4E in-game state for the client to provide time for the NGO side of the client to synchronize.
-                // Note: Once both are using the same transport we should be able to get the transport id and determine the NGO assigned client-id and at that point once the
-                // client has signaled that it has synchronized (or has been sent the synchronization data) we finalize the in-game connection state (or something along those lines).
                 if (!m_NewConnections.ContainsKey(networkId.Value))
                 {
-                    var delayTime = 0.0f;// isServer ? 0.2f : 0.1f;
-                    var newConnection = new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value, ConnectedTime = UnityEngine.Time.realtimeSinceStartup + delayTime, IsSynced = isServer};
+                    var newConnection = new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value };
                     m_NewConnections.Add(networkId.Value, newConnection);
                 }
             }
@@ -79,8 +74,9 @@ namespace Unity.Netcode.Components
             {
                 foreach (var entry in m_NewConnections)
                 {
-                    // Check if the delay time has passed.
-                    if (entry.Value.IsSynced && entry.Value.ConnectedTime < UnityEngine.Time.realtimeSinceStartup)
+                    // Server: always connect
+                    // Client: wait until we have synchronized before announcing we are ready to receive snapshots
+                    if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
                     {
                         // Set the connection in-game
                         commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
@@ -97,21 +93,29 @@ namespace Unity.Netcode.Components
             }
             m_TempConnections.Clear();
 
+            // If the local NetworkManager is shutting down or no longer connected, then
+            // make sure we have disconnected all known connections.
+            if (networkManager.ShutdownInProgress || !networkManager.IsListening)
+            {
+                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
+                {
+                    commandBuffer.RemoveComponent<ConnectionState>(entity);
+                    NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
+                }
+            }
             commandBuffer.Playback(EntityManager);
         }
 
+        /// <summary>
+        /// Always disconnect all known connections when being destroyed.
+        /// </summary>
         protected override void OnDestroy()
         {
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
             {
                 commandBuffer.RemoveComponent<ConnectionState>(entity);
-                // TODO: maybe disconnect reason?
-                m_TempConnections.Add(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
-            }
-            foreach (var con in m_TempConnections)
-            {
-                NetworkManager.OnNetCodeDisconnect?.Invoke(con);
+                NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
             }
             commandBuffer.Playback(EntityManager);
             base.OnDestroy();

@@ -1732,8 +1732,15 @@ namespace Unity.Netcode
                 return;
             }
 
+            var spawnManager = NetworkManager.SpawnManager;
+
             // Always attempt to remove from scene changed updates
-            networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            spawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+
+#if UNIFIED_NETCODE
+            spawnManager?.GhostsPendingSpawn.Remove(NetworkObjectId);
+            spawnManager?.GhostsPendingSynchronization.Remove(NetworkObjectId);
+#endif
 
             if (IsSpawned && !networkManager.ShutdownInProgress)
             {
@@ -1763,11 +1770,11 @@ namespace Unity.Netcode
                 }
             }
 
-            if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (spawnManager != null && spawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
-                    networkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                    spawnManager.OnDespawnObject(networkObject, false);
                 }
             }
         }
@@ -3846,7 +3853,6 @@ namespace Unity.Netcode
                 {
                     Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
                 }
-                NetworkObjectBridge.NetworkObjectIdChanged += OnNetworkObjectIdChanged;
                 if (NetworkObjectBridge.NetworkObjectId.Value != 0)
                 {
                     RegisterGhostBridge();
@@ -3865,11 +3871,6 @@ namespace Unity.Netcode
             {
                 NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
             }
-        }
-
-        private void OnNetworkObjectIdChanged(ulong networkObjectId)
-        {
-            RegisterGhostBridge();
         }
 #endif
 

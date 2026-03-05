@@ -7,15 +7,17 @@ namespace Unity.Netcode
 {
 
     /// <summary>
-    /// TODO-UNIFIED: Would need to be reviewed for alternate ways of handling this.
+    /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// </summary>
     /// <remarks>
     /// If used, we most likely would make this internal
     /// </remarks>
     public partial class NetworkObjectBridge : GhostBehaviour
     {
-        public Action<ulong> NetworkObjectIdChanged;
-
+        /// <summary>
+        /// This is used to link <see cref="NetworkObject.SerializedObject"/> data to
+        /// N4E-spawned hybrid prefab instances.
+        /// </summary>
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
 
         public void SetNetworkObjectId(ulong value)
