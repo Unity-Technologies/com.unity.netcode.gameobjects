@@ -14,6 +14,7 @@ namespace Unity.Netcode.Components
         public int NetworkId;
 
         internal float ConnectedTime;
+        internal bool IsSynced;
 
         public bool IsServer => World.IsServer();
         public void GoInGame()
@@ -34,6 +35,15 @@ namespace Unity.Netcode.Components
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
 
+        public void MarkSync(int NetworkId)
+        {
+            if (m_NewConnections.TryGetValue(NetworkId, out var connection))
+            {
+                connection.IsSynced = true;
+                m_NewConnections[NetworkId] = connection;
+            }
+        }
+        
         protected override void OnUpdate()
         {
             var isServer = World.IsServer();
@@ -59,7 +69,7 @@ namespace Unity.Netcode.Components
                 if (!m_NewConnections.ContainsKey(networkId.Value))
                 {
                     var delayTime = 0.0f;// isServer ? 0.2f : 0.1f;
-                    var newConnection = new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value, ConnectedTime = UnityEngine.Time.realtimeSinceStartup + delayTime};
+                    var newConnection = new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value, ConnectedTime = UnityEngine.Time.realtimeSinceStartup + delayTime, IsSynced = isServer};
                     m_NewConnections.Add(networkId.Value, newConnection);
                 }
             }
@@ -70,7 +80,7 @@ namespace Unity.Netcode.Components
                 foreach (var entry in m_NewConnections)
                 {
                     // Check if the delay time has passed.
-                    if (entry.Value.ConnectedTime < UnityEngine.Time.realtimeSinceStartup)
+                    if (entry.Value.IsSynced && entry.Value.ConnectedTime < UnityEngine.Time.realtimeSinceStartup)
                     {
                         // Set the connection in-game
                         commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);

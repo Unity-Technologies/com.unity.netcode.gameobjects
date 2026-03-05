@@ -1,4 +1,7 @@
 
+using Unity.Netcode.Components;
+using Unity.Netcode.Unified;
+
 namespace Unity.Netcode
 {
     // Todo: Would be lovely to get this one nicely formatted with all the data it sends in the struct
@@ -27,6 +30,11 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             networkManager.SceneManager.HandleSceneEvent(context.SenderId, m_ReceivedData);
+            
+#if UNIFIED_NETCODE
+            var unifiedConnectionSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedUpdateConnections>();
+            unifiedConnectionSystem.MarkSync((int)context.SenderId);
+#endif
         }
     }
 }
