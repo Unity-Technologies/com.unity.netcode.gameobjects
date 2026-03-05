@@ -665,7 +665,7 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class NetworkBehaviourOnSynchronizeComponent : NetworkBehaviour
     {
-        public SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
+        internal SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
 
         internal struct SomeCustomSerializationData : INetworkSerializable
         {
