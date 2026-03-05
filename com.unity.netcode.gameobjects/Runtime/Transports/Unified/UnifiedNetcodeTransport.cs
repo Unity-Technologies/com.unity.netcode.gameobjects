@@ -132,6 +132,7 @@ namespace Unity.Netcode.Unified
         private bool m_IsServer;
         private bool m_StartedServerWorld = false;
         private bool m_StartedClientWorld = false;
+        private NetworkManager m_NetworkManager;
         
         private IRealTimeProvider m_RealTimeProvider;
 
@@ -321,9 +322,8 @@ namespace Unity.Netcode.Unified
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
-            // todo
-            return 0;
-            //return (ulong)m_Connections[(int)clientId].RTT;
+            var (transportId, _) = m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
+            return (ulong)m_Connections[(int)transportId].Connection.RTT;
         }
 
         public override void Shutdown()
@@ -342,6 +342,7 @@ namespace Unity.Netcode.Unified
         {
             m_Connections = new Dictionary<int, ConnectionInfo>();
             m_RealTimeProvider = networkManager.RealTimeProvider;
+            m_NetworkManager = networkManager;
         }
     }
 }
