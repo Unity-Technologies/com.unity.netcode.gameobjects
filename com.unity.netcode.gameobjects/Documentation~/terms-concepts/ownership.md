@@ -31,13 +31,13 @@ Here's a table showing what actions the authority vs the owner can do in a clien
 
 ## Ownership in distributed authority
 
-In [distributed authority](./distributed-authority.md) the owner of an object is always the authority of that object. In this way, ownership comes before authority. Authority can be transferred between clients via changing and requesting ownership.
+In [distributed authority](./distributed-authority.md) the owner of a NetworkObject is always the authority of that NetworkObject. In this way, ownership comes before authority. Authority can be transferred between clients via changing and requesting ownership.
 
 ![diagram showing ownership precedes authority](../images/diagrams/distributedAuthorityOwnership.png)
 
-When building your game you can use [ownership permissions](../advanced-topics/networkobject-ownership.md#ownership-permissions-settings) to control how and when ownership of objects can be transferred between clients.
+When building your game, you can use [ownership permissions](../advanced-topics/networkobject-ownership.md#ownership-permissions-settings) to control how and when ownership of o NetworkObjects can be transferred between clients.
 
-Objects with the `OwnershipStatus.Distributable` permission will have their ownership automatically distributed between all connected game clients whenever a new client joins or an existing client leaves. This is the key mechanism in how the game simulation is distributed between clients in a distributed authority session.
+NetworkObjects with the `OwnershipStatus.Distributable` permission have their ownership automatically distributed between all connected game clients whenever a new client joins or an existing client leaves. This is the key mechanism in how the game simulation is distributed between clients in a distributed authority session.
 
 ## Checking for ownership
 
