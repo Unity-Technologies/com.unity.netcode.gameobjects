@@ -144,6 +144,7 @@ namespace Unity.Netcode
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
     /// Uses the <see cref="SceneEventMessage"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
+    [Serializable]
     public class NetworkSceneManager : IDisposable
     {
         internal const int InvalidSceneNameOrPath = -1;

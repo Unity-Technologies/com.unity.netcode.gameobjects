@@ -184,13 +184,45 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
-            EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
+            // precedence.
+            if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
+            {
+                networkTransform.UseUnreliableDeltas = false;
+            }
+            GUI.enabled = !networkTransform.SwitchTransformSpaceWhenParented;
+            if (networkTransform.SwitchTransformSpaceWhenParented)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+                EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.SwitchTransformSpaceWhenParented)}.");
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            }
+            GUI.enabled = true;
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            GUI.enabled = !networkTransform.UseUnreliableDeltas;
+            if (networkTransform.UseUnreliableDeltas)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+                EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.UseUnreliableDeltas)}.");
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            }
+            GUI.enabled = true;
             if (m_SwitchTransformSpaceWhenParented.boolValue)
             {
                 m_TickSyncChildren.boolValue = true;
+                networkTransform.UseUnreliableDeltas = false;
             }
             else
             {

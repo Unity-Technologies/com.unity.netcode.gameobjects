@@ -105,10 +105,10 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class CustomGenericSerializationTestBehaviour : NetworkBehaviour
     {
-        public CustomSerializableClass<TypeReferencedOnlyInCustomSerialization1, TypeReferencedOnlyInCustomSerialization2> Value1;
-        public CustomSerializableClass<NativeArray<TypeReferencedOnlyInCustomSerialization1>, NativeArray<TypeReferencedOnlyInCustomSerialization2>> Value2;
-        public CustomSerializableSubclass<TypeReferencedOnlyInCustomSerialization4> Value3;
-        public CustomSerializableSubclassWithNativeArray<NativeArray<TypeReferencedOnlyInCustomSerialization4>> Value4;
+        internal CustomSerializableClass<TypeReferencedOnlyInCustomSerialization1, TypeReferencedOnlyInCustomSerialization2> Value1;
+        internal CustomSerializableClass<NativeArray<TypeReferencedOnlyInCustomSerialization1>, NativeArray<TypeReferencedOnlyInCustomSerialization2>> Value2;
+        internal CustomSerializableSubclass<TypeReferencedOnlyInCustomSerialization4> Value3;
+        internal CustomSerializableSubclassWithNativeArray<NativeArray<TypeReferencedOnlyInCustomSerialization4>> Value4;
     }
 
     [GenerateSerializationForType(typeof(TypeReferencedOnlyInCustomSerialization5))]
@@ -915,7 +915,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariable<string> StringVar;
         public NetworkVariable<Guid> GuidVar;
-        public NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
+        internal NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
     }
 
     internal class TemplateNetworkBehaviourType<T> : NetworkBehaviour

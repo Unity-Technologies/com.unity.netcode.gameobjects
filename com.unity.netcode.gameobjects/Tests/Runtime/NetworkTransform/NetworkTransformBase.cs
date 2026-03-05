@@ -754,7 +754,7 @@ namespace Unity.Netcode.RuntimeTests
         public bool ServerAuthority;
         public bool ReadyToReceivePositionUpdate = false;
 
-        public NetworkTransformState AuthorityLastSentState;
+        internal NetworkTransformState AuthorityLastSentState;
         public bool StatePushed { get; internal set; }
 
         public delegate void AuthorityPushedTransformStateDelegateHandler(ref NetworkTransformState networkTransformState);
