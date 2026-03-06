@@ -124,6 +124,8 @@ namespace Unity.Netcode.Unified
 
     internal class UnifiedNetcodeTransport : NetworkTransport
     {
+        private const int k_MaxPacketSize = 1300;
+
         private int m_ServerClientId = -1;
         public override ulong ServerClientId => (ulong)m_ServerClientId;
 
@@ -206,9 +208,9 @@ namespace Unity.Netcode.Unified
                     Buffer = new FixedList4096Bytes<byte>(),
                 };
                 
-                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), 1340);
+                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), k_MaxPacketSize);
 
-                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, 1340);
+                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
 
