@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.Unified
 {
-    internal struct TransportRpc : IRpcCommand, IRpcCommandSerializer<TransportRpc>
+    internal struct TransportRpc : IOutOfBandRpcCommand, IRpcCommandSerializer<TransportRpc>
     {
         public FixedList4096Bytes<byte> Buffer;
         public ulong Order;
@@ -216,7 +216,7 @@ namespace Unity.Netcode.Unified
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
 
-                connectionInfo.Connection.SendMessage(rpc);
+                connectionInfo.Connection.SendOutOfBandMessage(rpc);
                 
                 connectionInfo.SendQueue.Consume(amount);
             }
