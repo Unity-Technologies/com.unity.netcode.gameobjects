@@ -7,7 +7,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport;
 
 namespace Unity.Netcode.Unified
 {
@@ -206,9 +205,10 @@ namespace Unity.Netcode.Unified
                 {
                     Buffer = new FixedList4096Bytes<byte>(),
                 };
-                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), 1024);
+                
+                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), 1340);
 
-                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, 1024);
+                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, 1340);
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
 
@@ -265,9 +265,6 @@ namespace Unity.Netcode.Unified
             NetCode.Netcode.Client.OnDisconnect = OnClientDisconnectFromServer;
             var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
-            using var drvQuery = updateSystem.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-            var driver = drvQuery.GetSingletonRW<NetworkStreamDriver>();
-            driver.ValueRW.Connect(updateSystem.EntityManager, NetworkEndpoint.Parse("127.0.0.1", 7979));
             return true;
         }
 
@@ -282,9 +279,6 @@ namespace Unity.Netcode.Unified
             NetCode.Netcode.Server.OnDisconnect = OnServerClientDisconnected;
             var updateSystem = NetCode.Netcode.GetWorld(true).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
-            using var drvQuery = updateSystem.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-            var driver = drvQuery.GetSingletonRW<NetworkStreamDriver>();
-            driver.ValueRW.Listen(NetworkEndpoint.Parse("127.0.0.1", 7979));
             return true;
         }
 

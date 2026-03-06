@@ -67,6 +67,10 @@ namespace Unity.Netcode
                 else // There is matching spawn data for this pending Ghost, process the pending spawn for this hybrid instance.
                 {
                     NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
+                    if (GhostsPendingSynchronization.ContainsKey(networkObjectId))
+                    {
+                        ProcessGhostPendingSynchronization(networkObjectId);
+                    }
                 }
             }
             else

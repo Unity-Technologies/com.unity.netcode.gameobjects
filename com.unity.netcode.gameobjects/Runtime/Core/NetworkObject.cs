@@ -257,10 +257,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void OnValidate()
         {
-#if UNIFIED_NETCODE
-            UnifiedValidation();
-#endif
-
             // Always exit early if we are in prefab edit mode and this instance is the
             // prefab instance within the InContext or InIsolation edit scene.
             if (s_PrefabInstance == this)
@@ -279,6 +275,10 @@ namespace Unity.Netcode
             {
                 return;
             }
+
+#if UNIFIED_NETCODE
+            UnifiedValidation();
+#endif
 
             // Get a global object identifier for this network prefab.
             var globalId = GlobalObjectId.GetGlobalObjectIdSlow(this);

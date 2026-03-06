@@ -43,7 +43,7 @@ namespace Unity.Netcode
         {
             var networkManager = NetworkManager.Singleton;
             Instance = this;
-            AutoConnectPort = 0;
+            AutoConnectPort = Port;
             if (base.Initialize(defaultWorldName))
             {
                 UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] Auto-bootstrap is enabled!!! This will break the POC!");
