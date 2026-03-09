@@ -892,5 +892,32 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Timed out waiting for clients-{m_NewOwner.LocalClientId} to gain ownership of object {m_OwnershipNetworkObject.NetworkObjectId}!");
             VerboseDebug($"Client {m_NewOwner.LocalClientId} now owns object {m_OwnershipNetworkObject.NetworkObjectId}!");
         }
+
+        [UnityTest]
+        public IEnumerator DuplicateHideShowTest()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            m_ClientId0 = nonAuthority.LocalClientId;
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientId0;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, authority);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value++;
+            m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+            m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+
+            yield return WaitForConditionOrTimeOut(() => !nonAuthority.SpawnManager.SpawnedObjects.ContainsKey(m_NetSpawnedObject1.NetworkObjectId));
+            AssertOnTimeout($"NetworkObject {m_NetSpawnedObject1.name} is still spawned on client-{nonAuthority.LocalClientId} after timeout!");
+
+            m_NetSpawnedObject1.NetworkShow(m_ClientId0);
+            m_NetSpawnedObject1.NetworkShow(m_ClientId0);
+
+            yield return WaitForConditionOrTimeOut(() => nonAuthority.SpawnManager.SpawnedObjects.ContainsKey(m_NetSpawnedObject1.NetworkObjectId));
+            AssertOnTimeout($"NetworkObject {m_NetSpawnedObject1.name} is not yet spawned on client-{nonAuthority.LocalClientId} after timeout!");
+        }
     }
 }
