@@ -1222,7 +1222,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<HashSet<int>> ListCollectionServer = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<HashSet<int>> ListCollectionOwner = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>>();
 
         public bool ValidateInstances()
         {
@@ -1471,7 +1471,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>> ListCollectionServer = new NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>>(new Dictionary<int, Dictionary<int, SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>> ListCollectionOwner = new NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>>(new Dictionary<int, Dictionary<int, SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>>();
 
         private bool CompareDictionaries(ulong clientId, Dictionary<int, SerializableObject> first, Dictionary<int, SerializableObject> second)
         {
@@ -1778,7 +1778,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Dictionary<int, SerializableObject>> ListCollectionServer = new NetworkVariable<Dictionary<int, SerializableObject>>(new Dictionary<int, SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<Dictionary<int, SerializableObject>> ListCollectionOwner = new NetworkVariable<Dictionary<int, SerializableObject>>(new Dictionary<int, SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>>();
 
         private bool CompareDictionaries(ulong clientId, Dictionary<int, SerializableObject> first, Dictionary<int, SerializableObject> second)
         {
@@ -2145,7 +2145,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<List<List<SerializableObject>>> ListCollectionServer = new NetworkVariable<List<List<SerializableObject>>>(new List<List<SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<List<List<SerializableObject>>> ListCollectionOwner = new NetworkVariable<List<List<SerializableObject>>>(new List<List<SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, List<List<SerializableObject>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<List<SerializableObject>>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, List<List<SerializableObject>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<List<SerializableObject>>>>();
 
         public bool ValidateInstances()
         {
@@ -2444,7 +2444,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<List<SerializableObject>> ListCollectionServer = new NetworkVariable<List<SerializableObject>>(new List<SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<List<SerializableObject>> ListCollectionOwner = new NetworkVariable<List<SerializableObject>>(new List<SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, List<SerializableObject>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<SerializableObject>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, List<SerializableObject>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<SerializableObject>>>();
 
         public bool ValidateInstances()
         {
@@ -2709,7 +2709,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<List<List<int>>> ListCollectionServer = new NetworkVariable<List<List<int>>>(new List<List<int>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<List<List<int>>> ListCollectionOwner = new NetworkVariable<List<List<int>>>(new List<List<int>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, List<List<int>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<List<int>>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, List<List<int>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<List<int>>>>();
 
         public bool ValidateInstances()
         {
@@ -3013,7 +3013,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<List<int>> ListCollectionServer = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<List<int>> ListCollectionOwner = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
-        public Dictionary<Targets, Dictionary<DeltaTypes, List<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<int>>>();
+        internal Dictionary<Targets, Dictionary<DeltaTypes, List<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, List<int>>>();
 
         public bool ValidateInstances()
         {

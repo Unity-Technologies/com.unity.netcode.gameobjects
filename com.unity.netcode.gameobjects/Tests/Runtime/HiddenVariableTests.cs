@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         public static List<NetworkObject> ClientInstancesSpawned = new List<NetworkObject>();
 
         public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
-        public NetworkList<int> MyNetworkList = new NetworkList<int>();
+        internal NetworkList<int> MyNetworkList = new NetworkList<int>();
 
         public static Dictionary<ulong, int> ValueOnClient = new Dictionary<ulong, int>();
         public static int ExpectedSize = 0;

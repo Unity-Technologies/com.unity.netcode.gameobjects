@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
         internal class DummyNetBehaviour : NetworkBehaviour
         {
             public static bool DistributedAuthority;
-            public DummyNetVar NetVar;
+            internal DummyNetVar NetVar;
 
             private void Awake()
             {

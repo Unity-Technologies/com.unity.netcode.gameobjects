@@ -65,9 +65,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
-        public NetworkList<int> MyListSetOnSpawn = new NetworkList<int>();
+        internal NetworkList<int> MyListSetOnSpawn = new NetworkList<int>();
         public NetworkVariable<int> MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
-        public NetworkList<int> MyList = new NetworkList<int>();
+        internal NetworkList<int> MyList = new NetworkList<int>();
         public static NetworkManager NetworkManagerOfInterest;
 
         internal static int GainOwnershipCount = 0;
