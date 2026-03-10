@@ -1486,12 +1486,12 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkShow while not spawned.");
+                    NetworkLog.LogErrorServer($"[{name}] Attempted NetworkShow while {nameof(NetworkObject)} not spawned.");
                 }
                 return;
             }
 
-            if (!HasAuthority)
+            if (!HasAuthority && !NetworkManagerOwner.DAHost)
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
@@ -1505,7 +1505,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Only the authority can change visibility.");
+                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
                     }
                     return;
                 }
@@ -1513,22 +1513,11 @@ namespace Unity.Netcode
 
             if (Observers.Contains(clientId))
             {
-                if (NetworkManagerOwner.DistributedAuthorityMode)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogErrorServer($"The object {name} is already visible to Client-{clientId}!");
-                    }
-                    return;
+                    NetworkLog.LogWarning($"[{name}] {nameof(NetworkObject)} is already visible to Client-{clientId}! (ignoring)");
                 }
-                else
-                {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"[{name}] Only the server can change visibility.");
-                    }
-                    return;
-                }
+                return;
             }
 
             if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
@@ -1578,8 +1567,8 @@ namespace Unity.Netcode
         /// <remarks>
         /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for a currently visible <see cref="NetworkObject"/>.<br />
         /// <br />
-        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br />
-        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be despawned on the targeted client's side.<br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be de-spawned and destroyed on the targeted client's side.<br />
+        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be de-spawned on the targeted client's side.<br />
         /// <br />
         /// See Also:<br />
         /// <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
@@ -1601,7 +1590,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
-                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"[{name}] Only the owner-authority can change visibility when distributed authority mode is enabled!");
                     }
@@ -1609,7 +1598,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
                     }
