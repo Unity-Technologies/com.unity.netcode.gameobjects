@@ -75,6 +75,9 @@ The following NetworkTransform properties can cause a full state update when cha
 - __Use Quaternion Compression__
 - __Use Half Float Precision__
 
+> [!NOTE]
+> **UseUnreliableDeltas** cannot be enabled if **SwitchTransformSpaceWhenParented** is enabled since **SwitchTransformSpaceWhenParented** requires deltas to be sent reliably.
+
 ### Axis to Synchronize
 
 ![image](../../images/networktransform/AxisToSynchronize.png)
@@ -180,6 +183,7 @@ To resolve this issue, you can enable the __Switch Transform Space When Parented
 Things to consider when using __Switch Transform Space When Parented__:
 
 - This property is synchronized by the authority instance. If you disable it on the authority instance then it will synchronize this adjustment on all non-authority instances.
+- This property cannot be enabled when **UseUnreliableDeltas** is enabled as it requires deltas to be sent reliably.
 - When using __Switch Transform Space When Parented__, it's best to not make adjustments to the __NetworkTransform.InLocalSpace__ field and let the NetworkTransform handle this for you.
   - While you can still change __In Local Space__ directly via script while __Switch Transform Space When Parented__ is enabled, this could impact the end results. It is recommended to not adjust __In Local Space__ when __Switch Transform Space When Parented__ is enabled.
 

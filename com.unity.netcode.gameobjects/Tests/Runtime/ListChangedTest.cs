@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests
         public int ExpectedValue = 0;
         public bool AddDone = false;
 
-        public NetworkList<int> MyNetworkList = new NetworkList<int>();
+        internal NetworkList<int> MyNetworkList = new NetworkList<int>();
 
         public override void OnNetworkSpawn()
         {
