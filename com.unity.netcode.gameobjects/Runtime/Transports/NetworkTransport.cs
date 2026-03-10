@@ -126,7 +126,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Invoked by NetworkManager at the beginning of its EarlyUpdate
         /// </summary>
-        internal void EarlyUpdate()
+        public void EarlyUpdate()
         {
             OnEarlyUpdate();
         }
@@ -146,7 +146,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Invoked by NetworkManager towards the end of the PostLateUpdate
         /// </summary>
-        internal void PostLateUpdate()
+        public void PostLateUpdate()
         {
             OnPostLateUpdate();
         }

@@ -960,6 +960,7 @@ namespace Unity.Netcode
         /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>
         /// </summary>
 #pragma warning restore IDE0001
+        [NonSerialized]
         public RpcTarget RpcTarget;
 
         /// <summary>

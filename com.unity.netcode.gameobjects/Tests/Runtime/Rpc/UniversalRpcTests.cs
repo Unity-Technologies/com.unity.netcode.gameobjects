@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
     {
         public bool Stop = false;
         public string Received = string.Empty;
-        public Tuple<int, bool, float, string> ReceivedParams = null;
+        internal Tuple<int, bool, float, string> ReceivedParams = null;
         public ulong ReceivedFrom = ulong.MaxValue;
         public int ReceivedCount;
 
