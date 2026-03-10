@@ -1,4 +1,4 @@
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
 using System;
 using System.Collections.Generic;
 using Unity.Burst;

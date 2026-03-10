@@ -8,7 +8,7 @@ using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
 using Unity.Netcode.Unified;
 #endif
 using UnityEngine;
@@ -1207,7 +1207,7 @@ namespace Unity.Netcode
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
             NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
 #endif
 
