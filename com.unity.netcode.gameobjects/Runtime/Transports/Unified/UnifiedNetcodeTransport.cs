@@ -1,19 +1,16 @@
 #if UNIFIED_NETCODE
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport;
-using UnityEngine;
 
 namespace Unity.Netcode.Unified
 {
+    [BurstCompile]
     internal struct TransportRpc : IOutOfBandRpcCommand, IRpcCommandSerializer<TransportRpc>
     {
         public FixedList4096Bytes<byte> Buffer;
@@ -31,8 +28,10 @@ namespace Unity.Netcode.Unified
         {
             data.Order = reader.ReadULong();
             var length = reader.ReadInt();
-            data.Buffer = new FixedList4096Bytes<byte>();
-            data.Buffer.Length = length;
+            data.Buffer = new FixedList4096Bytes<byte>()
+            {
+                Length = length
+            };
             var span = new Span<byte>(data.Buffer.GetUnsafePtr(), length);
             reader.ReadBytes(span);
         }
@@ -43,29 +42,29 @@ namespace Unity.Netcode.Unified
             RpcExecutor.ExecuteCreateRequestComponent<TransportRpc, TransportRpc>(ref parameters);
         }
         
-        static readonly PortableFunctionPointer<RpcExecutor.ExecuteDelegate> InvokeExecuteFunctionPointer = new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
+        private static readonly PortableFunctionPointer<RpcExecutor.ExecuteDelegate> k_InvokeExecuteFunctionPointer = new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 
         public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
         {
-            return InvokeExecuteFunctionPointer;
+            return k_InvokeExecuteFunctionPointer;
         }
     }
 
     [UpdateInGroup(typeof(RpcCommandRequestSystemGroup))]
     [CreateAfter(typeof(RpcSystem))]
     [BurstCompile]
-    partial struct TransportRpcCommandRequestSystem : ISystem
+    internal partial struct TransportRpcCommandRequestSystem : ISystem
     {
         private RpcCommandRequest<TransportRpc, TransportRpc> m_Request;
 
         [BurstCompile]
-        struct SendRpc : IJobChunk
+        internal struct SendRpc : IJobChunk
         {
-            public RpcCommandRequest<TransportRpc, TransportRpc>.SendRpcData data;
+            public RpcCommandRequest<TransportRpc, TransportRpc>.SendRpcData Data;
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
-                data.Execute(chunk, unfilteredChunkIndex);
+                Data.Execute(chunk, unfilteredChunkIndex);
             }
         }
 
@@ -77,7 +76,7 @@ namespace Unity.Netcode.Unified
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var sendJob = new SendRpc { data = m_Request.InitJobData(ref state) };
+            var sendJob = new SendRpc { Data = m_Request.InitJobData(ref state) };
             state.Dependency = sendJob.Schedule(m_Request.Query, state.Dependency);
         }
     }
@@ -125,13 +124,11 @@ namespace Unity.Netcode.Unified
 
     internal class UnifiedNetcodeTransport : NetworkTransport
     {
+        private const int k_MaxPacketSize = 1300;
+
         private int m_ServerClientId = -1;
         public override ulong ServerClientId => (ulong)m_ServerClientId;
 
-        private bool m_IsClient;
-        private bool m_IsServer;
-        private bool m_StartedServerWorld = false;
-        private bool m_StartedClientWorld = false;
         private NetworkManager m_NetworkManager;
         
         private IRealTimeProvider m_RealTimeProvider;
@@ -210,9 +207,10 @@ namespace Unity.Netcode.Unified
                 {
                     Buffer = new FixedList4096Bytes<byte>(),
                 };
-                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), 1024);
+                
+                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), k_MaxPacketSize);
 
-                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, 1024);
+                var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
 
@@ -265,44 +263,24 @@ namespace Unity.Netcode.Unified
 
         public override bool StartClient()
         {
-            if (!UnifiedBootStrap.HasClientWorlds)
-            {
-                UnifiedBootStrap.CreateClientWorld("ClientWorld");
-                m_StartedClientWorld = true;
-            }
-
             NetCode.Netcode.Client.OnConnect = OnClientConnectedToServer;
             NetCode.Netcode.Client.OnDisconnect = OnClientDisconnectFromServer;
             var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
-            using var drvQuery = updateSystem.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-            var driver = drvQuery.GetSingletonRW<NetworkStreamDriver>();
-            driver.ValueRW.Connect(updateSystem.EntityManager, NetworkEndpoint.Parse("127.0.0.1", 7979));
             return true;
         }
 
         public override bool StartServer()
         {
-            if (!UnifiedBootStrap.HasServerWorld)
+            foreach (var connection in NetCode.Netcode.Server.Connections)
             {
-                UnifiedBootStrap.CreateServerWorld("ServerWorld");
-                m_StartedClientWorld = true;
-            }
-            else
-            {
-                foreach (var connection in NetCode.Netcode.Server.Connections)
-                {
-                    OnServerNewClientConnection(connection, default);
-                }
+                OnServerNewClientConnection(connection, default);
             }
 
             NetCode.Netcode.Server.OnConnect = OnServerNewClientConnection;
             NetCode.Netcode.Server.OnDisconnect = OnServerClientDisconnected;
             var updateSystem = NetCode.Netcode.GetWorld(true).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
-            using var drvQuery = updateSystem.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-            var driver = drvQuery.GetSingletonRW<NetworkStreamDriver>();
-            driver.ValueRW.Listen(NetworkEndpoint.Parse("127.0.0.1", 7979));
             return true;
         }
 
@@ -326,23 +304,16 @@ namespace Unity.Netcode.Unified
             return (ulong)m_Connections[(int)transportId].Connection.RTT;
         }
 
-        public override void Shutdown()
-        {
-            if (m_StartedClientWorld)
-            {
-                UnifiedBootStrap.StopClient();
-            }
-            if (m_StartedServerWorld)
-            {
-                UnifiedBootStrap.StopServer();
-            }
-        }
-
         public override void Initialize(NetworkManager networkManager = null)
         {
             m_Connections = new Dictionary<int, ConnectionInfo>();
             m_RealTimeProvider = networkManager.RealTimeProvider;
             m_NetworkManager = networkManager;
+        }
+
+        public override void Shutdown()
+        {
+
         }
     }
 }

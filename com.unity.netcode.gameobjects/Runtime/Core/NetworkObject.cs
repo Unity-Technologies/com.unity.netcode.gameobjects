@@ -257,10 +257,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void OnValidate()
         {
-#if UNIFIED_NETCODE
-            UnifiedValidation();
-#endif
-
             // Always exit early if we are in prefab edit mode and this instance is the
             // prefab instance within the InContext or InIsolation edit scene.
             if (s_PrefabInstance == this)
@@ -279,6 +275,10 @@ namespace Unity.Netcode
             {
                 return;
             }
+
+#if UNIFIED_NETCODE
+            UnifiedValidation();
+#endif
 
             // Get a global object identifier for this network prefab.
             var globalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
@@ -1732,10 +1732,19 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Always attempt to remove from scene changed updates
-            networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            var spawnManager = NetworkManager.SpawnManager;
 
+            // Always attempt to remove from scene changed updates
+            spawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+
+#if UNIFIED_NETCODE
+            spawnManager?.GhostsPendingSpawn.Remove(NetworkObjectId);
+            spawnManager?.GhostsPendingSynchronization.Remove(NetworkObjectId);
+            // N4E controls this on the client, allow this if there is a ghost
+            if (IsSpawned && !HasGhost && !networkManager.ShutdownInProgress)
+#else
             if (IsSpawned && !networkManager.ShutdownInProgress)
+#endif
             {
                 // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
                 // was marked as destroy pending scene event (which means the destroy with scene property was set).
@@ -1763,11 +1772,11 @@ namespace Unity.Netcode
                 }
             }
 
-            if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (spawnManager != null && spawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
-                    networkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                    spawnManager.OnDespawnObject(networkObject, false);
                 }
             }
         }
@@ -3846,7 +3855,6 @@ namespace Unity.Netcode
                 {
                     Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
                 }
-                NetworkObjectBridge.NetworkObjectIdChanged += OnNetworkObjectIdChanged;
                 if (NetworkObjectBridge.NetworkObjectId.Value != 0)
                 {
                     RegisterGhostBridge();
@@ -3865,11 +3873,6 @@ namespace Unity.Netcode
             {
                 NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
             }
-        }
-
-        private void OnNetworkObjectIdChanged(ulong networkObjectId)
-        {
-            RegisterGhostBridge();
         }
 #endif
 
