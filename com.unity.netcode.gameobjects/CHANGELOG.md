@@ -19,7 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Removed
-
+- Removed un-needed exceptions on `NetworkObject.cs`. (#3867)
 
 ### Fixed
 
@@ -28,7 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Obsolete
-
+- `NotListeningException` is now marked as obsolete as it is not used internally anymore. (#3867)
 
 ## [2.10.0] - 2026-03-01
 
