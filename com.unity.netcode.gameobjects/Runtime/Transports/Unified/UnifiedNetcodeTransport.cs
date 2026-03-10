@@ -7,20 +7,52 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine;
 
 namespace Unity.Netcode.Unified
 {
     [BurstCompile]
+    internal unsafe struct FixedBytes1280
+    {
+        public fixed byte Buffer[1280];
+        public int Length;
+
+        // Returns a direct pointer to the data in the buffer.
+        // Implemented as a static with an in-parameter to avoid the buffer being copied while keeping its memory allocation fixed/non-heap
+        // Note that the buffer MUST outlive the returned pointer, as it is an alias.
+        public static byte* GetUnsafePtr(in FixedBytes1280 data)
+        {
+            fixed (byte* buffer = data.Buffer)
+            {
+                return buffer;
+            }
+        }
+
+        // Returns a native array that is an alias of the existing data without copying it
+        // Implemented as a static with an in-parameter to avoid the buffer being copied while keeping its memory allocation fixed/non-heap
+        // Note that the buffer MUST outlive the returned array, as it is an alias.
+        public static NativeArray<byte> ToNativeArray(in FixedBytes1280 data)
+        {
+            var array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(GetUnsafePtr(data), data.Length, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            var safety = CollectionHelper.CreateSafetyHandle(Allocator.None);
+            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, safety);
+#endif
+            return array;
+        }
+    }
+
+    [BurstCompile]    
     internal struct TransportRpc : IOutOfBandRpcCommand, IRpcCommandSerializer<TransportRpc>
     {
-        public FixedList4096Bytes<byte> Buffer;
+        public FixedBytes1280 Buffer;
         public ulong Order;
         
         public unsafe void Serialize(ref DataStreamWriter writer, in RpcSerializerState state, in TransportRpc data)
         {
             writer.WriteULong(data.Order);
             writer.WriteInt(data.Buffer.Length);
-            var span = new Span<byte>(data.Buffer.GetUnsafePtr(), data.Buffer.Length);
+            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Buffer), data.Buffer.Length);
             writer.WriteBytes(span);
         }
 
@@ -28,11 +60,12 @@ namespace Unity.Netcode.Unified
         {
             data.Order = reader.ReadULong();
             var length = reader.ReadInt();
-            data.Buffer = new FixedList4096Bytes<byte>()
+            data.Buffer = new FixedBytes1280
             {
                 Length = length
             };
-            var span = new Span<byte>(data.Buffer.GetUnsafePtr(), length);
+    
+            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Buffer), length);
             reader.ReadBytes(span);
         }
 
@@ -81,7 +114,6 @@ namespace Unity.Netcode.Unified
         }
     }
     
-
     internal partial class UnifiedNetcodeUpdateSystem : SystemBase
     {
         public UnifiedNetcodeTransport Transport;
@@ -96,11 +128,11 @@ namespace Unity.Netcode.Unified
         protected override void OnUpdate()
         {
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach(var (request, rpc, entity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRW<TransportRpc>>().WithEntityAccess())
+            foreach(var (request, rpc, entity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<TransportRpc>>().WithEntityAccess())
             {
                 var connectionId = SystemAPI.GetComponent<NetworkId>(request.ValueRO.SourceConnection).Value;
 
-                var buffer = rpc.ValueRW.Buffer;
+                var buffer = rpc.ValueRO.Buffer;
                 try
                 {
                     Transport.DispatchMessage(connectionId, buffer, rpc.ValueRO.Order);
@@ -124,7 +156,7 @@ namespace Unity.Netcode.Unified
 
     internal class UnifiedNetcodeTransport : NetworkTransport
     {
-        private const int k_MaxPacketSize = 1300;
+        private const int k_MaxPacketSize = 1280;
 
         private int m_ServerClientId = -1;
         public override ulong ServerClientId => (ulong)m_ServerClientId;
@@ -140,27 +172,34 @@ namespace Unity.Netcode.Unified
             public Connection Connection;
             public ulong LastSent;
             public ulong LastReceived;
-            public Dictionary<ulong, FixedList4096Bytes<byte>> DeferredMessages;
+            public Dictionary<ulong, FixedBytes1280> DeferredMessages;
         }
  
         private Dictionary<int, ConnectionInfo> m_Connections;
         
-        internal void DispatchMessage(int connectionId, FixedList4096Bytes<byte> buffer, ulong order)
+        internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer, ulong order)
         {
             var connectionInfo = m_Connections[connectionId];
+
+            if (order <= connectionInfo.LastReceived)
+            {
+                Debug.LogWarning("Received duplicate message, ignoring.");
+                return;
+            }
 
             if (order != connectionInfo.LastReceived + 1)
             {
                 if (connectionInfo.DeferredMessages == null)
                 {
-                    connectionInfo.DeferredMessages = new Dictionary<ulong, FixedList4096Bytes<byte>>();
+                    connectionInfo.DeferredMessages = new Dictionary<ulong, FixedBytes1280>();
                 }
 
                 connectionInfo.DeferredMessages[order] = buffer;
                 return;
             }
             
-            var reader = new DataStreamReader(buffer.ToNativeArray(Allocator.Temp));
+            using var arr = FixedBytes1280.ToNativeArray(buffer);
+            var reader = new DataStreamReader(arr);
             if (connectionInfo.ReceiveQueue == null)
             {
                 connectionInfo.ReceiveQueue = new BatchedReceiveQueue(reader);
@@ -176,7 +215,7 @@ namespace Unity.Netcode.Unified
                 var next = order + 1;
                 while (connectionInfo.DeferredMessages.Remove(next, out var nextBuffer))
                 {
-                    reader = new DataStreamReader(nextBuffer.ToNativeArray(Allocator.Temp));
+                    reader = new DataStreamReader(FixedBytes1280.ToNativeArray(nextBuffer));
                     connectionInfo.ReceiveQueue.PushReader(reader);
                     connectionInfo.LastReceived = next;
                     ++next;
@@ -205,10 +244,10 @@ namespace Unity.Netcode.Unified
             {
                 var rpc = new TransportRpc
                 {
-                    Buffer = new FixedList4096Bytes<byte>(),
+                    Buffer = new FixedBytes1280(),
                 };
                 
-                var writer = new DataStreamWriter(rpc.Buffer.GetUnsafePtr(), k_MaxPacketSize);
+                var writer = new DataStreamWriter(FixedBytes1280.GetUnsafePtr(rpc.Buffer), k_MaxPacketSize);
 
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Buffer.Length = amount;
