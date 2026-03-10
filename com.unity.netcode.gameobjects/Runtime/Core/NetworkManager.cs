@@ -1209,7 +1209,10 @@ namespace Unity.Netcode
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
 #if UNIFIED_NETCODE && OUT_OF_BAND_RPC
-            NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+            }
 #endif
 
             MetricsManager.Initialize(this);
