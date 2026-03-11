@@ -290,8 +290,77 @@ namespace Unity.Netcode.Unified
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
         }
 
+        private const string InvalidRpcMessage = "An invalid RPC was received";
+        private const string HandshakeTimeoutMessage = "The connection was closed because the handshake timed out.";
+        private const string ApprovalFailureMessage = "The connection was closed because the connection was not approved by the server.";
+        private const string ApprovalTimeoutMessage = "The connection was closed because the connection approval process timed out.";
+        
+        private string GetDisconnectMessageFromNetworkStreamDisconnectReason(NetworkStreamDisconnectReason reason)
+        {
+            switch (reason)
+            {
+                case NetworkStreamDisconnectReason.ConnectionClose:
+                    return UnityTransportNotificationHandler.DisconnectedMessage;
+                case NetworkStreamDisconnectReason.Timeout: 
+                    return UnityTransportNotificationHandler.TimeoutMessage;
+                case NetworkStreamDisconnectReason.MaxConnectionAttempts: 
+                    return UnityTransportNotificationHandler.MaxConnectionAttemptsMessage;
+                case NetworkStreamDisconnectReason.ClosedByRemote: 
+                    return  UnityTransportNotificationHandler.ClosedRemoteConnectionMessage;
+                case NetworkStreamDisconnectReason.BadProtocolVersion:
+                    return  UnityTransportNotificationHandler.ProtocolErrorMessage;
+                case NetworkStreamDisconnectReason.InvalidRpc:
+                    return InvalidRpcMessage;
+                case NetworkStreamDisconnectReason.AuthenticationFailure:
+                    return UnityTransportNotificationHandler.AuthenticationFailureMessage;
+                case NetworkStreamDisconnectReason.ProtocolError:
+                    return  UnityTransportNotificationHandler.ProtocolErrorMessage;
+                case NetworkStreamDisconnectReason.HandshakeTimeout:
+                    return HandshakeTimeoutMessage;
+                case NetworkStreamDisconnectReason.ApprovalFailure:
+                    return ApprovalFailureMessage;
+                case NetworkStreamDisconnectReason.ApprovalTimeout:
+                    return ApprovalTimeoutMessage;
+            }
+            return "Unknown reason";
+        }
+        
+        private DisconnectEvents GetDisconnectEventFromNetworkStreamDisconnectReason(NetworkStreamDisconnectReason reason)
+        {
+            switch (reason)
+            {
+                case NetworkStreamDisconnectReason.ConnectionClose:
+                    return DisconnectEvents.Disconnected;
+                case NetworkStreamDisconnectReason.Timeout: 
+                    return DisconnectEvents.ProtocolTimeout;
+                case NetworkStreamDisconnectReason.MaxConnectionAttempts:
+                    return DisconnectEvents.MaxConnectionAttempts;
+                case NetworkStreamDisconnectReason.ClosedByRemote:
+                    return DisconnectEvents.ClosedByRemote;
+                case NetworkStreamDisconnectReason.BadProtocolVersion:
+                    return DisconnectEvents.ProtocolError;
+                case NetworkStreamDisconnectReason.InvalidRpc:
+                    return DisconnectEvents.ProtocolError;
+                case NetworkStreamDisconnectReason.AuthenticationFailure:
+                    return DisconnectEvents.AuthenticationFailure;
+                case NetworkStreamDisconnectReason.ProtocolError:
+                    return DisconnectEvents.ProtocolError;
+                case NetworkStreamDisconnectReason.HandshakeTimeout:
+                    return DisconnectEvents.ProtocolError;
+                case NetworkStreamDisconnectReason.ApprovalFailure:
+                    return DisconnectEvents.AuthenticationFailure;
+                case NetworkStreamDisconnectReason.ApprovalTimeout:
+                    return DisconnectEvents.ProtocolTimeout;
+            }
+            return DisconnectEvents.Disconnected;
+        }
+
         private void OnClientDisconnectFromServer(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
+            SetDisconnectEvent(
+                GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
+                GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
+            );
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
         }
 
