@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Netcode.Transports.UTP;
@@ -42,12 +43,12 @@ namespace Unity.Netcode.Unified
         }
     }
 
-    [BurstCompile]    
+    [BurstCompile]
     internal struct TransportRpc : IOutOfBandRpcCommand, IRpcCommandSerializer<TransportRpc>
     {
         public FixedBytes1280 Buffer;
         public ulong Order;
-        
+
         public unsafe void Serialize(ref DataStreamWriter writer, in RpcSerializerState state, in TransportRpc data)
         {
             writer.WriteULong(data.Order);
@@ -64,7 +65,7 @@ namespace Unity.Netcode.Unified
             {
                 Length = length
             };
-    
+
             var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Buffer), length);
             reader.ReadBytes(span);
         }
@@ -74,7 +75,7 @@ namespace Unity.Netcode.Unified
         {
             RpcExecutor.ExecuteCreateRequestComponent<TransportRpc, TransportRpc>(ref parameters);
         }
-        
+
         private static readonly PortableFunctionPointer<RpcExecutor.ExecuteDelegate> k_InvokeExecuteFunctionPointer = new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 
         public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
@@ -113,13 +114,13 @@ namespace Unity.Netcode.Unified
             state.Dependency = sendJob.Schedule(m_Request.Query, state.Dependency);
         }
     }
-    
+
     internal partial class UnifiedNetcodeUpdateSystem : SystemBase
     {
         public UnifiedNetcodeTransport Transport;
 
         public List<Connection> DisconnectQueue = new List<Connection>();
-        
+
         public void Disconnect(Connection connection)
         {
             DisconnectQueue.Add(connection);
@@ -128,7 +129,7 @@ namespace Unity.Netcode.Unified
         protected override void OnUpdate()
         {
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach(var (request, rpc, entity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<TransportRpc>>().WithEntityAccess())
+            foreach (var (request, rpc, entity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<TransportRpc>>().WithEntityAccess())
             {
                 var connectionId = SystemAPI.GetComponent<NetworkId>(request.ValueRO.SourceConnection).Value;
 
@@ -150,7 +151,7 @@ namespace Unity.Netcode.Unified
             DisconnectQueue.Clear();
 
             commandBuffer.Playback(EntityManager);
-                
+
         }
     }
 
@@ -162,7 +163,7 @@ namespace Unity.Netcode.Unified
         public override ulong ServerClientId => (ulong)m_ServerClientId;
 
         private NetworkManager m_NetworkManager;
-        
+
         private IRealTimeProvider m_RealTimeProvider;
 
         private class ConnectionInfo
@@ -174,9 +175,9 @@ namespace Unity.Netcode.Unified
             public ulong LastReceived;
             public Dictionary<ulong, FixedBytes1280> DeferredMessages;
         }
- 
+
         private Dictionary<int, ConnectionInfo> m_Connections;
-        
+
         internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer, ulong order)
         {
             var connectionInfo = m_Connections[connectionId];
@@ -197,7 +198,7 @@ namespace Unity.Netcode.Unified
                 connectionInfo.DeferredMessages[order] = buffer;
                 return;
             }
-            
+
             using var arr = FixedBytes1280.ToNativeArray(buffer);
             var reader = new DataStreamReader(arr);
             if (connectionInfo.ReceiveQueue == null)
@@ -246,7 +247,7 @@ namespace Unity.Netcode.Unified
                 {
                     Buffer = new FixedBytes1280(),
                 };
-                
+
                 var writer = new DataStreamWriter(FixedBytes1280.GetUnsafePtr(rpc.Buffer), k_MaxPacketSize);
 
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
@@ -254,7 +255,7 @@ namespace Unity.Netcode.Unified
                 rpc.Order = ++connectionInfo.LastSent;
 
                 connectionInfo.Connection.SendOutOfBandMessage(rpc);
-                
+
                 connectionInfo.SendQueue.Consume(amount);
             }
         }
@@ -266,7 +267,7 @@ namespace Unity.Netcode.Unified
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
-        
+
         private void OnClientConnectedToServer(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             m_Connections[connection.NetworkId.Value] = new ConnectionInfo
@@ -276,9 +277,9 @@ namespace Unity.Netcode.Unified
                 Connection = connection
             };
             m_ServerClientId = connection.NetworkId.Value;
-            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
-        
+
         private void OnServerNewClientConnection(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             m_Connections[connection.NetworkId.Value] = new ConnectionInfo
@@ -286,52 +287,52 @@ namespace Unity.Netcode.Unified
                 ReceiveQueue = null,
                 SendQueue = new BatchedSendQueue(BatchedSendQueue.MaximumMaximumCapacity),
                 Connection = connection
-            };;
-            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
+            }; ;
+            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
-        private const string InvalidRpcMessage = "An invalid RPC was received";
-        private const string HandshakeTimeoutMessage = "The connection was closed because the handshake timed out.";
-        private const string ApprovalFailureMessage = "The connection was closed because the connection was not approved by the server.";
-        private const string ApprovalTimeoutMessage = "The connection was closed because the connection approval process timed out.";
-        
+        private const string k_InvalidRpcMessage = "An invalid RPC was received";
+        private const string k_HandshakeTimeoutMessage = "The connection was closed because the handshake timed out.";
+        private const string k_ApprovalFailureMessage = "The connection was closed because the connection was not approved by the server.";
+        private const string k_ApprovalTimeoutMessage = "The connection was closed because the connection approval process timed out.";
+
         private string GetDisconnectMessageFromNetworkStreamDisconnectReason(NetworkStreamDisconnectReason reason)
         {
             switch (reason)
             {
                 case NetworkStreamDisconnectReason.ConnectionClose:
                     return UnityTransportNotificationHandler.DisconnectedMessage;
-                case NetworkStreamDisconnectReason.Timeout: 
+                case NetworkStreamDisconnectReason.Timeout:
                     return UnityTransportNotificationHandler.TimeoutMessage;
-                case NetworkStreamDisconnectReason.MaxConnectionAttempts: 
+                case NetworkStreamDisconnectReason.MaxConnectionAttempts:
                     return UnityTransportNotificationHandler.MaxConnectionAttemptsMessage;
-                case NetworkStreamDisconnectReason.ClosedByRemote: 
-                    return  UnityTransportNotificationHandler.ClosedRemoteConnectionMessage;
+                case NetworkStreamDisconnectReason.ClosedByRemote:
+                    return UnityTransportNotificationHandler.ClosedRemoteConnectionMessage;
                 case NetworkStreamDisconnectReason.BadProtocolVersion:
-                    return  UnityTransportNotificationHandler.ProtocolErrorMessage;
+                    return UnityTransportNotificationHandler.ProtocolErrorMessage;
                 case NetworkStreamDisconnectReason.InvalidRpc:
-                    return InvalidRpcMessage;
+                    return k_InvalidRpcMessage;
                 case NetworkStreamDisconnectReason.AuthenticationFailure:
                     return UnityTransportNotificationHandler.AuthenticationFailureMessage;
                 case NetworkStreamDisconnectReason.ProtocolError:
-                    return  UnityTransportNotificationHandler.ProtocolErrorMessage;
+                    return UnityTransportNotificationHandler.ProtocolErrorMessage;
                 case NetworkStreamDisconnectReason.HandshakeTimeout:
-                    return HandshakeTimeoutMessage;
+                    return k_HandshakeTimeoutMessage;
                 case NetworkStreamDisconnectReason.ApprovalFailure:
-                    return ApprovalFailureMessage;
+                    return k_ApprovalFailureMessage;
                 case NetworkStreamDisconnectReason.ApprovalTimeout:
-                    return ApprovalTimeoutMessage;
+                    return k_ApprovalTimeoutMessage;
             }
             return "Unknown reason";
         }
-        
+
         private DisconnectEvents GetDisconnectEventFromNetworkStreamDisconnectReason(NetworkStreamDisconnectReason reason)
         {
             switch (reason)
             {
                 case NetworkStreamDisconnectReason.ConnectionClose:
                     return DisconnectEvents.Disconnected;
-                case NetworkStreamDisconnectReason.Timeout: 
+                case NetworkStreamDisconnectReason.Timeout:
                     return DisconnectEvents.ProtocolTimeout;
                 case NetworkStreamDisconnectReason.MaxConnectionAttempts:
                     return DisconnectEvents.MaxConnectionAttempts;
@@ -361,12 +362,12 @@ namespace Unity.Netcode.Unified
                 GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
                 GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
             );
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
         private void OnServerClientDisconnected(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default,  m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
         public override bool StartClient()
