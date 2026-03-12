@@ -22,7 +22,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed un-needed exceptions on `NetworkObject.cs`. (#3867)
 
 ### Fixed
+
 - Fixed `NetworkShow` behavior when it is called twice. (#3867)
+- NestedNetworkVariables initialized with no value no longer throw an error. (#3891)
 
 ### Security
 
