@@ -103,7 +103,7 @@ namespace Unity.Netcode
         /// Registeres a native hash set (this generic implementation works with all types)
         /// </summary>
         /// <typeparam name="T">The type of elements contained in the HashSet, must implement IEquatable</typeparam>
-        public static void InitializeSerializer_HashSet<T>() where T : IEquatable<T>
+        public static void InitializeSerializer_HashSet<T>()
         {
             NetworkVariableSerialization<HashSet<T>>.Serializer = new HashSetSerializer<T>();
         }
