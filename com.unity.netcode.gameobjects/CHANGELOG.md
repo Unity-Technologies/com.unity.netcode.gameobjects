@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where an attachable could log an error upon being de-spawned during shutdown. (#3895)
+- NestedNetworkVariables initialized with no value no longer throw an error. (#3891)
 
 ### Security
 
