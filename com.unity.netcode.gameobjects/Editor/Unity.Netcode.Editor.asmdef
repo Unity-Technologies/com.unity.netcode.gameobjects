@@ -40,11 +40,6 @@
             "define": "COM_UNITY_MODULES_PHYSICS2D"
         },
         {
-            "name": "com.unity.services.relay",
-            "expression": "1.0",
-            "define": "RELAY_SDK_INSTALLED"
-        },
-        {
             "name": "com.unity.services.multiplayer",
             "expression": "0.2.0",
             "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
