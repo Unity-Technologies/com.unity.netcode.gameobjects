@@ -5,7 +5,7 @@
     "com.unity.multiplayer.tools": "1.1.1",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.test-framework": "1.4.6",
-    "com.unity.test-framework.performance": "3.2.0",
+    "com.unity.test-framework.performance": "3.2.1",
     "com.unity.transport": "2.6.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
