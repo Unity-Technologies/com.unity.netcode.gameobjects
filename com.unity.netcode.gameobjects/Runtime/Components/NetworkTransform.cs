@@ -1847,13 +1847,12 @@ namespace Unity.Netcode.Components
         /// is the owner being synchronized we don't want to synchronize with
         /// the exception of the NetworkObject being owned by the server.
         /// </summary>
-        private bool ShouldSynchronizeHalfFloat(ulong targetClientId)
+        private bool ShouldSynchronizeHalfFloat(NetworkManager networkManager, ulong targetClientId)
         {
             if (!IsServerAuthoritative() && NetworkObject.OwnerClientId == targetClientId)
             {
                 // In distributed authority mode we want to synchronize the half float if we are the owner.
-                // TODO do we have a cached NetworkManager here? Should we create one?
-                return (!NetworkManager.DistributedAuthorityMode && NetworkObject.IsOwnedByServer) || (NetworkManager.DistributedAuthorityMode);
+                return (!networkManager.DistributedAuthorityMode && NetworkObject.IsOwnedByServer) || (networkManager.DistributedAuthorityMode);
             }
             return true;
         }
@@ -2117,7 +2116,6 @@ namespace Unity.Netcode.Components
             return CheckForStateChange(ref networkState);
         }
 
-        //private int m_CachedTickRateValue;
         /// <summary>
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
@@ -2376,7 +2374,7 @@ namespace Unity.Netcode.Components
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
-                        if (ShouldSynchronizeHalfFloat(targetClientId))
+                        if (ShouldSynchronizeHalfFloat(m_CachedNetworkManager, targetClientId))
                         {
                             // If we have a NetworkDeltaPosition that has a state applied, then we want to determine
                             // what needs to be synchronized. For owner authoritative mode, the server side
@@ -2970,7 +2968,7 @@ namespace Unity.Netcode.Components
                     if (isSynchronization)
                     {
                         // Need to use NetworkManager vs m_CachedNetworkManager here since we are yet to be spawned
-                        if (ShouldSynchronizeHalfFloat(NetworkManager.LocalClientId))
+                        if (ShouldSynchronizeHalfFloat(NetworkManager, NetworkManager.LocalClientId))
                         {
                             m_HalfPositionState.HalfVector3.Axis = newState.NetworkDeltaPosition.HalfVector3.Axis;
                             m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
