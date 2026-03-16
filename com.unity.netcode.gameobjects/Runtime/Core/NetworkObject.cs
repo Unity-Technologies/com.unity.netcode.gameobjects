@@ -1491,7 +1491,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasAuthority && !NetworkManagerOwner.DAHost)
+            if (!HasAuthority)
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
@@ -1505,7 +1505,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
+                        NetworkLog.LogError($"[{name}] Only the server can change visibility!");
                     }
                     return;
                 }
@@ -1586,7 +1586,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasAuthority && !NetworkManagerOwner.DAHost)
+            if (!HasAuthority)
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
@@ -1600,7 +1600,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"[{name}] Only the authority can change visibility!");
+                        NetworkLog.LogError($"[{name}] Only the server can change visibility!");
                     }
                     return;
                 }
