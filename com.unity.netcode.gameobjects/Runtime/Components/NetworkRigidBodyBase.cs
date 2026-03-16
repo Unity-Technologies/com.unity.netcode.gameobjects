@@ -52,6 +52,7 @@ namespace Unity.Netcode.Components
 #endif
 
 
+        private NetworkManager m_LocalNetworkManager;
         // Used to cache the authority state of this Rigidbody during the last frame
         private bool m_IsAuthority;
 
@@ -971,8 +972,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal void UpdateOwnershipAuthority()
         {
-            // TODO do we have a cached NetworkManager here? Should we create one?
-            if (NetworkManager.DistributedAuthorityMode)
+            if (m_LocalNetworkManager.DistributedAuthorityMode)
             {
                 // When in distributed authority mode, always use HasAuthority
                 m_IsAuthority = HasAuthority;
@@ -981,8 +981,7 @@ namespace Unity.Netcode.Components
             {
                 if (NetworkTransform.IsServerAuthoritative())
                 {
-                    // TODO do we have a cached NetworkManager here? Should we create one
-                    m_IsAuthority = NetworkManager.IsServer;
+                    m_IsAuthority = m_LocalNetworkManager.IsServer;
                 }
                 else
                 {
@@ -996,12 +995,16 @@ namespace Unity.Netcode.Components
             }
         }
 
+        internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
+        {
+            m_LocalNetworkManager = networkManager;
+        }
+
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
-            // TODO do we have a cached NetworkManager here? Should we create one
-            m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
-            m_TickRate = NetworkManager.NetworkConfig.TickRate;
+            m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
+            m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();
         }
 
