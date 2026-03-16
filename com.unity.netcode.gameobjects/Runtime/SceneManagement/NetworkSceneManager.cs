@@ -144,6 +144,7 @@ namespace Unity.Netcode
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
     /// Uses the <see cref="SceneEventMessage"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
+    [Serializable]
     public class NetworkSceneManager : IDisposable
     {
         internal const int InvalidSceneNameOrPath = -1;
@@ -2729,12 +2730,7 @@ namespace Unity.Netcode
             {
                 ScenePlacedObjects.Clear();
             }
-
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>();
 
             // Just add every NetworkObject found that isn't already in the list
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value
@@ -3034,7 +3030,7 @@ namespace Unity.Netcode
             // When we transfer session owner and we are using a DAHost, this will be pertinent (otherwise it is not when connected to a DA service)
             internal ulong[] ObserverIds;
             internal ulong[] NewObserverIds;
-            internal NetworkObject.SceneObject SceneObject;
+            internal NetworkObject.SerializedObject SerializedObject;
             internal FastBufferReader FastBufferReader;
         }
 
@@ -3042,7 +3038,7 @@ namespace Unity.Netcode
         internal int DeferredObjectCreationCount;
 
         // The added clientIds is specific to DAHost when session ownership changes and a normal client is controlling scene loading
-        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader, ulong[] observerIds, ulong[] newObserverIds)
+        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SerializedObject serializedObject, FastBufferReader fastBufferReader, ulong[] observerIds, ulong[] newObserverIds)
         {
             var deferredObjectCreationEntry = new DeferredObjectCreation()
             {
@@ -3050,7 +3046,7 @@ namespace Unity.Netcode
                 MessageSize = messageSize,
                 ObserverIds = observerIds,
                 NewObserverIds = newObserverIds,
-                SceneObject = sceneObject,
+                SerializedObject = serializedObject,
             };
 
             unsafe

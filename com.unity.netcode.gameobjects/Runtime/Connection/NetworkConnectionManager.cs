@@ -494,10 +494,12 @@ namespace Unity.Netcode
 
         internal ulong LocalClientTransportId => m_LocalClientTransportId;
 
+        private bool m_IsTransportConnected = false;
+
         /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
-        internal void ConnectEventHandler(ulong transportClientId)
+        internal void ConnectEventHandler(ulong transportId)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportConnect.Begin();
@@ -507,20 +509,45 @@ namespace Unity.Netcode
             // - When client receives one, it *must be* the server
             // Client's can't connect to or talk to other clients.
             // Server is a sentinel so only one exists, if we are server, we can't be connecting to it.
-            var clientId = transportClientId;
+
+            ulong clientId;
+
+            // If we're the server, then this connect event is firing for a new incoming client connection
             if (LocalClient.IsServer)
             {
+                var (_, alreadyConnected) = TransportIdToClientId(transportId);
+                if (alreadyConnected)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogError($"[TransportApproval][Server] TransportId {transportId} is already connected to this server!");
+                    }
+                    return;
+                }
+
                 clientId = m_NextClientId++;
             }
+            // Otherwise this connect event is an approved connection from the server
             else
             {
+                if (m_IsTransportConnected)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogError("[TransportApproval][Client] Client received a transport connection event after already connecting!");
+                    }
+                    return;
+                }
+
+                m_IsTransportConnected = true;
+
                 // Cache the local client's transport id.
-                m_LocalClientTransportId = transportClientId;
+                m_LocalClientTransportId = transportId;
                 clientId = NetworkManager.ServerClientId;
             }
 
-            ClientIdToTransportIdMap[clientId] = transportClientId;
-            TransportIdToClientIdMap[transportClientId] = clientId;
+            ClientIdToTransportIdMap[clientId] = transportId;
+            TransportIdToClientIdMap[transportId] = clientId;
             MessageManager.ClientConnected(clientId);
 
             if (LocalClient.IsServer)
@@ -1119,7 +1146,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key),
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.Serialize(clientPair.Key),
                     IncludesSerializedObject = true,
                 };
 
@@ -1540,6 +1567,7 @@ namespace Unity.Netcode
             ConnectedClientIds.Clear();
             ClientIdToTransportIdMap.Clear();
             TransportIdToClientIdMap.Clear();
+            m_IsTransportConnected = false;
             ClientsToApprove.Clear();
             NetworkObject.OrphanChildren.Clear();
             m_DisconnectReason = string.Empty;

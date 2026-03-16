@@ -10,6 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
     [GenerateSerializationForGenericParameter(0)]
+    [Serializable]
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
@@ -56,21 +57,6 @@ namespace Unity.Netcode
         ~NetworkList()
         {
             Dispose();
-        }
-
-        internal override void OnSpawned()
-        {
-            // If we are dirty and have write permissions by the time the NetworkObject
-            // is finished spawning (same frame), then go ahead and reset the dirty related
-            // properties for NetworkList in the event user script has made changes when
-            // spawning to prevent duplicate entries.
-            if (IsDirty() && CanSend())
-            {
-                UpdateLastSentTime();
-                ResetDirty();
-                SetDirty(false);
-            }
-            base.OnSpawned();
         }
 
         /// <inheritdoc cref="NetworkVariable{T}.ResetDirty"/>

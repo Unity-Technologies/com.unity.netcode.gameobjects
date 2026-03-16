@@ -29,15 +29,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Check the condition for this test and automatically handle varying processing
             // environments and conditions
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() =>
-            Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where(
-                (c) => c.IsSpawned).Count() == 2);
-#else
-            yield return WaitForConditionOrTimeOut(() =>
-            Object.FindObjectsOfType<NetworkVisibilityComponent>().Where(
-                (c) => c.IsSpawned).Count() == 2);
-#endif
+            yield return WaitForConditionOrTimeOut(() => FindObjects.ByType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for instances " +
                 "to be detected!");
         }
@@ -69,16 +61,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Check the condition for this test and automatically handle varying processing
             // environments and conditions
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() =>
-            Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where(
-                (c) => c.IsSpawned).Count() == 2);
-#else
-            yield return WaitForConditionOrTimeOut(() =>
-            Object.FindObjectsOfType<NetworkVisibilityComponent>().Where(
-                (c) => c.IsSpawned).Count() == 2);
-#endif
-
+            yield return WaitForConditionOrTimeOut(() => FindObjects.ByType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for instances " +
                 "to be detected!");
         }

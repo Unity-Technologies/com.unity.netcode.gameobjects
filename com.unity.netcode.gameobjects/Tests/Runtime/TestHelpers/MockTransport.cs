@@ -19,7 +19,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public override ulong ServerClientId { get; } = 0;
 
         public static ulong HighTransportId = 0;
-        public ulong TransportId = 0;
+        public ulong TransportId = ulong.MaxValue;
         public float SimulatedLatencySeconds;
         public float PacketDropRate;
         public float LatencyJitter;
@@ -75,15 +75,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override bool StartClient()
         {
-            TransportId = ++HighTransportId;
-            s_MessageQueue[TransportId] = new Queue<MessageData>();
+            // TransportId will be the max if it hasn't already been set.
+            if (TransportId == ulong.MaxValue)
+            {
+                TransportId = ++HighTransportId;
+                s_MessageQueue[TransportId] = new Queue<MessageData>();
+            }
             s_MessageQueue[ServerClientId].Enqueue(new MessageData { Event = NetworkEvent.Connect, FromClientId = TransportId, Payload = new ArraySegment<byte>() });
             return true;
         }
 
         public override bool StartServer()
         {
-            s_MessageQueue[ServerClientId] = new Queue<MessageData>();
+            if (TransportId == ulong.MaxValue)
+            {
+                TransportId = ServerClientId;
+                s_MessageQueue[ServerClientId] = new Queue<MessageData>();
+            }
             return true;
         }
 
@@ -104,6 +112,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override void Shutdown()
         {
+            TransportId = ulong.MaxValue;
         }
 
         protected override NetworkTopologyTypes OnCurrentTopology()

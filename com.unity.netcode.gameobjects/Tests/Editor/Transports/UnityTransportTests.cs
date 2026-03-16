@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -154,21 +155,21 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void UnityTransport_EmptySecurityStringsShouldThrow([Values("", null)] string cert, [Values("", null)] string secret)
         {
-            var supportingGO = new GameObject();
+            var supportingGo = new GameObject();
             try
             {
-                var networkManager = supportingGO.AddComponent<NetworkManager>(); // NM is required for UTP to work with certificates.
+                var networkManager = supportingGo.AddComponent<NetworkManager>(); // NM is required for UTP to work with certificates.
                 networkManager.NetworkConfig = new NetworkConfig();
-                UnityTransport transport = supportingGO.AddComponent<UnityTransport>();
+                UnityTransport transport = supportingGo.AddComponent<UnityTransport>();
                 networkManager.NetworkConfig.NetworkTransport = transport;
-                transport.Initialize();
+                transport.Initialize(networkManager);
                 transport.SetServerSecrets(serverCertificate: cert, serverPrivateKey: secret);
 
                 // Use encryption, but don't set certificate and check for exception
                 transport.UseEncryption = true;
                 Assert.Throws<System.Exception>(() =>
                 {
-                    networkManager.StartServer();
+                    transport.StartServer();
                 });
                 // Make sure StartServer failed
                 Assert.False(transport.GetNetworkDriver().IsCreated);
@@ -177,9 +178,9 @@ namespace Unity.Netcode.EditorTests
             }
             finally
             {
-                if (supportingGO != null)
+                if (supportingGo != null)
                 {
-                    Object.DestroyImmediate(supportingGO);
+                    Object.DestroyImmediate(supportingGo);
                 }
             }
         }
@@ -229,5 +230,46 @@ namespace Unity.Netcode.EditorTests
             transport.Shutdown();
         }
 #endif
+
+        private class IPCDriverConstructor : INetworkStreamDriverConstructor
+        {
+            public void CreateDriver(
+                UnityTransport transport,
+                out NetworkDriver driver,
+                out NetworkPipeline unreliableFragmentedPipeline,
+                out NetworkPipeline unreliableSequencedFragmentedPipeline,
+                out NetworkPipeline reliableSequencedPipeline)
+            {
+                var settings = transport.GetDefaultNetworkSettings();
+                driver = NetworkDriver.Create(new IPCNetworkInterface(), settings);
+
+#if MULTIPLAYER_TOOLS
+                driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
+
+                transport.GetDefaultPipelineConfigurations(
+                    out var unreliableFragmentedPipelineStages,
+                    out var unreliableSequencedFragmentedPipelineStages,
+                    out var reliableSequencedPipelineStages);
+
+                unreliableFragmentedPipeline = driver.CreatePipeline(unreliableFragmentedPipelineStages);
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(unreliableSequencedFragmentedPipelineStages);
+                reliableSequencedPipeline = driver.CreatePipeline(reliableSequencedPipelineStages);
+            }
+        }
+
+        [Test]
+        public void UnityTransport_CustomDriverConstructorWithDefaultPipelines()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            UnityTransport.s_DriverConstructor = new IPCDriverConstructor();
+            transport.Initialize();
+
+            Assert.True(transport.StartServer());
+
+            transport.Shutdown();
+
+            UnityTransport.s_DriverConstructor = null;
+        }
     }
 }

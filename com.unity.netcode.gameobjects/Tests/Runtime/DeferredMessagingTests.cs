@@ -278,12 +278,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private T GetComponentForClient<T>(ulong clientId) where T : NetworkBehaviour
         {
-#if UNITY_2023_1_OR_NEWER
-            var componentsToFind = Object.FindObjectsByType<T>(FindObjectsSortMode.InstanceID);
-#else
-            var componentsToFind = Object.FindObjectsOfType<T>();
-#endif
-
+            var componentsToFind = FindObjects.ByType<T>();
             foreach (var component in componentsToFind)
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
@@ -761,11 +756,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var found1 = false;
                 var found2 = false;
-#if UNITY_2023_1_OR_NEWER
-                var deferredMessageTestRpcComponents = Object.FindObjectsByType<DeferredMessageTestRpcComponent>(FindObjectsSortMode.None);
-#else
-                var deferredMessageTestRpcComponents = Object.FindObjectsOfType<DeferredMessageTestRpcComponent>();
-#endif
+                var deferredMessageTestRpcComponents = FindObjects.ByType<DeferredMessageTestRpcComponent>();
 
                 foreach (var component in deferredMessageTestRpcComponents)
                 {

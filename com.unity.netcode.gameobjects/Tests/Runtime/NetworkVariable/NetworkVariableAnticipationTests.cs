@@ -3,7 +3,6 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -79,7 +78,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariableAnticipationComponent GetServerComponent()
         {
-            foreach (var obj in Object.FindObjectsByType<NetworkVariableAnticipationComponent>(FindObjectsSortMode.None))
+            var objects = FindObjects.ByType<NetworkVariableAnticipationComponent>();
+            foreach (var obj in objects)
             {
                 if (obj.NetworkManager == m_ServerNetworkManager && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
                 {
@@ -92,7 +92,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariableAnticipationComponent GetOtherClientComponent()
         {
-            foreach (var obj in Object.FindObjectsByType<NetworkVariableAnticipationComponent>(FindObjectsSortMode.None))
+            var objects = FindObjects.ByType<NetworkVariableAnticipationComponent>();
+            foreach (var obj in objects)
             {
                 if (obj.NetworkManager == m_ClientNetworkManagers[1] && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
                 {

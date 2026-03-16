@@ -159,12 +159,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
-#if UNITY_2023_1_OR_NEWER
-            var inSceneNetworkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
-#else
-            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
-#endif
-
+            var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 ProcessInSceneObject(sobj, networkManager);
@@ -713,11 +708,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSpawned);
-#else
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSpawned);
             var distributedAuthority = networkManager.DistributedAuthorityMode;
             foreach (var networkObject in networkObjects)
             {

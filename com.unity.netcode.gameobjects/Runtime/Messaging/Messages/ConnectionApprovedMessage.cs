@@ -158,10 +158,10 @@ namespace Unity.Netcode
                 {
                     if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
-                        sobj.Observers.Add(OwnerClientId);
+                        sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                        var sceneObject = sobj.GetMessageSceneObject(OwnerClientId, IsDistributedAuthority);
-                        sceneObject.Serialize(writer);
+                        var serializedObject = sobj.Serialize(OwnerClientId, IsDistributedAuthority);
+                        serializedObject.Serialize(writer);
                         ++sceneObjectCount;
                     }
                 }
@@ -342,9 +342,9 @@ namespace Unity.Netcode
                 // to create a list to hold the data. This is a breach of convention for performance reasons.
                 for (ushort i = 0; i < sceneObjectCount; i++)
                 {
-                    var sceneObject = new NetworkObject.SceneObject();
-                    sceneObject.Deserialize(m_ReceivedSceneObjectData);
-                    NetworkObject.AddSceneObject(sceneObject, m_ReceivedSceneObjectData, networkManager);
+                    var serializedObject = new NetworkObject.SerializedObject();
+                    serializedObject.Deserialize(m_ReceivedSceneObjectData);
+                    NetworkObject.Deserialize(serializedObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
                 if (networkManager.AutoSpawnPlayerPrefabClientSide)
