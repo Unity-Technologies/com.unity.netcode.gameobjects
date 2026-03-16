@@ -23,14 +23,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed `NetworkShow` behavior when it is called twice. (#3867)
+- Fixed issue where an attachable could log an error upon being de-spawned during shutdown. (#3895)
 - NestedNetworkVariables initialized with no value no longer throw an error. (#3891)
+- Fixed `NetworkShow` behavior when it is called twice. (#3867)
 
 ### Security
 
 
 ### Obsolete
-- `NotListeningException` is now marked as obsolete as it is not used internally anymore. (#3867)
+- `NotListeningException` is now marked as obsolete as it is no longer used internally. (#3867)
 
 ## [2.10.0] - 2026-03-01
 
