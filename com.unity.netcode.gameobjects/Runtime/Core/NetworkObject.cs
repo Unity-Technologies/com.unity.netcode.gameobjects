@@ -391,7 +391,7 @@ namespace Unity.Netcode
         public void DeferDespawn(int tickOffset, bool destroy = true)
         {
             // Ensure we log the DAMode message first as locking ownership is not allowed if not in DAMode.
-            if (!NetworkManagerOwner.DistributedAuthorityMode)
+            if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
