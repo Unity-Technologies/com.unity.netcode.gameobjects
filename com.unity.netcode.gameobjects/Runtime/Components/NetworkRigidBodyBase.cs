@@ -998,6 +998,7 @@ namespace Unity.Netcode.Components
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             m_LocalNetworkManager = networkManager;
+            base.InternalOnNetworkPreSpawn(ref networkManager);
         }
 
         /// <inheritdoc />
@@ -1006,6 +1007,7 @@ namespace Unity.Netcode.Components
             m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
             m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();
+            base.OnNetworkSpawn();
         }
 
         /// <inheritdoc />
@@ -1026,6 +1028,7 @@ namespace Unity.Netcode.Components
                 SetIsKinematic(true);
             }
             SetInterpolation(m_OriginalInterpolation);
+            base.OnNetworkDespawn();
         }
 
         // TODO: Possibly provide a NetworkJoint that allows for more options than fixed.

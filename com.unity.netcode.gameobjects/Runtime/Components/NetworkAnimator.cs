@@ -917,6 +917,7 @@ namespace Unity.Netcode.Components
             // Save internal state references
             LocalNetworkManager = networkManager;
             DistributedAuthorityMode = LocalNetworkManager.DistributedAuthorityMode;
+            base.InternalOnNetworkPreSpawn(ref networkManager);
         }
 
         /// <inheritdoc/>
@@ -939,12 +940,14 @@ namespace Unity.Netcode.Components
 
             // Create a handler for state changes
             m_NetworkAnimatorStateChangeHandler = new NetworkAnimatorStateChangeHandler(this);
+            base.OnNetworkSpawn();
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             SpawnCleanup();
+            base.OnNetworkDespawn();
         }
 
         /// <summary>
@@ -1065,6 +1068,7 @@ namespace Unity.Netcode.Components
                     UpdateAnimationState(animationState);
                 }
             }
+            base.OnSynchronize(ref serializer);
         }
 
         /// <summary>
