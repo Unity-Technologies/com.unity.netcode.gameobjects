@@ -19,8 +19,19 @@ namespace Unity.Netcode
         public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
         {
             var sendBuffer = batchData.ToTempByteArray();
+            var (transportId, clientExists) = m_ConnectionManager.ClientIdToTransportId(clientId);
 
-            m_NetworkTransport.Send(m_ConnectionManager.ClientIdToTransportId(clientId), sendBuffer, delivery);
+            if (!clientExists)
+            {
+                if (m_ConnectionManager.NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogWarning("Trying to send a message to a client who doesn't have a transport connection");
+                }
+
+                return;
+            }
+
+            m_NetworkTransport.Send(transportId, sendBuffer, delivery);
         }
     }
 }

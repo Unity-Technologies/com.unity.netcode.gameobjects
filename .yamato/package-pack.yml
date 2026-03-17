@@ -7,6 +7,11 @@
   # The job performs additional validation by using Package Verification Pipeline (PVP). It includes x-ray validation for quick package structure verification
   # Because of that validation we can detect errors at the early stage of testing so not to waste CI resources
 
+# NOTES--------------------------------------------------------------------------------
+  # For NGO we use package_pack everywhere rather than project_pack
+  # This is because only the NGO package is being referenced as a file inside testproject
+  # This means both project_pack and package_pack produce same package artifacts
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
@@ -22,25 +27,24 @@
   # TODO: we should aim to replace target PVP profile from supported to gold
 
 #------------------------------------------------------------------------------------
-  
-{% for platform in test_platforms.desktop -%}
-package_pack_-_ngo_{{ platform.name }}:
-  name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
-{% if platform.model %}
-    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
-{% endif %}
+
+# Note that a package pack job on ubuntu will return the same tarball as windows or macOS based job
+# It may be confusing that a mac package test job depends on ubuntu pack, but it simplifies the configuration so this comment should help clarifying
+# This also reduces overhead since there is no point of running essentially 2 same jobs
+package_pack_-_ngo_ubuntu:
+  name: Package Pack (and x-ray) - NGO [ubuntu]
+  agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
   timeout: 0.25
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
   commands:
-    - python Tools/scripts/release.py # Needed to ensure that CHANGELOG is properly formatted for this test due to the fact that we have bumped package version (to properly perform vetting tests)
+    # Remove ValidationExceptions.json and its .meta file if they exist. For this specific test it's necessary (otherwise we want to keep them since we use those for release).
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json.meta
+
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
-    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
+    - upm-pvp require "$XRAY_PROFILE" --results pvp-results --allow-missing
   artifacts:
     logs:
       paths:
@@ -48,4 +52,3 @@ package_pack_-_ngo_{{ platform.name }}:
     packages:
       paths:
         - "upm-ci~/**"
-{% endfor -%}

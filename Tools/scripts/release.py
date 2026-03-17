@@ -6,96 +6,89 @@ This python script makes the NGO package release ready. What it does is:
 Note that this script NEEDS TO BE RUN FROM THE ROOT of the project.
 """
 #!/usr/bin/env python3
-import datetime
 import json
 import os
 import re
+import sys
 import subprocess
 import platform
 
-package_name = 'com.unity.netcode.gameobjects'
+from Utils.general_utils import get_package_version_from_manifest, update_changelog, update_validation_exceptions # nopep8
 
-def update_changelog(new_version):
+def regenerate_wrench():
     """
-    Cleans the [Unreleased] section of the changelog by removing empty subsections,
-    then replaces the '[Unreleased]' tag with the new version and release date.
-    """
-
-    changelog_entry = f'## [{new_version}] - {datetime.date.today().isoformat()}'
-    changelog_path = f'{package_name}/CHANGELOG.md'
-    print("Latest CHANGELOG entry will be modified to: " + changelog_entry)
-
-    with open(changelog_path, 'r', encoding='UTF-8') as f:
-        changelog_text = f.read()
-
-    # This pattern finds a line starting with '###', followed by its newline,
-    # and then two more lines that contain only whitespace.
-    # The re.MULTILINE flag allows '^' to match the start of each line.
-    pattern = re.compile(r"^###.*\n\n\n", re.MULTILINE)
-
-    # Replace every match with an empty string. The goal is to remove empty CHANGELOG subsections.
-    cleaned_content = pattern.sub('', changelog_text)
-
-    # Replace the [Unreleased] section with the new version + cleaned subsections
-    changelog_text = re.sub(r'## \[Unreleased\]', changelog_entry, cleaned_content)
-
-    # Write the changes
-    with open(changelog_path, 'w', encoding='UTF-8', newline='\n') as file:
-        file.write(changelog_text)
-
-
-def update_validation_exceptions(new_version):
-    """
-    Updates the ValidationExceptions.json file with the new package version.
+    It runs Tools/regenerate-ci.cmd OR Tools/regenerate-ci.sh script
+    to regenerate the CI files. (depending on the OS)
+    
+    This is needed because wrench scripts content is created dynamically depending on the available editors
     """
 
-    validation_file = f'{package_name}/ValidationExceptions.json'
+    # --- Regenerate the CI files ---
+    print("\nRegenerating CI files...")
+    script_path = ""
+    if platform.system() == "Windows":
+        script_path = os.path.join('Tools', 'regenerate-ci.cmd')
+    else: # macOS and Linux
+        script_path = os.path.join('Tools', 'regenerate-ci.sh')
 
-    # If files do not exist, exit
-    if not os.path.exists(validation_file):
-        return
+    if not os.path.exists(script_path):
+        raise FileNotFoundError(f"Error: Regeneration script not found at '{script_path}'.")
 
-    # Update the PackageVersion in the exceptions
-    with open(validation_file, 'rb') as f:
-        json_text = f.read()
-        data = json.loads(json_text)
-        updated = False
-        for exceptionElements in ["WarningExceptions", "ErrorExceptions"]:
-            exceptions = data.get(exceptionElements)
+    try:
+        # Execute the regeneration script
+        # On non-Windows systems, the script might need execute permissions.
+        if platform.system() != "Windows":
+            os.chmod(script_path, 0o755)
 
-            if exceptions is not None:
-                for exception in exceptions:
-                    if 'PackageVersion' in exception:
-                        exception['PackageVersion'] = new_version
-                        updated = True
+        subprocess.run([script_path], check=True, shell=True)
 
-    # If no exceptions were updated, we do not need to write the file
-    if not updated:
-        return
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Error: The CI regeneration script failed with exit code {e.returncode}.")
+    except Exception as e:
+        raise Exception(f"An unexpected error occurred while running the regeneration script: {e}")
+        
 
-    with open(validation_file, 'w', encoding='UTF-8', newline='\n') as json_file:
-        json.dump(data, json_file, ensure_ascii=False, indent=2)
-        json_file.write("\n")  # Add newline cause Py JSON does not
-        print(f"  updated `{validation_file}`")
+def make_package_release_ready(manifest_path, changelog_path, validation_exceptions_path, package_version):
+
+    if not os.path.exists(manifest_path):
+        print(f" Path does not exist: {manifest_path}")
+        sys.exit(1)
+
+    if not os.path.exists(changelog_path):
+        print(f" Path does not exist: {changelog_path}")
+        sys.exit(1)
+        
+    if not os.path.exists(validation_exceptions_path):
+        print(f" Path does not exist: {validation_exceptions_path}")
+        sys.exit(1)
+
+    if package_version is None:
+        print(f"Package version not found at {manifest_path}")
+        sys.exit(1)
+
+    try: 
+        # Update the ValidationExceptions.json file
+        # with the new package version OR remove it if not a release branch
+        update_validation_exceptions(validation_exceptions_path, package_version)
+        # Clean the CHANGELOG and add latest entry
+        # package version is already know as explained in
+        # https://github.cds.internal.unity3d.com/unity/dots/pull/14318
+        update_changelog(changelog_path, package_version)
+        # Make sure that the wrench scripts are up to date
+        regenerate_wrench()
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
-def get_manifest_json_version(filename):
-    """
-    Reads the package.json file and returns the version specified in it.
-    """
-    with open(filename, 'rb') as f:
-        json_text = f.read()
-        data = json.loads(json_text)
 
-    return data['version']
 
 
 if __name__ == '__main__':
-    manifest_path = f'{package_name}/package.json'
-    package_version = get_manifest_json_version(manifest_path)
+    manifest_path = 'com.unity.netcode.gameobjects/package.json'
+    changelog_path = 'com.unity.netcode.gameobjects/CHANGELOG.md'
+    validation_exceptions_path = 'com.unity.netcode.gameobjects/ValidationExceptions.json'
+    package_version = get_package_version_from_manifest(manifest_path)
 
-    # Update the ValidationExceptions.json file
-    # with the new package version OR remove it if not a release branch
-    update_validation_exceptions(package_version)
-    # Clean the CHANGELOG and add latest entry
-    update_changelog(package_version)
+    make_package_release_ready(manifest_path, changelog_path, validation_exceptions_path, package_version)

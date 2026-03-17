@@ -18,7 +18,7 @@ jobs:
       issues: write
     
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           # Only mark issues (not PRs) as stale
           any-of-labels: 'stat:awaiting-response'

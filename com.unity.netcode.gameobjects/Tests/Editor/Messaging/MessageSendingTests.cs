@@ -333,11 +333,8 @@ namespace Unity.Netcode.EditorTests
         public void WhenReceivingAMessageWithoutAHandler_ExceptionIsLogged()
         {
             // If a NetworkMessageManager already exists then dispose of it before creating a new NetworkMessageManager (otherwise memory leak)
-            if (m_MessageManager != null)
-            {
-                m_MessageManager.Dispose();
-                m_MessageManager = null;
-            }
+            m_MessageManager?.Dispose();
+            m_MessageManager = null;
 
             // Since m_MessageManager is disposed during teardown we don't need to worry about that here.
             m_MessageManager = new NetworkMessageManager(new NopMessageSender(), this, new TestNoHandlerMessageProvider());

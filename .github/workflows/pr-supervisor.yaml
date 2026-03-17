@@ -1,0 +1,66 @@
+﻿# GitHub Actions workflow to monitor Yamato CI job state on pull requests
+# We are using https://cli.github.com/manual/gh_pr_checks
+# The aim is to ensure that conditionally triggered Yamato jobs are completed successfully before allowing merges
+
+# This job will be required in branch protection rules for develop, develop-2.0.0, and release/* branches. It's only goal will be to ensure that Yamato jobs are completed successfully before allowing Pr to merge.
+# Note that conditional jobs will have 30s to show which is always the cas since they are showing up as soon as in distribution stage.
+
+name: Yamato PR Supervisor
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - develop
+      - develop-2.0.0
+      - release/*
+        
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  yamato-supervisor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 720
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        
+      - name: Wait and Verify Yamato Job Status
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          
+          
+          MAX_ATTEMPTS=$((12*60))
+          INTERVAL=60
+          
+          sleep $INTERVAL
+          for ((i=1;i<=MAX_ATTEMPTS;i++)); do
+            echo "Polling PR checks (attempt $i/$MAX_ATTEMPTS)..."
+          
+            # We want to watch for pending checks beside this check
+            checks=$(gh pr checks $PR_NUMBER --json name,state --jq '[ .[] | select(.name != "yamato-supervisor") ]')
+            
+            pending=$(echo "$checks" | jq '[.[] | select(.state == "PENDING")] | length')
+            skipping=$(echo "$checks" | jq '[.[] | select(.state == "SKIPPED")] | length')
+            passed=$(echo "$checks" | jq '[.[] | select(.state == "SUCCESS")] | length')
+            failed=$(echo "$checks" | jq '[.[] | select(.state == "FAILURE")] | length')
+          
+            echo "Pending checks: $pending, Skipping checks: $skipping", Passed checks: $passed, Failed checks: $failed
+          
+            if [[ "$failed" -gt 0 ]]; then
+              echo "A check has failed! Failing fast."
+              exit 1
+            fi
+
+            if [[ "$pending" -eq 0 ]] && [[ "$passed" -gt 0 ]]; then
+              echo "All non-supervisor checks are completed!"
+              exit 0
+            fi
+          
+            sleep $INTERVAL
+          done

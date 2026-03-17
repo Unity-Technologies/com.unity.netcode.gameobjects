@@ -29,6 +29,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Obsolete
 
 
+## [1.15.1] - 2026-01-21
+
+### Fixed
+
+- general documentation update
+
+## [1.15.0] - 2025-11-14
+
+### Changed
+
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround. (#3744)
+- The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3721)
+- Changed minimum Unity version supported to 2022.3 LTS
+
+### Fixed
+
+- Multiple disconnect events from the same transport will no longer disconnect the host. (#3721)
+- Exception when the network prefab list in the network manager has uninitialized elements. (#3744)
+
 ## [1.14.1] - 2025-08-17
 
 ### Fixed

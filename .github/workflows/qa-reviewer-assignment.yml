@@ -1,0 +1,36 @@
+# This workflow depend on the content of .github/pull_request_template.md file, which should contain the required sections that the script checks for
+# This also works in parallel with .github/workflows/pr-description-validation.yml which validates PR format
+# In contrast to .github/workflows/pr-description-validation.yml, this workflow is conditional and aims to ease the process of requesting QA review by automatically assigning the QA team  whenever a checkbox is marked
+
+# In case that the given checkboxes are marked the script will automatically add netcode-qa team as a reviewer.
+
+name: 'Assign QA Reviewer'
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  assign-qa:
+    # This job only runs if the checkbox in the PR description exist and is checked.
+    if: >
+      contains(github.event.pull_request.body, '- [x] `Review automated tests`') ||
+      contains(github.event.pull_request.body, '- [x] `Execute manual tests`') ||
+      contains(github.event.pull_request.body, '- [x] `Provide feedback about the PR`')
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: 'Assign QA Team'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              team_reviewers: ['netcode-qa']
+            });
+            console.log('Assigned netcode-qa for review.');

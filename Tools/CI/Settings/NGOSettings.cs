@@ -1,5 +1,6 @@
 ﻿using RecipeEngine.Api.Settings;
 using RecipeEngine.Modules.Wrench.Models;
+using RecipeEngine.Modules.Wrench.Platforms;
 using RecipeEngine.Modules.Wrench.Settings;
 
 namespace NGO.Cookbook.Settings;
@@ -23,7 +24,7 @@ public class NGOSettings : AnnotatedSettingsBase
             new PackageOptions()
             {
                 ReleaseOptions = new ReleaseOptions() { IsReleasing = true },
-                MaximumEditorVersion = "6000.2", // NGOv1.X will be deprecated in 6000.3+ so we won't run tests on higher editor versions
+                MaximumEditorVersion = "6000.0", // NGOv1.X will be deprecated in 6000.3+ so we won't run tests on higher editor versions
                 ValidationOptions = validationOptions
             }
         }
@@ -31,12 +32,9 @@ public class NGOSettings : AnnotatedSettingsBase
 
     public NGOSettings()
     {
-        Wrench = new WrenchSettings(
-            packagesRootPaths,
-            PackageOptions
-        );
-
+        Wrench = new WrenchSettings(packagesRootPaths, PackageOptions);
         Wrench.PvpProfilesToCheck = new HashSet<string>() { "supported" };
+        Wrench.Packages["com.unity.netcode.gameobjects"].PackAndPromotePlatformType = EditorPlatformType.Ubuntu2204;
     }
 
     public WrenchSettings Wrench { get; private set; }

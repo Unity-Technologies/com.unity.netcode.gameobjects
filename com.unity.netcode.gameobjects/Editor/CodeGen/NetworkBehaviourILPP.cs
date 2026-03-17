@@ -408,7 +408,14 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError($"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>");
+                        foreach (var typeInterface in type.Resolve().Interfaces)
+                        {
+                            if (typeInterface.InterfaceType.Name.Contains(typeof(IEquatable<>).Name) && typeInterface.InterfaceType.IsGenericInstance)
+                            {
+                                m_Diagnostics.AddError($"{type}: A generic IEquatable '{typeInterface.InterfaceType.FullName}' is not supported.");
+                            }
+                        }
+                        m_Diagnostics.AddError($"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>.");
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 

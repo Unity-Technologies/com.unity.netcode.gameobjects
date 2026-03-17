@@ -5,25 +5,25 @@
   # This job executes project-specific tests in Unity Editor context
   # Those tests cover both PlayMode and EditMode tests from project test assemblies
   # NGO package tests are NOT being executed within this job (those are handled in separate package test jobs)
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs configurations are generated using nested loops through:
     # 1. For all projects WITH TESTS (filtered by has_tests flag) (testproject, testproject-tools-interation) [For more info look into project.metafile configuration]
     # 2. For all desktop platforms (Windows, Ubuntu, macOS)
-    # 3. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
-  
+    # 3. For all supported Unity Editor versions (for NGOv1.X this means 2022.3+ editors)
+
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This job runs in Editor context only (no player builds is required)
   # No scripting backend variations needed (Editor context)
   # Architecture variations not applicable (Editor context)
   # Requires project packaging as prerequisite (dependency job)
-  
+
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # TODO: Currently upm-ci is being used but in the future it will be replaced by upm-pvp
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
-  
+
 #------------------------------------------------------------------------------------
-  
+
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
@@ -38,15 +38,15 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor for tests execution
-    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests --extra-utr-arg="--reruncount=1 --clean-library-on-rerun" # project tests execution via upm-ci
+    - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
+    - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

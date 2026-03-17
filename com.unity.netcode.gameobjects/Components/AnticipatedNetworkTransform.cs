@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -44,6 +45,7 @@ namespace Unity.Netcode.Components
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Anticipated Network Transform")]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
+    [HelpURL(HelpUrls.AnticipatedNetworkTransform)]
     public class AnticipatedNetworkTransform : NetworkTransform
     {
         /// <summary>

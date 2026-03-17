@@ -25,7 +25,7 @@ namespace Unity.Netcode
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <returns>The instantiated NetworkObject instance. Returns null if instantiation fails.</returns>
-        NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
         /// Invoked on Client and Server
@@ -41,7 +41,7 @@ namespace Unity.Netcode
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        void Destroy(NetworkObject networkObject);
+        public void Destroy(NetworkObject networkObject);
     }
 
     /// <summary>

@@ -9,7 +9,6 @@ CI related files are present inside .yamato/ folder and we can distinguish speci
 
 ### Helper jobs
 - `.yamato/package-pack.yml` responsible for generating package artifacts (.tgz) required for testing and publishing.
-- `.yamato/project-pack.yml` responsible for generating package artifacts (.tgz) required for testing and publishing. This packs all packages of a given project.
 - `.yamato/_run-all.yml` responsible for grouping tests into groups for easier management (for example "all console tests").
 - `.yamato/_triggers.yml` responsible for defining triggers (PR, nightly, weekly etc.) and defining which tests to run.
 - `disable-burst-if-requested.py` responsible for helping to disable burst if needed.
@@ -70,7 +69,7 @@ Currently, the CI implementation supports the following platforms:
     - Ubuntu
     - macOS
 4. Unity Editor Versions
-    - Supports NGOv1.X (2021.3+ editors)
+    - Supports NGOv1.X (2022.3+ editors)
 5. Architectures
     - x64
     - ARM64 (This is present for consoles/mobiles but will be extended. More information is present in specific standalone test files)

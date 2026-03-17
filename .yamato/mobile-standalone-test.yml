@@ -4,13 +4,13 @@
 # DESCRIPTION--------------------------------------------------------------------------
   # This job is responsible for Mobile platform test validation.
   # Those tests cover both PlayMode and EditMode tests from package test assemblies.
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For all mobile platform (Android, iOS)
-    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
+    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2022.3+ editors)
     # 3. For the default project.
-  
+
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # For mobile devices a split is required into two phases:
     # 1. Build Phase: Creates standalone players for mobile platforms
@@ -18,23 +18,23 @@
   # The Run phase uses build job as dependency
   # Note: More of a Unity specific but test assemblies need to be included in the build phase command
   # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
-  
+
 # PLATFORM SPECIFICS--------------------------------------------------------------------
   # iOS Requirements:
     # Must use IL2CPP scripting backend
     # Only supports ARM64 architecture
     # Builds on macOS agents only
-  
+
   # Android Requirements:
     # Uses IL2CPP scripting backend (recommended over Mono)
     # Supports both ARM64 and ARMv7 architectures
     # Can be built on any desktop platform
-  
+
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # TODO: consider adding all projects that have tests
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
-  
-  
+
+
 # BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_build -%}
@@ -48,14 +48,14 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% if platform.model %}
       model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
-  # Automatic UI interruption handling is available for iPhones running iOS 15 and above (models SE-Gen3 and 13). 
+  # Automatic UI interruption handling is available for iPhones running iOS 15 and above (models SE-Gen3 and 13).
   # It is enabled by default when using those devices. Otherwise, system alerts (e.g. “Local Network Access” permission alert, introduced in iOS 14) might cause disruptions during test execution.
   # If building of the test app is done on a separate (“Build”) job, please make sure that that job has environment variable UNITY_HANDLEUIINTERRUPTIONS set to 1.
   variables:
     UNITY_HANDLEUIINTERRUPTIONS: 1
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --wait
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
     players:
       paths:
@@ -66,8 +66,8 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
-  
-  
+
+
 # RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
@@ -84,24 +84,24 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   commands:
     # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
-  
+
 {% if platform.standalone == "Android" %}
     # Download standalone UnityTestRunner and ADB setup
     - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey.pub -O %USERPROFILE%/.android/adbkey.pub
     - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey -O %USERPROFILE%/.android/adbkey
     - command: gsudo NetSh Advfirewall set allprofiles state off
-  
+
     # Connect to Android device
     - command: '"%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP%'
-  
+
     # Run tests for Android devices
     - |
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
-      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
+      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
 {% else %}
-  
+
     # Run tests for non-Android devices
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600 --device-id=%BOKKEN_DEVICE_ID%
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }} --device-id=%BOKKEN_DEVICE_ID%
 {% endif %}
   artifacts:
     logs:
