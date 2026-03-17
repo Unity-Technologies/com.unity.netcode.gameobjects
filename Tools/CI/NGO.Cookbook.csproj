@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="RecipeEngine" Version="7.5.0" />
+        <PackageReference Include="RecipeEngine" Version="7.5.1" />
         <PackageReference Include="RecipeEngine.Api" Version="12.4.0" />
         <PackageReference Include="RecipeEngine.Api.Extensions" Version="7.2.1" />
         <PackageReference Include="RecipeEngine.Modules.Api" Version="5.1.0" />
