@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a `WebSocketPath` field to `UnityTransport.ConnectionData` (which also shows up in the inspector if "Use WebSockets" is checked) that controls the path clients will connect to and servers/hosts will listen on when using WebSockets. (#3901)
 - `NetworkTransport.EarlyUpdate` and `NetworkTransport.PostLateUpdate` are now public. For the vast majority of users, there's really no point in ever calling those methods directly (the `NetworkManager` handles it). It's only useful if wrapping transports outside of NGO. (#3890)
 
 ### Changed

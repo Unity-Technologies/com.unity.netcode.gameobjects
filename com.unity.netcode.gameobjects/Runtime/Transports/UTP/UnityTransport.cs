@@ -68,7 +68,7 @@ namespace Unity.Netcode.Transports.UTP
         // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
         private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 64 * 60) / 1000; // bytes per millisecond
 
-        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
+        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, WebSocketPath = "/", ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
         /// <summary>
@@ -227,6 +227,13 @@ namespace Unity.Netcode.Transports.UTP
             [Tooltip("UDP port of the server.")]
             [SerializeField]
             public ushort Port;
+
+            /// <summary>
+            /// Path of the URL when using WebSockets.
+            /// </summary>
+            [Tooltip("Path to connect to or listen on when using WebSockets. Defaults to \"/\" if not set.")]
+            [SerializeField]
+            public string WebSocketPath;
 
             /// <summary>
             /// IP address the server will listen on. If not provided, will use localhost.
@@ -511,6 +518,12 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     settings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
                 }
+            }
+
+            // Set up the WebSocket path if configured and if using WebSockets.
+            if (m_UseWebSockets && m_ProtocolType != ProtocolType.RelayUnityTransport && !string.IsNullOrWhiteSpace(ConnectionData.WebSocketPath))
+            {
+                settings.WithWebSocketParameters(path: ConnectionData.WebSocketPath);
             }
 
 #if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
