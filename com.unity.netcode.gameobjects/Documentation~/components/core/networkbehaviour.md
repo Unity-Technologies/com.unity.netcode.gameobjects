@@ -66,7 +66,8 @@ Dynamically spawned | In-scene placed (disabled NetworkBehaviour components)
 `OnNetworkSpawn`      | `OnNetworkSpawn`
 `Start`               | `Start` (invoked when disabled NetworkBehaviour components are enabled)
 
-> [!NOTE] Parenting, inactive GameObjects, and NetworkBehaviour components
+> [!NOTE]
+> Parenting, inactive GameObjects, and NetworkBehaviour components<br />
 > If you have child GameObjects that are not active in the hierarchy but are nested under an active GameObject with an attached NetworkObject component, then the inactive child GameObjects will not be included when the NetworkObject is spawned. This applies for the duration of the NetworkObject's spawned lifetime. If you want all child NetworkBehaviour components to be included in the spawn process, then make sure their respective GameObjects are active in the hierarchy before spawning the NetworkObject. Alternatively, you can just disable the NetworkBehaviour component(s) individually while leaving their associated GameObject active.
 > It's recommended to disable a NetworkBehaviour component rather than the GameObject itself.
 
@@ -165,7 +166,8 @@ Each NetworkBehaviour has a virtual `OnDestroy` method that you can override to 
         }
 ```
 
-> [!NOTE] Destroying the GameObject
+> [!NOTE]
+> Destroying the GameObject<br />
 > When destroying a NetworkObject from within an associated NetworkBehaviour component script, you should always destroy the `NetworkObject.gameObject` and not the `NetworkBehaviour.gameObject` in case the NetworkBehaviour is located on a child GameObject nested under the NetworkObject's GameObject.
 
 ### Despawn process and invocation order

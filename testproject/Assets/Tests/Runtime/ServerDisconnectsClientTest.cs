@@ -47,7 +47,7 @@ namespace TestProject.RuntimeTests
                 base.OnNetworkSpawn();
             }
 
-            [ServerRpc(RequireOwnership = false)]
+            [Rpc(SendTo.Server)]
             public void ClientToServerRpc()
             {
                 Debug.Log($"Received {nameof(ClientToServerRpc)}");

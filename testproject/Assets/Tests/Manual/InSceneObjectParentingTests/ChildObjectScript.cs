@@ -65,10 +65,9 @@ namespace TestProject.ManualTests
             {
                 // This preserves the original position offset of the object when parented with
                 // WorldPositionStays set to false.
-                transform.localPosition = m_OriginalLocalPosition;
+                transform.SetLocalPositionAndRotation(m_OriginalLocalPosition, m_OriginalLocalRotation);
 
-                // Optionally, you can also make other modifications to rotation or scale
-                transform.localRotation = m_OriginalLocalRotation;
+                // Optionally, you can also make other modifications to scale
                 transform.localScale = m_OriginalLocalScale;
             }
             else if (parentNetworkObject == null && m_LastParent)
@@ -96,8 +95,8 @@ namespace TestProject.ManualTests
         }
 
 
-        [ServerRpc(RequireOwnership = false)]
-        public void PickupItemServerRpc(bool worldPositionStays = true, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void PickupItemServerRpc(bool worldPositionStays = true, RpcParams serverRpcParams = default)
         {
             if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {
@@ -105,8 +104,8 @@ namespace TestProject.ManualTests
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        public void DropItemServerRpc(ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void DropItemServerRpc(RpcParams serverRpcParams = default)
         {
             if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {

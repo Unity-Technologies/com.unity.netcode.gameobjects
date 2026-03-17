@@ -101,7 +101,7 @@ namespace TestProject.ManualTests
 
         private ClientRpcDirectTestingModes m_ClientRpcDirectTestingMode;
 
-        private ServerRpcParams m_ServerRpcParams;
+        private RpcParams m_ServerRpcParams;
         private ClientRpcParams m_ClientRpcParams;
         private ClientRpcParams m_ClientRpcParamsMultiParameter;
 
@@ -616,8 +616,8 @@ namespace TestProject.ManualTests
         /// </summary>
         /// <param name="counter">the client side counter</param>
         /// <param name="parameters"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void OnSendCounterServerRpc(int counter, ulong clientId, ServerRpcParams parameters = default)
+        [Rpc(SendTo.Server)]
+        private void OnSendCounterServerRpc(int counter, ulong clientId, RpcParams parameters = default)
         {
             //This is just for debug purposes so I can trap for "non-local" clients
             if (m_ClientSpecificCounters.ContainsKey(parameters.Receive.SenderClientId))
@@ -638,8 +638,8 @@ namespace TestProject.ManualTests
         /// Sends no parameters to the server
         /// </summary>
         /// <param name="parameters"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void OnSendNoParametersServerRpc(ServerRpcParams parameters = default)
+        [Rpc(SendTo.Server)]
+        private void OnSendNoParametersServerRpc(RpcParams parameters = default)
         {
             m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
             OnSendNoParametersClientRpc(m_ClientRpcParamsMultiParameter);
@@ -650,8 +650,8 @@ namespace TestProject.ManualTests
         /// Sends multiple parameters to the server
         /// </summary>
         /// <param name="parameters"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
+        [Rpc(SendTo.Server)]
+        private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, RpcParams parameters = default)
         {
             m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
             OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);

@@ -135,9 +135,9 @@ namespace Unity.Netcode.RuntimeTests
         {
             var authorityNetworkManager = GetAuthorityNetworkManager();
             // Create a NetworkPrefab with an override
-            var basePrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-base", authorityNetworkManager, true);
+            var basePrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-base", true);
             basePrefab.AddComponent<SpawnDespawnDestroyNotifications>();
-            var targetPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-over", authorityNetworkManager, true);
+            var targetPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-over", true);
             targetPrefab.AddComponent<SpawnDespawnDestroyNotifications>();
             m_PrefabOverride = new NetworkPrefab()
             {

@@ -99,8 +99,8 @@ namespace Unity.Netcode.RuntimeTests
             /// A ServerRpc that requests the server to spawn a player object for the client that invoked this RPC.
             /// </summary>
             /// <param name="rpcParams">Parameters for the ServerRpc, including the sender's client ID.</param>
-            [ServerRpc(RequireOwnership = false)]
-            private void RequestPlayerObjectSpawnServerRpc(ServerRpcParams rpcParams = default)
+            [Rpc(SendTo.Server)]
+            private void RequestPlayerObjectSpawnServerRpc(RpcParams rpcParams = default)
             {
                 SpawnedPlayer = Instantiate(PlayerPrefab);
                 SpawnedPlayer.SpawnAsPlayerObject(rpcParams.Receive.SenderClientId);

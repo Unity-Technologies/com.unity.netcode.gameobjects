@@ -149,7 +149,7 @@ namespace TestProject.ManualTests
         /// RPC used to notify server that a specific client wants to receive its stats info
         /// </summary>
         /// <param name="clientId"></param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         public void GetStatsServerRPC(ulong clientId)
         {
             if (!m_ClientsToUpdate.Contains(clientId))

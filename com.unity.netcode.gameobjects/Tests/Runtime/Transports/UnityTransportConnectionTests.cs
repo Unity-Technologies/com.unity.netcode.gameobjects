@@ -5,7 +5,9 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
+#if HOSTNAME_RESOLUTION_AVAILABLE
 using Unity.Networking.Transport;
+#endif
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
@@ -64,6 +66,56 @@ namespace Unity.Netcode.RuntimeTests
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
             m_Clients[0].SetConnectionData("127.0.0.1", 7777);
+
+            m_Server.StartServer();
+            m_Clients[0].StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
+
+            // Check we've received Connect event on server too.
+            Assert.AreEqual(1, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Connect, m_ServerEvents[0].Type);
+
+            yield return null;
+        }
+
+        // Check connection with a single WebSocket client (IP address).
+        [UnityTest]
+        public IEnumerator ConnectSingleClient_WebSocket_IPAddress()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+
+            m_Server.UseWebSockets = true;
+            m_Clients[0].UseWebSockets = true;
+
+            m_Clients[0].SetConnectionData("127.0.0.1", 7777);
+
+            m_Server.StartServer();
+            m_Clients[0].StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
+
+            // Check we've received Connect event on server too.
+            Assert.AreEqual(1, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Connect, m_ServerEvents[0].Type);
+
+            yield return null;
+        }
+
+        // Check connection with a single WebSocket client (IP address and path).
+        [UnityTest]
+        public IEnumerator ConnectSingleClient_WebSocket_IPAddressAndPath()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+
+            m_Server.UseWebSockets = true;
+            m_Clients[0].UseWebSockets = true;
+
+            m_Clients[0].SetConnectionData("127.0.0.1", 7777);
+            m_Clients[0].ConnectionData.WebSocketPath = "/test";
+            m_Server.ConnectionData.WebSocketPath = "/test";
 
             m_Server.StartServer();
             m_Clients[0].StartClient();

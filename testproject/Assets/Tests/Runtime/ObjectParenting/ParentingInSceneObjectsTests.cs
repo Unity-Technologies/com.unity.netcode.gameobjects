@@ -332,14 +332,6 @@ namespace TestProject.RuntimeTests
             {
                 InSceneParentChildHandler.AuthorityRootParent.DeparentSetValuesAndReparent();
 
-                yield return WaitForConditionOrTimeOut(ValidateClientsAgainstAuthorityTransformValues);
-                if (s_GlobalTimeoutHelper.TimedOut)
-                {
-                    InSceneParentChildHandler.AuthorityRootParent.CheckChildren();
-                    yield return debugWait;
-                }
-                AssertOnTimeout($"[Final Pass][Deparent-Reparent-{i}] Timed out waiting for all clients transform values to match the server transform values!\n {m_ErrorValidationLog}");
-
                 yield return WaitForConditionOrTimeOut(() => ValidateAllChildrenParentingStatus(true));
                 if (s_GlobalTimeoutHelper.TimedOut)
                 {
@@ -347,6 +339,14 @@ namespace TestProject.RuntimeTests
                     yield return debugWait;
                 }
                 AssertOnTimeout($"[Final Pass][Deparent-Reparent-{i}] Timed out waiting for all children to be removed from their parent!\n {m_ErrorValidationLog}");
+
+                yield return WaitForConditionOrTimeOut(ValidateClientsAgainstAuthorityTransformValues);
+                if (s_GlobalTimeoutHelper.TimedOut)
+                {
+                    InSceneParentChildHandler.AuthorityRootParent.CheckChildren();
+                    yield return debugWait;
+                }
+                AssertOnTimeout($"[Final Pass][Deparent-Reparent-{i}] Timed out waiting for all clients transform values to match the server transform values!\n {m_ErrorValidationLog}");
             }
 
             // In the final pass, we remove the second generation nested child

@@ -36,6 +36,8 @@ namespace Unity.Netcode.Transports.UTP
     ///             var settings = transport.GetDefaultNetworkSettings();
     ///             driver = NetworkDriver.Create(new IPCNetworkInterface(), settings);
     ///
+    ///             driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+    ///
     ///             transport.GetDefaultPipelineConfigurations(
     ///                 out var unreliableFragmentedPipelineStages,
     ///                 out var unreliableSequencedFragmentedPipelineStages,
@@ -69,7 +71,7 @@ namespace Unity.Netcode.Transports.UTP
         /// all of its traffic is delivered, and in the correct order too. There is no need for that
         /// pipeline to support fragmentation (<see cref="UnityTransport"/> will handle that).
         /// </param>
-        void CreateDriver(
+        public void CreateDriver(
             UnityTransport transport,
             out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,

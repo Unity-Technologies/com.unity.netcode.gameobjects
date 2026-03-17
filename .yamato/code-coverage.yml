@@ -1,6 +1,6 @@
 {% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
-  
+
 # DESCRIPTION--------------------------------------------------------------------------
   # This job is responsible for executing package tests with code coverage analysis enabled.
   # Coverage analysis provides insights into:
@@ -8,7 +8,7 @@
     # Line and branch coverage statistics
     # Generated HTML reports for coverage visualization
     # Additional metrics for coverage analysis
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
@@ -19,12 +19,12 @@
   # Requires Unity Editor installation
   # Burst compilation is disabled to ensure accurate coverage measurement
   # In order to properly use -coverage-results-path parameter we need to start it with $PWD (which means the absolute path). Otherwise coverage results will not be visible
-  
+
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
-    
-    
-    
+
+
+
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
 code_coverage_{{ platform.name }}_{{ editor }}:
@@ -39,7 +39,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_{{ platform.name }}_{{ editor }};flags:NGOv2_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_{{ platform.name }}_{{ editor }};flags:NGOv2_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:

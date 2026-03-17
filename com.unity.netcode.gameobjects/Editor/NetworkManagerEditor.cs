@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_5_OR_NEWER
+using UnityEngine.Assemblies;
+#endif
 
 namespace Unity.Netcode.Editor
 {
@@ -59,7 +63,11 @@ namespace Unity.Netcode.Editor
         {
             m_TransportTypes.Clear();
 
+#if UNITY_6000_5_OR_NEWER
+            var assemblies = CurrentAssemblies.GetLoadedAssemblies();
+#else
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+#endif
 
             foreach (var assembly in assemblies)
             {
@@ -251,12 +259,12 @@ namespace Unity.Netcode.Editor
                         // Default directory
                         var directory = "Assets/";
                         var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
-                        if (assetPath == "")
+                        if (assetPath.Length == 0)
                         {
                             assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
                         }
 
-                        if (assetPath != "")
+                        if (assetPath.Length > 0)
                         {
                             directory = Path.GetDirectoryName(assetPath);
                         }
@@ -270,7 +278,7 @@ namespace Unity.Netcode.Editor
                             if (prefabStage != null)
                             {
                                 var prefabPath = prefabStage.assetPath;
-                                if (!string.IsNullOrEmpty(prefabPath))
+                                if (prefabPath.Length > 0)
                                 {
                                     directory = Path.GetDirectoryName(prefabPath);
                                 }
@@ -285,7 +293,11 @@ namespace Unity.Netcode.Editor
                             }
                         }
                         var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
+#if UNITY_6000_2_OR_NEWER
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetEntityId()}.asset");
+#else
                         string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
+#endif
                         Debug.Log("Saving migrated Network Prefabs List to " + path);
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
@@ -296,6 +308,10 @@ namespace Unity.Netcode.Editor
                     if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
                     {
                         EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                    }
+                    else if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.All(x => x == null))
+                    {
+                        EditorGUILayout.HelpBox("All prefab lists selected are uninitialized. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
                     }
                     EditorGUILayout.PropertyField(m_PrefabsList);
                 }
@@ -390,7 +406,8 @@ namespace Unity.Netcode.Editor
 #if !MULTIPLAYER_TOOLS
             DrawInstallMultiplayerToolsTip();
 #endif
-            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; }
+            ;
             DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
             DisplayCallToActionButtons();
             base.OnInspectorGUI();

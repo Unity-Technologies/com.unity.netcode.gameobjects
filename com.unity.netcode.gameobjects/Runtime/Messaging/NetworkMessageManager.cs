@@ -492,6 +492,11 @@ namespace Unity.Netcode
 
         internal void CleanupDisconnectedClients()
         {
+            if (m_DisconnectedClients.Count == 0)
+            {
+                return;
+            }
+
             foreach (var clientId in m_DisconnectedClients)
             {
                 CleanupDisconnectedClient(clientId);

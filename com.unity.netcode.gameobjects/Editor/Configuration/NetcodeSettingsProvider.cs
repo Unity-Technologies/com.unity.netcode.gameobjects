@@ -36,7 +36,7 @@ namespace Unity.Netcode.Editor.Configuration
             if (settings.TempNetworkPrefabsPath != settings.NetworkPrefabsPath)
             {
                 var newPath = settings.TempNetworkPrefabsPath;
-                if (newPath == "")
+                if (newPath.Length == 0)
                 {
                     newPath = NetcodeForGameObjectsProjectSettings.DefaultNetworkPrefabsPath;
                     settings.TempNetworkPrefabsPath = newPath;

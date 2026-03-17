@@ -4,6 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -213,8 +214,8 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
             m_TestNetworkObjectPrefab = new GameObject("InstantiateDestroySpawnNotCalled_Object");
-            var networkObject = m_TestNetworkObjectPrefab.AddComponent<NetworkObject>();
-            var fail = m_TestNetworkObjectPrefab.AddComponent<FailWhenSpawned>();
+            m_TestNetworkObjectPrefab.AddComponent<NetworkObject>();
+            m_TestNetworkObjectPrefab.AddComponent<FailWhenSpawned>();
 
             // instantiate
             m_TestNetworkObjectInstance = Object.Instantiate(m_TestNetworkObjectPrefab);
@@ -232,7 +233,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkDespawn()
             {
-                Assert.Fail("Depawn should not be called on not spawned object");
+                Assert.Fail("Despawn should not be called on not spawned object");
             }
         }
 
@@ -260,7 +261,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.OnTearDown();
         }
 
-        private List<TrackOnSpawnFunctions> m_ClientTrackOnSpawnInstances = new List<TrackOnSpawnFunctions>();
+        private List<TrackOnSpawnFunctions> m_ClientTrackOnSpawnInstances = new();
 
         /// <summary>
         /// Test that callbacks are run for playerobject spawn, despawn, regular spawn, destroy on server.
@@ -371,14 +372,14 @@ namespace Unity.Netcode.RuntimeTests
             var gameObject = new GameObject();
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.IsSpawned = true;
-            networkObject.SceneOriginHandle = 0;
+            networkObject.SceneOriginHandle = default;
             networkObject.IsSceneObject = false;
             // This validates invoking GetSceneOriginHandle will not throw an exception for a dynamically spawned NetworkObject
-            // when the scene of origin handle is zero
+            // when the scene of origin hasn't been set.
             var sceneOriginHandle = networkObject.GetSceneOriginHandle();
 
             // This validates that GetSceneOriginHandle will return the GameObject's scene handle that should be the currently active scene
-            var activeSceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+            var activeSceneHandle = SceneManager.GetActiveScene().handle;
             Assert.IsTrue(sceneOriginHandle == activeSceneHandle, $"{nameof(NetworkObject)} should have returned the active scene handle of {activeSceneHandle} but returned {sceneOriginHandle}");
         }
 

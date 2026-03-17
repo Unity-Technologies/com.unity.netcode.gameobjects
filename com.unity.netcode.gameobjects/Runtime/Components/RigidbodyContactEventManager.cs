@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -37,7 +38,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Should return a <see cref="Rigidbody"/>.
         /// </summary>
-        Rigidbody GetRigidbody();
+        public Rigidbody GetRigidbody();
 
         /// <summary>
         /// Invoked by the <see cref="RigidbodyContactEventManager"/> instance.
@@ -48,7 +49,7 @@ namespace Unity.Netcode.Components
         /// <param name="contactPoint">The world space location of the contact event.</param>
         /// <param name="hasCollisionStay">Will be set if this is a collision stay contact event (i.e. it is not the first contact event and continually has contact)</param>
         /// <param name="averagedCollisionStayNormal">The average normal of the collision stay contact over time.</param>
-        void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
+        public void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
     }
 
     /// <summary>
@@ -61,7 +62,7 @@ namespace Unity.Netcode.Components
         /// Invoked by <see cref="RigidbodyContactEventManager"/> for each set of contact events it is processing (prior to processing).
         /// </summary>
         /// <returns><see cref="ContactEventHandlerInfo"/></returns>
-        ContactEventHandlerInfo GetContactEventHandlerInfo();
+        public ContactEventHandlerInfo GetContactEventHandlerInfo();
     }
 
     /// <summary>
@@ -71,6 +72,7 @@ namespace Unity.Netcode.Components
     /// <see cref="ContactEventHandlerInfo"/><br />
     /// </summary>
     [AddComponentMenu("Netcode/Rigidbody Contact Event Manager")]
+    [HelpURL(HelpUrls.RigidbodyContactEventManager)]
     public class RigidbodyContactEventManager : MonoBehaviour
     {
         public static RigidbodyContactEventManager Instance { get; private set; }
@@ -78,8 +80,13 @@ namespace Unity.Netcode.Components
         private struct JobResultStruct
         {
             public bool HasCollisionStay;
+#if UNITY_6000_2_OR_NEWER
+            public EntityId ThisInstanceID;
+            public EntityId OtherInstanceID;
+#else
             public int ThisInstanceID;
             public int OtherInstanceID;
+#endif
             public Vector3 AverageNormal;
             public Vector3 AverageCollisionStayNormal;
             public Vector3 ContactPoint;
@@ -88,10 +95,15 @@ namespace Unity.Netcode.Components
         private NativeArray<JobResultStruct> m_ResultsArray;
         private int m_Count = 0;
         private JobHandle m_JobHandle;
-
+#if UNITY_6000_2_OR_NEWER
+        private readonly Dictionary<EntityId, Rigidbody> m_RigidbodyMapping = new Dictionary<EntityId, Rigidbody>();
+        private readonly Dictionary<EntityId, IContactEventHandler> m_HandlerMapping = new Dictionary<EntityId, IContactEventHandler>();
+        private readonly Dictionary<EntityId, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<EntityId, ContactEventHandlerInfo>();
+#else
         private readonly Dictionary<int, Rigidbody> m_RigidbodyMapping = new Dictionary<int, Rigidbody>();
         private readonly Dictionary<int, IContactEventHandler> m_HandlerMapping = new Dictionary<int, IContactEventHandler>();
         private readonly Dictionary<int, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<int, ContactEventHandlerInfo>();
+#endif
 
         private void OnEnable()
         {
@@ -123,7 +135,11 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+#if UNITY_6000_2_OR_NEWER
+            var instanceId = rigidbody.GetEntityId();
+#else
             var instanceId = rigidbody.GetInstanceID();
+#endif
             if (register)
             {
                 if (!m_RigidbodyMapping.ContainsKey(instanceId))

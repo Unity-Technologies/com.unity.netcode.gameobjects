@@ -5,23 +5,23 @@
   # This job is responsible for execution of package-specific tests in Unity Editor context
   # Those tests cover both PlayMode and EditMode tests from package test assemblies
   # Additionally it combines Package Verification Pipeline (PVP) validation. This ensures that package is compatible with Unity standards
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
     # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
-  
+
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This job runs in Editor context only (no player builds required)
   # No scripting backend variations needed (Editor context)
   # Architecture variations not applicable (Editor context)
   # Requires project packaging as prerequisite (dependency job)
   # Uses PVP for package validation. Specifically it looks for supported profiles which we should conform to but takes ./pvpExceptions.json file into consideration where we note our known issues related to PVP checks
-  
+
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   # TODO: we should aim to replace target PVP profile from supported to gold
-  
+
 #------------------------------------------------------------------------------------
 
 {% for platform in test_platforms.desktop -%}
@@ -31,7 +31,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.smaller_flavor }}
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
@@ -40,14 +40,14 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     UNITY_EXT_LOGGING: 1
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models.
-    
+
     # Validate PVP checks for package.
     - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results
 
     # Run UTR to test packages.
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --reruncount=1 --clean-library-on-rerun
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:

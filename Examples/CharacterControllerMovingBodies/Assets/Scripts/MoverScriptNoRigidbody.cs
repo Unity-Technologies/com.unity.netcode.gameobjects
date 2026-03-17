@@ -136,8 +136,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
     /// <summary>
     /// We are using post spawn to handle any final spawn initializations.
-    /// At this point we know all NetworkBehaviours on this instance has 
-    /// been spawned.
+    /// At this point we know all NetworkBehaviours on this instance have been spawned.
     /// </summary>
     protected override void OnNetworkPostSpawn()
     {
@@ -173,8 +172,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         {
             m_CharacterController.enabled = false;
             Camera.main.transform.SetParent(null, false);
-            Camera.main.transform.position = m_CameraOriginalPosition;
-            Camera.main.transform.rotation = m_CameraOriginalRotation;
+            Camera.main.transform.SetPositionAndRotation(m_CameraOriginalPosition, m_CameraOriginalRotation);
         }
         base.OnNetworkDespawn();
     }

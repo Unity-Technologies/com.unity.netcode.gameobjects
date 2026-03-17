@@ -9,8 +9,12 @@ namespace Unity.Netcode
     public enum LocalDeferMode
     {
         /// <summary>
-        /// Uses the default behavior for RPC message handling
+        /// Uses the default behavior for RPC message handling.
+        /// The default behavior is <see cref="SendImmediate"/>.
         /// </summary>
+        /// <remarks>
+        /// If <see cref="RpcAttribute.RpcAttributeParams.DeferLocal"/> is enabled, the behavior of this field wil change to <see cref="Defer"/>.
+        /// </remarks>
         Default,
 
         /// <summary>
@@ -25,7 +29,7 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// Generic RPC. Defines parameters for sending Remote Procedure Calls (RPCs) in the network system
+    /// Defines parameters for sending Remote Procedure Calls (RPCs) in the network system
     /// </summary>
     public struct RpcSendParams
     {
@@ -55,31 +59,29 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// The receive parameters for server-side remote procedure calls
+    /// The receive parameters for an RPC call
     /// </summary>
     public struct RpcReceiveParams
     {
         /// <summary>
-        /// Server-Side RPC
-        /// The client identifier of the sender
+        /// The sender's client identifier
         /// </summary>
         public ulong SenderClientId;
     }
 
     /// <summary>
-    /// Server-Side RPC
-    /// Can be used with any sever-side remote procedure call
-    /// Note: typically this is use primarily for the <see cref="ServerRpcReceiveParams"/>
+    /// Parameters for an RPC call
+    /// Can be used with any remote procedure call
     /// </summary>
     public struct RpcParams
     {
         /// <summary>
-        /// The server RPC send parameters (currently a place holder)
+        /// The RPC send parameters (currently a place holder)
         /// </summary>
         public RpcSendParams Send;
 
         /// <summary>
-        /// The client RPC receive parameters provides you with the sender's identifier
+        /// The RPC receive parameters provides you with the sender's identifier
         /// </summary>
         public RpcReceiveParams Receive;
 
@@ -211,5 +213,10 @@ namespace Unity.Netcode
         public RpcParams Ext;
         public ServerRpcParams Server;
         public ClientRpcParams Client;
+
+        /// <summary>
+        /// Internal information used by <see cref="RpcMessageHelpers"/> to help handle this message.
+        /// </summary>
+        internal ulong SenderId;
     }
 }

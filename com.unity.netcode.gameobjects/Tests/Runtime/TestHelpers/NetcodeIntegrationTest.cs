@@ -255,13 +255,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The <see cref="NetworkManager"/> instance that is the current authority</returns>
         protected NetworkManager GetAuthorityNetworkManager()
         {
-            if (m_UseCmbService)
+            if (m_DistributedAuthority)
             {
                 // If we haven't even started any NetworkManager, then return the first instance
                 // since it will be the session owner.
                 if (!NetcodeIntegrationTestHelpers.IsStarted)
                 {
-                    return m_NetworkManagers[0];
+                    return m_UseCmbService ? m_NetworkManagers[0] : m_ServerNetworkManager;
+                }
+
+                if (!m_UseCmbService && m_ServerNetworkManager.LocalClient.IsSessionOwner)
+                {
+                    return m_ServerNetworkManager;
                 }
 
                 foreach (var client in m_NetworkManagers)
@@ -485,6 +490,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected virtual bool m_EnableTimeTravel => false;
 
         /// <summary>
+        /// When true, <see cref="CreateServerAndClients()"/> and <see cref="CreateNewClient"/> will use a <see cref="MockTransport"/>
+        /// as the <see cref="NetworkConfig.NetworkTransport"/> on the created server and/or clients.
+        /// When false, a <see cref="UnityTransport"/> is used.
+        /// </summary>
+        /// <remarks>
+        /// This defaults to, and is required to be true when <see cref="m_EnableTimeTravel"/> is true.
+        /// <see cref="m_EnableTimeTravel"/> will not work with the <see cref="UnityTransport"/> component.
+        /// </remarks>
+        protected virtual bool m_UseMockTransport => m_EnableTimeTravel;
+
+        /// <summary>
         /// If this is false, SetUp will call OnInlineSetUp instead of OnSetUp.
         /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
         /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
@@ -576,6 +592,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
+            NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
@@ -637,7 +654,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
-            if (m_EnableTimeTravel)
+            if (m_UseMockTransport)
             {
                 if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
                 {
@@ -647,8 +664,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     MockTransport.Reset();
                 }
+            }
 
-                // Setup the frames per tick for time travel advance to next tick
+            // Setup the frames per tick for time travel advance to next tick
+            if (m_EnableTimeTravel)
+            {
                 ConfigureFramesPerTick();
             }
 
@@ -780,7 +800,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel, m_UseCmbService))
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_UseMockTransport, m_UseCmbService))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -871,7 +891,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The newly created <see cref="NetworkManager"/>.</returns>
         protected NetworkManager CreateNewClient()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel, m_UseCmbService);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_UseMockTransport, m_UseCmbService);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             SetDistributedAuthorityProperties(networkManager);
 
@@ -980,7 +1000,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void CreateAndStartNewClientWithTimeTravel()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_UseMockTransport);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             SetDistributedAuthorityProperties(networkManager);
 
@@ -1147,7 +1167,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
+            var clientPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -1163,7 +1183,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             // For late joining clients, add the remaining (if any) cloned versions of each client's player
-            clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+            clientPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -1187,7 +1207,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_UseHost)
             {
-                var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == NetworkManager.ServerClientId);
+                var clientSideServerPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == NetworkManager.ServerClientId);
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
                 {
                     // When the server is not the host this needs to be done
@@ -1296,7 +1316,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     if (m_UseHost || authorityManager.IsHost)
                     {
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
+                        var serverPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
                             if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
@@ -1384,13 +1404,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (m_UseHost || authorityManager.IsHost)
                     {
-#if UNITY_2023_1_OR_NEWER
-                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
-#else
-                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
-#endif
+                        var serverPlayerClones = FindObjects.ByType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
                             if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
@@ -1644,7 +1658,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         private void DestroyNetworkManagers()
         {
-            var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+            var networkManagers = FindObjects.ByType<NetworkManager>();
             foreach (var networkManager in networkManagers)
             {
                 Object.DestroyImmediate(networkManager.gameObject);
@@ -1713,11 +1727,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>();
-#endif
+            var networkObjects = FindObjects.ByType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
                 // This can sometimes be null depending upon order of operations
@@ -1735,7 +1745,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
@@ -1891,7 +1900,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// Waits until the specified condition returns true or a timeout occurs.
         /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
         /// </summary>
         /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
@@ -1905,6 +1914,108 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_InternalErrorLog.Clear();
                 return checkForCondition(m_InternalErrorLog);
             }, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ulong networkObjectId, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObjectId}!");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject networkObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = networkObject.NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(GameObject gameObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
+                        {
+                            errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObject.NetworkObjectId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectsSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForDespawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectsDespawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (client.SpawnManager.SpawnedObjects.TryGetValue(networkObject.NetworkObjectId, out NetworkObject clientObj) && clientObj.IsSpawned)
+                        {
+                            errorLog.Append($"Object-{networkObject.NetworkObjectId} is still spawned on Client-{client.LocalClientId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectsDespawnedOnAllClients, timeOutHelper);
         }
 
         /// <summary>
@@ -2109,6 +2220,69 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return SpawnObject(prefabNetworkObject, owner, destroyWithScene, true);
         }
 
+
+        internal void SpawnInstanceWithOwnership(NetworkObject networkObjectToSpawn, NetworkManager spawnAuthority, ulong clientId, bool destroyWithScene = false, bool isPlayerObject = false)
+        {
+            if (spawnAuthority.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                networkObjectToSpawn.NetworkManagerOwner = spawnAuthority; // Required to assure the client does the spawning
+                if (isPlayerObject)
+                {
+                    networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
+                }
+                else
+                {
+                    networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
+                }
+            }
+            else
+            {
+                networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
+                if (spawnAuthority == m_ServerNetworkManager)
+                {
+                    if (m_UseHost)
+                    {
+                        if (isPlayerObject)
+                        {
+                            networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
+                        }
+                        else
+                        {
+                            networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
+                        }
+                    }
+                    else
+                    {
+                        networkObjectToSpawn.Spawn(destroyWithScene);
+                    }
+                }
+                else
+                {
+                    if (isPlayerObject)
+                    {
+                        networkObjectToSpawn.SpawnAsPlayerObject(clientId, destroyWithScene);
+                    }
+                    else
+                    {
+                        networkObjectToSpawn.SpawnWithOwnership(clientId, destroyWithScene);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Spawn an already instantiated instance of a network prefab.
+        /// Note: If you pass in the NetworkPrefab itself this method will not create an instance but will spawn the pefab itself. (don't do this)
+        /// </summary>
+        /// <param name="networkObjectToSpawn">the instance of a prefab <see cref="NetworkObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
+        protected void SpawnObjectInstance(NetworkObject networkObjectToSpawn, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
+        {
+            SpawnInstanceWithOwnership(networkObjectToSpawn, owner, owner.LocalClientId, destroyWithScene, isPlayerObject);
+        }
+
         /// <summary>
         /// Spawn a NetworkObject prefab instance
         /// </summary>
@@ -2122,52 +2296,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
-
-            if (owner.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
-            {
-                networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
-                if (isPlayerObject)
-                {
-                    networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
-                }
-                else
-                {
-                    networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
-                }
-            }
-            else
-            {
-                networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
-                if (owner == m_ServerNetworkManager)
-                {
-                    if (m_UseHost)
-                    {
-                        if (isPlayerObject)
-                        {
-                            networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
-                        }
-                        else
-                        {
-                            networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
-                        }
-                    }
-                    else
-                    {
-                        networkObjectToSpawn.Spawn(destroyWithScene);
-                    }
-                }
-                else
-                {
-                    if (isPlayerObject)
-                    {
-                        networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
-                    }
-                    else
-                    {
-                        networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
-                    }
-                }
-            }
+            SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);
             return newInstance;
         }
 
@@ -2205,6 +2334,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             return gameObjectsSpawned;
         }
+
 
         /// <summary>
         /// Default constructor
@@ -2503,11 +2633,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (!string.IsNullOrEmpty(methodName))
                 {
-#if UNITY_2023_1_OR_NEWER
-                    foreach (var obj in Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID))
-#else
-                    foreach (var obj in Object.FindObjectsOfType<NetworkObject>())
-#endif
+                    var networkObjects = FindObjects.ByType<NetworkObject>();
+                    foreach (var obj in networkObjects)
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(obj, new object[] { });

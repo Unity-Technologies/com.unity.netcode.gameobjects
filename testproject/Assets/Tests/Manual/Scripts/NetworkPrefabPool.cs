@@ -348,12 +348,13 @@ namespace TestProject.ManualTests
         {
             m_LabelEnabled = isVisible;
             NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
-#if UNITY_2023_1_OR_NEWER
-            var labels = FindObjectsByType<NetworkObjectLabel>(FindObjectsSortMode.InstanceID);
+#if NGO_FINDOBJECTS_NOSORTING
+            var labels = FindObjectsByType<NetworkObjectLabel>();
+#elif UNITY_2023_1_OR_NEWER
+            var labels = FindObjectsByType<NetworkObjectLabel>(FindObjectsSortMode.None);
 #else
             var labels = FindObjectsOfType<NetworkObjectLabel>();
 #endif
-
             foreach (var label in labels)
             {
                 label.SetLabelVisibility(isVisible);
@@ -612,8 +613,7 @@ namespace TestProject.ManualTests
             var obj = GetObject();
             if (obj != null)
             {
-                obj.transform.position = position;
-                obj.transform.rotation = rotation;
+                obj.transform.SetPositionAndRotation(position, rotation);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;

@@ -287,7 +287,15 @@ namespace Unity.Netcode
             {
                 if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
-                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
+                    try
+                    {
+                        networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                        return null;
+                    }
                 }
                 else
                 {
@@ -297,7 +305,15 @@ namespace Unity.Netcode
             }
             else if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
             {
-                networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
+                try
+                {
+                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                    return null;
+                }
             }
 
             // Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)

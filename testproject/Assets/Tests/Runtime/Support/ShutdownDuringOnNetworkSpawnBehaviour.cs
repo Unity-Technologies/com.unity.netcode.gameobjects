@@ -29,7 +29,7 @@ namespace TestProject.RuntimeTests.Support
             ++ClientRpcsCalled;
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void TestServerRpc()
         {
             ++ServerRpcsCalled;

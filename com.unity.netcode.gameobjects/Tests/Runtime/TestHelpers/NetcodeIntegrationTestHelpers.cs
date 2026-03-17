@@ -201,6 +201,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #endif
         }
 
+        internal static readonly string IgnoredForCmbServiceReason = "[CMB-Service Test Run] Skipping non-distributed authority test.";
+
         /// <summary>
         /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
         /// test if running against a CMB server.
@@ -209,7 +211,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool isTrue) ? isTrue : false)
             {
-                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+                Assert.Ignore(IgnoredForCmbServiceReason);
             }
         }
 
@@ -327,7 +329,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
+        /// <summary>
+        /// Creates a new <see cref="NetworkManager"/> and configures it for use in a multi instance setting.
+        /// </summary>
+        /// <param name="identifier">The ClientId representation that is used in the name of the NetworkManager</param>
+        /// <param name="mockTransport">
+        /// When true, the client is created with a <see cref="MockTransport"/>; otherwise a <see cref="UnityTransport"/> is added
+        /// </param>
+        /// <param name="useCmbService">
+        /// Whether to configure the client to run against a hosted build of the CMB Service. Only applies if mockTransport is set to false.
+        /// </param>
+        /// <returns>The newly created <see cref="NetworkManager"/> component.</returns>
+        public static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
@@ -351,7 +364,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
-        /// <returns> Returns <see cref="true"/> if the clients were successfully created and configured, otherwise <see cref="false"/>.</returns>
+        /// <returns> Returns true if the clients were successfully created and configured, otherwise false.</returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
@@ -558,17 +571,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             s_IsStarted = true;
+            return StartInternal(host, server, clients, callback, startServer);
+        }
+
+        internal static bool StartServer(bool host, NetworkManager server)
+        {
+            return StartInternal(host, server, new NetworkManager[] { });
+        }
+
+
+        private static bool StartInternal(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
+        {
             s_ClientCount = clients.Length;
             var hooks = (MultiInstanceHooks)null;
             if (startServer)
             {
-                if (host)
+                var isListening = host ? server.StartHost() : server.StartServer();
+
+                if (!isListening)
                 {
-                    server.StartHost();
-                }
-                else
-                {
-                    server.StartServer();
+                    return false;
                 }
 
                 hooks = new MultiInstanceHooks();
@@ -686,18 +708,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates a <see cref="NetworkObject"/> to be used with integration testing
         /// </summary>
-        /// <param name="baseName">namr of the object</param>
-        /// <param name="owner">owner of the object</param>
+        /// <param name="baseName">name of the object</param>
         /// <param name="moveToDDOL">when true, the instance is automatically migrated into the DDOL</param>
         /// <returns><see cref="GameObject"/></returns>
-        internal static GameObject CreateNetworkObject(string baseName, NetworkManager owner, bool moveToDDOL = false)
+        internal static GameObject CreateNetworkObject(string baseName, bool moveToDDOL = false)
         {
             var gameObject = new GameObject
             {
                 name = baseName
             };
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = owner;
             MakeNetworkObjectTestPrefab(networkObject);
             if (moveToDDOL)
             {
@@ -724,7 +744,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = CreateNetworkObject(baseName, authorityNetworkManager);
+            var gameObject = CreateNetworkObject(baseName);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
@@ -750,27 +770,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [Obsolete("This method is no longer valid or used.", false)]
         public static void MarkAsSceneObjectRoot(GameObject networkObjectRoot, NetworkManager server, NetworkManager[] clients)
         {
-            networkObjectRoot.name += " - Server";
-
-            NetworkObject[] serverNetworkObjects = networkObjectRoot.GetComponentsInChildren<NetworkObject>();
-
-            for (int i = 0; i < serverNetworkObjects.Length; i++)
-            {
-                serverNetworkObjects[i].NetworkManagerOwner = server;
-            }
-
-            for (int i = 0; i < clients.Length; i++)
-            {
-                GameObject root = Object.Instantiate(networkObjectRoot);
-                root.name += " - Client - " + i;
-
-                NetworkObject[] clientNetworkObjects = root.GetComponentsInChildren<NetworkObject>();
-
-                for (int j = 0; j < clientNetworkObjects.Length; j++)
-                {
-                    clientNetworkObjects[j].NetworkManagerOwner = clients[i];
-                }
-            }
         }
 
         /// <summary>

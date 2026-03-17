@@ -6,7 +6,6 @@ using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools.Utils;
-using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -90,7 +89,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public AnticipatedNetworkTransform GetServerComponent()
         {
-            foreach (var obj in Object.FindObjectsByType<AnticipatedNetworkTransform>(FindObjectsSortMode.None))
+            var anticipatedNetworkTransforms = FindObjects.ByType<AnticipatedNetworkTransform>();
+            foreach (var obj in anticipatedNetworkTransforms)
             {
                 if (obj.NetworkManager == m_ServerNetworkManager && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
                 {
@@ -103,7 +103,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public AnticipatedNetworkTransform GetOtherClientComponent()
         {
-            foreach (var obj in Object.FindObjectsByType<AnticipatedNetworkTransform>(FindObjectsSortMode.None))
+            var anticipatedNetworkTransforms = FindObjects.ByType<AnticipatedNetworkTransform>();
+            foreach (var obj in anticipatedNetworkTransforms)
             {
                 if (obj.NetworkManager == m_ClientNetworkManagers[1] && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
                 {

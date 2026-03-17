@@ -7,6 +7,7 @@ namespace Unity.Netcode
     /// Provides discretized time.
     /// This is useful for games that require ticks happening at regular interval on the server and clients.
     /// </summary>
+    [Serializable]
     public class NetworkTickSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

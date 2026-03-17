@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -12,19 +11,11 @@ namespace Tests.Manual.NetworkAnimatorTests
         private Animator m_Animator;
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
-        private bool m_IsServerAuthoritative = true;
+        private bool m_IsServerAuthoritative => m_NetworkAnimator ? m_NetworkAnimator.IsServerAuthoritative() : true;
 
         private void DetermineNetworkAnimatorComponentType()
         {
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
-            if (m_NetworkAnimator != null)
-            {
-                m_IsServerAuthoritative = m_NetworkAnimator.GetType() != typeof(OwnerNetworkAnimator);
-            }
-            else
-            {
-                throw new Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
-            }
         }
 
         public override void OnNetworkSpawn()
@@ -55,7 +46,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         }
 
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void ToggleRotateAnimationServerRpc(bool rotate)
         {
             m_Rotate = rotate;
@@ -82,7 +73,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void PlayPulseAnimationServerRpc(bool rotate)
         {
             m_NetworkAnimator.SetTrigger("Pulse");
@@ -136,8 +127,8 @@ namespace Tests.Manual.NetworkAnimatorTests
             counter = 0.0f;
             while (counter < 100)
             {
-                m_Animator.SetFloat("TestFloat", UnityEngine.Random.Range(0.0f, 100.0f));
-                m_Animator.SetInteger("TestInt", UnityEngine.Random.Range(0, 100));
+                m_Animator.SetFloat("TestFloat", Random.Range(0.0f, 100.0f));
+                m_Animator.SetInteger("TestInt", Random.Range(0, 100));
                 counter++;
                 yield return waitForSeconds;
             }
@@ -264,4 +255,3 @@ namespace Tests.Manual.NetworkAnimatorTests
         }
     }
 }
-

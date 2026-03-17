@@ -41,24 +41,51 @@ namespace Unity.Netcode
                 }
                 return;
             }
-
             var observers = networkObject.Observers;
 
-            var nonServerIds = new NativeList<ulong>(Allocator.Temp);
-            for (var i = 0; i < TargetClientIds.Length; ++i)
+            // Validate message if server
+            if (networkManager.IsServer)
             {
-                if (!observers.Contains(TargetClientIds[i]))
+                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(WrappedMessage.Metadata.NetworkBehaviourId);
+
+                RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][WrappedMessage.Metadata.NetworkRpcMethodId];
+                bool hasPermission = permission switch
+                {
+                    RpcInvokePermission.Everyone => true,
+                    RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
+                    RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
+                    _ => false,
+                };
+
+                // Do not handle the message if the sender does not have permission to do so.
+                if (!hasPermission)
+                {
+                    if (networkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogErrorServer($"Rpc message received from client-{context.SenderId} who does not have permission to perform this operation!");
+                    }
+                    return;
+                }
+
+                WrappedMessage.SenderClientId = context.SenderId;
+            }
+
+
+            var nonServerIds = new NativeList<ulong>(Allocator.Temp);
+            foreach (var client in TargetClientIds)
+            {
+                if (!observers.Contains(client))
                 {
                     continue;
                 }
 
-                if (TargetClientIds[i] == NetworkManager.ServerClientId)
+                if (client == NetworkManager.ServerClientId)
                 {
                     WrappedMessage.Handle(ref context);
                 }
                 else
                 {
-                    nonServerIds.Add(TargetClientIds[i]);
+                    nonServerIds.Add(client);
                 }
             }
 

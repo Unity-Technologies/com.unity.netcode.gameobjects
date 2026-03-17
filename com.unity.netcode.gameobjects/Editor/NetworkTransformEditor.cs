@@ -107,11 +107,11 @@ namespace Unity.Netcode.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_PositionLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncPositionXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncPositionXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncPositionXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncPositionYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncPositionYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncPositionYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncPositionZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncPositionZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncPositionZProperty);
 
                 GUILayout.EndHorizontal();
             }
@@ -126,11 +126,11 @@ namespace Unity.Netcode.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_RotationLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncRotationXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncRotationXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncRotationXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncRotationYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncRotationYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncRotationYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncRotationZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncRotationZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncRotationZProperty);
 
                 GUILayout.EndHorizontal();
             }
@@ -150,11 +150,11 @@ namespace Unity.Netcode.Editor
                 rect = EditorGUI.PrefixLabel(rect, ctid, s_ScaleLabel);
                 rect.width = s_ToggleOffset;
 
-                m_SyncScaleXProperty.boolValue = EditorGUI.ToggleLeft(rect, "X", m_SyncScaleXProperty.boolValue);
+                DrawToggleProperty(rect, "X", m_SyncScaleXProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncScaleYProperty.boolValue = EditorGUI.ToggleLeft(rect, "Y", m_SyncScaleYProperty.boolValue);
+                DrawToggleProperty(rect, "Y", m_SyncScaleYProperty);
                 rect.x += s_ToggleOffset;
-                m_SyncScaleZProperty.boolValue = EditorGUI.ToggleLeft(rect, "Z", m_SyncScaleZProperty.boolValue);
+                DrawToggleProperty(rect, "Z", m_SyncScaleZProperty);
 
                 GUILayout.EndHorizontal();
             }
@@ -184,15 +184,51 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
-            EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
+            // precedence.
+            if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
+            {
+                networkTransform.UseUnreliableDeltas = false;
+            }
+            GUI.enabled = !networkTransform.SwitchTransformSpaceWhenParented;
+            if (networkTransform.SwitchTransformSpaceWhenParented)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+                EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.SwitchTransformSpaceWhenParented)}.");
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            }
+            GUI.enabled = true;
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            GUI.enabled = !networkTransform.UseUnreliableDeltas;
+            if (networkTransform.UseUnreliableDeltas)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+                EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.UseUnreliableDeltas)}.");
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            }
+            GUI.enabled = true;
             if (m_SwitchTransformSpaceWhenParented.boolValue)
             {
                 m_TickSyncChildren.boolValue = true;
+                networkTransform.UseUnreliableDeltas = false;
             }
-            EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            else
+            {
+                // Should only be visible when SwitchTransformSpaceWhenParented is disabled.
+                EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            }
             if (!networkTransform.HideInterpolateValue)
             {
                 if (networkTransform.Interpolate)
@@ -277,11 +313,37 @@ namespace Unity.Netcode.Editor
 #endif // COM_UNITY_MODULES_PHYSICS2D
         }
 
+        /// <summary>
+        /// Draw a ToggleLeft property field so it will support multi selection editing if applicable.
+        /// </summary>
+        private void DrawToggleProperty(Rect rect, string label, SerializedProperty property)
+        {
+            if (property.hasMultipleDifferentValues)
+            {
+                EditorGUI.showMixedValue = true;
+                EditorGUI.BeginChangeCheck();
+                bool enabled = EditorGUI.ToggleLeft(rect, label, property.boolValue);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    property.boolValue = enabled;
+                }
+                EditorGUI.showMixedValue = false;
+            }
+            else
+            {
+                property.boolValue = EditorGUI.ToggleLeft(rect, label, property.boolValue);
+            }
+        }
+
         /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             var networkTransform = target as NetworkTransform;
-            void SetExpanded(bool expanded) { networkTransform.NetworkTransformExpanded = expanded; };
+            void SetExpanded(bool expanded)
+            {
+                networkTransform.NetworkTransformExpanded = expanded;
+            }
+
             DrawFoldOutGroup<NetworkTransform>(networkTransform.GetType(), DisplayNetworkTransformProperties, networkTransform.NetworkTransformExpanded, SetExpanded);
             base.OnInspectorGUI();
         }

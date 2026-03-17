@@ -22,7 +22,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         private void OnEnable()
         {
-            if (NetworkPrefabsPath == "")
+            if (NetworkPrefabsPath.Length == 0)
             {
                 NetworkPrefabsPath = DefaultNetworkPrefabsPath;
             }

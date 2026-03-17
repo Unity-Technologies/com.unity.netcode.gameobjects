@@ -10,31 +10,36 @@ namespace TestProject.RuntimeTests.Support
 
         public bool WasSpawned = false;
         public bool WasDestroyed = false;
+        private NetworkManager m_NetworkManager;
 
-        public SpawnRpcDespawnInstanceHandler(uint prefabHash)
+        public SpawnRpcDespawnInstanceHandler(uint prefabHash, NetworkManager networkManager)
         {
+            m_NetworkManager = networkManager;
             m_PrefabHash = prefabHash;
         }
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             WasSpawned = true;
-            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
 
+            if (ownerClientId != NetworkManager.ServerClientId)
+            {
+                Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
+            }
 
             // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
             GameObject networkPrefabReference = null;
-            if (NetworkManager.Singleton.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(m_PrefabHash))
+            if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(m_PrefabHash))
             {
-                switch (NetworkManager.Singleton.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].Override)
+                switch (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].Override)
                 {
                     default:
                     case NetworkPrefabOverride.None:
-                        networkPrefabReference = NetworkManager.Singleton.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].Prefab;
+                        networkPrefabReference = m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].Prefab;
                         break;
                     case NetworkPrefabOverride.Hash:
                     case NetworkPrefabOverride.Prefab:
-                        networkPrefabReference = NetworkManager.Singleton.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].OverridingTargetPrefab;
+                        networkPrefabReference = m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[m_PrefabHash].OverridingTargetPrefab;
                         break;
                 }
             }
@@ -50,19 +55,20 @@ namespace TestProject.RuntimeTests.Support
             }
 
             // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
-            var networkObject = Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
-
-            return networkObject;
+            return Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
         }
 
         public void Destroy(NetworkObject networkObject)
         {
+            if (m_NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
             WasDestroyed = true;
-            if (networkObject.NetworkManager.IsClient)
+            if (!networkObject.NetworkManager.IsServer)
             {
                 Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
             }
-
             Object.Destroy(networkObject.gameObject);
         }
     }

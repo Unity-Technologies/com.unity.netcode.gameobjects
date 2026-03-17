@@ -281,7 +281,7 @@ namespace Unity.Netcode
             }
         }
 
-        public static void WriteHashSetDelta<T>(FastBufferWriter writer, ref HashSet<T> value, ref HashSet<T> previousValue) where T : IEquatable<T>
+        public static void WriteHashSetDelta<T>(FastBufferWriter writer, ref HashSet<T> value, ref HashSet<T> previousValue)
         {
             // HashSets can be null, so we have to handle that case.
             // We do that by marking this as a full serialization and using the existing null handling logic
@@ -337,7 +337,7 @@ namespace Unity.Netcode
             }
         }
 
-        public static void ReadHashSetDelta<T>(FastBufferReader reader, ref HashSet<T> value) where T : IEquatable<T>
+        public static void ReadHashSetDelta<T>(FastBufferReader reader, ref HashSet<T> value)
         {
             // 1 = full serialization, 0 = delta serialization
             reader.ReadByteSafe(out byte full);

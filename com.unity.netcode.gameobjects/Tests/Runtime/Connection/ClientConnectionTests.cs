@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -28,6 +30,12 @@ namespace Unity.Netcode.RuntimeTests
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
         }
 
+        protected override IEnumerator OnSetup()
+        {
+            m_ServerCallbackCalled.Clear();
+            m_ClientCallbackCalled.Clear();
+            return base.OnSetup();
+        }
         protected override void OnServerAndClientsCreated()
         {
             m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
@@ -54,6 +62,27 @@ namespace Unity.Netcode.RuntimeTests
             // The server callback should be called for self, and then once per client
             Assert.True(m_ServerCallbackCalled.Count == 1 + NumberOfClients);
         }
+
+        /// <summary>
+        /// Validates that no warnings are logged upon a client disconnecting and the
+        /// log level is set to developer.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator VerifyNoWarningOnClientDisconnect()
+        {
+            yield return WaitForConditionOrTimeOut(AllCallbacksCalled);
+            AssertOnTimeout("Timed out waiting for all clients to be connected!");
+
+            var authority = GetAuthorityNetworkManager();
+            var clientToDisconnect = GetNonAuthorityNetworkManager();
+            clientToDisconnect.LogLevel = LogLevel.Developer;
+            authority.LogLevel = LogLevel.Developer;
+
+            yield return StopOneClient(clientToDisconnect);
+
+            NetcodeLogAssert.LogWasNotReceived(LogType.Warning, new Regex(".*"));
+        }
+
 
         private void Server_OnClientConnectedCallback(ulong clientId)
         {

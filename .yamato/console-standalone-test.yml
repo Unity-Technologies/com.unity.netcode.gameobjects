@@ -4,7 +4,7 @@
 # DESCRIPTION--------------------------------------------------------------------------
   # This job is responsible for Console platform test validation.
   # Those tests cover both PlayMode and EditMode tests from package test assemblies.
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
     # 1. For all console platform (Switch, ps4, ps5, xbox360, xboxOne)
@@ -16,10 +16,10 @@
     # 1. Build Phase: Creates standalone players for console platforms
     # 2. Run Phase: Executes runtime tests on actual console devices
   # The Run phase uses build job as dependency
-  
+
   # Note: More of a Unity specific but test assemblies need to be included in the build phase command
   # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
-  
+
 # PLATFORM SPECIFICS-----------------------------------------------------------------
   # Common Requirements:
     # All consoles require IL2CPP scripting backend
@@ -29,13 +29,13 @@
     # Switch: ARM64 architecture only
     # Other Consoles: x64 architecture
     # Each console requires specific SDK paths and tools
-  
+
 # QUALITY THOUGHTS--------------------------------------------------------------------
   # TODO: consider adding all projects that have tests
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
 
-  
-  
+
+
 # BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
@@ -45,13 +45,13 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.larger_flavor }}
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+    - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -72,9 +72,9 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
-  
-  
-  
+
+
+
 # RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
@@ -90,7 +90,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'

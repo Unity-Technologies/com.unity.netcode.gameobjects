@@ -158,10 +158,10 @@ namespace Unity.Netcode
                 {
                     if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
-                        sobj.Observers.Add(OwnerClientId);
+                        sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                        var sceneObject = sobj.GetMessageSceneObject(OwnerClientId, IsDistributedAuthority);
-                        sceneObject.Serialize(writer);
+                        var serializedObject = sobj.Serialize(OwnerClientId, IsDistributedAuthority);
+                        serializedObject.Serialize(writer);
                         ++sceneObjectCount;
                     }
                 }
@@ -278,9 +278,16 @@ namespace Unity.Netcode
             if (networkManager.DistributedAuthorityMode)
             {
                 networkManager.SetSessionOwner(GetSessionOwner());
-                if (networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
+                if (networkManager.LocalClient.IsSessionOwner)
                 {
-                    networkManager.SceneManager.InitializeScenesLoaded();
+                    if (networkManager.NetworkConfig.EnableSceneManagement)
+                    {
+                        networkManager.SceneManager.InitializeScenesLoaded();
+                    }
+                    if (networkManager.NetworkConfig.ConnectionApproval && networkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConfig.ConnectionApproval)} is enabled but is not supported when using a distributed authority topology. The {nameof(NetworkManager.ConnectionApprovalCallback)} will not be invoked.");
+                    }
                 }
             }
 
@@ -335,9 +342,9 @@ namespace Unity.Netcode
                 // to create a list to hold the data. This is a breach of convention for performance reasons.
                 for (ushort i = 0; i < sceneObjectCount; i++)
                 {
-                    var sceneObject = new NetworkObject.SceneObject();
-                    sceneObject.Deserialize(m_ReceivedSceneObjectData);
-                    NetworkObject.AddSceneObject(sceneObject, m_ReceivedSceneObjectData, networkManager);
+                    var serializedObject = new NetworkObject.SerializedObject();
+                    serializedObject.Deserialize(m_ReceivedSceneObjectData);
+                    NetworkObject.Deserialize(serializedObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
                 if (networkManager.AutoSpawnPlayerPrefabClientSide)
@@ -366,20 +373,17 @@ namespace Unity.Netcode
 
                     if (!networkManager.SceneManager.IsRestoringSession)
                     {
-                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
-
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // Spawn the local player of the session owner
                         if (networkManager.AutoSpawnPlayerPrefabClientSide)
                         {
                             networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
                         }
-
-                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // With scene management enabled and since the session owner doesn't send a scene event synchronize to itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.

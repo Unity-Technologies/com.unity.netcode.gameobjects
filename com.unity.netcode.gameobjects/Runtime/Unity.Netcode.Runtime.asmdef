@@ -29,11 +29,6 @@
             "define": "MULTIPLAYER_TOOLS"
         },
         {
-            "name": "Unity",
-            "expression": "(0,2022.2.0a5)",
-            "define": "UNITY_UNET_PRESENT"
-        },
-        {
             "name": "com.unity.multiplayer.tools",
             "expression": "1.0.0-pre.7",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
@@ -77,6 +72,31 @@
             "name": "Unity",
             "expression": "6000.3.0a6",
             "define": "UNITY_6000_3_0A6_OR_HIGHER"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.3.0a2",
+            "define": "SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.4.0a3",
+            "define": "SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.5.0a1",
+            "define": "SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG"
+        },
+        {
+            "name": "Unity",
+            "expression": "[6000.4.0b5,6000.5.0a1)",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.5.0a7",
+            "define": "NGO_FINDOBJECTS_NOSORTING"
         }
     ],
     "noEngineReferences": false

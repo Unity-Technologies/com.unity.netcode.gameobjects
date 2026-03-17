@@ -43,7 +43,7 @@ def create_config(settings_path):
     }
 
     data = {'MonoBehaviour': monobehaviour}
-    with open(config_name, 'w') as f:
+    with open(config_name, 'w', encoding='UTF-8', newline='\n') as f:
         json.dump(data, f)
     return config_name
 
@@ -52,7 +52,7 @@ def create_config(settings_path):
 # Note that this jobs uses environment variables to pass parameters to the script.
 def resolve_target():
     # Get the platform value from the environment variable
-    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID')
+    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID').lower()
 
     resolved_target = platform_key
     if 'win64' == platform_key:
@@ -87,7 +87,7 @@ def set_burst_AOT(config_file, status):
     assert config is not None, 'AOT settings not found; did the burst-enabled build finish successfully?'
 
     config['MonoBehaviour']['EnableBurstCompilation'] = status
-    with open(config_file, 'w') as f:
+    with open(config_file, 'w', encoding='UTF-8', newline='\n') as f:
         json.dump(config, f)
 
 
@@ -95,7 +95,7 @@ def main():
     parse_args()
     config_names = get_or_create_burst_AOT_config()
 
-    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID')
+    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID').lower()
     print(f"Burst compilation script: Unity project path is {args.project_path}")
     print(f"Burst compilation script: Target platform is {platform_key}")
 

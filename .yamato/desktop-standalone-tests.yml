@@ -36,15 +36,15 @@
 desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
-    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
+    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }} {% endif %}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.larger_flavor }}
 {% if platform.name == "mac" %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
     players:
       paths:
@@ -53,7 +53,8 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
       paths:
         - "artifacts/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
+    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -70,7 +71,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
-    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
+    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }} {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
 {% if platform.name == "mac" %}
@@ -79,7 +80,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
-    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:

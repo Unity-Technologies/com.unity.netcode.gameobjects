@@ -5,7 +5,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using Debug = UnityEngine.Debug;
 
-#region MoverScriptNoRigidbody Custom Editor 
+#region MoverScriptNoRigidbody Custom Editor
 #if UNITY_EDITOR
 using Unity.Netcode.Editor;
 using UnityEditor;
@@ -144,8 +144,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
     /// <summary>
     /// We are using post spawn to handle any final spawn initializations.
-    /// At this point we know all NetworkBehaviours on this instance has 
-    /// been spawned.
+    /// At this point we know all NetworkBehaviours on this instance have been spawned.
     /// </summary>
     protected override void OnNetworkPostSpawn()
     {
@@ -182,14 +181,13 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
     public override void OnNetworkDespawn()
     {
-        // Notify any client or server specific componant that this instance has despawned.
+        // Notify any client or server specific component that this instance has despawned.
         NotifySpawnStatusChanged?.Invoke(false);
         if (IsLocalPlayer)
         {
             m_CharacterController.enabled = false;
             Camera.main.transform.SetParent(null, false);
-            Camera.main.transform.position = m_CameraOriginalPosition;
-            Camera.main.transform.rotation = m_CameraOriginalRotation;
+            Camera.main.transform.SetPositionAndRotation(m_CameraOriginalPosition, m_CameraOriginalRotation);
         }
         base.OnNetworkDespawn();
     }

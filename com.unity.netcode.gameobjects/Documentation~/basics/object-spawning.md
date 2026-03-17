@@ -153,8 +153,7 @@ This type of dynamically spawned `NetworkObject` typically is a simple wrapper c
             m_prefabInstance = Instantiate(prefabToSpawn);
 
             // Optional, this example applies the spawner's position and rotation to the new instance
-            m_prefabInstance.transform.position = transform.position;
-            m_prefabInstance.transform.rotation = transform.rotation;
+            m_prefabInstance.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
             // Get the instance's NetworkObject and Spawn
             m_SpawnedNetworkObject = m_prefabInstance.GetComponent<NetworkObject>();
@@ -233,8 +232,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkprefabInstan
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
     {
         m_prefabInstance.SetActive(true);
-        m_prefabInstance.transform.position = transform.position;
-        m_prefabInstance.transform.rotation = transform.rotation;
+        m_prefabInstance.transform.position.SetPositionAndRotation(transform.position, transform.rotation);
         return m_SpawnedNetworkObject;
     }
 

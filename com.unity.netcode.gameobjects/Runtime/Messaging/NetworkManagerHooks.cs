@@ -104,7 +104,7 @@ namespace Unity.Netcode
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
                         var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
-                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established. {transportErrorMsg}");
+                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when a connection has already been established. {transportErrorMsg}");
                     }
 
                     return false;
@@ -118,11 +118,11 @@ namespace Unity.Netcode
         {
             if (networkManager.NetworkConfig.NetworkTransport is not UnityTransport)
             {
-                return $"NetworkTransport: {networkManager.NetworkConfig.NetworkTransport.GetType()}. Please report this to the maintainer of transport layer.";
+                return $"NetworkTransport: {networkManager.NetworkConfig.NetworkTransport.GetType()}. Please report this to the maintainer of the transport layer.";
             }
 
             var transportVersion = GetTransportVersion(networkManager);
-            return $"{transportVersion}. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}";
+            return $"{transportVersion}. This should not happen. Further information: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}";
         }
 
         private static string GetTransportVersion(NetworkManager networkManager)

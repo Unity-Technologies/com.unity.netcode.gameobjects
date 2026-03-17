@@ -13,70 +13,57 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
-#if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
-
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
-
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
-
-#endif
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
-#if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
-
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
-
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
-#endif
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
-#if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
-
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
-
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
-#endif
     internal class NetworkTransformTests : NetworkTransformBase
     {
         protected const int k_TickRate = 60;
@@ -85,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="hostOrServer">Determines if we are running as a server or host</param>
+        /// <param name="testWithHost">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
         public NetworkTransformTests(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision, NetworkTransform.InterpolationTypes interpolation) :
             base(testWithHost, authority, rotationCompression, rotation, precision)
@@ -150,7 +137,6 @@ namespace Unity.Netcode.RuntimeTests
                 // If we timed out, then wait for 4 ticks to assure all data has been synchronized before declaring this a failed test.
                 for (int j = 0; j < 4; j++)
                 {
-                    var instances = useSubChild ? ChildObjectComponent.SubInstances : ChildObjectComponent.Instances;
                     success = PostAllChildrenLocalTransformValuesMatch(useSubChild);
                     TimeTravelAdvanceTick();
                 }
@@ -161,8 +147,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(success, m_InfoMessage.ToString());
             }
         }
-
-#if !MULTIPLAYER_TOOLS
 
         private void UpdateTransformLocal(NetworkTransform networkTransformTestComponent)
         {
@@ -283,10 +267,10 @@ namespace Unity.Netcode.RuntimeTests
                 TimeTravelAdvanceTick();
 
                 // This validates each child instance has preserved their local space values
-                AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
+                AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
 
                 // This validates each sub-child instance has preserved their local space values
-                AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
+                AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
                 // Parent while in motion
                 if (i == 5)
                 {
@@ -322,10 +306,10 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
                     // This validates each child instance has preserved their local space values
-                    AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
+                    AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
 
                     // This validates each sub-child instance has preserved their local space values
-                    AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
+                    AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
                 }
 
                 if (i == 20)
@@ -467,10 +451,10 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelAdvanceTick();
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.ConnectedClients);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.ConnectedClients);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -484,10 +468,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.LateJoinClient);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.LateJoinClient);
         }
 
         /// <summary>
@@ -495,7 +479,7 @@ namespace Unity.Netcode.RuntimeTests
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
         /// <remarks>
-        /// When testing < 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
+        /// When testing less than 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
         /// When testing 3 axis: Interpolation is enabled, sometimes an axis is intentionally excluded during a
         /// delta update, and it runs through 8 delta updates per unique test.
         /// </remarks>
@@ -662,7 +646,6 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void LateJoiningPlayerInitialScaleValues([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
@@ -698,7 +681,6 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
         }
-#endif
 
         /// <summary>
         /// Tests changing all axial values one at a time.
@@ -711,13 +693,9 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
-
-            // test position
-            var authPlayerTransform = overrideUpdate ? m_OwnerTransform.transform : m_AuthoritativeTransform.transform;
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
@@ -739,23 +717,9 @@ namespace Unity.Netcode.RuntimeTests
                         m_OwnerTransform.SetState(nextPosition, null, null);
                         break;
                     }
-                case OverrideState.CommitToTransform:
-                    {
-                        m_OwnerTransform.transform.position = nextPosition;
-                        m_OwnerTransform.CommitToTransform();
-                        break;
-                    }
             }
 
-            bool success;
-            if (overideState == OverrideState.CommitToTransform)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, k_DefaultTimeTravelFrames);
-                Assert.True(success, $"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
-            }
-
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch(), k_DefaultTimeTravelFrames);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch(), k_DefaultTimeTravelFrames);
             Assert.True(success, $"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
@@ -775,19 +739,6 @@ namespace Unity.Netcode.RuntimeTests
                         m_OwnerTransform.SetState(null, nextRotation, null);
                         break;
                     }
-                case OverrideState.CommitToTransform:
-                    {
-                        m_OwnerTransform.transform.rotation = nextRotation;
-                        m_OwnerTransform.CommitToTransform();
-                        break;
-                    }
-            }
-
-            if (overideState == OverrideState.CommitToTransform)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, k_DefaultTimeTravelFrames);
-                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the values match
@@ -809,19 +760,6 @@ namespace Unity.Netcode.RuntimeTests
                         m_OwnerTransform.SetState(null, null, nextScale);
                         break;
                     }
-                case OverrideState.CommitToTransform:
-                    {
-                        m_OwnerTransform.transform.localScale = nextScale;
-                        m_OwnerTransform.CommitToTransform();
-                        break;
-                    }
-            }
-
-            if (overideState == OverrideState.CommitToTransform)
-            {
-                // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, k_DefaultTimeTravelFrames);
-                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the scale values match
@@ -839,7 +777,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             var authTransform = m_AuthoritativeTransform.transform;
             var nonAuthPosition = m_NonAuthoritativeTransform.transform.position;
-            var currentTick = m_AuthoritativeTransform.NetworkManager.ServerTime.Tick;
             m_DetectedPotentialInterpolatedTeleport = 0.0f;
             var teleportDestination = GetRandomVector3(50.0f, 200.0f);
             m_NonAuthoritativeTransform.StateUpdated = false;

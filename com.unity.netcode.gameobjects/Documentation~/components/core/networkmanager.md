@@ -5,15 +5,15 @@ The NetworkManager is a required Netcode for GameObjects component that has all 
 ## NetworkManager Inspector properties
 
 - **LogLevel**:  Sets the network logging level
-- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object and assigned to the newly connected and authorized client. For more information about player prefabs, refer to [Player NetworkObjects](networkobject.md#player-networkobjects).
+- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object. For more information about player prefabs, refer to [Player NetworkObjects](networkobject.md#player-networkobjects).
 - **NetworkPrefabs**: Where you register your network prefabs.  You can also create a single network Prefab override per registered network Prefab here.
 - **Protocol Version**: Set this value to help distinguish between builds when the most current build has new assets that can cause issues with older builds connecting.
-- **Network Transport**: Where your network specific settings and transport type is set.  This field accepts any INetworkTransport implementation.  However, unless you have unique transport specific needs UnityTransport is the recommended transport to use with Netcode for GameObjects.
+- **Network Transport**: Where your network specific settings and transport type is set. When using a [client-server topology](../../terms-concepts/client-server.md),  This field accepts any INetworkTransport implementation.  However, unless you have unique transport specific needs UnityTransport is the recommended transport to use with Netcode for GameObjects. For a [distributed authority topology](../../terms-concepts/distributed-authority.md), refer to the [distributed authority quickstart](../../learn/distributed-authority-quick-start.md).
 - **Tick Rate**: This value controls the network tick update rate.
 - **Ensure Network Variable Length Safety**: (Increases cpu processing and bandwidth) When this property is checked, Netcode for GameObjects will prevent user code from writing past the boundaries of a NetworkVariable.
-- **Connection Approval**: This enables [connection approval](../../basics/connection-approval.md) when this is checked and the `NetworkManager.ConnectionApprovalCallback` is assigned.
+- **Connection Approval**: This enables [connection approval](../../basics/connection-approval.md) when this is checked and the `NetworkManager.ConnectionApprovalCallback` is assigned. This setting does nothing when using a [distributed authority topology](../../terms-concepts/distributed-authority.md).
 - **Client Connection Buffer Timeout**: This value sets the amount of time that has to pass for a connecting client to complete the connection approval process.  If the time specified is exceeded the connecting client will be disconnected.
-- **Force Same Prefabs**: When checked it will always verify that connecting clients have the same registered network prefabs as the server.  When not checked, Netcode for GameObjects will ignore any differences.
+- **Force Same Prefabs**: When checked it will always verify that connecting clients have the same registered network prefabs as the [authority game client](../../terms-concepts/authority.md).  When not checked, Netcode for GameObjects will ignore any differences.
 - **Recycle Network Ids**: When checked this will re-use previously assigned `NetworkObject.NetworkObjectIds` after the specified period of time.
 - **Network Id Recycle Delay**: The time it takes for a previously assigned but currently unassigned identifier to be available for use.
 - **Enable Scene Management**: When checked, Netcode for GameObjects will handle scene management and client synchronization for you.  When not checked, you will have to create your own scene management scripts and handle client synchronization.
@@ -34,12 +34,32 @@ NetworkManager is also where you can find references to other Netcode related ma
 
 ## Starting a server, host, or client
 
-To perform any netcode-related action that involves sending messages, you must first have a server started and listening for connections with at least one client (_a server can send RPCs to itself when running as a host_) that is connected. To accomplish this, you must first start your NetworkManager as a server, host, or client. There are three NetworkManager methods you can invoke to accomplish this:
+To perform any netcode-related action that involves sending messages you must first start your NetworkManager. Your NetworkManager can be started as either a server, host, or a client.
+
+### Starting as a server
+
+A server can't act as a local client. When starting as a server, no messages will be sent until at least one other client is connected. A server can only be used with a [client-server topology](../../terms-concepts/client-server.md).
 
 ```csharp
-NetworkManager.Singleton.StartServer();      // Starts the NetworkManager as just a server (that is, no local client).
-NetworkManager.Singleton.StartHost();        // Starts the NetworkManager as both a server and a client (that is, has local client)
-NetworkManager.Singleton.StartClient();      // Starts the NetworkManager as just a client.
+NetworkManager.Singleton.StartServer();
+```
+
+### Starting as a host
+
+A host is both a server and a client (that is, has local client). A host can send RPCs to itself, and so can start sending some messages before another client is connected. A host can only be used with a [client-server topology](../../terms-concepts/client-server.md).
+
+```csharp
+NetworkManager.Singleton.StartHost();
+```
+
+### Starting as a client
+
+This is the most general option for the NetworkManager. Starting as a client starts a single game client that will either connect to the server or host (under a client-server topology) or connect to a distributed authority session (under a distributed authority topology).
+
+When using the distributed authority topology, the first client who joins and connects to the session will become the [session owner](../../terms-concepts/distributed-authority.md#session-ownership)
+
+```csharp
+NetworkManager.Singleton.StartClient();
 ```
 
 > [!NOTE]
@@ -56,7 +76,8 @@ When starting a client, the NetworkManager uses the IP and the Port provided in 
 
 The below examples use [Unity Transport](https://docs.unity3d.com/Packages/com.unity.transport@latest?subfolder=/manual/index.html) to show a few ways you can gain access to the `UnityTransport` component via the `NetworkManager.Singleton` to configure your project's network settings programmatically:
 
-If you are only setting the IP address and port number, then you can use the `UnityTransport.SetConnectionData` method:
+If you are only setting the IP address and port number, then you can use the `UnityTransport.SetConnectionData` method. This will return a [`ConnectionAddressData` **struct**](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L239-L286), holding this info. You are strongly advised to use the `SetConnectionData` method to update this info.
+
 ```csharp
 NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData(
     "127.0.0.1",  // The IP address is a string
@@ -65,6 +86,7 @@ NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData(
 ```
 
 If you are using the same code block to configure both your server and your client and you want to configure your server to listen to all IP addresses assigned to it, then you can also pass a 'listen address' of "0.0.0.0" to the `SetConnectionData` method, like so:
+
 ```csharp
 NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData(
     "127.0.0.1",  // The IP address is a string
@@ -76,10 +98,7 @@ NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData(
 > [!NOTE]
 > Using an IP address of 0.0.0.0 for the server listen address will make a server or host listen on all IP addresses assigned to the local system. This can be particularly helpful if you are testing a client instance on the same system as well as one or more client instances connecting from other systems on your local area network. Another scenario is while developing and debugging you might sometimes test local client instances on the same system and sometimes test client instances running on external systems.
 
-It is possible to access the current connection data at runtime, via `NetworkManager.Singleton.GetComponent<UnityTransport>().ConnectionData`. This will return a [`ConnectionAddressData` **struct**](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L239-L286), holding this info. You are strongly advised to use the `SetConnectionData` method to update this info.
-
 If you are using Unity Relay to handle connections, however, **don't use `SetConnectionData`**. The host should call [`SetHostRelayData`](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L575), and clients should call [`SetClientRelayData`](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L588). Attempting to join a **Relay**-hosted game via entering IP/port number (via `SetConnectionData`) **won't work**.
-
 
 [More information about Netcode for GameObjects Transports](../../advanced-topics/transports.md)
 
@@ -136,14 +155,16 @@ void DisconnectPlayer(NetworkObject player)
 
 ### Client disconnection notifications
 
-Both the client and the server can subscribe to the `NetworkManager.OnClientDisconnectCallback` event to be notified when a client is disconnected.
+Subscribe to the `NetworkManager.OnClientDisconnectCallback` event to receive notifications when a client is disconnected.
 
 **When disconnect notifications are triggered:**
-- Clients are notified when they're disconnected by the server.
+
+- Clients are notified when they're disconnected by the server or from the distributed authority session.
 - The server is notified when any client disconnects from the server, whether the server disconnects the client or the client disconnects itself.
 - Both the server and clients are notified when their network connection is unexpectedly disconnected (network interruption).
 
 **Client notification identifiers**
+
 - On the server-side, the client identifier parameter is the identifier of the client that disconnects.
 - On the client-side, the client identifier parameter is the identifier assigned to the client.
   - _The exception to this is when a client is disconnected before its connection is approved._
@@ -151,6 +172,7 @@ Both the client and the server can subscribe to the `NetworkManager.OnClientDisc
 You can also use the `NetworkManager.OnServerStopped` and `NetworkManager.OnClientStopped` callbacks to get local notifications when the server or client stops respectively.
 
 ### Connection notification manager example
+
 Below is one example of how you can provide client connect and disconnect notifications to any type of NetworkBehaviour or MonoBehaviour derived component.
 
 > [!NOTE]

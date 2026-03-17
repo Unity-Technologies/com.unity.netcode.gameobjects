@@ -10,6 +10,7 @@ namespace Unity.Netcode
     /// as last received from the server plus an offset based on the current RTT - in other words, it is a best-guess
     /// effort at predicting what the server tick will be when a given network action is processed on the server.
     /// </summary>
+    [Serializable]
     public class NetworkTimeSystem
     {
         /// <remarks>
@@ -108,6 +109,8 @@ namespace Unity.Netcode
         /// </summary>
         private int m_TimeSyncFrequencyTicks;
 
+        private NetworkDelivery m_NetworkDelivery;
+
         /// <summary>
         /// The constructor class for <see cref="NetworkTickSystem"/>
         /// </summary>
@@ -122,6 +125,7 @@ namespace Unity.Netcode
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
             m_TickLatencyAverage = 2;
+            m_NetworkDelivery = MessageDeliveryType<TimeSyncMessage>.DefaultDelivery;
         }
 
         /// <summary>
@@ -189,7 +193,7 @@ namespace Unity.Netcode
                 {
                     Tick = m_NetworkTickSystem.ServerTime.Tick
                 };
-                m_ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, m_ConnectionManager.ConnectedClientIds);
+                m_ConnectionManager.SendMessage(ref message, m_NetworkDelivery, m_ConnectionManager.ConnectedClientIds);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

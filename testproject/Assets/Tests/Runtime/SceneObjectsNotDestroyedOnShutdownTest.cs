@@ -6,10 +6,11 @@ using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     public class SceneObjectsNotDestroyedOnShutdownTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
@@ -17,34 +18,32 @@ namespace TestProject.RuntimeTests
         private const string k_TestScene = "InSceneNetworkObject";
         private const string k_SceneObjectName = "InSceneObject";
         private Scene m_TestScene;
-        private WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / 30);
+        private WaitForSeconds m_DefaultWaitForTick = new(1.0f / 30);
 
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
+        public SceneObjectsNotDestroyedOnShutdownTest(NetworkTopologyTypes topology) : base(topology) { }
 
         [UnityTest]
         public IEnumerator SceneObjectsNotDestroyedOnShutdown()
         {
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            m_ServerNetworkManager.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            authority.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
 
             yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
-            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
+            var loadedInSceneObject = FindObjects.ByType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
 
             AssertOnTimeout($"Timed out waiting to find {k_SceneObjectName} after scene load and before starting client!\"");
 
-            yield return CreateAndStartNewClient();
+            var lateJoin = CreateNewClient();
+            yield return StartClient(lateJoin);
 
-            var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
+            var loadedInSceneObjects = FindObjects.ByType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
-            m_ClientNetworkManagers[0].Shutdown();
+            lateJoin.Shutdown();
             yield return m_DefaultWaitForTick;
-            loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
+            loadedInSceneObjects = FindObjects.ByType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
 
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client shutdown!");
         }
@@ -52,36 +51,39 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ChildSceneObjectsDoNotDestroyOnShutdown()
         {
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            m_ServerNetworkManager.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            authority.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
 
             yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
 
-            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
+            var loadedInSceneObject = FindObjects.ByType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
-            yield return CreateAndStartNewClient();
 
-            var clientId = m_ClientNetworkManagers[0].LocalClientId;
-            Assert.IsTrue(loadedInSceneObject.TrySetParent(m_PlayerNetworkObjects[0][clientId]), $"Failed to parent in-scene object under client player");
+            var lateJoin = CreateNewClient();
+            yield return StartClient(lateJoin);
+
+            var clientId = lateJoin.LocalClientId;
+            Assert.IsTrue(loadedInSceneObject.TrySetParent(m_PlayerNetworkObjects[authority.LocalClientId][clientId]), $"Failed to parent in-scene object under client player");
 
             yield return WaitForConditionOrTimeOut(() => PlayerHasChildren(clientId));
             AssertOnTimeout($"Client-{clientId} player never parented {k_SceneObjectName}!");
 
-            var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
+            var loadedInSceneObjects = FindObjects.ByType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
-            m_ClientNetworkManagers[0].Shutdown();
+            lateJoin.Shutdown();
             yield return m_DefaultWaitForTick;
 
             // Sanity check to make sure the client's player no longer has any children
             yield return WaitForConditionOrTimeOut(() => PlayerNoLongerExistsWithChildren(clientId));
             AssertOnTimeout($"Client-{clientId} player still exits with children after client shutdown!");
 
-            loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
+            loadedInSceneObjects = FindObjects.ByType<NetworkObject>().Where(o => o.name.Contains(k_SceneObjectName)).ToArray();
             // Make sure any in-scene placed NetworkObject instantiated has no parent
-            foreach (var insceneObject in loadedInSceneObjects)
+            foreach (var inSceneObject in loadedInSceneObjects)
             {
-                Assert.IsTrue(insceneObject.transform.parent == null, $"{insceneObject.name} is still parented!");
+                Assert.IsTrue(inSceneObject.transform.parent == null, $"{inSceneObject.name} is still parented!");
             }
 
             // We should have exactly 2 in-scene placed NetworkObjects remaining:
@@ -100,16 +102,17 @@ namespace TestProject.RuntimeTests
 
         private bool PlayerNoLongerExistsWithChildren(ulong clientId)
         {
-            if (m_PlayerNetworkObjects[0].ContainsKey(clientId) && m_PlayerNetworkObjects[0][clientId] != null)
+            var authorityId = GetAuthorityNetworkManager().LocalClientId;
+            if (m_PlayerNetworkObjects[authorityId].ContainsKey(clientId) && m_PlayerNetworkObjects[authorityId][clientId] != null)
             {
-                return m_PlayerNetworkObjects[0][clientId].transform.childCount == 0;
+                return m_PlayerNetworkObjects[authorityId][clientId].transform.childCount == 0;
             }
             return true;
         }
 
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
-            if (sceneEvent.ClientId != m_ServerNetworkManager.LocalClientId)
+            if (sceneEvent.ClientId != GetAuthorityNetworkManager().LocalClientId)
             {
                 return;
             }

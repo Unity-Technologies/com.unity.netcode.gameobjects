@@ -157,6 +157,39 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        private bool ExcludedParameterValuesDoNotMatch()
+        {
+            var objectToUpdate = AnimatorTestHelper.ServerSideInstance;
+            var excludedParameterValue = objectToUpdate.GetExcludedParameter();
+            if (m_AuthoritativeMode == AuthoritativeMode.OwnerAuth)
+            {
+                objectToUpdate = m_OwnerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+                excludedParameterValue = objectToUpdate.GetExcludedParameter();
+                if (m_OwnerShipMode == OwnerShipMode.ClientOwner)
+                {
+                    if (excludedParameterValue == AnimatorTestHelper.ServerSideInstance.GetExcludedParameter())
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            foreach (var animatorTestHelper in AnimatorTestHelper.ClientSideInstances)
+            {
+                if (objectToUpdate == animatorTestHelper.Value)
+                {
+                    continue;
+                }
+                var clientExcludedParameter = animatorTestHelper.Value.GetExcludedParameter();
+                if (clientExcludedParameter == excludedParameterValue)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
         public enum OwnerShipMode
         {
             ServerOwner,
@@ -267,6 +300,42 @@ namespace TestProject.RuntimeTests
             Assert.True(success, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
             VerboseDebug($" ------------------ Parameter Test [{m_OwnerShipMode}] Stopping ------------------ ");
         }
+
+        [Test]
+        public void ParameterExcludedTests()
+        {
+            VerboseDebug($" ++++++++++++++++++ Parameter Excluded Test [{m_OwnerShipMode}] Starting ++++++++++++++++++ ");
+
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(m_OwnerShipMode == OwnerShipMode.ClientOwner, m_AuthoritativeMode);
+
+            // Wait for it to spawn server-side
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(m_AuthoritativeMode)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(m_AuthoritativeMode)} to be spawned!");
+
+            if (m_AuthoritativeMode == AuthoritativeMode.OwnerAuth)
+            {
+                var objectToUpdate = m_OwnerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+                // Set the excluded parameter value via the owner instance
+                objectToUpdate.UpdateExcludedParameter(Random.Range(1.5f, 100.0f));
+            }
+            else
+            {
+                // Set the excluded parameter value via the server instance
+                AnimatorTestHelper.ServerSideInstance.UpdateExcludedParameter(Random.Range(1.5f, 100.0f));
+            }
+
+            TimeTravel(0.5, 60);
+            // Wait for the client side to update to the new parameter values
+            success = WaitForConditionOrTimeOutWithTimeTravel(ExcludedParameterValuesDoNotMatch);
+            Assert.True(success, $"The excluded parameter was synchronized!");
+            VerboseDebug($" ------------------ Parameter Test [{m_OwnerShipMode}] Stopping ------------------ ");
+        }
+
 
 
         private bool AllTriggersDetected(OwnerShipMode ownerShipMode)

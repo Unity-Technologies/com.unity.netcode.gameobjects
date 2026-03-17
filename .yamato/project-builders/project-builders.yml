@@ -30,13 +30,14 @@ build_{{ netcodeProject[0] }}_project:
     SCRIPTING_BACKEND_IL2CPP_MONO: il2cpp
     BURST_ON_OFF: on
     PLATFORM_WIN64_MAC_ANDROID: win64
+    SAMPLE_BRANCH: {{ netcodeProject[1].defaultBranch }}
   commands:
     # Validate inputs passed via Yamato variables
     - python Tools/scripts/BuildAutomation/validate_params.py
-    - echo Building {{ netcodeProject[0] }} project with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
+    - echo Building {{ netcodeProject[0] }} project from branch %SAMPLE_BRANCH% with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
 
     # Clone the external project repository into a specific directory. Notice that branch is also specified.
-    - git clone --single-branch --branch {{ netcodeProject[1].branch }} {{ netcodeProject[1].GithubRepo }} C:/ClonedProject
+    - git clone --single-branch --branch %SAMPLE_BRANCH% {{ netcodeProject[1].GithubRepo }} C:/ClonedProject
 
     # Modify the external project's manifest to use the local N4E package from current branch on which this Yamato job is running. (requires python that should be preinstalled in the image)
     - python Tools/scripts/BuildAutomation/manifest_update.py --manifest-path C:/ClonedProject/{{ netcodeProject[1].manifestPath }} --local-package-path %YAMATO_SOURCE_DIR%/com.unity.netcode.gameobjects
@@ -61,21 +62,21 @@ build_{{ netcodeProject[0] }}_project:
     # Build the project using Unity Editor. This will call the given static BuilderScripts method.
     # Ideally, it would be nice to parametrize the BuilderScripts (for example to pass scripting backend as parameter) but -executeMethod only calls static methods without parameters so for now we will have multiple configurations
     # Notice that for Android platform even if mono is selected, il2cpp will be used since mono is not supported for Android builds.
-    - IF "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
-        IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+    - IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
+        IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
         ) ELSE (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
         )
       )
-      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
-          IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
+          IF /I "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
             C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
           ) ELSE (
             C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
           )
       )
-      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
+      ELSE IF /I "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
           C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget android -executeMethod BuilderScripts.BuildAndroidIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
       )
 

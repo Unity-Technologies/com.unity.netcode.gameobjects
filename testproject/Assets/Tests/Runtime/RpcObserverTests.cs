@@ -326,8 +326,8 @@ namespace TestProject.RuntimeTests
         /// Called by each observer client that received the ObserverMessageClientRpc message
         /// The sender id is added to the ObserversThatReceivedRPC list
         /// </summary>
-        [ServerRpc(RequireOwnership = false)]
-        public void ObserverMessageServerRpc(ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void ObserverMessageServerRpc(RpcParams serverRpcParams = default)
         {
             ObserversThatReceivedRPC.Add(serverRpcParams.Receive.SenderClientId);
         }

@@ -4,7 +4,7 @@
 # DESCRIPTION--------------------------------------------------------------------------
   # This job is responsible fo validating package compatibility with latest dependency versions.
   # This helps detect potential breaking changes from dependency updates early
-  
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs configurations are generated using nested loops through:
     # 1. For all projects (testproject, minimalproject, testproject-tools-integration).
@@ -15,17 +15,17 @@
   # This job requires successful project packaging before execution (job dependency)
   # This job tests only NGO package dependencies (com.unity.netcode.gameobjects)
   # The results are being generated in upm-ci~/test-results directory (specific of upm-ci)
-  
+
 # QUALITY CONSIDERATIONS---------------------------------------------------------------------
   # TODO: Currently upm-ci is being used but in the future it will be replaced by upm-pvp
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
-  
-#-------------------------------------------------------------------------------------- 
-  
+
+#--------------------------------------------------------------------------------------
+
 {% for project in projects.all -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:                   
+updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
   name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
@@ -42,7 +42,28 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    - .yamato/project-updated-dependencies-test.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  
+  
+# TODO: This job was removed on PR-3711 but the above job somehow can find proper artifacts with package pack job. 
+# This job should be removed when issue will be resolved since it's not used anywhere
+{% for project in projects.all -%}
+{% for platform in test_platforms.desktop -%}
+project_pack_-_{{ project.name }}_{{ platform.name }}:
+  name: Project Pack - {{ project.name }} [{{ platform.name }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
+    - upm-ci project pack --project-path {{ project.path }}
+  artifacts:
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
 {% endfor -%}
 {% endfor -%}

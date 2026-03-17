@@ -1,4 +1,5 @@
 #if COM_UNITY_MODULES_PHYSICS
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -10,6 +11,7 @@ namespace Unity.Netcode.Components
     [RequireComponent(typeof(NetworkTransform))]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Netcode/Network Rigidbody")]
+    [HelpURL(HelpUrls.NetworkRigidbody)]
     public class NetworkRigidbody : NetworkRigidbodyBase
     {
 

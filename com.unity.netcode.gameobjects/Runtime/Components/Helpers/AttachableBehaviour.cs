@@ -278,11 +278,11 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkPreDespawn()
         {
-            if (AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
+            if (NetworkManager.ShutdownInProgress || AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
             {
                 ForceDetach();
             }
-            base.OnNetworkDespawn();
+            base.OnNetworkPreDespawn();
         }
 
         /// <summary>
@@ -463,8 +463,7 @@ namespace Unity.Netcode.Components
                 {
                     // Set the original parent and origianl local position and rotation
                     transform.SetParent(m_DefaultParent.transform, false);
-                    transform.localPosition = m_OriginalLocalPosition;
-                    transform.localRotation = m_OriginalLocalRotation;
+                    transform.SetLocalPositionAndRotation(m_OriginalLocalPosition, m_OriginalLocalRotation);
                 }
                 m_AttachState = AttachState.Detached;
             }
@@ -475,10 +474,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         public void Detach()
         {
-            if (!gameObject)
+            if (!gameObject || NetworkObject == null || NetworkManager == null || NetworkManager.ShutdownInProgress)
             {
                 return;
             }
+
             if (!IsSpawned)
             {
                 NetworkLog.LogError($"[{name}][Detach][Not Spawned] Cannot detach if not spawned!");

@@ -25,11 +25,6 @@
             "define": "MULTIPLAYER_TOOLS"
         },
         {
-            "name": "Unity",
-            "expression": "(0,2022.2.0a5)",
-            "define": "UNITY_UNET_PRESENT"
-        },
-        {
             "name": "com.unity.modules.animation",
             "expression": "",
             "define": "COM_UNITY_MODULES_ANIMATION"
@@ -43,11 +38,6 @@
             "name": "com.unity.modules.physics2d",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS2D"
-        },
-        {
-            "name": "com.unity.services.relay",
-            "expression": "1.0",
-            "define": "RELAY_SDK_INSTALLED"
         },
         {
             "name": "com.unity.services.multiplayer",

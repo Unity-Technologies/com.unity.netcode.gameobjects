@@ -1,7 +1,7 @@
 ﻿# Netcode for GameObjects CI Documentation
 
 ## Overview
-This document provides an overview of the Continuous Integration (CI) implementation for Netcode for GameObjects. 
+This document provides an overview of the Continuous Integration (CI) implementation for Netcode for GameObjects.
 Specifics of each test are described within related files (for example .yamato/package-tests.yml) and this file present high level overview related to overall implementation.
 
 ## Test Configurations
@@ -9,7 +9,6 @@ CI related files are present inside .yamato/ folder and we can distinguish speci
 
 ### Helper jobs
 - `.yamato/package-pack.yml` responsible for generating package artifacts (.tgz) required for testing and publishing.
-- `.yamato/project-pack.yml` responsible for generating package artifacts (.tgz) required for testing and publishing. This packs all packages of a given project.
 - `.yamato/_run-all.yml` responsible for grouping tests into groups for easier management (for example "all console tests").
 - `.yamato/_triggers.yml` responsible for defining triggers (PR, nightly, weekly etc.) and defining which tests to run.
 - `disable-burst-if-requested.py` responsible for helping to disable burst if needed.

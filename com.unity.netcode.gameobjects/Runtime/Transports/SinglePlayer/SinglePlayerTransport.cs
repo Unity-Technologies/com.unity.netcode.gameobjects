@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode.Runtime;
+using UnityEngine;
 
 namespace Unity.Netcode.Transports.SinglePlayer
 {
@@ -11,6 +13,8 @@ namespace Unity.Netcode.Transports.SinglePlayer
     /// <remarks>
     /// You can only start as a host when using this transport.
     /// </remarks>
+    [AddComponentMenu("Netcode/Single Player Transport")]
+    [HelpURL(HelpUrls.SinglePlayerTransport)]
     public class SinglePlayerTransport : NetworkTransport
     {
         /// <inheritdoc/>
@@ -28,7 +32,6 @@ namespace Unity.Netcode.Transports.SinglePlayer
 
         private static Dictionary<ulong, Queue<MessageData>> s_MessageQueue = new Dictionary<ulong, Queue<MessageData>>();
 
-        private bool m_Initialized;
         private ulong m_TransportId = 0;
         private NetworkManager m_NetworkManager;
 

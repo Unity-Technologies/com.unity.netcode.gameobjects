@@ -43,6 +43,8 @@ namespace Unity.Netcode.RuntimeTests
 
             protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
             {
+                Assert.That(NetworkObject.NetworkManagerOwner, Is.Not.Null, "NetworkManagerOwner should be set before calling OnNetworkPreSpawn");
+
                 OnNetworkPreSpawnCalled = true;
                 // If we are the server, then set the randomly generated value (1-200).
                 // Otherwise, just set the value to 0.

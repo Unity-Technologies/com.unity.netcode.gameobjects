@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -377,6 +378,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNetworkPostSpawn()
         {
+            Log($"[Client-{NetworkManager.LocalClientId}] Running post spawn.");
             m_DictionaryCollection.OnValueChanged += OnValueChanged;
             base.OnNetworkPostSpawn();
         }
@@ -488,6 +490,8 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private HelperStates HelperState { get; set; }
+        private Dictionary<HelperStates, Action> m_StateToAction = new Dictionary<HelperStates, Action>();
+
 
         private int m_SendClearForOwnershipOnTick;
         private ulong m_NextClient = 0;
@@ -495,7 +499,13 @@ namespace Unity.Netcode.RuntimeTests
 
         public void SetState(HelperStates helperState)
         {
+            Log($"[StateUpdate] Previous: {HelperState} New: {helperState}");
             HelperState = helperState;
+        }
+
+        private void Awake()
+        {
+            InitializeStateUpdates();
         }
 
         protected virtual bool OnValidateAgainst(BaseCollectionUpdateHelper otherHelper)
@@ -653,24 +663,36 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return;
             }
+            m_StateToAction[HelperState]?.Invoke();
+        }
 
-            if (HelperState == HelperStates.ChangingOwner)
-            {
-                NetworkObject.ChangeOwnership(m_NextClient);
-                Log($"Local Change ownership to Client-{m_NextClient} complete! New Owner is {NetworkObject.OwnerClientId} | Expected {m_NextClient}");
-            }
-            else
-            {
-                ChangingOwnershipClearRpc(RpcTarget.Single(m_ClientToSendClear, RpcTargetUse.Temp));
-            }
-            HelperState = HelperStates.Stop;
+        private void InitializeStateUpdates()
+        {
+            m_StateToAction.Add(HelperStates.Start, null);
+            m_StateToAction.Add(HelperStates.Stop, null);
+            m_StateToAction.Add(HelperStates.Pause, null);
+            m_StateToAction.Add(HelperStates.ClearToChangeOwner, ClearToChangeOwnerStateUpdate);
+            m_StateToAction.Add(HelperStates.ChangingOwner, ChangingOwnerStateUpdate);
+        }
+
+        private void ChangingOwnerStateUpdate()
+        {
+            NetworkObject.ChangeOwnership(m_NextClient);
+            Log($"Local Change ownership to Client-{m_NextClient} complete! New Owner is {NetworkObject.OwnerClientId} | Expected {m_NextClient}");
+            SetState(HelperStates.Stop);
+        }
+
+        private void ClearToChangeOwnerStateUpdate()
+        {
+            ChangingOwnershipClearRpc(RpcTarget.Single(m_ClientToSendClear, RpcTargetUse.Temp));
+            SetState(HelperStates.Stop);
         }
 
         protected void Log(string msg)
         {
             if (VerboseMode)
             {
-                Debug.Log($"[Client-{NetworkManager.LocalClientId}] {msg}");
+                Debug.Log($"[Frame: {Time.frameCount}][Tick: {((uint)(NetworkManager.LocalTime.TickWithPartial * 1000)) * 0.001f}][{name}] {msg}");
             }
         }
     }
