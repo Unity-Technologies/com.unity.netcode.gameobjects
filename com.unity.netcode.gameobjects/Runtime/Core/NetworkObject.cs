@@ -383,19 +383,7 @@ namespace Unity.Netcode
                     SynchronizeTransform = false;
                 }
 
-                // Move the bridge to the top
-                while (UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
-                {
-                    // Keep moving until it can't go higher
-                }
-
-                // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
-                while (UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
-                {
-                    // Keep moving until it can't go higher
-                }
-
-                EditorUtility.SetDirty(gameObject);
+                EditorApplication.delayCall += SortToTop;
 
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
@@ -403,6 +391,24 @@ namespace Unity.Netcode
                 HadBridge = false;
                 SynchronizeTransform = true;
             }
+        }
+
+
+        private void SortToTop()
+        {
+            // Move the bridge to the top
+            while (UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
+            {
+                // Keep moving until it can't go higher
+            }
+
+            // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
+            while (UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
+            {
+                // Keep moving until it can't go higher
+            }
+
+            EditorUtility.SetDirty(gameObject);
         }
 #endif
 #endif
