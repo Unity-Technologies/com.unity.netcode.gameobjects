@@ -2230,7 +2230,6 @@ namespace Unity.Netcode
             }
 
             m_CachedWorldPositionStays = worldPositionStays;
-            if (parent == null)
             CurrentParent = parent;
             transform.SetParent(CurrentParent?.transform, worldPositionStays);
 
