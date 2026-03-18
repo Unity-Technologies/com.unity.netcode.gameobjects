@@ -208,7 +208,7 @@ namespace Unity.Netcode
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                 {
-                    if (targetClientId == NetworkManager.ServerClientId)
+                    if (targetClientId == networkManager.ServerClientId)
                     {
                         shouldInvokeLocally = true;
                         continue;
@@ -225,7 +225,7 @@ namespace Unity.Netcode
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
-                    if (targetClientId == NetworkManager.ServerClientId)
+                    if (targetClientId == networkManager.ServerClientId)
                     {
                         shouldInvokeLocally = true;
                         continue;
@@ -353,7 +353,6 @@ namespace Unity.Netcode
         internal void __endSendRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, RpcParams rpcParams, RpcAttribute.RpcAttributeParams attributeParams, SendTo defaultTarget, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            // Sould we create a local networkManager var to improve performance instead of using 2 times m_NetworkManager?
             var rpcMessage = new RpcMessage
             {
                 Metadata = new RpcMetadata
@@ -579,7 +578,7 @@ namespace Unity.Netcode
         {
             get
             {
-                if (m_NetworkObject)
+                if (m_NetworkObject != null)
                 {
                     return m_NetworkObject;
                 }
@@ -599,7 +598,7 @@ namespace Unity.Netcode
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
                 // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
-                if (IsSpawned && !m_NetworkObject && (!m_NetworkManager || !m_NetworkManager.ShutdownInProgress))
+                if (IsSpawned && !m_NetworkObject && (m_NetworkObject == null || !m_NetworkManager.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
