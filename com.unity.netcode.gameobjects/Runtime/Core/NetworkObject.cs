@@ -390,8 +390,8 @@ namespace Unity.Netcode
         /// <param name="destroy">Defaults to true, determines whether the <see cref="NetworkObject"/> will be destroyed.</param>
         public void DeferDespawn(int tickOffset, bool destroy = true)
         {
-            // Ensure we log the DAMode message first as locking ownership is not allowed if not in DAMode.
-            if (!NetworkManagerOwner.DistributedAuthorityMode)
+            // The DAMode message is logged first, as ownership locking isn’t allowed when not in DAMode, making it the most relevant message.
+            if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
@@ -606,7 +606,7 @@ namespace Unity.Netcode
         /// <returns>true or false depending upon lock operation's success</returns>
         public bool SetOwnershipLock(bool lockOwnership = true)
         {
-            // Ensure we log the DAMode message first as locking ownership is not allowed if not in DAMode.
+            // The DAMode message is logged first, as ownership locking isn’t allowed when not in DAMode, making it the most relevant message.
             if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
