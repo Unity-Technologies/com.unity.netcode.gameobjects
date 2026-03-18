@@ -4822,7 +4822,6 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void RegisterForTickUpdate(NetworkTransform networkTransform)
         {
-            //CHECK can we use NetworkManager.Singleton instead as we are in static context?
             var networkManager = networkTransform.NetworkManager;
             if (!networkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkManager))
             {
@@ -4840,7 +4839,6 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
         {
-            //CHECK static context, can we use NetworkManager.Singleton?
             var networkManager = networkTransform.NetworkManager;
             if (!networkManager)
             {
