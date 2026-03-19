@@ -97,7 +97,7 @@ Fortunately, the authority of the NetworkTransform instance can make changes to 
 When disabling an axis to be synchronized for performance purposes, you should always consider that NetworkTransform won't send updates as long as the axis in question doesn't have a change that exceeds its [threshold](#thresholds) value. So, taking the scale example into consideration, it can be simpler to leave those axes enabled if you only ever plan on changing them once or twice because the CPU cost for checking that change isn't as expensive as the serialization and state update sending process. The associated axis threshold values can make the biggest impact on frequency of sending state updates that, in turn, will reduce the number of state updates sent per second at the cost of losing some motion resolution.
 
 > [!NOTE]
-> The __Axis to Synchronize__ properties that determine which axes are synchronized don't get synchronized with other instances. If you change ownership and there have been any adjustments to these values that are different from the network prefab's original settings, you'll need to keep those values synchronized and apply them upon the notification that ownership has changed.
+> The __Axis to Synchronize__ properties that determine which axes are synchronized don't get synchronized with other instances. If you change [ownership](../../terms-concepts/ownership.md) and there have been any adjustments to these values that are different from the network prefab's original settings, you'll need to keep those values synchronized and apply them upon the notification that ownership has changed.
 
 ### Authority
 
