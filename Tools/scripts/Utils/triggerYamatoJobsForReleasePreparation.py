@@ -75,12 +75,12 @@ def trigger_automated_builds_job_on_yamato(yamato_api_token, project_id, branch_
 
     build_automation_configs = [
         {
-            "job_name": "Build Sample for Windows with minimal supported editor (2022.3), burst ON, IL2CPP",
+            "job_name": "Build Sample for Windows with latest supported editor (6000.3), burst ON, IL2CPP",
             "variables": [
                 { "key": "BURST_ON_OFF", "value": "on" },
                 { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "win64" },
                 { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                { "key": "UNITY_VERSION", "value": "2022.3" }
+                { "key": "UNITY_VERSION", "value": "6000.3" }
             ]
         }
     ]
@@ -125,7 +125,8 @@ def trigger_release_preparation_jobs(config: ReleaseConfig):
     try:
         revision_sha = get_latest_git_revision(config.release_branch_name)
 
-        trigger_wrench_promotion_job_on_yamato(config.yamato_api_token, config.yamato_project_id, config.release_branch_name, revision_sha)
+        # We don't need to trigger promotion job to run the tests for the release branch since those are being triggered automatically on release/ prefixed branches
+        #trigger_wrench_promotion_job_on_yamato(config.yamato_api_token, config.yamato_project_id, config.release_branch_name, revision_sha)
         trigger_automated_builds_job_on_yamato(config.yamato_api_token, config.yamato_project_id, config.release_branch_name, revision_sha, config.yamato_samples_to_build, config.yamato_build_automation_configs)
 
     except Exception as e:
