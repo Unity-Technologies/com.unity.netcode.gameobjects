@@ -1,15 +1,15 @@
 # NetworkObject parenting
 
-### Overview
+## Overview
 
-If you aren't completely familiar with transform parenting in Unity, then it's highly recommended to [review over the existing Unity documentation](https://docs.unity3d.com/Manual/class-Transform.html) before reading further to properly synchronize all connected clients with any change in a GameObject component's transform parented status, Netcode for GameObjects requires that the parent and child GameObject components have NetworkObject components attached to them.
+If you aren't familiar with transform parenting in Unity, then it's recommended that you [review the existing Unity documentation](https://docs.unity3d.com/Manual/class-Transform.html) before reading further. To properly synchronize all connected clients with any change in a GameObject component's transform parented status, Netcode for GameObjects requires that the parent and child GameObject components have NetworkObject components attached to them. Otherwise, you can use the [AttachableBehaviour](../components/helper/attachablebehaviour.md) and [AttachableNode](../components/helper/attachablenode.md) helper components to synchronize other types of parenting.
 
-### Parenting rules
+## Parenting rules
 
 - Setting the parent of a child's `Transform` directly (that is, `transform.parent = childTransform;`) always uses the default `WorldPositionStays` value of `true`.
   - It's recommended to always use the `NetworkObject.TrySetParent` method when parenting if you plan on changing the `WorldPositionStays` default value.
   - Likewise, it's also recommended to use the `NetworkObject.TryRemoveParent` method to remove a parent from a child.
-- When a server parents a spawned NetworkObject component under another spawned NetworkObject component during a Netcode game session this parent child relationship replicates across the network to all connected and future late joining clients.
+- When an [authority](../terms-concepts/authority.md) parents a spawned NetworkObject component under another spawned NetworkObject component during a Netcode game session, this parent-child relationship replicates across the network to all connected and future late-joining clients.
 - If, while editing a scene, you place an in-scene placed NetworkObject component under a GameObject component that doesn't have a NetworkObject component attached to it, Netcode for GameObjects preserves that parenting relationship.
   - During runtime, this parent-child hierarchy remains true unless the user code removes the GameObject parent from the child NetworkObject component.
     - **Note**: Once removed, Netcode for GameObjects won't allow you to re-parent the NetworkObject component back under the same or another GameObject component that with no NetworkObject component attached to it.
@@ -35,15 +35,26 @@ If you aren't completely familiar with transform parenting in Unity, then it's h
 virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 ```
 
-> [!NOTE] Multi-generation children and scale
+> [!NOTE]
+> Multi-generation children and scale
 > If you are dealing with more than one generation of nested children where each parent and child have scale values other than `Vector3.one`, then mixing the `WorldPositionStays` value when parenting and removing a parent will impact how the final scale is calculated! If you want to keep the same values before parenting when removing a parent from a child, then you need to use the same `WorldPositionStays` value used when the child was parented.
 
-### Only a server (or a host) can parent NetworkObjects
+### Who can parent NetworkObjects
 
-Similar to [Ownership](../basics/networkobject#ownership), only the server (or host) can control NetworkObject component parenting.
+#### Under a spawned NetworkObject
+
+The [owner](../terms-concepts/ownership.md) of a NetworkObject can always parent that NetworkObject under any other spawned NetworkObject. This works regardless of who owns the other NetworkObject.
+
+#### Under other GameObjects
+
+By default, only the [authority](../terms-concepts/authority.md) of a NetworkObject can parent a NetworkObject under a non-networked object. This means in a client-server game, only the server (or host) can control NetworkObject component parenting. In a distributed authority game the [owner](../terms-concepts/ownership.md) of the object can always parent the object.
+
+To allow the [owner](../terms-concepts/ownership.md) to parent their owned NetworkObject in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
+
+![image](../images/networkobject/allowOwnerToParent.png)
 
 > [!NOTE]
-> If you run into a situation where your client must trigger parenting a NetworkObject component, one solution is for the client to send an RPC to the server. Upon receiving the RPC message, the server then handles parenting the NetworkObject component.
+> If you run into a situation where your client must trigger parenting a NetworkObject component, one solution is for the client to send an RPC to the authority. Upon receiving the RPC message, the authority then handles parenting the NetworkObject component.
 
 ### Only parent under a NetworkObject Or nothing (root or null)
 
