@@ -1852,7 +1852,6 @@ namespace Unity.Netcode.Components
             if (!IsServerAuthoritative() && NetworkObject.OwnerClientId == targetClientId)
             {
                 // In distributed authority mode we want to synchronize the half float if we are the owner.
-                // TODO do we have a cached NetworkManager here? Should we create one?
                 return (!NetworkManager.DistributedAuthorityMode && NetworkObject.IsOwnedByServer) || (NetworkManager.DistributedAuthorityMode);
             }
             return true;
