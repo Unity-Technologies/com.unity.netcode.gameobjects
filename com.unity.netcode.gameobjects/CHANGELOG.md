@@ -41,6 +41,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where starting the NetworkManager within `OnClientStopped` or `OnServerStopped` resulted in a broken `NetworkManager` state. (#3908)
 - Fixed issue where an attachable could log an error upon being de-spawned during shutdown. (#3895)
 - NestedNetworkVariables initialized with no value no longer throw an error. (#3891)
 - Fixed `NetworkShow` behavior when it is called twice. (#3867)
