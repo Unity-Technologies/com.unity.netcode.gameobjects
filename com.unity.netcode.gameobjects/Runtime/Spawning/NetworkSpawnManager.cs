@@ -1278,7 +1278,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkObject.HasGhost)
             {
-                networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
+                networkObject.NetworkObjectBridge.SetNetworkObjectId(networkObject.NetworkObjectId);
             }
 #endif
 

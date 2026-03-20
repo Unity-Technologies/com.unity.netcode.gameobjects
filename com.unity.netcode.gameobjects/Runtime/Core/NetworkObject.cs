@@ -291,6 +291,10 @@ namespace Unity.Netcode
             // Always check for in-scene placed to assure any previous version scene assets with in-scene place NetworkObjects gets updated.
             CheckForInScenePlaced();
 
+#if UNIFIED_NETCODE
+            UnifiedValidation();
+#endif
+
             // If the GlobalObjectIdHash value changed, then mark the asset dirty.
             if (GlobalObjectIdHash != oldValue)
             {
@@ -376,33 +380,12 @@ namespace Unity.Netcode
                 HadBridge = true;
                 // Transform synchronization is handled by unified netcode
                 SynchronizeTransform = false;
-
-                // Move the bridge to the top
-                while (NetworkObjectBridge != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
-                {
-                    // Keep moving until it can't go higher
-                }
-
-                // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
-                while (GhostAdapter != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
-                {
-                    // Keep moving until it can't go higher
-                }
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
             {
                 HadBridge = false;
                 SynchronizeTransform = true;
             }
-        }
-
-        /// <summary>
-        /// TODO: This needs to be handled better.
-        /// Temporary work-around for sorting and adding components.
-        /// </summary>
-        private void OnEnable()
-        {
-            UnifiedValidation();
         }
 #endif
 #endif
