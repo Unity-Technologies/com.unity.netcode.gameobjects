@@ -276,10 +276,6 @@ namespace Unity.Netcode
                 return;
             }
 
-#if UNIFIED_NETCODE
-            UnifiedValidation();
-#endif
-
             // Get a global object identifier for this network prefab.
             var globalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
 
@@ -376,15 +372,22 @@ namespace Unity.Netcode
             HasGhost = GhostAdapter != null;
             if (HasGhost && NetworkObjectBridge == null)
             {
+                NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+                HadBridge = true;
+                // Transform synchronization is handled by unified netcode
+                SynchronizeTransform = false;
+
+                // Move the bridge to the top
+                while (NetworkObjectBridge != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
                 {
-                    NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
-                    HadBridge = true;
-                    // Transform synchronization is handled by unified netcode
-                    SynchronizeTransform = false;
+                    // Keep moving until it can't go higher
                 }
 
-                EditorApplication.delayCall += SortToTop;
-
+                // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
+                while (GhostAdapter != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
+                {
+                    // Keep moving until it can't go higher
+                }
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
             {
@@ -393,31 +396,13 @@ namespace Unity.Netcode
             }
         }
 
-
-        private void SortToTop()
+        /// <summary>
+        /// TODO: This needs to be handled better.
+        /// Temporary work-around for sorting and adding components.
+        /// </summary>
+        private void OnEnable()
         {
-            if (gameObject == null)
-            {
-                return;
-            }
-            // Move the bridge to the top
-            while (NetworkObjectBridge != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
-            {
-                // Keep moving until it can't go higher
-            }
-
-            // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
-            while (GhostAdapter != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
-            {
-                // Keep moving until it can't go higher
-            }
-            
-            if (gameObject != null)
-            {
-                EditorUtility.SetDirty(gameObject);
-                return;
-            }
-            
+            UnifiedValidation();
         }
 #endif
 #endif
