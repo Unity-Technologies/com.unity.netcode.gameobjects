@@ -259,27 +259,28 @@ public class ConnectionNotificationManager : MonoBehaviour
 
 ### Instantiation and destroying
 
-There are times when it could be useful to be notified when a NetworkManager has been instantiated or is about to be destroyed. There are two static NetworkManager events you can use for this:
+There are two static NetworkManager events you can use to be notified when a NetworkManager is instantiated or is about to be destroyed:
 
-- NetworkManager.OnInstantiated: This is invoked when a NetworkManager is instantiated.
-- NetworkManager.OnDestroying: This is invoked when a NetworkManager is about to be destroyed.
+- [`NetworkManager.OnInstantiated`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnInstantiated): This is invoked when a NetworkManager is instantiated.
+- [`NetworkManager.OnDestroying`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnDestroying): This is invoked when a NetworkManager is about to be destroyed.
 
 ### When a NetworkManager is stopped
 
-You will almost always want to know when a NetworkManager has finished shutting down ("stopped"). This can be useful to know when it is safe to transition back to a main menu scene or you might want to perform other similar types of tasks. However, knowing when a NetworkManager has been stopped does not help if you want to save off any state that might exist on spawned objects because at that point everything will have been de-spawned and destroyed. If you run into this scenario then you can use the following event notification:
 
-- [NetworkManager.OnPreShutdown](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.10/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnPreShutdown): This is invoked prior to finalizing the NetworkManager shutdown process. Any remaining spawned objects will still be instantiated and spawned when this event is invoked.
+Knowing when a NetworkManager has stopped is useful for establishing when it's safe to transition back to a main menu scene, or other similar tasks. There are two events you can use to be notified that the NetworkManager has finished shutting down:
 
-Similar to the started events, there are two stopped events you can subscribe to that lets you know the NetworkManager is completely shutdown ("stopped"):
-
-- [NetworkManager.OnClientStopped](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.10/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnClientStopped): This is invoked on a Host or client when NetworkManager has completely shutdown and is ready to be restarted.
-- [NetworkManager.OnServerStopped](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.10/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnServerStopped): This is invoked on a Host or Server when NetworkManager has completely shutdown and is ready to be restarted.
+- [`NetworkManager.OnClientStopped`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnClientStopped): This is invoked on a host or client when the NetworkManager has completely shut down and is ready to be restarted.
+- [`NetworkManager.OnServerStopped`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnServerStopped): This is invoked on a host or server when the NetworkManager has completely shut down and is ready to be restarted.
 
 Since a host is both a client and a server, the event invocation order is:
 
-- OnClientStopped
-- OnServerStopped
-  - _Only if the NetworkManager instance is not restarted during `OnClientStopped`_.
+- `OnClientStopped`
+- `OnServerStopped`
+    - _Only if the NetworkManager instance is not restarted during `OnClientStopped`_.
 
 > [!NOTE]
-> If you start the NetworkManager during `NetworkManager.OnClientStopped`, then upon the NetworkManager having restarted successfully it will skip the invocation of `OnServerStopped` since it is no longer shutdown.
+> If you restart the NetworkManager during `NetworkManager.OnClientStopped`, then it will skip the invocation of `OnServerStopped`.
+
+If you need to save the state of spawned objects before they're destroyed when the NetworkManager shuts down, you can use the following event notification:
+
+- [`NetworkManager.OnPreShutdown`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnPreShutdown): This is invoked prior to finalizing the NetworkManager shut down process. Any remaining spawned objects will still be instantiated and spawned when this event is invoked.
