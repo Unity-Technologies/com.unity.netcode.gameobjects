@@ -396,19 +396,28 @@ namespace Unity.Netcode
 
         private void SortToTop()
         {
+            if (gameObject == null)
+            {
+                return;
+            }
             // Move the bridge to the top
-            while (UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
+            while (NetworkObjectBridge != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(NetworkObjectBridge))
             {
                 // Keep moving until it can't go higher
             }
 
             // Now move the GhostAdapter to the top so it is above NetworkObjectBridge
-            while (UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
+            while (GhostAdapter != null && UnityEditorInternal.ComponentUtility.MoveComponentUp(GhostAdapter))
             {
                 // Keep moving until it can't go higher
             }
-
-            EditorUtility.SetDirty(gameObject);
+            
+            if (gameObject != null)
+            {
+                EditorUtility.SetDirty(gameObject);
+                return;
+            }
+            
         }
 #endif
 #endif
