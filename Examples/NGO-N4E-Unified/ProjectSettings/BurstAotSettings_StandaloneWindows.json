@@ -1,0 +1,19 @@
+{
+  "MonoBehaviour": {
+    "Version": 5,
+    "EnableBurstCompilation": false,
+    "EnableOptimisations": false,
+    "EnableSafetyChecks": false,
+    "EnableDebugInAllBuilds": false,
+    "DebugDataKind": 1,
+    "EnableArmv9SecurityFeatures": false,
+    "CpuMinTargetX32": 0,
+    "CpuMaxTargetX32": 0,
+    "CpuMinTargetX64": 0,
+    "CpuMaxTargetX64": 0,
+    "CpuTargetsX32": 6,
+    "CpuTargetsX64": 72,
+    "OptimizeFor": 0,
+    "FloatMode": 0
+  }
+}
