@@ -1,6 +1,6 @@
 # Authority
 
-Multiplayer games are games that are played between many different game instances. Each game instance has their own copy of the game world and behaviors within that game world. To have a shared game experience, each networked object is required to have an **authority**.
+Multiplayer games are games that are played between many different game instances. Each game instance has their own copy of the game world and behaviors within that game world. To have a shared game experience, each part of the game simulation is required to have an **authority**. The authority runs the game simulation, takes actions on the game world, and synchronizes the simulation to all other connected clients. When clients who are not the authority (non-authority clients) want to interact or change the world, they must communicate with the authority and request the authority to make changes on their behalf.
 
 The authority of a networked object has the ultimate power to make definitive decisions about that object. Each object must have one and only one authority. The authority has the final control over all state and behavior of that object.
 
@@ -12,7 +12,7 @@ Netcode for GameObjects provides two authority models: [server authority](#serve
 
 ### Server authority
 
-The server authority model has a single game instance that is defined as the server. That game instance is responsible for running the main simulation and managing all aspects of running the networked game. Server authority is the authority model used for [client-server games](client-server.md).
+The server authority model has a single game instance that is defined as the server. That game instance is responsible for running the main simulation and managing all aspects of running the networked game. Server authority is the authority model used for [client-server games](client-server.md). In a client-server game all actions that only the server can take are referred to as **server authoritative** actions.
 
 The server authority model has the strength of providing a centralized authority to manage any potential game state conflicts. This allows the implementation of systems such as game state rollback and competitive client prediction. However, this can come at the expense of adding latencies, because all state changes must be sent to the server game instance, processed, and then sent out to other game instances.
 
