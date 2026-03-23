@@ -90,7 +90,6 @@ namespace Unity.Netcode
         internal void __endSendServerRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            // Getting this ahead of time actually improves performance
             var networkManager = m_NetworkManager;
             var serverRpcMessage = new ServerRpcMessage
             {
@@ -170,7 +169,6 @@ namespace Unity.Netcode
         internal void __endSendClientRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            // Getting this ahead of time actually improves performance
             var networkManager = m_NetworkManager;
             var clientRpcMessage = new ClientRpcMessage
             {
@@ -208,7 +206,7 @@ namespace Unity.Netcode
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                 {
-                    if (targetClientId == networkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldInvokeLocally = true;
                         continue;
@@ -219,13 +217,13 @@ namespace Unity.Netcode
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
-                rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
+                rpcWriteSize = m_NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
-                    if (targetClientId == networkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldInvokeLocally = true;
                         continue;
@@ -598,7 +596,7 @@ namespace Unity.Netcode
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
                 // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
-                if (IsSpawned && !m_NetworkObject && (m_NetworkObject == null || !m_NetworkManager.ShutdownInProgress))
+                if (IsSpawned && m_NetworkObject == null && (m_NetworkManager == null || !m_NetworkManager.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -654,7 +652,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void UpdateNetworkProperties()
         {
-            // Getting these ahead of time actually improves performance
             var networkObject = m_NetworkObject;
             var networkManager = m_NetworkManager;
 
