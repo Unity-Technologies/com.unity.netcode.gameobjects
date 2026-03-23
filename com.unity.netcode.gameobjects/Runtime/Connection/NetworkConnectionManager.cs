@@ -1113,17 +1113,14 @@ namespace Unity.Netcode
         /// </summary>
         internal void CreateAndSpawnPlayer(ulong ownerId)
         {
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
+            var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
+            if (playerPrefab != null)
             {
-                var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
-                if (playerPrefab != null)
-                {
-                    var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
-                    networkObject.IsSceneObject = false;
-                    networkObject.NetworkManagerOwner = NetworkManager;
-                    networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
-                }
+                var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
+                networkObject.IsSceneObject = false;
+                networkObject.NetworkManagerOwner = NetworkManager;
+                networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
             }
         }
 
