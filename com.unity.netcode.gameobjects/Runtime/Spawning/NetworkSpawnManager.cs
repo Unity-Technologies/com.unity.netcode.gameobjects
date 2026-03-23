@@ -526,9 +526,14 @@ namespace Unity.Netcode
             }
             else if (!isAuthorized)
             {
-                throw new NotServerException("Only the server can change ownership");
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Only the server can change ownership! (ignoring)");
+                    return;
+                }
             }
 
+            //Should this go at the beginning of the function?
             if (!networkObject.IsSpawned)
             {
                 throw new SpawnStateException("Object is not spawned");
