@@ -42,6 +42,7 @@ namespace Unity.Netcode.Editor
 
         private SerializedProperty m_ServerAddressProperty;
         private SerializedProperty m_ServerPortProperty;
+        private SerializedProperty m_WebSocketPathProperty;
 
         private const string k_LoopbackIpv4 = "127.0.0.1";
         private const string k_LoopbackIpv6 = "::1";
@@ -62,6 +63,7 @@ namespace Unity.Netcode.Editor
 
             m_ServerAddressProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Address));
             m_ServerPortProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Port));
+            m_WebSocketPathProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.WebSocketPath));
         }
 
         /// <summary>
@@ -78,6 +80,11 @@ namespace Unity.Netcode.Editor
 
             EditorGUILayout.PropertyField(m_ServerAddressProperty);
             EditorGUILayout.PropertyField(m_ServerPortProperty);
+
+            if (m_UnityTransport.UseWebSockets)
+            {
+                EditorGUILayout.PropertyField(m_WebSocketPathProperty);
+            }
 
             serializedObject.ApplyModifiedProperties();
 

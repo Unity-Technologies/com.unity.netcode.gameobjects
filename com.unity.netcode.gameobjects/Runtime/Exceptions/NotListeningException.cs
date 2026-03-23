@@ -5,6 +5,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Exception thrown when the operation require NetworkManager to be listening.
     /// </summary>
+    [Obsolete("Not used anymore.")]
     public class NotListeningException : Exception
     {
         /// <summary>
