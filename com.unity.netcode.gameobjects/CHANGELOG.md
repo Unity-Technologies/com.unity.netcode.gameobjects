@@ -12,7 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Changed
-
+- Changed: Improve performance of `NetworkBehavior`.
 
 ### Deprecated
 
