@@ -1274,7 +1274,7 @@ namespace Unity.Netcode
             foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
             {
                 // If it fails the first update then don't add for updates
-                if (!entry.Value.UpdateForSceneChanges())
+                if (entry.Value != null && !entry.Value.UpdateForSceneChanges())
                 {
                     CleanUpDisposedObjects.Push(entry.Key);
                 }
