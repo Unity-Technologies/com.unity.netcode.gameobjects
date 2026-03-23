@@ -52,7 +52,6 @@ namespace Unity.Netcode.Components
 #endif
 
 
-        private NetworkManager m_LocalNetworkManager;
         // Used to cache the authority state of this Rigidbody during the last frame
         private bool m_IsAuthority;
 
@@ -972,7 +971,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal void UpdateOwnershipAuthority()
         {
-            if (m_LocalNetworkManager.DistributedAuthorityMode)
+            if (NetworkManager.DistributedAuthorityMode)
             {
                 // When in distributed authority mode, always use HasAuthority
                 m_IsAuthority = HasAuthority;
@@ -981,7 +980,7 @@ namespace Unity.Netcode.Components
             {
                 if (NetworkTransform.IsServerAuthoritative())
                 {
-                    m_IsAuthority = m_LocalNetworkManager.IsServer;
+                    m_IsAuthority = NetworkManager.IsServer;
                 }
                 else
                 {
@@ -995,19 +994,12 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
-        {
-            m_LocalNetworkManager = networkManager;
-            base.InternalOnNetworkPreSpawn(ref networkManager);
-        }
-
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
-            m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
-            m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
+            m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
+            m_TickRate = NetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();
-            base.OnNetworkSpawn();
         }
 
         /// <inheritdoc />
@@ -1028,7 +1020,6 @@ namespace Unity.Netcode.Components
                 SetIsKinematic(true);
             }
             SetInterpolation(m_OriginalInterpolation);
-            base.OnNetworkDespawn();
         }
 
         // TODO: Possibly provide a NetworkJoint that allows for more options than fixed.
