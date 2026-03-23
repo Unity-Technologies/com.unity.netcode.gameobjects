@@ -29,49 +29,6 @@ The order in which NetworkBehaviour components are presented in the **Inspector*
 
 You can avoid execution order issues in any NetworkBehaviour component scripts that have dependencies on other NetworkBehaviour components associated with the same NetworkObject by placing those scripts in an overridden `NetworkBehaviour.OnNetworkPostSpawn` method. The `NetworkBehaviour.OnNetworkPostSpawn` method is invoked on each NetworkBehaviour component after all NetworkBehaviour components associated with the same NetworkObject component have had their `NetworkBehaviour.OnNetworkSpawn` methods invoked (but they will still be invoked in the same execution order defined by their relative position to the NetworkObject component when viewed within the Unity Editor **Inspector** view).
 
-## Ownership
-
-Either the server (default) or any connected and approved client owns each NetworkObject. By default, Netcode for GameObjects is [server-authoritative](../../terms-concepts/client-server.md), which means only the server can spawn and despawn NetworkObjects, but you can also build [distributed authority](../../terms-concepts/distributed-authority.md) games where clients have the authority to spawn and despawn NetworkObjects as well.
-
-If you're creating a client-server game and you want a client to control more than one NetworkObject, use the following ownership methods.
-
-The default `NetworkObject.Spawn` method assumes server-side ownership:
-
-```csharp
-GetComponent<NetworkObject>().Spawn();
-```
-
-To spawn a `NetworkObject` that is [owned](../../terms-concepts/ownership.md) by a different game client than the one doing the spawning, use the following:
-
-```csharp
-GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-```
-> [!NOTE]
-> The `SpawnWithOwnership` method allows a game client to spawn an object that it doesn't own. This means any owner-specific checks during the spawn sequence will not be invoked on the spawn authority side. Using `SpawnWithOwnership` can result in unexpected behavior if the spawn authority makes any additional post-spawn adjustments within the same frame.
-> To avoid potential issues, it's recommended to use `Spawn` if the spawn authority needs to make any adjustments post-spawn. After adjusting, the spawn authority can immediately follow with a call to `ChangeOwnership`.
-
-To change ownership, use the `ChangeOwnership` method:
-
-```csharp
-GetComponent<NetworkObject>().ChangeOwnership(clientId);
-```
-
-To give ownership back to the server use the `RemoveOwnership` method:
-
-```csharp
-GetComponent<NetworkObject>().RemoveOwnership();
-```
-> [!NOTE]
-> `RemoveOwnership` isn't supported when using a [distributed authority network topology](../../terms-concepts/distributed-authority.md).
-
-
-To see if the local client is the owner of a NetworkObject, you can check the [`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwner.html) property.
-
-To see if the server owns the NetworkObject, you can check the [`NetworkBehaviour.IsOwnedByServer`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwnedByServer.html) property.
-
-> [!NOTE]
-> When you want to despawn and destroy the owner but you don't want to destroy a specific NetworkObject along with the owner, you can set the `NetworkObject.DontDestroyWithOwner` property to `true` which ensures that the owned NetworkObject isn't destroyed with the owner.
-
 ## Network prefabs
 
 Network prefabs are registered to a `NetworkPrefabsList` object (a type of `ScriptableObject`). By default, a default prefabs list containing every network prefab in your project.
@@ -115,8 +72,10 @@ Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchroniz
 > [!NOTE]
 > The `NetworkObject.SceneMigrationSynchronization` field is enabled by default. If your project can have many (600-1000+) spawned objects at any given time, this setting can cause performance issues. Scene migration synchronization only provides the ability to automatically synchronize the scene a NetworkObject is migrated to while it is spawned. If your NetworkObject doesn't change scenes and you have no need for automatic scene migration synchronization (_only applies when the integration scene management is enabled_), then it's recommended to disable this property to avoid additional processing overheads.
 
-
 ## Additional resources
 
+- [NetworkObject parenting](../../advanced-topics/networkobject-parenting.md)
+- [NetworkObject ownership](./networkobject-ownership.md)
+- [In-scene placed NetworkObjects](../../basics/scenemanagement/inscene-placed-networkobjects.md)
 - [NetworkBehaviour](networkbehaviour.md)
 - [NetworkVariable](../../basics/networkvariable.md)
