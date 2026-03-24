@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
             var authority = GetAuthorityNetworkManager();
             authority.OnServerStopped += OnServerStopped;
             authority.Shutdown();
-            yield return WaitForConditionOrTimeOut(()=>  m_ServerStopped);
+            yield return WaitForConditionOrTimeOut(() => m_ServerStopped);
             AssertOnTimeout($"Timed out waiting for {nameof(NetworkManager)} to stop!");
             // Assure it is destroyed.
             UnityEngine.Object.Destroy(authority);
