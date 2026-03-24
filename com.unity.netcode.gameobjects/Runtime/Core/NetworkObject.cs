@@ -3647,7 +3647,8 @@ namespace Unity.Netcode
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                // Only log this warning if we are not shutting down.
+                if (!NetworkManagerOwner.ShutdownInProgress && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
