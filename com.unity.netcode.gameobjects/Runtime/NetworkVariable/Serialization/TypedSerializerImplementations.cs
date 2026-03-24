@@ -335,6 +335,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in List<T> value, ref List<T> duplicatedValue)
         {
+            if (value == null)
+            {
+                duplicatedValue = null;
+                return;
+            }
+
             if (duplicatedValue == null)
             {
                 duplicatedValue = new List<T>();
@@ -351,7 +357,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal class HashSetSerializer<T> : INetworkVariableSerializer<HashSet<T>> where T : IEquatable<T>
+    internal class HashSetSerializer<T> : INetworkVariableSerializer<HashSet<T>>
     {
         public void Write(FastBufferWriter writer, ref HashSet<T> value)
         {
@@ -414,6 +420,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in HashSet<T> value, ref HashSet<T> duplicatedValue)
         {
+            if (value == null)
+            {
+                duplicatedValue = null;
+                return;
+            }
+
             if (duplicatedValue == null)
             {
                 duplicatedValue = new HashSet<T>();
@@ -496,6 +508,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in Dictionary<TKey, TVal> value, ref Dictionary<TKey, TVal> duplicatedValue)
         {
+            if (value == null)
+            {
+                duplicatedValue = null;
+                return;
+            }
+
             if (duplicatedValue == null)
             {
                 duplicatedValue = new Dictionary<TKey, TVal>();

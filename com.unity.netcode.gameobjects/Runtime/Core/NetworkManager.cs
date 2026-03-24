@@ -1866,19 +1866,8 @@ namespace Unity.Netcode
                 ConnectionManager.InvokeOnClientDisconnectCallback(LocalClientId);
             }
 
-            if (ConnectionManager.LocalClient.IsClient)
-            {
-                // If we were a client, we want to know if we were a host
-                // client or not. (why we pass in "IsServer")
-                OnClientStopped?.Invoke(ConnectionManager.LocalClient.IsServer);
-            }
-
-            if (ConnectionManager.LocalClient.IsServer)
-            {
-                // If we were a server, we want to know if we were a host
-                // or not. (why we pass in "IsClient")
-                OnServerStopped?.Invoke(ConnectionManager.LocalClient.IsClient);
-            }
+            // Save off the last local client settings
+            var localClient = ConnectionManager.LocalClient;
 
             // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
             m_ShuttingDown = false;
@@ -1899,6 +1888,19 @@ namespace Unity.Netcode
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
 
+            if (localClient.IsClient)
+            {
+                // If we were a client, we want to know if we were a host
+                // client or not. (why we pass in "IsServer")
+                OnClientStopped?.Invoke(localClient.IsServer);
+            }
+
+            if (localClient.IsServer)
+            {
+                // If we were a server, we want to know if we were a host
+                // or not. (why we pass in "IsClient")
+                OnServerStopped?.Invoke(localClient.IsClient);
+            }
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.

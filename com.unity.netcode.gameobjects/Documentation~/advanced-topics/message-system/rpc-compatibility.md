@@ -36,11 +36,11 @@ However, the RPC signature hash doesn't change when the names of the parameters 
 
 When the RPC signature changes, it directs to a different invocation code path that has different serialization code. This means that the RPC method with the new signature doesn't invoke previous versions of that RPC method (for example, an RPC method from an older build).
 
-| Compatibility | <i class="fp-check"></i> | Description |
-| -- | :--: | -- |
-| Cross-Build Compatibility | <i class="fp-check"></i> | As long as the RPC method signature is kept the same, it will be compatible between different builds. |
-| Cross-Version Compatibility | <i class="fp-check"></i> | As long as the RPC method signature is kept the same, it will be compatible between different versions. |
-| Cross-Project Compatibility | <i class="fp-x"></i> | The exact same RPC method signature can be defined in different projects. This is because the project name or project-specific token isn't part of RPC signature. Cross-project RPC methods aren't compatible with each other. |
+| Compatibility | | Description |
+| -- | -- | -- |
+| Cross-Build Compatibility | **Yes** | As long as the RPC method signature is kept the same, it will be compatible between different builds. |
+| Cross-Version Compatibility | **Yes** | As long as the RPC method signature is kept the same, it will be compatible between different versions. |
+| Cross-Project Compatibility | No | The exact same RPC method signature can be defined in different projects. This is because the project name or project-specific token isn't part of RPC signature. Cross-project RPC methods aren't compatible with each other. |
 
 ## Deprecation of return values
 

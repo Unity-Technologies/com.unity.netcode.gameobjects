@@ -278,7 +278,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkPreDespawn()
         {
-            if (AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
+            if (NetworkManager.ShutdownInProgress || AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
             {
                 ForceDetach();
             }
@@ -474,10 +474,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         public void Detach()
         {
-            if (!gameObject)
+            if (!gameObject || NetworkObject == null || NetworkManager == null || NetworkManager.ShutdownInProgress)
             {
                 return;
             }
+
             if (!IsSpawned)
             {
                 NetworkLog.LogError($"[{name}][Detach][Not Spawned] Cannot detach if not spawned!");
