@@ -11,7 +11,7 @@
     # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
     # smaller_flavor --> An override for flavor that determines the VM size/resources for lighter weight jobs that can run on a smaller vm
     # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
-    # model --> Defines specific hardware model requirements (e.g., rtx2080, iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
+    # model --> Defines specific hardware model requirements (e.g., iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
     # base --> Indicates the base operating system for build operations (e.g., win, mac)
     # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
 
@@ -48,14 +48,12 @@ test_platforms:
           flavor: b1.large
           smaller_flavor: b1.medium
           standalone: StandaloneLinux64
-          model: rtx2080
         - name: win
           type: Unity::VM
           image: package-ci/win10:v4
           flavor: b1.large
           smaller_flavor: b1.medium
           standalone: StandaloneWindows64
-          model: rtx2080
         - name: mac
           type: Unity::VM::osx
           image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
