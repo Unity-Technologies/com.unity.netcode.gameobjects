@@ -4802,7 +4802,7 @@ namespace Unity.Netcode.Components
         internal void RegisterForTickSynchronization()
         {
             s_TickSynchPosition++;
-            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
+            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)m_CachedNetworkManager.NetworkConfig.TickRate);
         }
 
         private static void RegisterNetworkManagerForTickUpdate(NetworkManager networkManager)
