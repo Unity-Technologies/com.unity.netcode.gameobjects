@@ -1625,6 +1625,7 @@ namespace Unity.Netcode.Components
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
+        private int m_CachedTickRate;
 
         /// <summary>
         /// Helper method that returns the space relative position of the transform.
@@ -2136,9 +2137,8 @@ namespace Unity.Netcode.Components
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
             if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
             {
-                // TODO-CACHE: m_CachedNetworkManager.NetworkConfig.TickRate value
                 // Increment to the next frame synch tick position for this instance
-                m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
+                m_NextTickSync += m_CachedTickRate;
                 // If we are teleporting, we do not need to send a frame synch for this tick slot
                 // as a "frame synch" really is effectively just a teleport.
                 isAxisSync = !flagStates.IsTeleportingNextFrame;
@@ -3729,6 +3729,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_CachedNetworkObject = NetworkObject;
+            m_CachedTickRate = (int)m_CachedNetworkManager.NetworkConfig.TickRate;
 
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
             m_IsFirstNetworkTransform = m_CachedNetworkObject.NetworkTransforms[0] == this;
@@ -4802,7 +4803,7 @@ namespace Unity.Netcode.Components
         internal void RegisterForTickSynchronization()
         {
             s_TickSynchPosition++;
-            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)m_CachedNetworkManager.NetworkConfig.TickRate);
+            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % m_CachedTickRate);
         }
 
         private static void RegisterNetworkManagerForTickUpdate(NetworkManager networkManager)
