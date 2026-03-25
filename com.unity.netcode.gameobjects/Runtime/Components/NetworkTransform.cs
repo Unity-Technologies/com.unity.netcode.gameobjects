@@ -2606,7 +2606,7 @@ namespace Unity.Netcode.Components
             }
             else // If we are no longer authority, unsubscribe to the tick event
             {
-                DeregisterForTickUpdate(this);
+                DeregisterForTickUpdate();
             }
         }
         #endregion
@@ -3654,7 +3654,7 @@ namespace Unity.Netcode.Components
                 m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
 
-            DeregisterForTickUpdate(this);
+            DeregisterForTickUpdate();
             CanCommitToTransform = false;
         }
 
@@ -3793,7 +3793,7 @@ namespace Unity.Netcode.Components
                 m_InternalCurrentPosition = currentPosition;
                 m_LastStateTargetPosition = currentPosition;
 
-                RegisterForTickUpdate(this);
+                RegisterForTickUpdate();
 
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
@@ -3813,7 +3813,7 @@ namespace Unity.Netcode.Components
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
                 m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
-                DeregisterForTickUpdate(this);
+                DeregisterForTickUpdate();
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_InternalCurrentPosition = currentPosition;
                 m_LastStateTargetPosition = currentPosition;
@@ -4818,37 +4818,34 @@ namespace Unity.Netcode.Components
         /// If a NetworkTransformTickRegistration has not yet been registered for the NetworkManager
         /// instance, then create an entry.
         /// </summary>
-        /// <param name="networkTransform"></param>
-        private static void RegisterForTickUpdate(NetworkTransform networkTransform)
+        private void RegisterForTickUpdate()
         {
-            var networkManager = networkTransform.NetworkManager;
-            if (!networkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkManager))
+
+            if (!m_CachedNetworkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(m_CachedNetworkManager))
             {
-                s_NetworkTickRegistration.Add(networkManager, new NetworkTransformTickRegistration(networkManager));
+                s_NetworkTickRegistration.Add(m_CachedNetworkManager, new NetworkTransformTickRegistration(m_CachedNetworkManager));
             }
 
-            networkTransform.RegisterForTickSynchronization();
-            s_NetworkTickRegistration[networkManager].NetworkTransforms.Add(networkTransform);
+            RegisterForTickSynchronization();
+            s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Add(this);
         }
 
         /// <summary>
         /// If a NetworkTransformTickRegistration exists for the NetworkManager instance, then this will
         /// remove the NetworkTransform instance from the single tick update entry point.
         /// </summary>
-        /// <param name="networkTransform"></param>
-        private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
+        private void DeregisterForTickUpdate()
         {
-            var networkManager = networkTransform.NetworkManager;
-            if (!networkManager)
+            if (m_CachedNetworkManager == null)
             {
                 return;
             }
-            if (s_NetworkTickRegistration.ContainsKey(networkManager))
+            if (s_NetworkTickRegistration.ContainsKey(m_CachedNetworkManager))
             {
-                s_NetworkTickRegistration[networkManager].NetworkTransforms.Remove(networkTransform);
-                if (!networkManager.DistributedAuthorityMode && s_NetworkTickRegistration[networkManager].NetworkTransforms.Count == 0)
+                s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Remove(this);
+                if (!m_CachedNetworkManager.DistributedAuthorityMode && s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Count == 0)
                 {
-                    var registrationEntry = s_NetworkTickRegistration[networkManager];
+                    var registrationEntry = s_NetworkTickRegistration[m_CachedNetworkManager];
                     registrationEntry.Remove();
                 }
             }
