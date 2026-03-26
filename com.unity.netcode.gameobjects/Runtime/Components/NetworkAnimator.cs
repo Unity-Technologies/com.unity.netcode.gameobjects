@@ -194,7 +194,7 @@ namespace Unity.Netcode.Components
         internal NetworkAnimatorStateChangeHandler(NetworkAnimator networkAnimator)
         {
             m_NetworkAnimator = networkAnimator;
-            m_IsServer = networkAnimator.NetworkManager.IsServer;
+            m_IsServer = networkAnimator.LocalNetworkManager.IsServer;
             NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
         }
     }
@@ -279,7 +279,7 @@ namespace Unity.Netcode.Components
         private Dictionary<int, Dictionary<int, TransitionStateinfo>> m_DestinationStateToTransitioninfo = new Dictionary<int, Dictionary<int, TransitionStateinfo>>();
 
         // Named differently to avoid serialization conflicts with NetworkBehaviour
-        private NetworkManager m_LocalNetworkManager;
+        internal NetworkManager LocalNetworkManager;
 
         internal bool DistributedAuthorityMode;
 
@@ -915,8 +915,8 @@ namespace Unity.Netcode.Components
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             // Save internal state references
-            m_LocalNetworkManager = networkManager;
-            DistributedAuthorityMode = m_LocalNetworkManager.DistributedAuthorityMode;
+            LocalNetworkManager = networkManager;
+            DistributedAuthorityMode = LocalNetworkManager.DistributedAuthorityMode;
         }
 
         /// <inheritdoc/>
@@ -1176,7 +1176,7 @@ namespace Unity.Netcode.Components
 
             if (m_Animator.runtimeAnimatorController == null)
             {
-                if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
+                if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                 {
                     Debug.LogError($"[{GetType().Name}] Could not find an assigned {nameof(RuntimeAnimatorController)}! Cannot check {nameof(Animator)} for changes in state!");
                 }
@@ -1211,9 +1211,9 @@ namespace Unity.Netcode.Components
                 {
                     // Just notify all remote clients and not the local server
                     m_TargetGroup.Clear();
-                    foreach (var clientId in m_LocalNetworkManager.ConnectionManager.ConnectedClientIds)
+                    foreach (var clientId in LocalNetworkManager.ConnectionManager.ConnectedClientIds)
                     {
-                        if (clientId == m_LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
+                        if (clientId == LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
                         {
                             continue;
                         }
@@ -1241,7 +1241,7 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    Debug.LogError($"[{name}][Client-{m_LocalNetworkManager.LocalClientId}] Attempting to send parameter updates but not the owner!");
+                    Debug.LogError($"[{name}][Client-{LocalNetworkManager.LocalClientId}] Attempting to send parameter updates but not the owner!");
                 }
             }
             else
@@ -1491,18 +1491,18 @@ namespace Unity.Netcode.Components
                             // Cross fade from the current to the destination state for the transitions duration while starting at the server's current normalized time of the transition
                             m_Animator.CrossFade(transitionStateInfo.DestinationState, transitionStateInfo.TransitionDuration, transitionStateInfo.Layer, 0.0f, animationState.NormalizedTime);
                         }
-                        else if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
+                        else if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                         {
                             NetworkLog.LogWarning($"Current State Hash ({currentState.fullPathHash}) != AnimationState.StateHash ({animationState.StateHash})");
                         }
                     }
-                    else if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
+                    else if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                     {
                         NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) sub-table does not contain destination state ({animationState.DestinationStateHash})!");
                     }
                 }
                 // For reference, it is valid to have no transition information
-                //else if (NetworkManager.LogLevel == LogLevel.Developer)
+                //else if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
                 //{
                 //    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
                 //}
@@ -1539,7 +1539,7 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 UpdateParameters(ref parametersUpdate);
-                var connectedClientIds = m_LocalNetworkManager.ConnectionManager.ConnectedClientIds;
+                var connectedClientIds = LocalNetworkManager.ConnectionManager.ConnectedClientIds;
                 if (connectedClientIds.Count <= (IsHost ? 2 : 1))
                 {
                     return;
@@ -1605,7 +1605,7 @@ namespace Unity.Netcode.Components
                     UpdateAnimationState(animationState);
                 }
 
-                var connectedClientIds = m_LocalNetworkManager.ConnectionManager.ConnectedClientIds;
+                var connectedClientIds = LocalNetworkManager.ConnectionManager.ConnectedClientIds;
                 if (connectedClientIds.Count <= (IsHost ? 2 : 1))
                 {
                     return;
@@ -1652,7 +1652,7 @@ namespace Unity.Netcode.Components
         {
             if (HasAuthority)
             {
-                if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
+                if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                 {
                     var hostOrOwner = DistributedAuthorityMode ? "Owner" : "Host";
                     var clientServerOrDAMode = DistributedAuthorityMode ? "distributed authority" : "client-server";
@@ -1677,7 +1677,7 @@ namespace Unity.Netcode.Components
             // Ignore if a non-owner sent this.
             if (rpcParams.Receive.SenderClientId != OwnerClientId)
             {
-                if (m_LocalNetworkManager.LogLevel == LogLevel.Developer)
+                if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"[Owner Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
                 }
@@ -1687,7 +1687,7 @@ namespace Unity.Netcode.Components
             // set the trigger locally on the server
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
-            var connectedClientIds = m_LocalNetworkManager.ConnectionManager.ConnectedClientIds;
+            var connectedClientIds = LocalNetworkManager.ConnectionManager.ConnectedClientIds;
 
             m_TargetGroup.Clear();
             foreach (var clientId in connectedClientIds)
