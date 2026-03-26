@@ -132,6 +132,7 @@ namespace Unity.Netcode.RuntimeTests
 #if HOSTNAME_RESOLUTION_AVAILABLE
         // Check connection with a single client (hostname).
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Test fails on Android for editors 6000.3+ Tracked in MTT-14757
         public IEnumerator ConnectSingleClient_Hostname()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
