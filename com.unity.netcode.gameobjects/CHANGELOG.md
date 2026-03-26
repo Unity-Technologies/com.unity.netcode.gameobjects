@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Changed
+- Improve performance of `NetworkRigidbodyBase`. (#3906)
 - Improve performance of `NetworkAnimator`. (#3905)
 
 ### Deprecated
