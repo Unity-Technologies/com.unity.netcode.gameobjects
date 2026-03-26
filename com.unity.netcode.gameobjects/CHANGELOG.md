@@ -12,7 +12,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Changed
-- Improve editor performance of `NetworkTransform` and `NetworkBehavior` by using the cached `NetworkManager` field instead of the property when available. (#3907 #3915)
+- Improve performance of `NetworkBehavior`. (#3915)
+- Improve performance of `NetworkTransform`. (#3907)
+- Improve performance of `NetworkRigidbodyBase`. (#3906)
+- Improve performance of `NetworkAnimator`. (#3905)
 
 ### Deprecated
 
