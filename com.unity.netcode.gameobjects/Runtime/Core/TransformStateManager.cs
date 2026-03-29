@@ -178,6 +178,10 @@ namespace Unity.Netcode
         private void OnInstanceDespawning(TransformStateSync instance)
         {
             var index = m_SpawnedInstances.IndexOf(instance);
+            if (index < 0)
+            {
+                return;
+            }
             if (m_TransformAccessArray.isCreated && m_TransformAccessArray.length > index)
             {
                 m_TransformAccessArray.RemoveAtSwapBack(index);
@@ -275,12 +279,15 @@ namespace Unity.Netcode
                     FastBufferWriter.WriteValueSafe(count);
                     var lastPosition = FastBufferWriter.Position;
                     var internalCount = 0;
+#if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(BEGIN - {m_MessageTicketNumber})======================");
+#endif
                     foreach (var entry in m_CurrentJob.Current)
                     {
                         if (entry.GridStateDelta.HasDelta())
                         {
                             entry.GridStateDelta.WriteState(FastBufferWriter);
+#if DEBUG_TRANSFORMSTATE
                             var header = $"[{nameof(TransformStateManager)}][Send][NetworkObjectId: {entry.NetworkObjectId}][Index: {entry.GridStateDelta.Index}][EntityId: {entry.EntityIdentifier}][PayloadSize: {entry.GridStateDelta.Payload_Size}]";
                             if((entry.GridStateDelta.DirtyFlags & 0x02) == 0x02)
                             {
@@ -292,6 +299,7 @@ namespace Unity.Netcode
                                 header += $"[{entry.GridStateDelta.Rotation.Rotation}]";
                             }
                             NetworkLog.LogInfo(header);
+#endif
                             count++;
                             var readSize = FastBufferWriter.Position - lastPosition;
                             AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
@@ -303,7 +311,9 @@ namespace Unity.Netcode
                     }
                     if (internalCount == 0)
                     {
+#if DEBUG_TRANSFORMSTATE
                         NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(END - NO DATA TO SEND)======================");
+#endif
                         FastBufferWriter.Seek(0);
                         return;
                     }
@@ -333,8 +343,9 @@ namespace Unity.Netcode
                         }
                         m_NetworkManager.ConnectionManager.SendMessage(ref transfromStateUpdateMessage, NetworkDelivery.ReliableFragmentedSequenced, clients, index);
                     }
-
+#if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(END)======================");
+#endif
                 }
             }
         }
@@ -446,15 +457,19 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out count);
                 var networkTime = new NetworkTime(m_NetworkManager.NetworkConfig.TickRate, tick);
                 var lastPosition = reader.Position;
+#if DEBUG_TRANSFORMSTATE
                 NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][{ticketNumber}][Receive][Count: {count}");
+#endif
                 for (var i = 0; i < count; i++)
                 {
                     transformState.ReadState(reader);
 
+#if DEBUG_TRANSFORMSTATE
                     var position = (transformState.DirtyFlags & 0x02) == 0x02 ? $"[{transformState.Position.ToVector3()}]" : string.Empty;
                     var rotation = (transformState.DirtyFlags & 0x04) == 0x04 ? $"[{transformState.Rotation.Rotation}]" : string.Empty;
                     NetworkLog.LogInfo($"[Read][NetworkObjectId: {transformState.NetworkObjectId}][NetworkBehaviourId: {transformState.NetworkBehaviourId}]" +
                         $"{position}{rotation}");
+#endif
 
                     if (m_TransformStates.ContainsKey(transformState.NetworkObjectId))
                     {

@@ -148,7 +148,9 @@ namespace Unity.Netcode
 
             if (state.DirtyPosition)
             {
+#if DEBUG_TRANSFORMSTATE
                 Debug.Log($"[{name}][NetworkObjectId: {NetworkObjectId}][{nameof(TransformStateSync)}][{nameof(UpdateState)}][Position] {state.PositionFloat}");
+#endif
                 m_PositionInterpolator.AddMeasurement(transform.parent, state.PositionFloat, time);
             }
 

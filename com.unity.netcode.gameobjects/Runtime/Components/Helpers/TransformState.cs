@@ -265,6 +265,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Decompress()
         {
+            /// TODO: Implenent any form of grid compression here.
+
             AxisWritten = Compressed[0];
             // Byte count is stored in lowest bit positions
             var uX = (uint)X;
