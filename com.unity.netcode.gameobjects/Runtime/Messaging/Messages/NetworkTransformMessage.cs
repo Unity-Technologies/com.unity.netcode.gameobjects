@@ -3,6 +3,32 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    internal struct TransformStateUpdateMessage : INetworkMessage
+    {
+        public int Version => 0;
+
+        internal byte[] State;
+
+        public void Serialize(FastBufferWriter writer, int targetVersion)
+        {
+            writer.WriteBytesSafe(State, State.Length);
+        }
+
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
+        {
+            var networkManager = context.SystemOwner as NetworkManager;
+            networkManager.TransformStateManager.UpdateTransformStates(reader);
+            return true;
+        }
+
+        public void Handle(ref NetworkContext context)
+        {
+
+        }
+    }
+
+
+
     /// <summary>
     /// NetworkTransform State Update Message
     /// </summary>
@@ -71,7 +97,8 @@ namespace Unity.Netcode
             }
             var currentPosition = reader.Position;
             var networkObjectId = (ulong)0;
-            var networkBehaviourId = 0;
+            var networkBehaviourId = (ushort)0;
+            var networkBehaviourIdRead = 0;
 
             ByteUnpacker.ReadValueBitPacked(reader, out networkObjectId);
             var isSpawnedLocally = networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId);
@@ -91,12 +118,13 @@ namespace Unity.Netcode
             var ownerAuthoritativeServerSide = false;
 
             // Get the behaviour index
-            ByteUnpacker.ReadValueBitPacked(reader, out networkBehaviourId);
+            ByteUnpacker.ReadValueBitPacked(reader, out networkBehaviourIdRead);
+            networkBehaviourId = (ushort)networkBehaviourIdRead;
 
             if (isSpawnedLocally)
             {
                 networkObject = networkManager.SpawnManager.SpawnedObjects[networkObjectId];
-                if (networkObject.ChildNetworkBehaviours.Count <= networkBehaviourId || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
+                if (!networkObject.ChildNetworkBehaviours.ContainsKey(networkBehaviourId) || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
                 {
                     Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
                     return false;
@@ -106,7 +134,7 @@ namespace Unity.Netcode
                 var transform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
                 if (transform == null)
                 {
-                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist on {networkObject.name}! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
                     return false;
                 }
 
