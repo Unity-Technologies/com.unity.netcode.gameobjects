@@ -1118,7 +1118,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    NetworkLog.LogError("Could not fetch a local player to spawn. Ensure PlayerPrefab is set in NetcodeConfig.");
+                    NetworkLog.LogWarning("Could not fetch a local player to spawn. Ensure PlayerPrefab is set in NetcodeConfig.");
                 }
                 return;
             }
