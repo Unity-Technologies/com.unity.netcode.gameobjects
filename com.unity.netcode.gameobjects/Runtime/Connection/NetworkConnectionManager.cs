@@ -1116,7 +1116,7 @@ namespace Unity.Netcode
             var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
             if (playerPrefab == null)
             {
-                if (NetworkManager.LogLevel == LogLevel.Developer)
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogWarning("Could not fetch a local player to spawn. Ensure PlayerPrefab is set in NetcodeConfig.");
                 }
