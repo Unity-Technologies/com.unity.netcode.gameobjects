@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security
 
