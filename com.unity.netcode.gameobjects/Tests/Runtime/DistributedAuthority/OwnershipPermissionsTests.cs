@@ -445,7 +445,7 @@ namespace Unity.Netcode.RuntimeTests
             authorityInstance.ChangeOwnership(otherClient.LocalClientId);
             var senderId = authority.LocalClientId;
             var receiverId = otherClient.LocalClientId;
-            LogAssert.Expect(LogType.Warning, $"[Session-Owner Sender={senderId}] [Invalid Owner] Cannot send Ownership change as client-{receiverId} cannot see {authorityInstance.name}! Use NetworkShow first.");
+            LogAssert.Expect(LogType.Warning, $"[Netcode-Session-Owner Sender={senderId}] [Invalid Owner] Cannot send Ownership change as client-{receiverId} cannot see {authorityInstance.name}! Use NetworkShow first.");
             Assert.True(authorityInstance.IsOwner, $"[Ownership Check] Client-{senderId} should still own this object!");
 
             // Now re-add the client to the Observers list and try to change ownership

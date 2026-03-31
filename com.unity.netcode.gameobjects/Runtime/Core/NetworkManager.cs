@@ -1021,6 +1021,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// For testing purposes when you need the singleton to be null
+        /// </summary>
+        internal static void ResetSingleton()
+        {
+            Singleton = null;
+        }
+
+        /// <summary>
         /// Set this NetworkManager instance as the static NetworkManager singleton
         /// </summary>
         public void SetSingleton()
