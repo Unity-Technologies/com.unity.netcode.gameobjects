@@ -435,6 +435,34 @@ namespace Unity.Netcode.Transports.UTP
             return new NetworkEndpoint();
         }
 
+        /// <summary>
+        /// Sets hole punch candidate endpoints for all active peer connections on the driver.
+        /// The probe protocol handles matching — it's safe to provide the same candidate set
+        /// for all connections.
+        /// </summary>
+        /// <param name="candidates">Candidate endpoints (host + server-reflexive) to probe.</param>
+        public void SetHolePunchCandidatesForAllPeers(NativeArray<NetworkEndpoint> candidates)
+        {
+            if (!m_Driver.IsCreated || candidates.Length == 0)
+                return;
+
+            if (m_NetworkManager == null || !m_NetworkManager.IsListening)
+                return;
+
+            foreach (var ngoClientId in m_NetworkManager.ConnectedClientsIds)
+            {
+                if (ngoClientId == m_NetworkManager.LocalClientId)
+                    continue;
+
+                var (transportId, isConnected) = m_NetworkManager.ConnectionManager.ClientIdToTransportId(ngoClientId);
+                if (isConnected)
+                {
+                    var connection = ParseClientId(transportId);
+                    m_Driver.SetPeerCandidates(connection, candidates);
+                }
+            }
+        }
+
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
         private ulong m_ServerClientId;
