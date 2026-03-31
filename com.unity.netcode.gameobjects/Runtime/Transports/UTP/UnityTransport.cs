@@ -208,6 +208,41 @@ namespace Unity.Netcode.Transports.UTP
             set => m_DisconnectTimeoutMS = value;
         }
 
+        [Tooltip("When using Relay, attempt to establish a direct peer-to-peer connection via UDP hole punching. Falls back to Relay if direct connection fails.")]
+        [SerializeField]
+        private bool m_UseDirectConnectionWhenPossible = true;
+
+        /// <summary>
+        /// When using Relay, attempt to establish a direct peer-to-peer connection via UDP hole
+        /// punching. Falls back to Relay transparently if direct connection fails.
+        /// </summary>
+        public bool UseDirectConnectionWhenPossible
+        {
+            get => m_UseDirectConnectionWhenPossible;
+            set => m_UseDirectConnectionWhenPossible = value;
+        }
+
+        [Tooltip("STUN server address for NAT traversal when using direct connection. Default is Google's public STUN server (stun.l.google.com:19302).")]
+        [SerializeField]
+        private string m_StunServerAddress = "stun.l.google.com";
+
+        [SerializeField]
+        private ushort m_StunServerPort = 19302;
+
+        /// <summary>STUN server address for NAT traversal when using direct connection.</summary>
+        public string StunServerAddress
+        {
+            get => m_StunServerAddress;
+            set => m_StunServerAddress = value;
+        }
+
+        /// <summary>STUN server port for NAT traversal.</summary>
+        public ushort StunServerPort
+        {
+            get => m_StunServerPort;
+            set => m_StunServerPort = value;
+        }
+
         /// <summary>
         /// Structure to store the address to connect to
         /// </summary>
@@ -517,6 +552,22 @@ namespace Unity.Netcode.Transports.UTP
                 else
                 {
                     settings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
+                }
+
+                if (m_UseDirectConnectionWhenPossible)
+                {
+                    var stunEndpoint = default(NetworkEndpoint);
+                    if (!string.IsNullOrEmpty(m_StunServerAddress))
+                    {
+                        stunEndpoint = NetworkEndpoint.Parse(m_StunServerAddress, m_StunServerPort);
+                    }
+
+                    if (stunEndpoint != default)
+                    {
+                        settings.WithHolePunchParameters(
+                            enabled: true,
+                            stunServer: stunEndpoint);
+                    }
                 }
             }
 
