@@ -222,9 +222,9 @@ namespace Unity.Netcode.Transports.UTP
             set => m_UseDirectConnectionWhenPossible = value;
         }
 
-        [Tooltip("STUN server address for NAT traversal when using direct connection. Default is Google's public STUN server (stun.l.google.com:19302).")]
+        [Tooltip("STUN server IP address for NAT traversal when using direct connection. Must be a resolved IP address, not a DNS hostname. Default is Google's public STUN server.")]
         [SerializeField]
-        private string m_StunServerAddress = "stun.l.google.com";
+        private string m_StunServerAddress = "74.125.250.129";
 
         [SerializeField]
         private ushort m_StunServerPort = 19302;
@@ -587,7 +587,13 @@ namespace Unity.Netcode.Transports.UTP
                     var stunEndpoint = default(NetworkEndpoint);
                     if (!string.IsNullOrEmpty(m_StunServerAddress))
                     {
-                        stunEndpoint = NetworkEndpoint.Parse(m_StunServerAddress, m_StunServerPort);
+                        if (!NetworkEndpoint.TryParse(m_StunServerAddress, m_StunServerPort, out stunEndpoint))
+                        {
+                            Debug.LogWarning($"UnityTransport: STUN server address '{m_StunServerAddress}' could not be parsed. " +
+                                "Use a resolved IP address instead of a DNS hostname to avoid blocking the main thread. " +
+                                "Hole punching will be disabled.");
+                            stunEndpoint = default;
+                        }
                     }
 
                     if (stunEndpoint != default)
