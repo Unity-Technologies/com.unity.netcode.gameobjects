@@ -3651,7 +3651,7 @@ namespace Unity.Netcode.Components
 #endif
             if (m_CachedNetworkObject != null)
             {
-                m_CachedNetworkManager.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+                m_CachedNetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
 
             DeregisterForTickUpdate();

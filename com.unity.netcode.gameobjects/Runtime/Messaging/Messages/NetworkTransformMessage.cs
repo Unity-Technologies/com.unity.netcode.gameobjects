@@ -106,7 +106,7 @@ namespace Unity.Netcode
                 var transform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
                 if (transform == null)
                 {
-                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist on {networkObject.name}! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
                     return false;
                 }
 
