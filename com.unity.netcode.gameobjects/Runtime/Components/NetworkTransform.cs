@@ -1625,7 +1625,6 @@ namespace Unity.Netcode.Components
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
-        private int m_CachedTickRate;
 
         /// <summary>
         /// Helper method that returns the space relative position of the transform.
@@ -3620,9 +3619,14 @@ namespace Unity.Netcode.Components
             CachedTransform = transform;
         }
 
+        private NetworkObject m_CachedNetworkObject;
+        private int m_CachedTickRate;
+
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             m_CachedNetworkManager = networkManager;
+            m_CachedNetworkObject = NetworkObject;
+            m_CachedTickRate = (int)networkManager.NetworkConfig.TickRate;
             CachedTransform = transform;
             base.InternalOnNetworkPreSpawn(ref networkManager);
         }
@@ -3717,7 +3721,7 @@ namespace Unity.Netcode.Components
 
             m_ScaleInterpolator.ResetTo(transform.parent, transform.localScale, serverTime);
         }
-        private NetworkObject m_CachedNetworkObject;
+
         /// <summary>
         /// The internal initialization method to allow for internal API adjustments
         /// </summary>
@@ -3728,8 +3732,6 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-            m_CachedNetworkObject = NetworkObject;
-            m_CachedTickRate = (int)m_CachedNetworkManager.NetworkConfig.TickRate;
 
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
             m_IsFirstNetworkTransform = m_CachedNetworkObject.NetworkTransforms[0] == this;
