@@ -12,7 +12,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Changed
-- Improve performance of `NetworkBehavior`. (#3915)
+
+- Improve performance of `NetworkBehaviour`. (#3915)
+- Improve performance of `NetworkTransform`. (#3907)
 - Improve performance of `NetworkRigidbodyBase`. (#3906)
 - Improve performance of `NetworkAnimator`. (#3905)
 
