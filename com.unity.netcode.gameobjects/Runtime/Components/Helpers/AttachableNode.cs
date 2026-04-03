@@ -71,20 +71,36 @@ public class AttachableNode : NetworkBehaviour
         {
             for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
             {
-                if (!m_AttachedBehaviours[i])
+                var attachable = m_AttachedBehaviours[i];
+                if (!attachable)
                 {
                     continue;
                 }
                 // If we don't have authority but should detach on despawn,
                 // then proceed to detach.
-                if (!m_AttachedBehaviours[i].HasAuthority)
+                if (!attachable.HasAuthority)
                 {
-                    m_AttachedBehaviours[i].ForceDetach();
+                    attachable.ForceDetach();
                 }
                 else
                 {
-                    // Detach the normal way with authority
-                    m_AttachedBehaviours[i].Detach();
+                    // TODO-FIX: We might track if something has been "destroyed" in order
+                    // to be able to be 100% sure this is specific to being destroyed.
+                    // Otherwise, we keep this in place and make note of it
+                    // in documentation that you cannot detatch from something already despawned.
+                    // Issue: When trying to detatch if the thing attached is no longer 
+                    // spawned. Instantiation order recently changed such that
+                    // the attachable =or= the attach node target could be despawned 
+                    // and in the middle of being destroyed. Resolution for this 
+                    // is to skip over destroyed object (default) and then only sort
+                    // through the things the local NetworkManager instance has authority
+                    // over. Even then, we have to check if the attached object is still
+                    // spawned before attempting to detatch it.
+                    if (attachable.IsSpawned)
+                    {
+                        // Detach the normal way with authority
+                        attachable.Detach();
+                    }
                 }
             }
         }

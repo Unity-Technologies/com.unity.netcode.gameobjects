@@ -392,7 +392,8 @@ namespace Unity.Netcode.Components
 
             foreach (var componentControllerEntry in ComponentControllers)
             {
-                if (componentControllerEntry.AutoTrigger.HasFlag(triggerType))
+                // Only if the component controller still exists and has the appropriate flag.
+                if (componentControllerEntry.ComponentController && componentControllerEntry.AutoTrigger.HasFlag(triggerType))
                 {
                     componentControllerEntry.ComponentController.ForceChangeEnabled(componentControllerEntry.EnableOnAttach ? isAttaching : !isAttaching, forcedChange);
                 }
@@ -459,7 +460,14 @@ namespace Unity.Netcode.Components
         {
             if (m_AttachableNode)
             {
-                if (m_DefaultParent)
+                // TODO-FIX: We might track if something has been "destroyed" in order
+                // to be able to be 100% sure in the event a user disables the world item
+                // when detatched. Otherwise, we keep this in place and make note of it
+                // in documentation.
+                // Issue:
+                // Edge-case where the parent could be in the middle of being destroyed.
+                // If not active in the hierarchy, then don't attempt to set the parent.
+                if (m_DefaultParent && m_DefaultParent.activeInHierarchy)
                 {
                     // Set the original parent and origianl local position and rotation
                     transform.SetParent(m_DefaultParent.transform, false);
