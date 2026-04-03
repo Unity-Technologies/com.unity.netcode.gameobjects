@@ -137,6 +137,10 @@ namespace Unity.Netcode
         {
         }
 
+        public void TrackTransformSyncReceived(ulong senderClientId, string messageType, long bytesCount)
+        {
+        }
+
         public void TrackPacketSent(uint packetCount)
         {
         }

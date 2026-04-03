@@ -435,6 +435,17 @@ namespace Unity.Netcode
             IncrementMetricCount();
         }
 
+        public void TrackTransformSyncReceived(ulong senderClientId, string messageType, long bytesCount)
+        {
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_NetworkMessageReceivedEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(senderClientId), messageType, bytesCount));
+            IncrementMetricCount();
+        }
+
         public void TrackPacketSent(uint packetCount)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7

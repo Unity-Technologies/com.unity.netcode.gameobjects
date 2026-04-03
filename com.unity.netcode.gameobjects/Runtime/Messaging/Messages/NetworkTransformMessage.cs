@@ -5,6 +5,7 @@ namespace Unity.Netcode
 {
     internal struct TransformStateUpdateMessage : INetworkMessage
     {
+        private const string k_Name = "TransformStateUpdateMessage";
         public int Version => 0;
 
         internal byte[] State;
@@ -23,7 +24,9 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-
+            // Nothing needed to be handled here.
+            var networkManager = (NetworkManager)context.SystemOwner;
+            networkManager.NetworkMetrics.TrackTransportBytesReceived(context.MessageSize);
         }
     }
 

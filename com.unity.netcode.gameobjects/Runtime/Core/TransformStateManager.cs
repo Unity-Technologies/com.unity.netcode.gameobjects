@@ -11,9 +11,11 @@ using UnityEngine.Jobs;
 
 namespace Unity.Netcode
 {
-    // UpdateTransformStateJob
+    /// <summary>
+    /// 
+    /// </summary>
     [BurstCompile]
-    internal struct UpdateTransformStateJob : IJobParallelForTransform
+    internal struct CheckTransformStateDeltasJob : IJobParallelForTransform
     {
         public bool NextTick;
         public int Precision;
@@ -58,6 +60,8 @@ namespace Unity.Netcode
 
     public class TransformStateManager : IDisposable
     {
+        internal FastBufferWriter FastBufferWriter = new FastBufferWriter(1024 * 256, Allocator.Persistent);
+
         private TransformAccessArray m_TransformAccessArray;
         private JobHandle m_JobHandle;
 
@@ -72,12 +76,9 @@ namespace Unity.Netcode
         private bool m_JobRunning;
         private int m_LastTickUpdate;
 
-
         private NetworkTime m_LocalTime;
 
-        private UpdateTransformStateJob m_CurrentJob;
-
-        internal FastBufferWriter FastBufferWriter = new FastBufferWriter(1024 * 256, Allocator.Persistent);
+        private CheckTransformStateDeltasJob m_CurrentJob;
 
         private void InitializeNativeStates(bool allocate = true)
         {
@@ -108,29 +109,6 @@ namespace Unity.Netcode
                 m_NativeStates[i] = state;
             }
         }
-
-        //private void RefreshNativeStates()
-        //{
-        //    for (int i = 0; i < m_TransformsArray.Length; i++)
-        //    {
-        //        var transform = m_TransformsArray[i];
-        //        var state = m_NativeStates[i];
-        //        var networkObjectId = transform.GetComponent<NetworkObject>().NetworkObjectId;
-        //        var networkBehaviourId = transform.GetComponent<TransformStateSync>().NetworkBehaviourId;
-
-        //        if (state.GridStateDelta.NetworkObjectId != networkObjectId)
-        //        {
-        //            Debug.LogWarning($"[Mismatch][State][NetworkObjectId] Index-{i} is {state.GridStateDelta.NetworkObjectId} when transform's is actually {networkObjectId}!");
-        //        }
-        //        if (state.GridStateDelta.NetworkBehaviourId != networkBehaviourId)
-        //        {
-        //            Debug.LogWarning($"[Mismatch][State][NetworkBehaviourId] Index-{i} is {state.GridStateDelta.NetworkBehaviourId} when transform's is actually {networkBehaviourId}!");
-        //        }
-        //        state.GridStateDelta.NetworkObjectId = state.GridStateCurrent.NetworkObjectId = networkObjectId;
-        //        state.GridStateDelta.NetworkBehaviourId = state.GridStateCurrent.NetworkBehaviourId = networkBehaviourId;
-        //        m_NativeStates[i] = state;
-        //    }
-        //}
 
         internal void TrackTransformStateChanges(TransformStateSync transformStateSync, bool isSpawned)
         {
@@ -197,25 +175,18 @@ namespace Unity.Netcode
             }
         }
 
-
         internal void Initialize(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             m_LastTickUpdate = networkManager.LocalTime.Tick;
         }
 
-        private Transform[] m_TransformsArray;
-
-
-
         internal void OnEarlyUpdate()
         {
-            m_LocalTime = m_NetworkManager.LocalTime;
-
-            // Starting job during early update will place delta 1 frame behind.
-            //if (m_TransformAccessArray.isCreated && m_TransformAccessArray.length > 0)
+            // Only update when there is something to update
             if (m_SpawnedInstances.Count > 0)
             {
+                m_LocalTime = m_NetworkManager.LocalTime;
                 if (m_LocalTime.Tick != m_LastTickUpdate)
                 {
                     if (m_NativeStates == null || (m_NativeStates.Length != m_SpawnedInstances.Count))
@@ -227,13 +198,8 @@ namespace Unity.Netcode
                     {
                         InitializeNativeStates(false);
                     }
-                    //else if (m_TransformsArray != null && m_TransformsArray.Length > 0) 
-                    //{
-                    //    m_TransformAccessArray.SetTransforms(m_TransformsArray);
-                    //    RefreshNativeStates();
-                    //}
 
-                    m_CurrentJob = new UpdateTransformStateJob
+                    m_CurrentJob = new CheckTransformStateDeltasJob
                     {
                         Current = m_NativeStates,
                         Precision = m_Precision,
@@ -244,26 +210,22 @@ namespace Unity.Netcode
                     m_JobRunning = true;
                 }
             }
-            //else
-            //{
-            //    m_TransformAccessArray = new TransformAccessArray(m_Transforms.ToArray());
-            //    m_NativeStates = new NativeArray<TransformState>(m_Transforms.Count, Allocator.Persistent);
-            //    InitializeNativeStates();
-            //}
         }
 
         private int m_MessageTicketNumber = 0;
 
         internal void OnPreLateUpdate()
         {
-            if (m_LocalTime.Tick != m_LastTickUpdate && m_JobRunning)
+            if (m_JobRunning && m_LocalTime.Tick != m_LastTickUpdate)
             {
                 var lastTick = m_LastTickUpdate;
                 m_LastTickUpdate = m_LocalTime.Tick;
                 // Ensure the job is completed before the next frame
                 m_JobHandle.Complete();
                 m_JobRunning = false;
+#if DEBUGDELTACOMPRESSION
                 DebugJobResults();
+#endif
                 AvBytesPerUpdate = 0;
                 AvHeaderSize = 0;
                 AvPayLoadSize = 0;
@@ -342,6 +304,7 @@ namespace Unity.Netcode
                             index++;
                         }
                         m_NetworkManager.ConnectionManager.SendMessage(ref transfromStateUpdateMessage, NetworkDelivery.ReliableFragmentedSequenced, clients, index);
+                        m_NetworkManager.NetworkMetrics.TrackTransportBytesReceived(transfromStateUpdateMessage.State.Length);
                     }
 #if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(END)======================");
@@ -349,94 +312,47 @@ namespace Unity.Netcode
                 }
             }
         }
-
+#if DEBUGDELTACOMPRESSION
         private void DebugJobResults()
         {
-#if DEBUGDELTACOMPRESSION
-                        var deltas = CurrentJob.HasDeltas();
-                        if (m_NextTick && deltas > 0)
-                        {
-                            // We would send the compressed deltas here.
-                            StringBuilder sb = new StringBuilder();
-                            sb.AppendLine($"[TransformStateManager][Tick: {lastTick}] DirtyTransforms: {deltas}");
+            var deltas = CurrentJob.HasDeltas();
+            if (m_NextTick && deltas > 0)
+            {
+                // We would send the compressed deltas here.
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"[TransformStateManager][Tick: {lastTick}] DirtyTransforms: {deltas}");
                             
-                            for(int i = 0; i < CurrentJob.Current.Length; i++)
-                            {
-                                var entry = CurrentJob.Current[i];
-                                var entryTransform = m_Transforms[i];
-                                if (entry.Delta.HasDelta())
-                                {
-                                    sb.Append($"[{entryTransform.name}][Deltas] Total size: {entry.Delta.TotalCompressedSize} of a possible {sizeof(int) * 10}:\n");
-                                    //if (entry.Delta.Scale.HasDelta())
-                                    //{
-                                    //    sb.Append($"Scale: Compressed down to ({entry.Delta.Scale.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
-                                    //}
-                                    if (entry.Delta.Position.HasDelta())
-                                    {
-                                        sb.Append($"Position: Compressed down to ({entry.Delta.Position.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
-                                        sb.Append($"Position: Decompressed ({entry.Delta.DecompressedPosition}) vs Original ({entry.Delta.OriginalPosition}).");
-                                    }
-                                    //if (entry.Delta.Rotation.HasDelta())
-                                    //{
-                                    //    sb.Append($"Rotation: Compressed down to ({entry.Delta.Rotation.CompressedSize}) bytes of possible {sizeof(int) * 4}.");
-                                    //}
-
-                                    sb.AppendLine();
-                                }
-                            }
-                            Debug.Log(sb.ToString());
+                for(int i = 0; i < CurrentJob.Current.Length; i++)
+                {
+                    var entry = CurrentJob.Current[i];
+                    var entryTransform = m_Transforms[i];
+                    if (entry.Delta.HasDelta())
+                    {
+                        sb.Append($"[{entryTransform.name}][Deltas] Total size: {entry.Delta.TotalCompressedSize} of a possible {sizeof(int) * 10}:\n");
+                        //if (entry.Delta.Scale.HasDelta())
+                        //{
+                        //    sb.Append($"Scale: Compressed down to ({entry.Delta.Scale.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
+                        //}
+                        if (entry.Delta.Position.HasDelta())
+                        {
+                            sb.Append($"Position: Compressed down to ({entry.Delta.Position.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
+                            sb.Append($"Position: Decompressed ({entry.Delta.DecompressedPosition}) vs Original ({entry.Delta.OriginalPosition}).");
                         }
-#endif
-        }
+                        //if (entry.Delta.Rotation.HasDelta())
+                        //{
+                        //    sb.Append($"Rotation: Compressed down to ({entry.Delta.Rotation.CompressedSize}) bytes of possible {sizeof(int) * 4}.");
+                        //}
 
+                        sb.AppendLine();
+                    }
+                }
+                Debug.Log(sb.ToString());
+            }
+        }
+#endif
         public int AvBytesPerUpdate;
         public int AvHeaderSize;
         public int AvPayLoadSize;
-        internal void UpdateTransformStatesOriginal(FastBufferReader reader)
-        {
-            var count = (ushort)0;
-            var tick = 0;
-            var transformState = new TransformIntState();
-            try
-            {
-                transformState.Initialize();
-                reader.ReadValueSafe(out tick);
-                reader.ReadValueSafe(out count);
-                var networkTime = new NetworkTime(m_NetworkManager.NetworkConfig.TickRate, tick);
-                var lastPosition = reader.Position;
-                for (var i = 0; i < count; i++)
-                {
-                    transformState.ReadState(reader);
-                    if (m_TransformStates.ContainsKey(transformState.NetworkObjectId))
-                    {
-                        if (m_TransformStates[transformState.NetworkObjectId].ContainsKey(transformState.NetworkBehaviourId))
-                        {
-                            var readSize = reader.Position - lastPosition;
-                            AvBytesPerUpdate = AvBytesPerUpdate == 0 ? +readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
-                            AvHeaderSize = AvHeaderSize == 0 ? +transformState.Header_Size : (int)(0.5f * (AvHeaderSize + transformState.Header_Size));
-                            AvPayLoadSize = AvPayLoadSize == 0 ? +transformState.Payload_Size : (int)(0.5f * (AvPayLoadSize + transformState.Payload_Size));
-                            transformState.Decompress(m_Precision);
-                            m_TransformStates[transformState.NetworkObjectId][transformState.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
-                        }
-                        else
-                        {
-                            NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformIntState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
-                                $"NetworkBehaviourId-{transformState.NetworkBehaviourId}but it does not exist!");
-                        }
-                    }
-                    else
-                    {
-                        NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformIntState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
-                    }
-                    lastPosition = reader.Position;
-                }
-            }
-            catch (Exception ex)
-            {
-                transformState.Dispose();
-                Debug.LogException(ex);
-            }
-        }
 
         internal void UpdateTransformStates(FastBufferReader reader)
         {
@@ -492,13 +408,13 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformIntState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
+                            NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
                                 $"NetworkBehaviourId-{transformState.NetworkBehaviourId}but it does not exist!");
                         }
                     }
                     else
                     {
-                        NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformIntState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
+                        NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
                     }
                     lastPosition = reader.Position;
                     transformState.Clear();
@@ -520,7 +436,7 @@ namespace Unity.Netcode
             for (int i = 0; i < m_NativeStates.Length; i++)
             {
                 var state = m_NativeStates[i];
-                state.Delta.Dispose();
+                state.GridStateDelta.Dispose();
                 m_NativeStates[i] = state;
             }
             if (m_NativeStates.IsCreated)

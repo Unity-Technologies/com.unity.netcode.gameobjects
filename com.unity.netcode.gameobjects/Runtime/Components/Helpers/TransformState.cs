@@ -13,16 +13,12 @@ namespace Unity.Netcode
     [BurstCompile]
     internal struct TransformState
     {
-        /// <summary>
-        /// Needs to be converted to a byte
-        /// </summary>
-        public TransformIntState PreviousState;
-        public TransformIntState CurrentState;
-        public TransformIntState Delta;
+        public TransformGridState GridStatePrevious;
+        public TransformGridState GridStateCurrent;
+        public TransformGridState GridStateDelta;
 
         public ulong NetworkObjectId;
         public ushort NetworkBehaviourId;
-
         public ulong EntityIdentifier;
 
         public void UpdateIds(TransformStateSync transformStateSync)
@@ -34,52 +30,13 @@ namespace Unity.Netcode
             GridStateDelta.NetworkBehaviourId = GridStatePrevious.NetworkBehaviourId = GridStateCurrent.NetworkBehaviourId = NetworkBehaviourId;
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ProcessCurrentStateOriginal(TransformAccess transformAccess, int precision, bool isNextTick)
-        {
-            CurrentState.Scale.X = (int)(transformAccess.localScale.x * precision);
-            CurrentState.Scale.Y = (int)(transformAccess.localScale.y * precision);
-            CurrentState.Scale.Z = (int)(transformAccess.localScale.z * precision);
-
-            CurrentState.Position.X = (int)(transformAccess.position.x * precision);
-            CurrentState.Position.Y = (int)(transformAccess.position.y * precision);
-            CurrentState.Position.Z = (int)(transformAccess.position.z * precision);
-
-            CurrentState.Rotation.X = (int)(transformAccess.rotation.x * precision);
-            CurrentState.Rotation.Y = (int)(transformAccess.rotation.y * precision);
-            CurrentState.Rotation.Z = (int)(transformAccess.rotation.z * precision);
-            CurrentState.Rotation.W = (int)(transformAccess.rotation.w * precision);
-
-            if (isNextTick)
-            {
-                Delta.Scale.X = CurrentState.Scale.X - PreviousState.Scale.X;
-                Delta.Scale.Y = CurrentState.Scale.Y - PreviousState.Scale.Y;
-                Delta.Scale.Z = CurrentState.Scale.Z - PreviousState.Scale.Z;
-
-                Delta.Position.X = CurrentState.Position.X - PreviousState.Position.X;
-                Delta.Position.Y = CurrentState.Position.Y - PreviousState.Position.Y;
-                Delta.Position.Z = CurrentState.Position.Z - PreviousState.Position.Z;
-
-                Delta.Rotation.X = CurrentState.Rotation.X - PreviousState.Rotation.X;
-                Delta.Rotation.Y = CurrentState.Rotation.Y - PreviousState.Rotation.Y;
-                Delta.Rotation.Z = CurrentState.Rotation.Z - PreviousState.Rotation.Z;
-                Delta.Rotation.W = CurrentState.Rotation.W - PreviousState.Rotation.W;
-                PreviousState.ApplyState(CurrentState);
-            }
-
-            return Delta.HasDelta();
-        }
-
-        public TransformGridState GridStatePrevious;
-        public TransformGridState GridStateCurrent;
-        public TransformGridState GridStateDelta;
-
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ProcessCurrentState(int index, TransformAccess transformAccess, int precision, bool isNextTick)
         {
             if (isNextTick && transformAccess.isValid)
             {
-
+                // Get and set the current transform state
                 GridStateCurrent.Index = index;
                 GridStateCurrent.Scale.X = (uint)(transformAccess.localScale.x * precision);
                 GridStateCurrent.Scale.Y = (uint)(transformAccess.localScale.y * precision);
@@ -96,7 +53,7 @@ namespace Unity.Netcode
                 GridStateCurrent.Rotation.W = (uint)(transformAccess.rotation.w * precision);
                 GridStateCurrent.Rotation.Rotation = transformAccess.rotation;
 
-
+                // Calculate the delta between the previous and current states.
                 GridStateDelta.Index = index;
                 GridStateDelta.DirtyScale = false;
                 GridStateDelta.Scale.X = GridStateCurrent.Scale.X - GridStatePrevious.Scale.X;
@@ -112,13 +69,14 @@ namespace Unity.Netcode
                 GridStateDelta.Rotation.Z = GridStateCurrent.Rotation.Z - GridStatePrevious.Rotation.Z;
                 GridStateDelta.Rotation.W = GridStateCurrent.Rotation.W - GridStatePrevious.Rotation.W;
 
+                // Check for and record deltas between the current and previous states
                 GridStateDelta.DirtyScale = false;
                 if (GridStateDelta.Scale.HasDelta())
                 {
                     GridStateDelta.DirtyScale = true;
                     GridStateDelta.Scale.Axis = new half3(transformAccess.localScale);
+                    // TODO: this could be removed
                     GridStateDelta.Scale.InvPrecision = 1.0f / precision;
-                    //GridStateDelta.Scale.Compress();
                 }
 
                 GridStateDelta.DirtyPosition = false;
@@ -126,8 +84,9 @@ namespace Unity.Netcode
                 {
                     GridStateDelta.DirtyPosition = true;
                     GridStateDelta.Position.Axis = new half3(transformAccess.position);
+
+                    // TODO: this could be removed
                     GridStateDelta.Position.InvPrecision = 1.0f / precision;
-                    //GridStateDelta.Position.Compress();
                 }
 
                 GridStateDelta.DirtyRotation = false;
@@ -146,6 +105,9 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// Keeping for reference purposes
+    /// </summary>
     [BurstCompile]
     internal unsafe struct Vector3State : ITransformStateComponent<Vector3State>
     {
@@ -367,6 +329,7 @@ namespace Unity.Netcode
         }
     }
 
+    [BurstCompile]
     internal unsafe struct Vector3Half : ITransformStateComponent<Vector3Half>
     {
         internal const int Length = 3;
@@ -649,11 +612,13 @@ namespace Unity.Netcode
             Clear();
         }
 
+        [BurstCompile]
         public void Dispose()
         {
             Clear();
         }
 
+        [BurstCompile]
         public void Compress()
         {
             Compressed = QuaternionCompressorJob.CompressQuaternion(ref Rotation);
@@ -1001,6 +966,10 @@ namespace Unity.Netcode
             Rotation.Dispose();
         }
 
+        /// <summary>
+        /// TODO: We may or may not need this.
+        /// (Currently nothing uses this method when writing this)
+        /// </summary>
         public void Compress()
         {
             if (Scale.HasDelta())
@@ -1022,15 +991,13 @@ namespace Unity.Netcode
             if (DirtyScale)
             {
                 Scale.InvPrecision = InvPrecision;
-                //Scale.Decompress();
-
                 ScaleFloat = Scale.ToVector3();
             }
 
             if (DirtyPosition)
             {
                 Position.InvPrecision = InvPrecision;
-                //Position.Decompress();
+                // TODO: Add grid offset here
                 PositionFloat = Position.ToVector3();
             }
 
@@ -1054,11 +1021,12 @@ namespace Unity.Netcode
             writer.WriteByteSafe(dirtyFlags);
             Header_Size = writer.Position - startPosition;
             startPosition = writer.Position;
-            //if (Scale.HasDelta())
-            //{
-            //    dirtyFlags |= 0x01;
-            //    Scale.WriteState(writer);
-            //}
+
+            if (Scale.HasDelta())
+            {
+                dirtyFlags |= 0x01;
+                Scale.WriteState(writer);
+            }
 
             if (Position.HasDelta())
             {
@@ -1071,6 +1039,7 @@ namespace Unity.Netcode
                 dirtyFlags |= 0x04;
                 Rotation.WriteState(writer);
             }
+
             var tail = writer.Position;
             writer.Seek(dirtyPosition);
             writer.WriteValueSafe(dirtyFlags);
@@ -1089,12 +1058,12 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out dirtyFlags);
             Header_Size = reader.Position - startPosition;
             startPosition = reader.Position;
-            //if ((dirtyFlags & 0x01) == 0x01)
-            //{
-            //    DirtyScale = true;
-            //    Scale.ReadState(reader);
-            //    ScaleFloat = math.float3(Scale.Axis);
-            //}
+            if ((dirtyFlags & 0x01) == 0x01)
+            {
+                DirtyScale = true;
+                Scale.ReadState(reader);
+                ScaleFloat = math.float3(Scale.Axis);
+            }
 
             if ((dirtyFlags & 0x02) == 0x02)
             {
@@ -1114,200 +1083,6 @@ namespace Unity.Netcode
             DirtyFlags = dirtyFlags;
         }
     }
-
-
-    internal struct TransformIntState : ITransformState<TransformIntState>
-    {
-        public ulong NetworkObjectId;
-        public ushort NetworkBehaviourId;
-        public byte CompressFlags;
-        public int TotalCompressedSize;
-
-        public Vector3State Scale;
-        public Vector3State Position;
-        public Vector4State Rotation;
-
-
-        public Vector3 OriginalPosition;
-
-        public Vector3 DecompScale;
-        public Vector3 DecompPosition;
-        public Quaternion DecompRotation;
-
-        public bool DirtyPosition { get; private set; }
-        public bool DirtyRotation { get; private set; }
-        public bool DirtyScale { get; private set; }
-
-        public void ApplyState(TransformIntState state)
-        {
-            Scale.ApplyState(state.Scale);
-            Position.ApplyState(state.Position);
-            Rotation.ApplyState(state.Rotation);
-        }
-
-        public bool HasDelta()
-        {
-            return Scale.HasDelta() || Position.HasDelta() || Rotation.HasDelta();
-        }
-
-        public void Clear()
-        {
-            Scale.Clear();
-            Position.Clear();
-            Rotation.Clear();
-        }
-
-        public void Initialize()
-        {
-            Scale.Initialize();
-            Position.Initialize();
-            Rotation.Initialize();
-        }
-
-        public void Dispose()
-        {
-            Scale.Dispose();
-            Position.Dispose();
-            Rotation.Dispose();
-        }
-
-        public unsafe void Compress()
-        {
-            TotalCompressedSize = 0;
-            CompressFlags = 0;
-
-            if (Scale.HasDelta())
-            {
-                CompressFlags |= 0x01;
-                Scale.Compress();
-                TotalCompressedSize += Scale.CompressedSize;
-            }
-            if (Position.HasDelta())
-            {
-                CompressFlags |= 0x02;
-                Position.Compress();
-                TotalCompressedSize += Position.CompressedSize;
-            }
-            if (Rotation.HasDelta())
-            {
-                CompressFlags |= 0x04;
-                Rotation.Compress();
-                TotalCompressedSize += Rotation.CompressedSize;
-            }
-        }
-
-        public unsafe void Decompress(int precision)
-        {
-            var precisionInvert = 1.0f / precision;
-
-            if ((CompressFlags & 0x01) > 0)
-            {
-                Scale.Clear();
-                Scale.Decompress();
-                DecompScale.x = Scale.X * precisionInvert;
-                DecompScale.y = Scale.X * precisionInvert;
-                DecompScale.z = Scale.X * precisionInvert;
-            }
-            if ((CompressFlags & 0x02) > 0)
-            {
-                Position.Clear();
-                Position.Decompress();
-                DecompPosition.x = Position.X * precisionInvert;
-                DecompPosition.y = Position.Y * precisionInvert;
-                DecompPosition.z = Position.Z * precisionInvert;
-            }
-            if ((CompressFlags & 0x04) > 0)
-            {
-                Rotation.Clear();
-                Rotation.Decompress();
-                DecompRotation.x = Rotation.X * precisionInvert;
-                DecompRotation.y = Rotation.Y * precisionInvert;
-                DecompRotation.z = Rotation.Z * precisionInvert;
-                DecompRotation.w = Rotation.W * precisionInvert;
-            }
-        }
-
-        public unsafe void WriteState(FastBufferWriter writer)
-        {
-            if (!HasDelta())
-            {
-                //Warning?
-                return;
-            }
-            BytePacker.WriteValuePacked(writer, NetworkObjectId);
-            BytePacker.WriteValuePacked(writer, NetworkBehaviourId);
-            writer.WriteByteSafe(CompressFlags);
-            DirtyPosition = DirtyRotation = DirtyScale = false;
-            // We can write the compressed size as a byte since we know
-            // it will never exceed 255 bytes.
-            if ((CompressFlags & 0x01) > 0)
-            {
-                DirtyScale = true;
-                Scale.WriteState(writer);
-                //writer.WriteByteSafe((byte)Scale.CompressedSize);
-                //writer.WriteBytesSafe(&Scale.Compressed[0], Scale.CompressedSize);
-            }
-            if ((CompressFlags & 0x02) > 0)
-            {
-                DirtyPosition = true;
-                Position.WriteState(writer);
-                //writer.WriteByteSafe((byte)Position.CompressedSize);
-                //writer.WriteBytesSafe(&Position.Compressed[0], Position.CompressedSize);
-            }
-            if ((CompressFlags & 0x04) > 0)
-            {
-                DirtyRotation = true;
-                Rotation.WriteState(writer);
-                //writer.WriteByteSafe((byte)Rotation.CompressedSize);
-                //writer.WriteBytesSafe(&Rotation.Compressed[0], Rotation.CompressedSize);
-            }
-        }
-
-        // TODO: We need to further compress this down by about 60%
-        public int Header_Size;
-        public int Payload_Size;
-
-        /// <summary>
-        /// TODO:  Next--> Switch to quaternion compression
-        /// Should get us close to ~= 9-10 bytes (total) per state update when moving around a bunch.
-        /// </summary>
-        /// <param name="reader"></param>
-        public unsafe void ReadState(FastBufferReader reader)
-        {
-            var position = reader.Position;
-            ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
-            ByteUnpacker.ReadValuePacked(reader, out NetworkBehaviourId);
-            reader.ReadByteSafe(out CompressFlags);
-            Header_Size = reader.Position - position;
-            position = reader.Position;
-            //var readSize = (byte)0;
-            DirtyPosition = DirtyRotation = DirtyScale = false;
-            if ((CompressFlags & 0x01) > 0)
-            {
-                DirtyScale = true;
-                Scale.ReadState(reader);
-                //reader.ReadByteSafe(out readSize);
-                //reader.ReadBytesSafe(&Scale.Compressed[0], readSize);
-            }
-            if ((CompressFlags & 0x02) > 0)
-            {
-                DirtyPosition = true;
-                Position.ReadState(reader);
-                //reader.ReadByteSafe(out readSize);
-                //reader.ReadBytesSafe(&Position.Compressed[0], readSize);
-            }
-            if ((CompressFlags & 0x04) > 0)
-            {
-                DirtyRotation = true;
-                Rotation.ReadState(reader);
-                //reader.ReadByteSafe(out readSize);
-                //reader.ReadBytesSafe(&Rotation.Compressed[0], readSize);
-            }
-            Payload_Size = reader.Position - position;
-        }
-
-    }
-
 
     internal interface ITransformStateComponent<T> : ITransformState<T>
     {

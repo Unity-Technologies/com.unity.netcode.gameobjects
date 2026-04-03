@@ -122,7 +122,6 @@ namespace Unity.Netcode
             base.OnInternalOnNetworkSpawn();
         }
 
-
         public override void OnNetworkPreDespawn()
         {
             UpdateMotionAuthority(true);
@@ -157,29 +156,6 @@ namespace Unity.Netcode
             if (state.DirtyRotation)
             {
                 m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
-            }
-        }
-
-        internal void UpdateState(double time, TransformIntState state)
-        {
-            if (state.DirtyScale)
-            {
-                m_ScaleInterpolator.AddMeasurement(transform.parent, transform.localScale += state.DecompScale, time);
-            }
-
-            if (state.DirtyPosition)
-            {
-                m_PositionInterpolator.AddMeasurement(transform.parent,state.DecompPosition + (HasParent ? transform.localScale : transform.position), time);
-            }
-
-            if (state.DirtyRotation)
-            {
-                var rotation = (HasParent ? transform.localRotation : transform.rotation);
-                rotation.x += state.DecompRotation.x;
-                rotation.y += state.DecompRotation.y;
-                rotation.z += state.DecompRotation.z;
-                rotation.w += state.DecompRotation.w;
-                m_RotationInterpolator.AddMeasurement(transform.parent, rotation, time);
             }
         }
 
