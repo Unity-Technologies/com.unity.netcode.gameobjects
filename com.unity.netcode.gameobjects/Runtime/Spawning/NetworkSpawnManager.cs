@@ -75,11 +75,11 @@ namespace Unity.Netcode
         {
             if (!playerObject.IsPlayerObject)
             {
-                if (NetworkManager.LogLevel == LogLevel.Normal)
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogError($"Attempting to register a {nameof(NetworkObject)} as a player object but {nameof(NetworkObject.IsPlayerObject)} is not set!");
-                    return;
                 }
+                return;
             }
 
             var cmbService = NetworkManager.CMBServiceConnection;
@@ -148,11 +148,11 @@ namespace Unity.Netcode
         {
             if (!playerObject.IsPlayerObject)
             {
-                if (NetworkManager.LogLevel == LogLevel.Normal)
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogError($"Attempting to deregister a {nameof(NetworkObject)} as a player object but {nameof(NetworkObject.IsPlayerObject)} is not set!");
-                    return;
                 }
+                return;
             }
             playerObject.IsPlayerObject = false;
             m_PlayerObjects.Remove(playerObject);
