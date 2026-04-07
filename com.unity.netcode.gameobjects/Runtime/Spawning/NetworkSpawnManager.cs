@@ -1856,6 +1856,8 @@ namespace Unity.Netcode
                 {
                     if (entry.Key != null && entry.Key.IsSpawned)
                     {
+                        // Try catch due to ensure that if anything throws we keep processing the list.
+                        // This can throw if the GameObject was destroyed on this frame.
                         try
                         {
                             // Always push the most recent deltas when showing a NetworkObject
@@ -1885,6 +1887,8 @@ namespace Unity.Netcode
                 {
                     if (networkObject != null && networkObject.IsSpawned)
                     {
+                        // Try catch due to ensure that if anything throws we keep processing the list.
+                        // This can throw if the GameObject was destroyed on this frame.
                         try
                         {
                             if (forceSend)
@@ -2019,10 +2023,6 @@ namespace Unity.Netcode
         {
             if (!NetworkManager.DistributedAuthorityMode)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError("[DistributeNetworkObjects] called while not in Distributed Authority Mode!");
-                }
                 return;
             }
 
@@ -2285,12 +2285,6 @@ namespace Unity.Netcode
         /// </remarks>
         internal void ShowHiddenObjectsToNewlyJoinedClient(ulong newClientId)
         {
-            if (NetworkManager == null || NetworkManager.ShutdownInProgress && NetworkManager.LogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogWarning($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} invoked while shutdown is in progress!");
-                return;
-            }
-
             if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
@@ -2332,12 +2326,6 @@ namespace Unity.Netcode
 
         internal void SynchronizeObjectsToNewlyJoinedClient(ulong newClientId)
         {
-            if (NetworkManager == null || NetworkManager.ShutdownInProgress && NetworkManager.LogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogWarning($"[Internal Error] {nameof(SynchronizeObjectsToNewlyJoinedClient)} invoked while shutdown is in progress!");
-                return;
-            }
-
             if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
