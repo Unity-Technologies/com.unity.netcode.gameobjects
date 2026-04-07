@@ -347,7 +347,7 @@ namespace Unity.Netcode
                     NetworkObject.Deserialize(serializedObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
-                if (networkManager.AutoSpawnPlayerPrefabClientSide)
+                if (networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide)
                 {
                     networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
                 }

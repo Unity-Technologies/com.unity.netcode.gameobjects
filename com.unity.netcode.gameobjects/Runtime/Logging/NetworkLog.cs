@@ -113,14 +113,21 @@ namespace Unity.Netcode
             }
         }
 
+        private const string k_HeaderStart = "Netcode";
         private static string Header()
         {
             var networkManager = NetworkManagerOverride ??= NetworkManager.Singleton;
-            if (networkManager.DistributedAuthorityMode)
+            if (networkManager != null)
             {
-                return "Session-Owner";
+                if (networkManager.DistributedAuthorityMode)
+                {
+                    return $"{k_HeaderStart}-Session-Owner";
+                }
+                return $"{k_HeaderStart}-Server";
             }
-            return "Netcode-Server";
+
+            // If NetworkManager no longer exists, then return the generic header
+            return k_HeaderStart;
         }
 
         internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[{Header()} Sender={sender}] {message}");

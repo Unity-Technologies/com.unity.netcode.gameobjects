@@ -13,6 +13,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve performance of `NetworkBehaviour`. (#3915)
+- Improve performance of `NetworkTransform`. (#3907)
+- Improve performance of `NetworkRigidbodyBase`. (#3906)
+- Improve performance of `NetworkAnimator`. (#3905)
 
 ### Deprecated
 
@@ -22,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security
 

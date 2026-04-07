@@ -90,7 +90,6 @@ namespace Unity.Netcode
         internal void __endSendServerRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            var networkManager = m_NetworkManager;
             var serverRpcMessage = new ServerRpcMessage
             {
                 Metadata = new RpcMetadata
@@ -110,7 +109,7 @@ namespace Unity.Netcode
                     networkDelivery = MessageDeliveryType<ServerRpcMessage>.DefaultDelivery;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
+                    if (bufferWriter.Length > m_NetworkManager.MessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -127,8 +126,8 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = networkManager.RealTimeProvider.RealTimeSinceStartup,
-                    SystemOwner = networkManager,
+                    Timestamp = m_NetworkManager.RealTimeProvider.RealTimeSinceStartup,
+                    SystemOwner = m_NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new NetworkMessageHeader(),
@@ -141,7 +140,7 @@ namespace Unity.Netcode
             }
             else
             {
-                rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
+                rpcWriteSize = m_NetworkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
             }
 
             bufferWriter.Dispose();
@@ -169,7 +168,6 @@ namespace Unity.Netcode
         internal void __endSendClientRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            var networkManager = m_NetworkManager;
             var clientRpcMessage = new ClientRpcMessage
             {
                 Metadata = new RpcMetadata
@@ -189,7 +187,7 @@ namespace Unity.Netcode
                     networkDelivery = MessageDeliveryType<ClientRpcMessage>.DefaultDelivery;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
+                    if (bufferWriter.Length > m_NetworkManager.MessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -212,7 +210,7 @@ namespace Unity.Netcode
                         continue;
                     }
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (networkManager.LogLevel >= LogLevel.Error && !m_NetworkObject.Observers.Contains(targetClientId))
+                    if (m_NetworkManager.LogLevel >= LogLevel.Error && !m_NetworkObject.Observers.Contains(targetClientId))
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
@@ -229,12 +227,12 @@ namespace Unity.Netcode
                         continue;
                     }
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (networkManager.LogLevel >= LogLevel.Error && !m_NetworkObject.Observers.Contains(targetClientId))
+                    if (m_NetworkManager.LogLevel >= LogLevel.Error && !m_NetworkObject.Observers.Contains(targetClientId))
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
-                rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
+                rpcWriteSize = m_NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
@@ -242,12 +240,12 @@ namespace Unity.Netcode
                 while (observerEnumerator.MoveNext())
                 {
                     // Skip over the host
-                    if (IsHost && observerEnumerator.Current == networkManager.LocalClientId)
+                    if (IsHost && observerEnumerator.Current == m_NetworkManager.LocalClientId)
                     {
                         shouldInvokeLocally = true;
                         continue;
                     }
-                    rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
+                    rpcWriteSize = m_NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
                 }
             }
 
@@ -258,8 +256,8 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = networkManager.RealTimeProvider.RealTimeSinceStartup,
-                    SystemOwner = networkManager,
+                    Timestamp = m_NetworkManager.RealTimeProvider.RealTimeSinceStartup,
+                    SystemOwner = m_NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new NetworkMessageHeader(),
@@ -282,7 +280,7 @@ namespace Unity.Netcode
                 {
                     foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                     {
-                        networkManager.NetworkMetrics.TrackRpcSent(
+                        m_NetworkManager.NetworkMetrics.TrackRpcSent(
                             targetClientId,
                             m_NetworkObject,
                             rpcMethodName,
@@ -294,7 +292,7 @@ namespace Unity.Netcode
                 {
                     foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                     {
-                        networkManager.NetworkMetrics.TrackRpcSent(
+                        m_NetworkManager.NetworkMetrics.TrackRpcSent(
                             targetClientId,
                             m_NetworkObject,
                             rpcMethodName,
@@ -307,7 +305,7 @@ namespace Unity.Netcode
                     var observerEnumerator = m_NetworkObject.Observers.GetEnumerator();
                     while (observerEnumerator.MoveNext())
                     {
-                        networkManager.NetworkMetrics.TrackRpcSent(
+                        m_NetworkManager.NetworkMetrics.TrackRpcSent(
                             observerEnumerator.Current,
                             m_NetworkObject,
                             rpcMethodName,
@@ -325,7 +323,7 @@ namespace Unity.Netcode
         internal FastBufferWriter __beginSendRpc(uint rpcMethodId, RpcParams rpcParams, RpcAttribute.RpcAttributeParams attributeParams, SendTo defaultTarget, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (m_NetworkObject == null && !IsSpawned)
+            if (!IsSpawned)
             {
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
@@ -652,27 +650,24 @@ namespace Unity.Netcode
         /// </summary>
         internal void UpdateNetworkProperties()
         {
-            var networkObject = m_NetworkObject;
-            var networkManager = m_NetworkManager;
-
             // Set identification related properties
-            NetworkObjectId = networkObject.NetworkObjectId;
-            IsLocalPlayer = networkObject.IsLocalPlayer;
+            NetworkObjectId = m_NetworkObject.NetworkObjectId;
+            IsLocalPlayer = m_NetworkObject.IsLocalPlayer;
 
             // Set ownership related properties
-            IsOwnedByServer = networkObject.IsOwnedByServer;
-            IsOwner = networkObject.IsOwner;
-            OwnerClientId = networkObject.OwnerClientId;
+            IsOwnedByServer = m_NetworkObject.IsOwnedByServer;
+            IsOwner = m_NetworkObject.IsOwner;
+            OwnerClientId = m_NetworkObject.OwnerClientId;
 
             // Set NetworkManager dependent properties
-            if (networkManager != null)
+            if (m_NetworkManager != null)
             {
-                IsHost = networkManager.IsListening && networkManager.IsHost;
-                IsClient = networkManager.IsListening && networkManager.IsClient;
-                IsServer = networkManager.IsListening && networkManager.IsServer;
-                IsSessionOwner = networkManager.IsListening && networkManager.LocalClient.IsSessionOwner;
-                HasAuthority = networkObject.HasAuthority;
-                ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
+                IsHost = m_NetworkManager.IsListening && m_NetworkManager.IsHost;
+                IsClient = m_NetworkManager.IsListening && m_NetworkManager.IsClient;
+                IsServer = m_NetworkManager.IsListening && m_NetworkManager.IsServer;
+                IsSessionOwner = m_NetworkManager.IsListening && m_NetworkManager.LocalClient.IsSessionOwner;
+                HasAuthority = m_NetworkObject.HasAuthority;
+                ServerIsHost = m_NetworkManager.IsListening && m_NetworkManager.ServerIsHost;
             }
         }
 
