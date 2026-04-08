@@ -211,7 +211,7 @@ namespace Unity.Netcode
             // probably overkill, but deals with multiple entries
             while (ObjectsToShowToClient[clientId].Contains(networkObject))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                if (NetworkManager.LogLevel > LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"Object was shown and hidden from the same client in the same Network frame. As a result, the client will _not_ receive a NetworkSpawn");
                 }
@@ -777,7 +777,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.ShutdownInProgress)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogWarning(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
                 }
@@ -2089,10 +2089,7 @@ namespace Unity.Netcode
                     var offsetCount = Mathf.Max((int)Math.Round((float)(ownerList.Value.Count / objPerClient)), 1);
                     if (EnableDistributeLogging)
                     {
-                        if (NetworkManager.LogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo($"[{objPerClient} of {totalObjectsToDistribute}][Client-{ownerList.Key}] Count: {ownerList.Value.Count} | ObjPerClient: {objPerClient} | maxD: {maxDistributeCount} | Offset: {offsetCount}");
-                        }
+                        Debug.Log($"[{objPerClient} of {totalObjectsToDistribute}][Client-{ownerList.Key}] Count: {ownerList.Value.Count} | ObjPerClient: {objPerClient} | maxD: {maxDistributeCount} | Offset: {offsetCount}");
                     }
 
                     for (int i = 0; i < ownerList.Value.Count; i++)
@@ -2112,7 +2109,7 @@ namespace Unity.Netcode
                                 }
                                 if (!child.IsOwnershipDistributable || !child.IsOwnershipTransferable)
                                 {
-                                    if (NetworkManager.LogLevel <= LogLevel.Developer)
+                                    if (NetworkManager.LogLevel <= LogLevel.Normal)
                                     {
                                         NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
                                     }
@@ -2126,10 +2123,7 @@ namespace Unity.Netcode
                             ChangeOwnership(ownerList.Value[i], clientId, true);
                             if (EnableDistributeLogging)
                             {
-                                if (NetworkManager.LogLevel <= LogLevel.Developer)
-                                {
-                                    NetworkLog.LogInfo($"[Client-{ownerList.Key}][NetworkObjectId-{ownerList.Value[i].NetworkObjectId} Distributed to Client-{clientId}");
-                                }
+                                Debug.Log($"[Client-{ownerList.Key}][NetworkObjectId-{ownerList.Value[i].NetworkObjectId} Distributed to Client-{clientId}");
                             }
                             distributed++;
                         }
@@ -2160,10 +2154,7 @@ namespace Unity.Netcode
                         builder.AppendLine($"[Client-{ownerList.Key}] Count: {ownerList.Value.Count}");
                     }
                 }
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
-                {
-                    NetworkLog.LogInfo(builder.ToString());
-                }
+                Debug.Log(builder.ToString());
             }
         }
 
@@ -2287,19 +2278,13 @@ namespace Unity.Netcode
         {
             if (!NetworkManager.DistributedAuthorityMode)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked when using a distributed authority network topology!");
-                }
+                Debug.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked when using a distributed authority network topology!");
                 return;
             }
 
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked on a non-session owner client!");
-                }
+                Debug.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked on a non-session owner client!");
                 return;
             }
             var localClientId = NetworkManager.LocalClient.ClientId;
@@ -2328,19 +2313,13 @@ namespace Unity.Netcode
         {
             if (!NetworkManager.DistributedAuthorityMode)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"[Internal Error] {nameof(SynchronizeObjectsToNewlyJoinedClient)} should only be invoked when using a distributed authority network topology!");
-                }
+                Debug.LogError($"[Internal Error] {nameof(SynchronizeObjectsToNewlyJoinedClient)} should only be invoked when using a distributed authority network topology!");
                 return;
             }
 
             if (NetworkManager.NetworkConfig.EnableSceneManagement)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"[Internal Error] {nameof(SynchronizeObjectsToNewlyJoinedClient)} should only be invoked when scene management is disabled!");
-                }
+                Debug.LogError($"[Internal Error] {nameof(SynchronizeObjectsToNewlyJoinedClient)} should only be invoked when scene management is disabled!");
                 return;
             }
 
