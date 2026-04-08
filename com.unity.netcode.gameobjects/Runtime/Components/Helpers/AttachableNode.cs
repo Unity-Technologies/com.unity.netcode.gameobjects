@@ -24,7 +24,7 @@ public class AttachableNode : NetworkBehaviour
     /// </summary>
     public bool DetachOnDespawn = true;
 
-    internal bool IsDestroying  { get; private set; }
+    internal bool IsDestroying { get; private set; }
 
     /// <summary>
     /// A <see cref="List{T}"/> of the currently attached <see cref="AttachableBehaviour"/>s.
