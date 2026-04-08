@@ -240,6 +240,7 @@ namespace Unity.Netcode.Components
             OnAwake();
         }
 
+        /// <inheritdoc/>
         protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             IsDestroying = false;
