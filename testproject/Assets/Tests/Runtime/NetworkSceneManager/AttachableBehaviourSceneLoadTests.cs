@@ -273,7 +273,7 @@ namespace TestProject.RuntimeTests
         {
             m_SceneLoadCompleted = false;
 
-            // Handle detatch on despawn differently to validate both paths.
+            // Handle detach on despawn differently to validate both paths.
             m_PrefabAttachableNode.DetachOnDespawn = detachOnDespawn;
 
             var authority = GetAuthorityNetworkManager();
