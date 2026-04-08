@@ -644,6 +644,20 @@ namespace Unity.Netcode
         public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
+        /// Returns true if the NetworkObject is in the middle of being destroyed or
+        /// if there is no valid assigned NetworkObject.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="NetworkObject.IsDestroying"/>
+        /// </remarks>
+        internal bool IsDestroying { get; private set; }
+
+        internal void SetDestroying()
+        {
+            IsDestroying = true;
+        }
+
+        /// <summary>
         /// Updates properties with network session related
         /// dependencies such as a NetworkObject's spawned
         /// state or NetworkManager's session state.

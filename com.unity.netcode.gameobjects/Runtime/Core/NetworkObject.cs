@@ -1689,13 +1689,50 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Invoked when the NetworkObject is destroyed.
+        /// Returns true if the NetworkObject is in the middle of being destroyed.
         /// </summary>
-        internal event Action OnDestroying;
+        /// <remarks>
+        /// This is particularly useful when determining if something is being de-spawned
+        /// normally or if it is being de-spawned because the NetworkObject/GameObject is
+        /// being destroyed.
+        /// </remarks>
+        internal bool IsDestroying { get; private set; }
+
+        /// <summary>
+        /// Applies the despawning flag for the local instance and
+        /// its child NetworkBehaviours. Private to assure this is
+        /// only invoked from within OnDestroy.
+        /// </summary>
+        private void SetIsDestroying()
+        {
+            IsDestroying = true;
+
+            // Exit early if null
+            if (m_ChildNetworkBehaviours == null)
+            {
+                return;
+            }
+
+            foreach(var childBehaviour in m_ChildNetworkBehaviours)
+            {
+                // Just ignore and continue processing through the entries
+                if (!childBehaviour)
+                {
+                    continue;
+                }
+
+                // Keeping the property a private set to assure this is
+                // the only way it can be set as it should never be reset
+                // back to false once invoked.
+                childBehaviour.SetDestroying();
+            }
+        }
 
         private void OnDestroy()
         {
-            OnDestroying?.Invoke();
+            // Apply the is destroying flag
+            SetIsDestroying();
+
             var networkManager = NetworkManager;
             // If no NetworkManager is assigned, then just exit early
             if (!networkManager)

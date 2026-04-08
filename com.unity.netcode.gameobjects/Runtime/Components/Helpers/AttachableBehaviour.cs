@@ -205,8 +205,6 @@ namespace Unity.Netcode.Components
         private Vector3 m_OriginalLocalPosition;
         private Quaternion m_OriginalLocalRotation;
 
-        internal bool IsDestroying { get; private set; }
-
         /// <inheritdoc/>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
@@ -238,42 +236,6 @@ namespace Unity.Netcode.Components
             m_AttachState = AttachState.Detached;
             m_AttachableNode = null;
             OnAwake();
-        }
-
-        /// <inheritdoc/>
-        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
-        {
-            IsDestroying = false;
-            // When attached to something else, the attachable needs to know if the
-            // default parent has been destroyed in order to not attempt to re-parent
-            // when detached (especially if it is being detached because it should be destroyed).
-            NetworkObject.OnDestroying += OnDefaultParentDestroying;
-
-            base.OnNetworkPreSpawn(ref networkManager);
-        }
-
-        private void OnDefaultParentDestroying()
-        {
-            NetworkObject.OnDestroying -= OnDefaultParentDestroying;
-            // Exit early if we are already being destroyed
-            if (IsDestroying)
-            {
-                return;
-            }
-            IsDestroying = true;
-            // If not completely detached, then destroy the GameObject for
-            // this attachable since the associated NetworkObject is being
-            // destroyed.
-            if (m_AttachState != AttachState.Detached)
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        internal override void InternalOnDestroy()
-        {
-            IsDestroying = true;
-            base.InternalOnDestroy();
         }
 
         /// <inheritdoc/>
@@ -316,6 +278,14 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkPreDespawn()
         {
+            // If the NetworkObject is being destroyed and not completely detached, then destroy the GameObject for
+            // this attachable since the associated default parent is being destroyed.
+            if (IsDestroying && m_AttachState != AttachState.Detached)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             if (NetworkManager.ShutdownInProgress || AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
             {
                 ForceDetach();

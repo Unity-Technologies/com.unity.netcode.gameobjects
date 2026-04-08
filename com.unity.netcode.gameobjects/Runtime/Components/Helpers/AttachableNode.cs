@@ -24,8 +24,6 @@ public class AttachableNode : NetworkBehaviour
     /// </summary>
     public bool DetachOnDespawn = true;
 
-    internal bool IsDestroying { get; private set; }
-
     /// <summary>
     /// A <see cref="List{T}"/> of the currently attached <see cref="AttachableBehaviour"/>s.
     /// </summary>
@@ -34,7 +32,6 @@ public class AttachableNode : NetworkBehaviour
     /// <inheritdoc/>
     protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
     {
-        IsDestroying = false;
         m_AttachedBehaviours.Clear();
         base.OnNetworkPreSpawn(ref networkManager);
     }
@@ -104,7 +101,6 @@ public class AttachableNode : NetworkBehaviour
 
     internal override void InternalOnDestroy()
     {
-        IsDestroying = true;
         // Notify any attached behaviours that this node is being destroyed.
         for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
         {
