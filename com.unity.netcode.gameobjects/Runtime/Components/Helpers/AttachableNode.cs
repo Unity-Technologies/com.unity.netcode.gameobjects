@@ -76,23 +76,15 @@ public class AttachableNode : NetworkBehaviour
                 {
                     continue;
                 }
-                // If we don't have authority but should detach on despawn,
-                // then proceed to detach.
-                if (!attachable.HasAuthority)
+
+                if (attachable.HasAuthority && attachable.IsSpawned)
+                {
+                    // Detach the normal way with authority
+                    attachable.Detach();
+                }
+                else if (!attachable.HasAuthority || !attachable.IsDestroying)
                 {
                     attachable.ForceDetach();
-                }
-                else
-                {
-                    if (attachable.IsSpawned)
-                    {
-                        // Detach the normal way with authority
-                        attachable.Detach();
-                    }
-                    else if (!attachable.IsDestroying)
-                    {
-                        attachable.ForceDetach();
-                    }
                 }
             }
         }
