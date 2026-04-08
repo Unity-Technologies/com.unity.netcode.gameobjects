@@ -2646,7 +2646,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
+                        NetworkLog.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour.Value)}");
                     }
                     continue;
                 }
