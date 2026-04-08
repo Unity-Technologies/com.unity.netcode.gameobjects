@@ -245,7 +245,7 @@ namespace Unity.Netcode.Components
             IsDestroying = false;
             // When attached to something else, the attachable needs to know if the
             // default parent has been destroyed in order to not attempt to re-parent
-            // when detached (especially if it is being detatched because it should be destroyed).
+            // when detached (especially if it is being detached because it should be destroyed).
             NetworkObject.OnDestroying += OnDefaultParentDestroying;
 
             base.OnNetworkPreSpawn(ref networkManager);
@@ -260,9 +260,13 @@ namespace Unity.Netcode.Components
                 return;
             }
             IsDestroying = true;
-            // Just destroy the GameObject for this attachable since
-            // the associated NetworkObject is being destroyed.
-            Destroy(gameObject);
+            // If not completely detached, then destroy the GameObject for
+            // this attachable since the associated NetworkObject is being
+            // destroyed.
+            if (m_AttachState != AttachState.Detached)
+            {
+                Destroy(gameObject);
+            }
         }
 
         internal override void InternalOnDestroy()
@@ -319,7 +323,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// This will apply the final attach or detatch state based on the current value of <see cref="m_AttachedNodeReference"/>.
+        /// This will apply the final attach or detach state based on the current value of <see cref="m_AttachedNodeReference"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateAttachedState()
