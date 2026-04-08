@@ -1688,8 +1688,14 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Invoked when the NetworkObject is destroyed.
+        /// </summary>
+        internal event Action OnDestroying;
+
         private void OnDestroy()
         {
+            OnDestroying?.Invoke();
             var networkManager = NetworkManager;
             // If no NetworkManager is assigned, then just exit early
             if (!networkManager)

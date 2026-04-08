@@ -24,6 +24,8 @@ public class AttachableNode : NetworkBehaviour
     /// </summary>
     public bool DetachOnDespawn = true;
 
+    internal bool IsDestroying  { get; private set; }
+
     /// <summary>
     /// A <see cref="List{T}"/> of the currently attached <see cref="AttachableBehaviour"/>s.
     /// </summary>
@@ -32,6 +34,7 @@ public class AttachableNode : NetworkBehaviour
     /// <inheritdoc/>
     protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
     {
+        IsDestroying = false;
         m_AttachedBehaviours.Clear();
         base.OnNetworkPreSpawn(ref networkManager);
     }
@@ -84,22 +87,14 @@ public class AttachableNode : NetworkBehaviour
                 }
                 else
                 {
-                    // TODO-FIX: We might track if something has been "destroyed" in order
-                    // to be able to be 100% sure this is specific to being destroyed.
-                    // Otherwise, we keep this in place and make note of it
-                    // in documentation that you cannot detatch from something already despawned.
-                    // Issue: When trying to detatch if the thing attached is no longer 
-                    // spawned. Instantiation order recently changed such that
-                    // the attachable =or= the attach node target could be despawned 
-                    // and in the middle of being destroyed. Resolution for this 
-                    // is to skip over destroyed object (default) and then only sort
-                    // through the things the local NetworkManager instance has authority
-                    // over. Even then, we have to check if the attached object is still
-                    // spawned before attempting to detatch it.
                     if (attachable.IsSpawned)
                     {
                         // Detach the normal way with authority
                         attachable.Detach();
+                    }
+                    else if (!attachable.IsDestroying)
+                    {
+                        attachable.ForceDetach();
                     }
                 }
             }
@@ -109,6 +104,7 @@ public class AttachableNode : NetworkBehaviour
 
     internal override void InternalOnDestroy()
     {
+        IsDestroying = true;
         // Notify any attached behaviours that this node is being destroyed.
         for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
         {

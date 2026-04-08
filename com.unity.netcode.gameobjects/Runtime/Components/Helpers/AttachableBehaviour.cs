@@ -205,6 +205,8 @@ namespace Unity.Netcode.Components
         private Vector3 m_OriginalLocalPosition;
         private Quaternion m_OriginalLocalRotation;
 
+        internal bool IsDestroying { get; private set; }
+
         /// <inheritdoc/>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
@@ -236,6 +238,37 @@ namespace Unity.Netcode.Components
             m_AttachState = AttachState.Detached;
             m_AttachableNode = null;
             OnAwake();
+        }
+
+        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+        {
+            IsDestroying = false;
+            // When attached to something else, the attachable needs to know if the
+            // default parent has been destroyed in order to not attempt to re-parent
+            // when detached (especially if it is being detatched because it should be destroyed).
+            NetworkObject.OnDestroying += OnDefaultParentDestroying;
+
+            base.OnNetworkPreSpawn(ref networkManager);
+        }
+
+        private void OnDefaultParentDestroying()
+        {
+            NetworkObject.OnDestroying -= OnDefaultParentDestroying;
+            // Exit early if we are already being destroyed
+            if (IsDestroying)
+            {
+                return;
+            }
+            IsDestroying = true;
+            // Just destroy the GameObject for this attachable since
+            // the associated NetworkObject is being destroyed.
+            Destroy(gameObject);
+        }
+
+        internal override void InternalOnDestroy()
+        {
+            IsDestroying = true;
+            base.InternalOnDestroy();
         }
 
         /// <inheritdoc/>
@@ -458,16 +491,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void InternalDetach()
         {
-            if (m_AttachableNode)
+            if (!IsDestroying && m_AttachableNode && !m_AttachableNode.IsDestroying)
             {
-                // TODO-FIX: We might track if something has been "destroyed" in order
-                // to be able to be 100% sure in the event a user disables the world item
-                // when detatched. Otherwise, we keep this in place and make note of it
-                // in documentation.
-                // Issue:
-                // Edge-case where the parent could be in the middle of being destroyed.
-                // If not active in the hierarchy, then don't attempt to set the parent.
-                if (m_DefaultParent && m_DefaultParent.activeInHierarchy)
+                if (m_DefaultParent)
                 {
                     // Set the original parent and origianl local position and rotation
                     transform.SetParent(m_DefaultParent.transform, false);
