@@ -1713,7 +1713,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            foreach(var childBehaviour in m_ChildNetworkBehaviours)
+            foreach (var childBehaviour in m_ChildNetworkBehaviours)
             {
                 // Just ignore and continue processing through the entries
                 if (!childBehaviour)
