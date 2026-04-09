@@ -42,6 +42,7 @@ namespace Unity.Netcode
         Unnamed = 22,
         AnticipationCounterSyncPingMessage = 23,
         AnticipationCounterSyncPongMessage = 24,
+        TransformStateUpdateMessage = 25,
     }
 
     internal struct ILPPMessageProvider : INetworkMessageProvider
@@ -91,6 +92,7 @@ namespace Unity.Netcode
                 { typeof(SessionOwnerMessage), NetworkMessageTypes.SessionOwner },
                 { typeof(AnticipationCounterSyncPingMessage), NetworkMessageTypes.AnticipationCounterSyncPingMessage},
                 { typeof(AnticipationCounterSyncPongMessage), NetworkMessageTypes.AnticipationCounterSyncPongMessage},
+                { typeof(TransformStateUpdateMessage), NetworkMessageTypes.TransformStateUpdateMessage},
             };
             return messageTypes;
         }
@@ -156,7 +158,6 @@ namespace Unity.Netcode
                 __network_message_types.Clear();
             }
         }
-
 #endif
     }
 }

@@ -60,6 +60,8 @@ namespace Unity.Netcode
 
     public class TransformStateManager : IDisposable
     {
+        internal bool DebugMode;
+
         internal FastBufferWriter FastBufferWriter = new FastBufferWriter(1024 * 256, Allocator.Persistent);
 
         private TransformAccessArray m_TransformAccessArray;
@@ -139,17 +141,15 @@ namespace Unity.Netcode
                 // Track transform changes
                 m_SpawnedInstances.Add(instance);
             }
-            else
+
+            // Create a lookup table for for everything spawned.
+            if (!m_TransformStates.ContainsKey(instance.NetworkObjectId))
             {
-                // Non-authority just creates a lookup table for receiving updates
-                if (!m_TransformStates.ContainsKey(instance.NetworkObjectId))
-                {
-                    m_TransformStates.Add(instance.NetworkObjectId, new Dictionary<ushort, TransformStateSync>());
-                }
-                if (!m_TransformStates[instance.NetworkObjectId].ContainsKey(instance.NetworkBehaviourId))
-                {
-                    m_TransformStates[instance.NetworkObjectId].Add(instance.NetworkBehaviourId, instance);
-                }
+                m_TransformStates.Add(instance.NetworkObjectId, new Dictionary<ushort, TransformStateSync>());
+            }
+            if (!m_TransformStates[instance.NetworkObjectId].ContainsKey(instance.NetworkBehaviourId))
+            {
+                m_TransformStates[instance.NetworkObjectId].Add(instance.NetworkBehaviourId, instance);
             }
         }
 
@@ -284,28 +284,39 @@ namespace Unity.Netcode
                     FastBufferWriter.Seek(offset);
                     FastBufferWriter.WriteValueSafe(count);
                     FastBufferWriter.Seek(position);
-
+                    var delivery = MessageDelivery.GetDelivery(NetworkMessageTypes.TransformStateUpdateMessage);
                     var transfromStateUpdateMessage = new TransformStateUpdateMessage()
                     {
                         State = FastBufferWriter.ToArray(),
                     };
 
-                    unsafe
+                    if (m_NetworkManager.IsServer)
                     {
-                        ulong* clients = stackalloc ulong[m_NetworkManager.ConnectedClientsIds.Count - 1];
-                        var index = 0;
-                        foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+                        // TODO: Send an observer unique state buffer per client. Observer specific state buffers are not yet implemented so send to everyone.
+                        unsafe
                         {
-                            if (clientId == 0)
+                            ulong* clients = stackalloc ulong[m_NetworkManager.ConnectedClientsIds.Count - 1];
+                            var index = 0;
+                            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
                             {
-                                continue;
+                                if (clientId == 0)
+                                {
+                                    continue;
+                                }
+                                clients[index] = clientId;
+                                index++;
                             }
-                            clients[index] = clientId;
-                            index++;
+                            m_NetworkManager.ConnectionManager.SendMessage(ref transfromStateUpdateMessage, delivery, clients, index);
+                            m_NetworkManager.NetworkMetrics.TrackTransportBytesReceived(transfromStateUpdateMessage.State.Length);
                         }
-                        m_NetworkManager.ConnectionManager.SendMessage(ref transfromStateUpdateMessage, NetworkDelivery.ReliableFragmentedSequenced, clients, index);
+                    }
+                    else
+                    {
+                        // TODO: Send an observer unique state buffer per client. Observer specific state buffers are not yet implemented so send to everyone.
+                        m_NetworkManager.ConnectionManager.SendMessage(ref transfromStateUpdateMessage, delivery, NetworkManager.ServerClientId);
                         m_NetworkManager.NetworkMetrics.TrackTransportBytesReceived(transfromStateUpdateMessage.State.Length);
                     }
+
 #if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(END)======================");
 #endif
@@ -406,15 +417,25 @@ namespace Unity.Netcode
                             }
                             m_TransformStates[transformState.NetworkObjectId][transformState.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
                         }
-                        else
+                        else if (DebugMode)
                         {
-                            NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
+                            // TODO: This can trigger if a message is in flight with updates to objects just recently destroyed.
+                            // This can happen in NGO where a message would typically be deferred and then dropped, but I think
+                            // under this condition it is "ok" to silently ignore updates for things that no longer exist. This
+                            // won't disrupt this deserialization process since the entry was read in the offset lines up for
+                            // the next entry properly.
+                            NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
                                 $"NetworkBehaviourId-{transformState.NetworkBehaviourId}but it does not exist!");
                         }
                     }
-                    else
+                    else if (DebugMode)
                     {
-                        NetworkLog.LogErrorServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
+                        // TODO: This can trigger if a message is in flight with updates to objects just recently destroyed.
+                        // This can happen in NGO where a message would typically be deferred and then dropped, but I think
+                        // under this condition it is "ok" to silently ignore updates for things that no longer exist. This
+                        // won't disrupt this deserialization process since the entry was read in the offset lines up for
+                        // the next entry properly.
+                        NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
                     }
                     lastPosition = reader.Position;
                     transformState.Clear();

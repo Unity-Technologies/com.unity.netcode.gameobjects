@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// TODO:
+    /// - Generate 1 state buffer per client/observer when getting deltas.
+    /// - Could be a framework for delta compression.
+    ///   - The TransformStateUpdateMessage would need to provide an intended targeted client for DA.
+    ///       - This would tell both DAHost and the Rust server how to re-direct the message.
+    /// </summary>
     internal struct TransformStateUpdateMessage : INetworkMessage
     {
         private const string k_Name = "TransformStateUpdateMessage";
@@ -10,15 +17,62 @@ namespace Unity.Netcode
 
         internal byte[] State;
 
+        private FastBufferReader m_CurrentReader;
+
+        private unsafe void CopyPayload(ref FastBufferWriter writer)
+        {
+            writer.WriteBytesSafe(m_CurrentReader.GetUnsafePtrAtCurrentPosition(), m_CurrentReader.Length - m_CurrentReader.Position);
+        }
+
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteBytesSafe(State, State.Length);
+            if (m_CurrentReader.IsInitialized)
+            {
+                CopyPayload(ref writer);
+            }
+            else
+            {
+                writer.WriteBytesSafe(State, State.Length);
+            }
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = context.SystemOwner as NetworkManager;
+
+            var startPosition = reader.Position;
             networkManager.TransformStateManager.UpdateTransformStates(reader);
+
+            /// See the TODO here: <see cref="TransformStateUpdateMessage"/>
+            if (networkManager.DAHost)
+            {
+                var senderId = context.SenderId;
+                // This is only to copy the existing and already serialized struct for forwarding purposes only.
+                // This will not include any changes made to this struct at this particular stage of processing the message.
+                var currentMessage = this;
+                // Create a new reader that replicates this message
+                currentMessage.m_CurrentReader = new FastBufferReader(reader, Collections.Allocator.None);
+                // Rewind the new reader to the beginning of the message's payload
+                currentMessage.m_CurrentReader.Seek(startPosition);
+                // Forward the message to all connected clients that are observers of the associated NetworkObject
+
+                for (int i = 0; i < networkManager.ConnectedClientsIds.Count; i++)
+                {
+                    var clientId = networkManager.ConnectedClientsIds[i];
+                    if (clientId == networkManager.LocalClientId && clientId != senderId)
+                    {
+                        continue;
+                    }
+                    // TODO: Generate a state per client and send states of transforms "observer relative" which could be
+                    // done during the initial job. The results of the job should have 1 state buffer per client/observer that
+                    // is sent only to that client.
+                    // Rust will need to know what client each message is intended for and then just remove the client identifier
+                    // from this message (would be added when this is done)
+                    networkManager.MessageManager.SendMessage(ref currentMessage, MessageDelivery.GetDelivery(NetworkMessageTypes.TransformStateUpdateMessage), clientId);
+                }
+                // Dispose of the reader used for forwarding
+                currentMessage.m_CurrentReader.Dispose();
+            }
             return true;
         }
 
@@ -29,8 +83,6 @@ namespace Unity.Netcode
             networkManager.NetworkMetrics.TrackTransportBytesReceived(context.MessageSize);
         }
     }
-
-
 
     /// <summary>
     /// NetworkTransform State Update Message

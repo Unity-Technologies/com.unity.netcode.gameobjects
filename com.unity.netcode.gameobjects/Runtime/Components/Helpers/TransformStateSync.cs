@@ -41,6 +41,22 @@ namespace Unity.Netcode
         private bool m_IsMotionAuthority;
         public bool IsMotionAuthority => m_IsMotionAuthority;
 
+        /// <summary>
+        /// TODO: Add editor inspector view way of configuring whether the kinematic state should
+        /// be set or not and for which Rigidbody(ies).
+        /// <see cref="Components.ComponentController"/>
+        /// We could use a <see cref="Components.NetworkRigidbodyBase"/> derived component, but that
+        /// requires removing the required component and making adjustments.
+        /// For now, just mock the same kind of behaviour.
+        /// </summary>
+        private void UpdateKinematicState()
+        {
+            if (NetworkObject.NetworkRigidbodies.Count > 0)
+            {
+                NetworkObject.NetworkRigidbodies[0].SetIsKinematic(!m_IsMotionAuthority);
+            }
+        }
+
         private void UpdateMotionAuthority(bool isDespawning = false)
         {
             // Clean up for despawn
@@ -49,6 +65,7 @@ namespace Unity.Netcode
                 NetworkManager.TransformStateManager.TrackTransformStateChanges(this, false);
                 NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
                 CurrentState = TransformStateSyncStates.NotSpawned;
+                m_IsMotionAuthority = false;
                 // Exit early before updating motion authority status (doesn't matter at this point)
                 return;
             }
@@ -87,6 +104,8 @@ namespace Unity.Netcode
                 CurrentState = TransformStateSyncStates.ReceivingDeltas;
                 NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
             }
+
+            UpdateKinematicState();
         }
 
         protected override void OnOwnershipChanged(ulong previous, ulong current)
@@ -128,6 +147,7 @@ namespace Unity.Netcode
             m_RotationInterpolator = null;
             m_PositionInterpolator = null;
             m_ScaleInterpolator = null;
+            CurrentState = TransformStateSyncStates.NotSpawned;
             NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
             base.OnNetworkPreDespawn();
         }
@@ -226,7 +246,7 @@ namespace Unity.Netcode
             // the next state updates.
             var maxDeltaTime = tickLatency * minDeltaTime;
 
-            //
+
             m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
@@ -234,7 +254,7 @@ namespace Unity.Netcode
             var scale = m_ScaleInterpolator.GetInterpolatedValue();
             var position = m_PositionInterpolator.GetInterpolatedValue();
             var rotation = m_RotationInterpolator.GetInterpolatedValue();
-            
+
             transform.SetLocalPositionAndRotation(position, rotation);
             transform.localScale = scale;
         }

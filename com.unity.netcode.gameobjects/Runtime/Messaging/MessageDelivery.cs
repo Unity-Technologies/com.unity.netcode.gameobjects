@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 internal static class MessageDelivery
@@ -69,6 +71,7 @@ internal static class MessageDelivery
         MessageDeliveryType<ServerLogMessage>.Initialize();
         MessageDeliveryType<SessionOwnerMessage>.Initialize();
         MessageDeliveryType<TimeSyncMessage>.Initialize();
+        MessageDeliveryType<TransformStateUpdateMessage>.Initialize();
     }
 
 #if UNITY_EDITOR
