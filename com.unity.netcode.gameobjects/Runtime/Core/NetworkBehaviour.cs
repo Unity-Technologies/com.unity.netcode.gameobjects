@@ -699,6 +699,11 @@ namespace Unity.Netcode
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
+        /// Internal implementation of spawn functionality. Called before OnNetworkSpawn to handle internal spawn operations.
+        /// </summary>
+        protected internal virtual void OnInternalOnNetworkSpawn() { }
+
+        /// <summary>
         /// Gets called after the <see cref="NetworkObject"/> is spawned. All NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked.
         /// </summary>
         /// <remarks>
@@ -797,6 +802,8 @@ namespace Unity.Netcode
             InitializeVariables();
             // Apply the spawned state/properties to this instance
             UpdateNetworkProperties();
+            // Invoked the internal spawn method
+            OnInternalOnNetworkSpawn();
         }
 
         /// <summary>
