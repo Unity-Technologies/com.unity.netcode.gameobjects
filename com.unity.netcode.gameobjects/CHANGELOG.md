@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Remove exceptions and replaced Debug usage by NetcodeLog on `NetworkSpawnManager`. (#3933)
 - Improve performance of `NetworkBehaviour`. (#3915)
 - Improve performance of `NetworkTransform`. (#3907)
 - Improve performance of `NetworkRigidbodyBase`. (#3906)
@@ -26,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Early return when `ChangeOwnership` is called while not spawned. (#3933)
 - Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security
