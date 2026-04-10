@@ -284,7 +284,7 @@ namespace TestProject.RuntimeTests
 
             if (instantiateAndSpawnType != InstantiateAndSpawnMethods.Manual)
             {
-                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
+                LogAssert.Expect(LogType.Error, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]}");
                 InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, true);
             }
         }
@@ -314,28 +314,29 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidateAllClientsSpawnedObjects);
             AssertOnTimeout($"[First Stage] Validating spawned objects faild with the following error: {m_ErrorLog}");
 
-            LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]);
+            LogAssert.Expect(LogType.Error, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]}");
             InstantiateAndSpawn(m_ServerSpawnedObjects[0], instantiateAndSpawnType);
 
             // The Network Prefab is null error can only happen when invoking from NetworkSpawnManager
             if (instantiateAndSpawnType == InstantiateAndSpawnMethods.SpawnManager)
             {
-                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkPrefabNull]);
+                LogAssert.Expect(LogType.Error, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkPrefabNull]}");
                 InstantiateAndSpawn(null, instantiateAndSpawnType);
             }
             else
             {
                 // The NetworkManager is null error can only happen when invoking from Network Prefab
-                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
+                LogAssert.Expect(LogType.Error, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]}");
                 InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, false, true);
             }
 
             m_ServerNetworkManager.Shutdown();
-            LogAssert.Expect(LogType.Warning, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
+            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]}");
             InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
             // The not listening error can only happen when trying to instantiate and spawn on a Network Prefab
             if (instantiateAndSpawnType == InstantiateAndSpawnMethods.NetworkObject)
             {
+                //CHECK this is not being hit by tests
                 LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
                 yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.IsListening);
                 InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
