@@ -17,17 +17,13 @@ namespace Unity.Netcode
         public TransformGridState GridStateCurrent;
         public TransformGridState GridStateDelta;
 
-        public ulong NetworkObjectId;
-        public ushort NetworkBehaviourId;
         public ulong EntityIdentifier;
 
         public void UpdateIds(TransformStateSync transformStateSync)
         {
+            // We may not need the EntityIdentifier
             EntityIdentifier = EntityId.ToULong(transformStateSync.GetEntityId());
-            NetworkObjectId = transformStateSync.NetworkObjectId;
-            NetworkBehaviourId = transformStateSync.NetworkBehaviourId;
-            GridStateDelta.NetworkObjectId = GridStatePrevious.NetworkObjectId = GridStateCurrent.NetworkObjectId = NetworkObjectId;
-            GridStateDelta.NetworkBehaviourId = GridStatePrevious.NetworkBehaviourId = GridStateCurrent.NetworkBehaviourId = NetworkBehaviourId;
+            GridStateDelta.TransformIdentifier = GridStatePrevious.TransformIdentifier = GridStateCurrent.TransformIdentifier = transformStateSync.TransformIdentifier;
         }
 
 
@@ -46,6 +42,11 @@ namespace Unity.Netcode
                 GridStateCurrent.Position.Y = (uint)(transformAccess.position.y * precision);
                 GridStateCurrent.Position.Z = (uint)(transformAccess.position.z * precision);
 
+                var forward = transformAccess.rotation.normalized * Vector3.forward;
+                GridStateCurrent.Forward.X = (uint)(forward.x * precision);
+                GridStateCurrent.Forward.Y = (uint)(forward.y * precision);
+                GridStateCurrent.Forward.Z = (uint)(forward.z * precision);
+                GridStateCurrent.Forward.Forward = forward;
 
                 GridStateCurrent.Rotation.X = (uint)(transformAccess.rotation.x * precision);
                 GridStateCurrent.Rotation.Y = (uint)(transformAccess.rotation.y * precision);
@@ -63,6 +64,10 @@ namespace Unity.Netcode
                 GridStateDelta.Position.X = GridStateCurrent.Position.X - GridStatePrevious.Position.X;
                 GridStateDelta.Position.Y = GridStateCurrent.Position.Y - GridStatePrevious.Position.Y;
                 GridStateDelta.Position.Z = GridStateCurrent.Position.Z - GridStatePrevious.Position.Z;
+
+                GridStateDelta.Forward.X = GridStateCurrent.Forward.X - GridStatePrevious.Forward.X;
+                GridStateDelta.Forward.Y = GridStateCurrent.Forward.Y - GridStatePrevious.Forward.Y;
+                GridStateDelta.Forward.Z = GridStateCurrent.Forward.Z - GridStatePrevious.Forward.Z;
 
                 GridStateDelta.Rotation.X = GridStateCurrent.Rotation.X - GridStatePrevious.Rotation.X;
                 GridStateDelta.Rotation.Y = GridStateCurrent.Rotation.Y - GridStatePrevious.Rotation.Y;
@@ -90,6 +95,15 @@ namespace Unity.Netcode
                 }
 
                 GridStateDelta.DirtyRotation = false;
+
+                
+                //if (GridStateDelta.Forward.HasDelta())
+                //{
+                //    GridStateDelta.DirtyRotation = true;
+                //    GridStateDelta.Forward.ApplyState(GridStateCurrent.Forward);
+                //}
+
+
                 GridStateDelta.Rotation.IsDirty = false;
                 if (GridStateDelta.Rotation.HasDelta())
                 {
@@ -330,6 +344,90 @@ namespace Unity.Netcode
     }
 
     [BurstCompile]
+    internal unsafe struct ForwardVector : ITransformStateComponent<ForwardVector>
+    {
+        internal const int Length = 3;
+        public uint X;
+        public uint Y;
+        public uint Z;
+
+        public Vector3 Forward;
+
+
+        public Quaternion Rotation;
+
+
+        public float InvPrecision;
+        
+
+        public void ApplyState(ForwardVector state)
+        {
+            X = state.X;
+            Y = state.Y;
+            Z = state.Z;
+            Forward = state.Forward;
+        }
+
+        public bool HasDelta()
+        {
+            return !(X == 0 && Y == 0 && Z == 0);
+        }
+
+        public void Clear()
+        {
+            X = Y = Z = 0;
+            Forward = Vector3.zero;
+        }
+
+        public unsafe void Compress()
+        {
+
+        }
+
+
+        public unsafe void Decompress()
+        {
+        }
+
+        public void Initialize()
+        {
+
+        }
+
+        public void Dispose()
+        {
+        }
+        public void WriteState(FastBufferWriter writer)
+        {
+            var scaleFactor = 127f;
+
+            var forwardAsScaleFactor = stackalloc byte[3] {0x00, 0x00, 0x00 };
+            
+            for (int i = 0; i < 3; i++)
+            {
+                var negativeMask = (byte)(Forward[i] < 0.0f ? 0x80 : 0x00);
+                forwardAsScaleFactor[i] = (byte)(negativeMask | (0x7F & (byte)(Forward[i] * scaleFactor)));
+            }
+            Debug.Log($"[ForwardVector][WRITE][X: {Forward[0]} | {forwardAsScaleFactor[0]}][Y: {Forward[1]} | {forwardAsScaleFactor[1]}][Z: {Forward[2]} | {forwardAsScaleFactor[2]}]");
+            writer.WriteBytesSafe(forwardAsScaleFactor, 3);
+
+        }
+        public void ReadState(FastBufferReader reader)
+        {
+            var scaleFactor = 1.0f/127.0f;
+            var forwardAsScaleFactor = stackalloc byte[3] { 0x00, 0x00, 0x00 };
+            reader.ReadBytesSafe(forwardAsScaleFactor, 3);
+            for (int i = 0; i < 3; i++)
+            {
+                var negative = ((0x80 & forwardAsScaleFactor[i]) == 0x80) ? -1.0f : 1.0f;
+                Forward[i] = (forwardAsScaleFactor[i] & 0x7F) * scaleFactor * negative;
+            }
+            Debug.Log($"[ForwardVector][WRITE][X: {Forward[0]} | {forwardAsScaleFactor[0]}][Y: {Forward[1]} | {forwardAsScaleFactor[1]}][Z: {Forward[2]} | {forwardAsScaleFactor[2]}]");
+        }
+    }
+
+
+    [BurstCompile]
     internal unsafe struct Vector3Half : ITransformStateComponent<Vector3Half>
     {
         internal const int Length = 3;
@@ -516,10 +614,22 @@ namespace Unity.Netcode
             UnsafeUtility.Free(Compressed, Allocator.Persistent);
         }
 
+
+        public static float ClampDecimalPlaces(float value, int decimalPlaces)
+        {
+            if (decimalPlaces < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(decimalPlaces), "Must be non-negative.");
+            }
+            float factor = (float)math.pow(10, decimalPlaces);
+            return (float)(math.trunc(value * factor) / factor);
+        }
+
         public void WriteState(FastBufferWriter writer)
         {
             AxisWritten = 0;
             var position = writer.Position;
+            var debugPosition = position;
             writer.WriteByteSafe(AxisWritten);
             var uX = ((uint)Arithmetic.ZigZagEncode(X)) << 3;
             var uY = ((uint)Arithmetic.ZigZagEncode(Y)) << 3;
@@ -527,25 +637,41 @@ namespace Unity.Netcode
             var xBytes = (uint)BitCounter.GetUsedByteCount(uX);
             var yBytes = (uint)BitCounter.GetUsedByteCount(uY);
             var zBytes = (uint)BitCounter.GetUsedByteCount(uZ);
-            if (xBytes > 0)
+            var debugInfo = "[Vector3Half]";
+            //if (xBytes > 0)
+            if (X > 0)
             {
                 AxisWritten |= 0x01;
-                BytePacker.WriteValuePacked(writer, Axis.x.value);
+                BytePacker.WriteValuePacked(writer, Axis.x);
+                debugInfo += $"[X: {writer.Position - debugPosition} | {X}]";
+                debugPosition = writer.Position;
             }
-            if (yBytes > 0)
+            //if (yBytes > 0)
+            if (Y > 0)
             {
                 AxisWritten |= 0x02;
-                BytePacker.WriteValuePacked(writer, Axis.y.value);
+                BytePacker.WriteValuePacked(writer, Axis.y);
+                //BytePacker.WriteValuePacked(writer, Axis.y.value);
+                debugInfo += $"[Y: {writer.Position - debugPosition} | {Y}]";
+                debugPosition = writer.Position;
             }
-            if (zBytes > 0)
+            //if (zBytes > 0)
+            if (Z > 0)
             {
                 AxisWritten |= 0x04;
-                BytePacker.WriteValuePacked(writer, Axis.z.value);
+                BytePacker.WriteValuePacked(writer, Axis.z);
+                //BytePacker.WriteValuePacked(writer, Axis.z.value);
+                debugInfo += $"[Z: {writer.Position - debugPosition} | {Z}]";
+                debugPosition = writer.Position;
             }
             var tailPosition = writer.Position;
             writer.Seek(position);
             writer.WriteByteSafe(AxisWritten);
             writer.Seek(tailPosition);
+            if ((xBytes + yBytes + zBytes) > 0)
+            {
+                Debug.Log(debugInfo);
+            }
         }
         public void ReadState(FastBufferReader reader)
         {
@@ -639,8 +765,6 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out Compressed);
         }
     }
-
-
 
     [BurstCompile]
     internal unsafe struct Vector4State : ITransformStateComponent<Vector4State>
@@ -898,26 +1022,31 @@ namespace Unity.Netcode
 
     internal struct TransformGridState : ITransformState<TransformGridState>
     {
-        public ulong NetworkObjectId;
-        public ushort NetworkBehaviourId;
         public float Precision;
         public float InvPrecision;
         public bool DirtyScale;
         public bool DirtyPosition;
         public bool DirtyRotation;
+
+        public int Header_Size;
+        public int Payload_Size;
+        public byte DirtyFlags { get; private set; }
+
         public Vector3Half Scale;
         public Vector3Half Position;
+        public ForwardVector Forward;
         public QuaternionState Rotation;
 
         public Vector3 ScaleFloat;
         public Vector3 PositionFloat;
         public int Index;
+        public ushort TransformIdentifier;
 
         public void ApplyState(TransformGridState state)
         {
-            if (NetworkObjectId != state.NetworkObjectId)
+            if (TransformIdentifier != state.TransformIdentifier)
             {
-                Debug.Log($"MISMATCH CONFLICT IN STATE PROCESSING! Applying NID: {state.NetworkObjectId} to previous state for NID: {NetworkObjectId}!");
+                Debug.Log($"MISMATCH CONFLICT IN STATE PROCESSING! Applying TID: {state.TransformIdentifier} to previous state for TID: {TransformIdentifier}!");
             }
             Index = state.Index;
             Precision = state.Precision;
@@ -929,12 +1058,14 @@ namespace Unity.Netcode
             Scale.ApplyState(state.Scale);
             Position.ApplyState(state.Position);
             Rotation.ApplyState(state.Rotation);
+            Forward.ApplyState(state.Forward);
         }
 
         public bool HasDelta()
         {
             //return Scale.HasDelta() || Position.HasDelta() || Rotation.HasDelta();
-            return Position.HasDelta() || Rotation.HasDelta();
+            //return Position.HasDelta() || Rotation.HasDelta();
+            return Position.HasDelta() || Forward.HasDelta();
         }
 
         public void Clear()
@@ -1007,16 +1138,17 @@ namespace Unity.Netcode
             }
         }
 
+        public unsafe (byte, int, int) DebugWriteState(FastBufferWriter writer)
+        {
+            WriteState(writer);
+            return (DirtyFlags, Header_Size, Payload_Size);
+        }
 
-        public int Header_Size;
-        public int Payload_Size;
-
-        public unsafe void WriteState(FastBufferWriter writer)
+        public void WriteState(FastBufferWriter writer)
         {
             var dirtyFlags = (byte)0;
             var startPosition = writer.Position;
-            BytePacker.WriteValuePacked(writer, NetworkObjectId);
-            BytePacker.WriteValuePacked(writer, NetworkBehaviourId);
+            BytePacker.WriteValueBitPacked(writer, TransformIdentifier);
             var dirtyPosition = writer.Position;
             writer.WriteByteSafe(dirtyFlags);
             Header_Size = writer.Position - startPosition;
@@ -1034,10 +1166,16 @@ namespace Unity.Netcode
                 Position.WriteState(writer);
             }
 
-            if (Rotation.HasDelta())
+            //if (Rotation.HasDelta())
+            //{
+            //    dirtyFlags |= 0x04;
+            //    Rotation.WriteState(writer);
+            //}
+
+            if (Forward.HasDelta())
             {
                 dirtyFlags |= 0x04;
-                Rotation.WriteState(writer);
+                Forward.WriteState(writer);
             }
 
             var tail = writer.Position;
@@ -1046,15 +1184,15 @@ namespace Unity.Netcode
             writer.Seek(tail);
             Payload_Size = writer.Position - startPosition;
             DirtyFlags = dirtyFlags;
+            
         }
 
-        public byte DirtyFlags { get; private set; }
         public unsafe void ReadState(FastBufferReader reader)
         {
             var dirtyFlags = (byte)0;
             var startPosition = reader.Position;
-            ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
-            ByteUnpacker.ReadValuePacked(reader, out NetworkBehaviourId);
+            ByteUnpacker.ReadValuePacked(reader, out TransformIdentifier);
+
             reader.ReadValueSafe(out dirtyFlags);
             Header_Size = reader.Position - startPosition;
             startPosition = reader.Position;
@@ -1072,11 +1210,17 @@ namespace Unity.Netcode
                 PositionFloat = math.float3(Position.Axis);
             }
 
+            //if ((dirtyFlags & 0x04) == 0x04)
+            //{
+            //    DirtyRotation = true;
+            //    Rotation.ReadState(reader);
+            //    Rotation.Decompress();
+            //}
+
             if ((dirtyFlags & 0x04) == 0x04)
             {
                 DirtyRotation = true;
-                Rotation.ReadState(reader);
-                Rotation.Decompress();
+                Forward.ReadState(reader);
             }
 
             Payload_Size = reader.Position - startPosition;
@@ -1094,8 +1238,6 @@ namespace Unity.Netcode
     internal interface ITransformState<T> : IDisposable
     {
         public void ApplyState(T state);
-
-        public void Clear();
 
         public bool HasDelta();
 

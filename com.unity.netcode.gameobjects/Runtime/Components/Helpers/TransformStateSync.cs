@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using static Unity.Netcode.Components.NetworkTransform;
 
@@ -5,6 +6,120 @@ namespace Unity.Netcode
 {
     public class TransformStateSync : NetworkBehaviour, INetworkUpdateSystem
     {
+        internal struct IdentifierObjectMap
+        {
+            public ulong NetworkObjectId;
+            public ushort NetworkBehaviourId;
+        }
+
+        /// <summary>
+        /// Handles providing a unique identifier for transform synchronization,
+        /// while also providing the ability to recylce identifiers to keep the
+        /// maximum identifier value no more than a bit higher than the maximum
+        /// number of things one might spawn in a session.
+        /// </summary>
+        private class TransformdentifierHandler
+        {
+            private struct ReleaseId
+            {
+                public ushort Identifier;
+                public float AvailabilityDelay;
+            }
+
+            private HashSet<ReleaseId> m_ReleasedIds = new HashSet<ReleaseId>();
+            private ushort m_HighestIdAssigned = 0;
+            // [Client Identifier][Transform Identifier][NetworkObjectId][NetworkBehaviourId]
+            private Dictionary<ulong, Dictionary<ushort, IdentifierObjectMap>> m_MotionAuthorityObjectMap = new Dictionary<ulong, Dictionary<ushort, IdentifierObjectMap>>();
+
+            internal IdentifierObjectMap GetIdentifierObjectMap(ulong clientId, ushort identifier)
+            {
+                if (m_MotionAuthorityObjectMap.ContainsKey(clientId))
+                {
+                    if (m_MotionAuthorityObjectMap[clientId].ContainsKey(identifier))
+                    {
+                        return m_MotionAuthorityObjectMap[clientId][identifier];
+                    }
+                }
+                return default;
+            }
+
+            public void AddIdentifier(ulong clientId, ushort identifier, ulong networkObjectId, ushort networkBehaviourId)
+            {
+                if (!m_MotionAuthorityObjectMap.ContainsKey(clientId))
+                {
+                    m_MotionAuthorityObjectMap.Add(clientId, new Dictionary<ushort, IdentifierObjectMap>());
+                }
+
+                if (!m_MotionAuthorityObjectMap[clientId].ContainsKey(identifier))
+                {
+                    m_MotionAuthorityObjectMap[clientId].Add(identifier, new IdentifierObjectMap()
+                    {
+                       NetworkObjectId = networkObjectId,
+                       NetworkBehaviourId = networkBehaviourId
+                    });
+                }
+            }
+
+            public void RemoveIdentifier(ulong clientId, ushort identifier)
+            {
+                if (m_MotionAuthorityObjectMap.ContainsKey(clientId))
+                {
+                    m_MotionAuthorityObjectMap[clientId].Remove(identifier);
+                }
+
+                if (m_MotionAuthorityObjectMap[clientId].Count == 0)
+                {
+                    m_MotionAuthorityObjectMap.Remove(clientId);
+                }
+            }
+
+            public ushort GetNextIdentifier()
+            {
+                var nextIdentifier = (ushort)0;
+                ReleaseId releasedId = default;
+                foreach (var entry in m_ReleasedIds)
+                {
+                    if (entry.AvailabilityDelay < Time.realtimeSinceStartup)
+                    {
+                        releasedId = entry;
+                        break;
+                    }
+                }
+
+                if (releasedId.Identifier > 0)
+                {
+                    m_ReleasedIds.Remove(releasedId);
+                    nextIdentifier = releasedId.Identifier;
+                }
+                else
+                {
+                    m_HighestIdAssigned++;
+                    nextIdentifier = m_HighestIdAssigned;
+                }
+                return nextIdentifier;
+            }
+
+            public void ReleaseIdentifier(ushort identifier)
+            {
+                m_ReleasedIds.Add(new ReleaseId()
+                {
+                    Identifier = identifier,
+                    AvailabilityDelay = Time.realtimeSinceStartup + 2.0f
+                });
+            }
+        }
+
+        private static Dictionary<ulong, TransformdentifierHandler> s_TransformIdentifierHandlers = new Dictionary<ulong, TransformdentifierHandler>();
+
+        internal static IdentifierObjectMap GetIdentifierObjectMap(ulong clientId, ushort identifier)
+        {
+            if (s_TransformIdentifierHandlers.ContainsKey(clientId))
+            {
+                return s_TransformIdentifierHandlers[clientId].GetIdentifierObjectMap(clientId, identifier);
+            }
+            return default;
+        }
+
         /// <summary>
         /// Determines if the server or client owner pushes transform states.
         /// </summary>
@@ -30,16 +145,29 @@ namespace Unity.Netcode
             SendingDeltas,
             ReceivingDeltas,
         }
+        
 
         public TransformStateSyncStates CurrentState { get; private set; }
 
+        private ushort m_TransformIdentifier;
+        internal ushort TransformIdentifier => m_TransformIdentifier;
+
+        public bool IsMotionAuthority => m_IsMotionAuthority;
+        private bool m_IsMotionAuthority;
+
+
         // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
         private BufferedLinearInterpolatorQuaternion m_RotationInterpolator;
+        private BufferedLinearInterpolatorVector3 m_ForwardInterpolator;
         private BufferedLinearInterpolatorVector3 m_PositionInterpolator;
         private BufferedLinearInterpolatorVector3 m_ScaleInterpolator;
 
-        private bool m_IsMotionAuthority;
-        public bool IsMotionAuthority => m_IsMotionAuthority;
+
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            serializer.SerializeValue(ref m_TransformIdentifier);
+            base.OnSynchronize(ref serializer);
+        }
 
         /// <summary>
         /// TODO: Add editor inspector view way of configuring whether the kinematic state should
@@ -120,6 +248,7 @@ namespace Unity.Netcode
             m_ScaleInterpolator.ResetTo(transform.parent, transform.localScale, serverTime.Time);
             m_PositionInterpolator.ResetTo(transform.parent, (HasParent ? transform.localPosition : transform.position), serverTime.Time);
             m_RotationInterpolator.ResetTo(transform.parent, (HasParent ? transform.localRotation : transform.rotation), serverTime.Time);
+            m_ForwardInterpolator.ResetTo(transform.parent, transform.forward, serverTime.Time);
         }
 
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
@@ -128,7 +257,25 @@ namespace Unity.Netcode
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
             m_PositionInterpolator = new BufferedLinearInterpolatorVector3();
             m_ScaleInterpolator = new BufferedLinearInterpolatorVector3();
+            m_ForwardInterpolator = new BufferedLinearInterpolatorVector3();
+
             CurrentState = TransformStateSyncStates.Spawning;
+
+            var localClientId = networkManager.LocalClientId;
+
+            // Always create a handler for each client
+            if (!s_TransformIdentifierHandlers.ContainsKey(localClientId))
+            {
+                s_TransformIdentifierHandlers.Add(localClientId, new TransformdentifierHandler());
+            }
+
+            // Only the spawn authority assigns the unique identifier
+            // Client-server is always the server.
+            // DA is any client.
+            if (NetworkObject.IsSpawnAuthority)
+            {
+                m_TransformIdentifier = s_TransformIdentifierHandlers[networkManager.LocalClientId].GetNextIdentifier();
+            }
             base.InternalOnNetworkPreSpawn(ref networkManager);
         }
 
@@ -136,6 +283,17 @@ namespace Unity.Netcode
         {
             // Determines if we are the motion authority
             UpdateMotionAuthority();
+
+            var motionAuthorityClientId = m_IsMotionAuthority ? NetworkManager.LocalClientId : Authority == AuthorityModes.Server ? NetworkManager.ServerClientId : OwnerClientId;
+            // Motion authority
+
+            if (!s_TransformIdentifierHandlers.ContainsKey(motionAuthorityClientId))
+            {
+                s_TransformIdentifierHandlers.Add(motionAuthorityClientId, new TransformdentifierHandler());
+            }
+
+            s_TransformIdentifierHandlers[motionAuthorityClientId].AddIdentifier(motionAuthorityClientId, TransformIdentifier, NetworkObjectId, NetworkBehaviourId);
+
             InitializeInterpolators();
             NetworkManager.TransformStateManager.TrackTransformStateChanges(this, true);
             base.OnInternalOnNetworkSpawn();
@@ -143,10 +301,25 @@ namespace Unity.Netcode
 
         public override void OnNetworkPreDespawn()
         {
+            if (m_IsMotionAuthority)
+            {
+                s_TransformIdentifierHandlers[OwnerClientId].ReleaseIdentifier(TransformIdentifier);
+                m_TransformIdentifier = 0;
+            }
+            else
+            {
+                if (s_TransformIdentifierHandlers.ContainsKey(OwnerClientId))
+                {
+                    s_TransformIdentifierHandlers[OwnerClientId].RemoveIdentifier(OwnerClientId, TransformIdentifier);
+                }
+            }
+
             UpdateMotionAuthority(true);
+            
             m_RotationInterpolator = null;
             m_PositionInterpolator = null;
             m_ScaleInterpolator = null;
+            m_ForwardInterpolator = null;
             CurrentState = TransformStateSyncStates.NotSpawned;
             NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
             base.OnNetworkPreDespawn();
@@ -175,7 +348,8 @@ namespace Unity.Netcode
 
             if (state.DirtyRotation)
             {
-                m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
+                m_ForwardInterpolator.AddMeasurement(transform.parent, state.Forward.Forward, time);
+                //m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
             }
         }
 
@@ -249,13 +423,16 @@ namespace Unity.Netcode
 
             m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
-            m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
+            //m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
+            m_ForwardInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
 
             var scale = m_ScaleInterpolator.GetInterpolatedValue();
             var position = m_PositionInterpolator.GetInterpolatedValue();
-            var rotation = m_RotationInterpolator.GetInterpolatedValue();
+            //var rotation = m_RotationInterpolator.GetInterpolatedValue();
+            var forward = m_ForwardInterpolator.GetInterpolatedValue();
 
-            transform.SetLocalPositionAndRotation(position, rotation);
+            transform.position = position;
+            transform.forward = forward;
             transform.localScale = scale;
         }
     }

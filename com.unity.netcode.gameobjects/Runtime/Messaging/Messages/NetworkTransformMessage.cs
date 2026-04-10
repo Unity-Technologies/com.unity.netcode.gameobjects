@@ -16,6 +16,8 @@ namespace Unity.Netcode
         public int Version => 0;
 
         internal byte[] State;
+        internal int Size;
+        internal ushort Count;
 
         private FastBufferReader m_CurrentReader;
 
@@ -32,7 +34,12 @@ namespace Unity.Netcode
             }
             else
             {
-                writer.WriteBytesSafe(State, State.Length);
+                var position = writer.Position;
+                BytePacker.WriteValuePacked(writer, Count);
+                var countSize = writer.Position - position;
+
+                writer.WriteBytesSafe(State, Size);
+                Debug.Log($"[{k_Name}][Start: {position}][Count-Size: {countSize}][Size: {Size}][Wrote {Size + countSize} bytes!");
             }
         }
 
@@ -41,7 +48,8 @@ namespace Unity.Netcode
             var networkManager = context.SystemOwner as NetworkManager;
 
             var startPosition = reader.Position;
-            networkManager.TransformStateManager.UpdateTransformStates(reader);
+            ByteUnpacker.ReadValuePacked(reader, out Count);
+            networkManager.TransformStateManager.UpdateTransformStates(Count, reader);
 
             /// See the TODO here: <see cref="TransformStateUpdateMessage"/>
             if (networkManager.DAHost)

@@ -89,6 +89,12 @@ namespace Unity.Netcode
                 m_TransformAccessArray = new TransformAccessArray(m_SpawnedInstances.Count, 1);
                 m_NativeStates = new NativeArray<TransformState>(m_SpawnedInstances.Count, Allocator.Persistent);
             }
+            else if (m_TransformAccessArray.length != m_NativeStates.Length)
+            {
+                // TODO: Determine if we should log a warning here.
+                // Edge case when destroying a bunch of things.
+                return;
+            }
             // Assure our transform access array is aligned with our native states array.
             for (int i = 0; i < m_NativeStates.Length; i++)
             {
@@ -232,33 +238,42 @@ namespace Unity.Netcode
                 if (m_CurrentJob.HasDeltas() > 0)
                 {
                     FastBufferWriter.Seek(0);
+                    var startOfBuffer = FastBufferWriter.Position;
                     var count = (ushort)0;
                     var tick = m_NetworkManager.LocalTime.Tick;
-                    FastBufferWriter.WriteValueSafe(m_MessageTicketNumber);
+                    BytePacker.WriteValueBitPacked(FastBufferWriter, m_NetworkManager.LocalClientId);
+                    //BytePacker.WriteValueBitPacked(FastBufferWriter, m_MessageTicketNumber);
+                    BytePacker.WriteValueBitPacked(FastBufferWriter, tick);
 
-                    FastBufferWriter.WriteValueSafe(tick);
                     var offset = FastBufferWriter.Position;
-                    FastBufferWriter.WriteValueSafe(count);
                     var lastPosition = FastBufferWriter.Position;
                     var internalCount = 0;
 #if DEBUG_TRANSFORMSTATE
-                    NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(BEGIN - {m_MessageTicketNumber})======================");
+                    NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(BEGIN - {m_MessageTicketNumber} Header: {FastBufferWriter.Position - startOfBuffer})======================");
 #endif
                     foreach (var entry in m_CurrentJob.Current)
                     {
                         if (entry.GridStateDelta.HasDelta())
                         {
-                            entry.GridStateDelta.WriteState(FastBufferWriter);
+                            var start = FastBufferWriter.Position;
+                            var writeSize = entry.GridStateDelta.DebugWriteState(FastBufferWriter);
+                            var totalSize = FastBufferWriter.Position - start;
+
 #if DEBUG_TRANSFORMSTATE
-                            var header = $"[{nameof(TransformStateManager)}][Send][NetworkObjectId: {entry.NetworkObjectId}][Index: {entry.GridStateDelta.Index}][EntityId: {entry.EntityIdentifier}][PayloadSize: {entry.GridStateDelta.Payload_Size}]";
-                            if((entry.GridStateDelta.DirtyFlags & 0x02) == 0x02)
+                            var header = $"[{nameof(TransformStateManager)}][Send][NetworkObjectId: {entry.GridStateDelta.TransformIdentifier}][Index: {entry.GridStateDelta.Index}][Total Size: {totalSize}][Header: {writeSize.Item2}][PayloadSize: {writeSize.Item3}]";
+                            if ((writeSize.Item1 & 0x01) == 0x01)
                             {
-                                header += $"[{entry.GridStateDelta.Position.ToVector3()}]";
+                                header += $"[S: {entry.GridStateDelta.Scale.ToVector3()}]";
                             }
 
-                            if ((entry.GridStateDelta.DirtyFlags & 0x04) == 0x04)
+                            if ((writeSize.Item1 & 0x02) == 0x02)
                             {
-                                header += $"[{entry.GridStateDelta.Rotation.Rotation}]";
+                                header += $"[P: {entry.GridStateDelta.Position.ToVector3()}]";
+                            }
+
+                            if ((writeSize.Item1 & 0x04) == 0x04)
+                            {
+                                header += $"[R: {entry.GridStateDelta.Rotation.Rotation}]";
                             }
                             NetworkLog.LogInfo(header);
 #endif
@@ -280,14 +295,16 @@ namespace Unity.Netcode
                         return;
                     }
                     m_MessageTicketNumber++;
-                    var position = FastBufferWriter.Position;
-                    FastBufferWriter.Seek(offset);
-                    FastBufferWriter.WriteValueSafe(count);
-                    FastBufferWriter.Seek(position);
+                    //var position = FastBufferWriter.Position;
+                    //FastBufferWriter.Seek(offset);
+                    //FastBufferWriter.WriteValueSafe(count);
+                    //FastBufferWriter.Seek(position);
                     var delivery = MessageDelivery.GetDelivery(NetworkMessageTypes.TransformStateUpdateMessage);
                     var transfromStateUpdateMessage = new TransformStateUpdateMessage()
                     {
                         State = FastBufferWriter.ToArray(),
+                        Size  = FastBufferWriter.Position - startOfBuffer,
+                        Count = count
                     };
 
                     if (m_NetworkManager.IsServer)
@@ -365,9 +382,8 @@ namespace Unity.Netcode
         public int AvHeaderSize;
         public int AvPayLoadSize;
 
-        internal void UpdateTransformStates(FastBufferReader reader)
+        internal void UpdateTransformStates(ushort count, FastBufferReader reader)
         {
-            var count = (ushort)0;
             var tick = 0;
             var transformState = new TransformGridState()
             {
@@ -379,9 +395,11 @@ namespace Unity.Netcode
             {
                 transformState.Initialize();
                 var ticketNumber = 0;
-                reader.ReadValueSafe(out ticketNumber);
-                reader.ReadValueSafe(out tick);
-                reader.ReadValueSafe(out count);
+                var clientSender = (ulong)0;
+                ByteUnpacker.ReadValuePacked(reader, out clientSender);
+                //ByteUnpacker.ReadValuePacked(reader, out ticketNumber);
+                ByteUnpacker.ReadValuePacked(reader, out tick);
+                //reader.ReadValueSafe(out count);
                 var networkTime = new NetworkTime(m_NetworkManager.NetworkConfig.TickRate, tick);
                 var lastPosition = reader.Position;
 #if DEBUG_TRANSFORMSTATE
@@ -390,17 +408,23 @@ namespace Unity.Netcode
                 for (var i = 0; i < count; i++)
                 {
                     transformState.ReadState(reader);
-
 #if DEBUG_TRANSFORMSTATE
-                    var position = (transformState.DirtyFlags & 0x02) == 0x02 ? $"[{transformState.Position.ToVector3()}]" : string.Empty;
-                    var rotation = (transformState.DirtyFlags & 0x04) == 0x04 ? $"[{transformState.Rotation.Rotation}]" : string.Empty;
-                    NetworkLog.LogInfo($"[Read][NetworkObjectId: {transformState.NetworkObjectId}][NetworkBehaviourId: {transformState.NetworkBehaviourId}]" +
-                        $"{position}{rotation}");
+                    var scale = (transformState.DirtyFlags & 0x01) == 0x01 ? $"[ScaleUpdated]" : string.Empty;
+                    var position = (transformState.DirtyFlags & 0x02) == 0x02 ? $"[PositionUpdated]" : string.Empty;
+                    var rotation = (transformState.DirtyFlags & 0x04) == 0x04 ? $"[RotationUpdated]" : string.Empty;
+                    NetworkLog.LogInfo($"[Read][TransformIdentifier: {transformState.TransformIdentifier}]{scale}{position}{rotation}");
 #endif
 
-                    if (m_TransformStates.ContainsKey(transformState.NetworkObjectId))
+                    var identifierObjectMap = TransformStateSync.GetIdentifierObjectMap(clientSender, transformState.TransformIdentifier);
+                    if (identifierObjectMap.NetworkObjectId == 0 && identifierObjectMap.NetworkBehaviourId == 0)
                     {
-                        if (m_TransformStates[transformState.NetworkObjectId].ContainsKey(transformState.NetworkBehaviourId))
+                        NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{ticketNumber}][Receive] Identifier ({transformState.TransformIdentifier}) has no object map! Skipping...");
+                        continue;
+                    }
+
+                    if (m_TransformStates.ContainsKey(identifierObjectMap.NetworkObjectId))
+                    {
+                        if (m_TransformStates[identifierObjectMap.NetworkObjectId].ContainsKey(identifierObjectMap.NetworkBehaviourId))
                         {
                             var readSize = reader.Position - lastPosition;
                             AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
@@ -410,12 +434,14 @@ namespace Unity.Netcode
                             transformState.InvPrecision = 1.0f / m_Precision;
                             transformState.Decompress();
 
-                            var transformStateSync = m_TransformStates[transformState.NetworkObjectId][transformState.NetworkBehaviourId];
-                            if (transformStateSync.NetworkObjectId != transformState.NetworkObjectId)
+                            var transformStateSync = m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId];
+                            if (transformStateSync.TransformIdentifier != transformState.TransformIdentifier)
                             {
-                                Debug.LogError($"!!!! Trying to update NetworkObjectID: {transformState.NetworkObjectId} but local table points to {transformStateSync.NetworkObjectId}!");
+                                Debug.LogError($"!!!! Trying to update {transformStateSync.name} which has a local TID of {transformStateSync.TransformIdentifier} " +
+                                    $"but incoming state update table thinks it is {transformState.TransformIdentifier}! (Ignoring entry)");
+                                continue;
                             }
-                            m_TransformStates[transformState.NetworkObjectId][transformState.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
+                            m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
                         }
                         else if (DebugMode)
                         {
@@ -424,8 +450,8 @@ namespace Unity.Netcode
                             // under this condition it is "ok" to silently ignore updates for things that no longer exist. This
                             // won't disrupt this deserialization process since the entry was read in the offset lines up for
                             // the next entry properly.
-                            NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} : " +
-                                $"NetworkBehaviourId-{transformState.NetworkBehaviourId}but it does not exist!");
+                            NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{identifierObjectMap.NetworkObjectId} : " +
+                                $"NetworkBehaviourId-{identifierObjectMap.NetworkBehaviourId}but it does not exist!");
                         }
                     }
                     else if (DebugMode)
@@ -435,7 +461,7 @@ namespace Unity.Netcode
                         // under this condition it is "ok" to silently ignore updates for things that no longer exist. This
                         // won't disrupt this deserialization process since the entry was read in the offset lines up for
                         // the next entry properly.
-                        NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{transformState.NetworkObjectId} but it does not exist!");
+                        NetworkLog.LogWarningServer($"[{nameof(TransformStateManager)}][{nameof(TransformGridState)}] Read an entry for NetworkObjectId-{identifierObjectMap.NetworkObjectId} but it does not exist!");
                     }
                     lastPosition = reader.Position;
                     transformState.Clear();
