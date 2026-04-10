@@ -1885,7 +1885,7 @@ namespace Unity.Netcode
         {
             if (networkManager == null)
             {
-                if (networkManager.LogLevel <= LogLevel.Error)
+                if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
                 }
@@ -2320,7 +2320,7 @@ namespace Unity.Netcode
                     return;
                 }
                 transform.parent = m_CachedParent;
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                if (networkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 }
@@ -2340,7 +2340,7 @@ namespace Unity.Netcode
                 else
                 {
                     transform.parent = m_CachedParent;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                    if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
                     }
@@ -2355,9 +2355,9 @@ namespace Unity.Netcode
             if (!isParentingAuthority)
             {
                 transform.parent = m_CachedParent;
-                if (networkManager.LogLevel <= LogLevel.Error)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
-                    if (networkManager.DistributedAuthorityMode)
+                    if (NetworkManagerOwner.DistributedAuthorityMode)
                     {
                         NetworkLog.LogError($"[{name}][Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can re-parent it!");
                     }
@@ -2383,7 +2383,7 @@ namespace Unity.Netcode
                     }
                     return;
                 }
-                else if (!parentObject.IsSpawned)
+                if (!parentObject.IsSpawned)
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
@@ -2428,20 +2428,20 @@ namespace Unity.Netcode
             }
 
             // If we're not the server, we should tell the server about this parent change
-            if (!networkManager.IsServer)
+            if (!NetworkManagerOwner.IsServer)
             {
                 // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
-                if (networkManager.DistributedAuthorityMode && Observers.Count <= 1)
+                if (NetworkManagerOwner.DistributedAuthorityMode && Observers.Count <= 1)
                 {
                     return;
                 }
 
-                networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 return;
             }
 
             // Otherwise we are a Server (client-server or DAHost). Send to all observers
-            foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId)
                 {
@@ -2449,7 +2449,7 @@ namespace Unity.Netcode
                 }
                 if (Observers.Contains(clientId))
                 {
-                    networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
+                    NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
