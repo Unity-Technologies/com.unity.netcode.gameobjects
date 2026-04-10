@@ -336,8 +336,7 @@ namespace TestProject.RuntimeTests
             // The not listening error can only happen when trying to instantiate and spawn on a Network Prefab
             if (instantiateAndSpawnType == InstantiateAndSpawnMethods.NetworkObject)
             {
-                //CHECK this is not being hit by tests
-                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
+                LogAssert.Expect(LogType.Error, $"[Netcode] {NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]}");
                 yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.IsListening);
                 InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
             }

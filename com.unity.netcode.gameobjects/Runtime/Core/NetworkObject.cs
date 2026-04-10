@@ -2523,10 +2523,10 @@ namespace Unity.Netcode
                 }
             }
 
-            // If we are removing the parent or our latest parent is not set, then remove the parent
+            // If we are removing the parent or our latest parent is not set, then remove the parent.
             // removeParent is only set when:
             //  - The server-side NetworkObject.OnTransformParentChanged is invoked and the parent is being removed
-            //  - The client-side when handling a ParentSyncMessage
+            //  - The client-side is handling a ParentSyncMessage
             // When clients are synchronizing only the m_LatestParent.HasValue will not have a value if there is no parent
             // or a parent was removed prior to the client connecting (i.e. in-scene placed NetworkObjects)
             if (removeParent || !m_LatestParent.HasValue)
