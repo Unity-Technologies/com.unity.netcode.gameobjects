@@ -297,7 +297,7 @@ namespace Unity.Netcode
                     if (globalId.identifierType != k_SceneObjectType)
                     {
                         // This should never happen, but in the event it does throw and error.
-                        Debug.LogError($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}! **Report this error**");
+                        NetworkLog.LogError($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}! **Report this error**");
                     }
 
                     // If this is a prefab instance, then we want to mark it as having been updated in order for the udpated GlobalObjectIdHash value to be saved.
@@ -1778,7 +1778,10 @@ namespace Unity.Netcode
             {
                 if (NetworkManagerOwner.LocalClient == null || !NetworkManagerOwner.IsConnectedClient || !NetworkManagerOwner.ConnectionManager.LocalClient.IsApproved)
                 {
-                    Debug.LogError($"Cannot spawn {name} until the client is fully connected to the session!");
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"Cannot spawn {name} until the client is fully connected to the session!");
+                    }
                     return;
                 }
                 if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement)
@@ -1856,7 +1859,11 @@ namespace Unity.Netcode
             var networkObject = networkPrefab.GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                Debug.LogError($"The {nameof(NetworkPrefab)} {networkPrefab.name} does not have a {nameof(NetworkObject)} component!");
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"The {nameof(NetworkPrefab)} {networkPrefab.name} does not have a {nameof(NetworkObject)} component!");
+                }
+
                 return null;
             }
             return networkObject.InstantiateAndSpawn(networkManager, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
@@ -1878,13 +1885,19 @@ namespace Unity.Netcode
         {
             if (networkManager == null)
             {
-                Debug.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
+                }
                 return null;
             }
 
             if (!networkManager.IsListening)
             {
-                Debug.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
+                }
                 return null;
             }
 
@@ -1892,20 +1905,29 @@ namespace Unity.Netcode
             // We only need to check for authority when running in client-server mode
             if (!networkManager.IsServer && !networkManager.DistributedAuthorityMode)
             {
-                Debug.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
+                }
                 return null;
             }
 
             if (networkManager.ShutdownInProgress)
             {
-                Debug.LogWarning(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
+                if (networkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
+                }
                 return null;
             }
 
             // Verify it is actually a valid prefab
             if (!networkManager.NetworkConfig.Prefabs.Contains(gameObject))
             {
-                Debug.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]);
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError(NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]);
+                }
                 return null;
             }
 
@@ -2061,7 +2083,11 @@ namespace Unity.Netcode
                 {
                     if (!childBehaviour.gameObject.activeInHierarchy)
                     {
-                        Debug.LogWarning($"[{name}] {childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
+                        if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"[{name}] {childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
+                        }
+
                         continue;
                     }
 
@@ -2080,7 +2106,10 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    Debug.LogWarning($"[{name}] {ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                    if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"[{name}] {ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                    }
                 }
             }
         }
@@ -2597,7 +2626,10 @@ namespace Unity.Netcode
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
                 {
-                    Debug.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
+                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
+                    }
                     continue;
                 }
                 childBehaviour.NetworkSpawn();
@@ -3356,7 +3388,11 @@ namespace Unity.Netcode
                 // Ensure that the buffer is completely reset
                 if (reader.Position != endOfSynchronizationData)
                 {
-                    Debug.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
+                    if (networkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
+                    }
+
                     reader.Seek(endOfSynchronizationData);
                 }
             }
