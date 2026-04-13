@@ -1837,7 +1837,10 @@ namespace Unity.Netcode
             }
             else
             {
-                NetworkLog.LogWarningServer($"[{name}] Ran into unknown conditional check during spawn when determining distributed authority mode or not");
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarningServer($"[{name}] Ran into unknown conditional check during spawn when determining distributed authority mode or not");
+                }
             }
         }
 
@@ -1863,7 +1866,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogError($"The {nameof(NetworkPrefab)} {networkPrefab.name} does not have a {nameof(NetworkObject)} component!");
                 }
-
                 return null;
             }
             return networkObject.InstantiateAndSpawn(networkManager, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
@@ -1983,7 +1985,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Attempted despawn before {nameof(NetworkObject)} was spawned]");
                 }
-
                 return;
             }
 
@@ -2033,10 +2034,8 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Attempted ownership change before {nameof(NetworkObject)} was spawned]");
                 }
-
                 return;
             }
-
             NetworkManagerOwner.SpawnManager.ChangeOwnership(this, newOwnerClientId, HasAuthority);
         }
 
@@ -2052,7 +2051,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Attempted behavior invoke on ownership changed before {nameof(NetworkObject)} was spawned]");
                 }
-
                 return;
             }
 
@@ -2087,10 +2085,8 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogWarning($"[{name}] {childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
                         }
-
                         continue;
                     }
-
                     childBehaviour.InternalOnGainedOwnership();
                 }
             }
@@ -2741,7 +2737,6 @@ namespace Unity.Netcode
                     }
 #endif
                 }
-
                 return m_ChildNetworkBehaviours;
             }
         }
@@ -2908,9 +2903,7 @@ namespace Unity.Netcode
             public bool HasParent;
             public bool IsSceneObject;
             public bool HasTransform;
-
             public bool IsLatestParentSet;
-
             public bool WorldPositionStays;
 
             /// <summary>
@@ -2920,15 +2913,10 @@ namespace Unity.Netcode
             /// to the current active scene when its scene is unloaded. (only for dynamically spawned)
             /// </summary>
             public bool DestroyWithScene;
-
             public bool DontDestroyWithOwner;
-
             public bool HasOwnershipFlags;
-
             public bool SyncObservers;
-
             public bool SpawnWithObservers;
-
             public bool HasInstantiationData;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3020,9 +3008,6 @@ namespace Unity.Netcode
 
             public TransformData Transform;
 
-            //If(Metadata.IsReparented)
-
-            //If(IsLatestParentSet)
             public ulong? LatestParent;
 
             public NetworkObject OwnerObject;
@@ -3342,11 +3327,8 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out instantiationData);
             }
 
-
             // Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(serializedObject, instantiationData);
-
-
             if (networkObject == null)
             {
                 // Log the error that the NetworkObject failed to construct
@@ -3368,7 +3350,6 @@ namespace Unity.Netcode
                 // We have nothing left to do here.
                 return null;
             }
-
             networkObject.NetworkManagerOwner = networkManager;
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
@@ -3392,7 +3373,6 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
                     }
-
                     reader.Seek(endOfSynchronizationData);
                 }
             }
@@ -3661,17 +3641,13 @@ namespace Unity.Netcode
                     {
                         return PrefabGlobalObjectIdHash;
                     }
-                    else
+                    // For legacy manual instantiation and spawning, check the OverrideToNetworkPrefab for a possible match
+                    if (networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
                     {
-                        // For legacy manual instantiation and spawning, check the OverrideToNetworkPrefab for a possible match
-                        if (networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
-                        {
-                            return networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab[GlobalObjectIdHash];
-                        }
+                        return networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab[GlobalObjectIdHash];
                     }
                 }
             }
-
             return GlobalObjectIdHash;
         }
 
