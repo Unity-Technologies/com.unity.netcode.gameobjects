@@ -426,14 +426,6 @@ namespace Unity.Netcode
                     {
                         if (m_TransformStates[identifierObjectMap.NetworkObjectId].ContainsKey(identifierObjectMap.NetworkBehaviourId))
                         {
-                            var readSize = reader.Position - lastPosition;
-                            AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
-                            AvHeaderSize = AvHeaderSize == 0 ? transformState.Header_Size : (int)(0.5f * (AvHeaderSize + transformState.Header_Size));
-                            AvPayLoadSize = AvPayLoadSize == 0 ? transformState.Payload_Size : (int)(0.5f * (AvPayLoadSize + transformState.Payload_Size));
-                            transformState.Precision = m_Precision;
-                            transformState.InvPrecision = 1.0f / m_Precision;
-                            transformState.Decompress();
-
                             var transformStateSync = m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId];
                             if (transformStateSync.TransformIdentifier != transformState.TransformIdentifier)
                             {
@@ -441,6 +433,18 @@ namespace Unity.Netcode
                                     $"but incoming state update table thinks it is {transformState.TransformIdentifier}! (Ignoring entry)");
                                 continue;
                             }
+
+                            var readSize = reader.Position - lastPosition;
+                            AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
+                            AvHeaderSize = AvHeaderSize == 0 ? transformState.Header_Size : (int)(0.5f * (AvHeaderSize + transformState.Header_Size));
+                            AvPayLoadSize = AvPayLoadSize == 0 ? transformState.Payload_Size : (int)(0.5f * (AvPayLoadSize + transformState.Payload_Size));
+                            transformState.Precision = m_Precision;
+                            transformState.InvPrecision = 1.0f / m_Precision;
+                            transformState.CurrentPosition = transformStateSync.transform.position;
+                            transformState.CurrentScale = transformStateSync.transform.localScale;
+                            transformState.Decompress();
+
+
                             m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
                         }
                         else if (DebugMode)

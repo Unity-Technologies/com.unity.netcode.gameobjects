@@ -34,24 +34,24 @@ namespace Unity.Netcode
             {
                 // Get and set the current transform state
                 GridStateCurrent.Index = index;
-                GridStateCurrent.Scale.X = (uint)(transformAccess.localScale.x * precision);
-                GridStateCurrent.Scale.Y = (uint)(transformAccess.localScale.y * precision);
-                GridStateCurrent.Scale.Z = (uint)(transformAccess.localScale.z * precision);
+                GridStateCurrent.Scale.X = (int)(transformAccess.localScale.x * precision);
+                GridStateCurrent.Scale.Y = (int)(transformAccess.localScale.y * precision);
+                GridStateCurrent.Scale.Z = (int)(transformAccess.localScale.z * precision);
 
-                GridStateCurrent.Position.X = (uint)(transformAccess.position.x * precision);
-                GridStateCurrent.Position.Y = (uint)(transformAccess.position.y * precision);
-                GridStateCurrent.Position.Z = (uint)(transformAccess.position.z * precision);
+                GridStateCurrent.Position.X = (int)(transformAccess.position.x * precision);
+                GridStateCurrent.Position.Y = (int)(transformAccess.position.y * precision);
+                GridStateCurrent.Position.Z = (int)(transformAccess.position.z * precision);
 
-                var forward = transformAccess.rotation.normalized * Vector3.forward;
-                GridStateCurrent.Forward.X = (uint)(forward.x * precision);
-                GridStateCurrent.Forward.Y = (uint)(forward.y * precision);
-                GridStateCurrent.Forward.Z = (uint)(forward.z * precision);
-                GridStateCurrent.Forward.Forward = forward;
+                //var forward = transformAccess.rotation.normalized * Vector3.forward;
+                //GridStateCurrent.Forward.X = (int)(forward.x * precision);
+                //GridStateCurrent.Forward.Y = (int)(forward.y * precision);
+                //GridStateCurrent.Forward.Z = (int)(forward.z * precision);
+                //GridStateCurrent.Forward.Forward = forward;
 
-                GridStateCurrent.Rotation.X = (uint)(transformAccess.rotation.x * precision);
-                GridStateCurrent.Rotation.Y = (uint)(transformAccess.rotation.y * precision);
-                GridStateCurrent.Rotation.Z = (uint)(transformAccess.rotation.z * precision);
-                GridStateCurrent.Rotation.W = (uint)(transformAccess.rotation.w * precision);
+                GridStateCurrent.Rotation.X = (int)(transformAccess.rotation.x * precision);
+                GridStateCurrent.Rotation.Y = (int)(transformAccess.rotation.y * precision);
+                GridStateCurrent.Rotation.Z = (int)(transformAccess.rotation.z * precision);
+                GridStateCurrent.Rotation.W = (int)(transformAccess.rotation.w * precision);
                 GridStateCurrent.Rotation.Rotation = transformAccess.rotation;
 
                 // Calculate the delta between the previous and current states.
@@ -431,9 +431,9 @@ namespace Unity.Netcode
     internal unsafe struct Vector3Half : ITransformStateComponent<Vector3Half>
     {
         internal const int Length = 3;
-        public uint X;
-        public uint Y;
-        public uint Z;
+        public int X;
+        public int Y;
+        public int Z;
         public half3 Axis;
 
         public float InvPrecision;
@@ -474,55 +474,55 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Compress()
         {
-            var uX = ((uint)Arithmetic.ZigZagEncode(X)) << 3;
-            var uY = ((uint)Arithmetic.ZigZagEncode(Y)) << 3;
-            var uZ = ((uint)Arithmetic.ZigZagEncode(Z)) << 3;
-            var xBytes = (uint)BitCounter.GetUsedByteCount(uX);
-            var yBytes = (uint)BitCounter.GetUsedByteCount(uY);
-            var zBytes = (uint)BitCounter.GetUsedByteCount(uZ);
+            //var uX = ((uint)Arithmetic.ZigZagEncode(X)) << 3;
+            //var uY = ((uint)Arithmetic.ZigZagEncode(Y)) << 3;
+            //var uZ = ((uint)Arithmetic.ZigZagEncode(Z)) << 3;
+            //var xBytes = (uint)BitCounter.GetUsedByteCount(uX);
+            //var yBytes = (uint)BitCounter.GetUsedByteCount(uY);
+            //var zBytes = (uint)BitCounter.GetUsedByteCount(uZ);
 
-            CompressedSize = (int)(xBytes + yBytes + zBytes);
+            //CompressedSize = (int)(xBytes + yBytes + zBytes);
 
-            if (CompressedSize == 0)
-            {
-                // Warning?
-                return;
-            }
+            //if (CompressedSize == 0)
+            //{
+            //    // Warning?
+            //    return;
+            //}
 
-            uX |= xBytes;
-            uY |= yBytes;
-            uZ |= zBytes;
+            //uX |= xBytes;
+            //uY |= yBytes;
+            //uZ |= zBytes;
 
-            UnsafeUtility.MemSet(&Compressed[0], 0, sizeof(int) * 4);
+            //UnsafeUtility.MemSet(&Compressed[0], 0, sizeof(int) * 4);
 
 
-            // Get pointers to the values
-            var xPtr = (byte*)&uX;
-            var yPtr = (byte*)&uY;
-            var zPtr = (byte*)&uZ;
+            //// Get pointers to the values
+            //var xPtr = (byte*)&uX;
+            //var yPtr = (byte*)&uY;
+            //var zPtr = (byte*)&uZ;
 
-            var offset = 1;
-            // Write the compressed values
-            if (xBytes > 0)
-            {
-                AxisWritten |= 0x01;
-                UnsafeUtility.MemCpy(&Compressed[offset], xPtr, xBytes);
-                offset += (int)xBytes;
-            }
-            if (yBytes > 0)
-            {
-                AxisWritten |= (0x01 << 1);
-                UnsafeUtility.MemCpy(&Compressed[offset], yPtr, yBytes);
-                offset += (int)yBytes;
-            }
-            if (zBytes > 0)
-            {
-                AxisWritten |= (0x01 << 2);
-                UnsafeUtility.MemCpy(&Compressed[offset], zPtr, zBytes);
-                offset += (int)zBytes;
-            }
+            //var offset = 1;
+            //// Write the compressed values
+            //if (xBytes > 0)
+            //{
+            //    AxisWritten |= 0x01;
+            //    UnsafeUtility.MemCpy(&Compressed[offset], xPtr, xBytes);
+            //    offset += (int)xBytes;
+            //}
+            //if (yBytes > 0)
+            //{
+            //    AxisWritten |= (0x01 << 1);
+            //    UnsafeUtility.MemCpy(&Compressed[offset], yPtr, yBytes);
+            //    offset += (int)yBytes;
+            //}
+            //if (zBytes > 0)
+            //{
+            //    AxisWritten |= (0x01 << 2);
+            //    UnsafeUtility.MemCpy(&Compressed[offset], zPtr, zBytes);
+            //    offset += (int)zBytes;
+            //}
 
-            Compressed[0] = AxisWritten;
+            //Compressed[0] = AxisWritten;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -562,46 +562,46 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Decompress()
         {
-            AxisWritten = Compressed[0];
-            // Byte count is stored in lowest bit positions
-            var uX = X;
-            var uY = Y;
-            var uZ = Z;
+            //AxisWritten = Compressed[0];
+            //// Byte count is stored in lowest bit positions
+            //var uX = X;
+            //var uY = Y;
+            //var uZ = Z;
 
-            // Get pointers to the values
-            var xPtr = (byte*)&uX;
-            var yPtr = (byte*)&uY;
-            var zPtr = (byte*)&uZ;
-            var offset = 1;
-            if ((AxisWritten & 0x01) > 0)
-            {
-                int numBytes = (Compressed[offset] & 0b111);
-                ReadBytes(xPtr, &Compressed[offset], numBytes);
-                uX = uX >> 3;
-                X = (ushort)Arithmetic.ZigZagDecode(uX);
-                Axis.x = math.half(X * InvPrecision);
-                offset += numBytes;
-            }
+            //// Get pointers to the values
+            //var xPtr = (byte*)&uX;
+            //var yPtr = (byte*)&uY;
+            //var zPtr = (byte*)&uZ;
+            //var offset = 1;
+            //if ((AxisWritten & 0x01) > 0)
+            //{
+            //    int numBytes = (Compressed[offset] & 0b111);
+            //    ReadBytes(xPtr, &Compressed[offset], numBytes);
+            //    uX = uX >> 3;
+            //    X = (ushort)Arithmetic.ZigZagDecode(uX);
+            //    Axis.x = math.half(X * InvPrecision);
+            //    offset += numBytes;
+            //}
 
-            if ((AxisWritten & 0x02) > 0)
-            {
-                int numBytes = (Compressed[offset] & 0b111);
-                ReadBytes(yPtr, &Compressed[offset], numBytes);
-                uY = uY >> 3;
-                Y = (ushort)Arithmetic.ZigZagDecode(uY);
-                Axis.y = math.half(Y * InvPrecision);
-                offset += numBytes;
-            }
+            //if ((AxisWritten & 0x02) > 0)
+            //{
+            //    int numBytes = (Compressed[offset] & 0b111);
+            //    ReadBytes(yPtr, &Compressed[offset], numBytes);
+            //    uY = uY >> 3;
+            //    Y = (ushort)Arithmetic.ZigZagDecode(uY);
+            //    Axis.y = math.half(Y * InvPrecision);
+            //    offset += numBytes;
+            //}
 
-            if ((AxisWritten & 0x04) > 0)
-            {
-                int numBytes = (Compressed[offset] & 0b111);
-                ReadBytes(zPtr, &Compressed[offset], numBytes);
-                uZ = uZ >> 3;
-                Z = (ushort)Arithmetic.ZigZagDecode(uZ);
-                Axis.z = math.half(Z * InvPrecision);
-                offset += numBytes;
-            }
+            //if ((AxisWritten & 0x04) > 0)
+            //{
+            //    int numBytes = (Compressed[offset] & 0b111);
+            //    ReadBytes(zPtr, &Compressed[offset], numBytes);
+            //    uZ = uZ >> 3;
+            //    Z = (ushort)Arithmetic.ZigZagDecode(uZ);
+            //    Axis.z = math.half(Z * InvPrecision);
+            //    offset += numBytes;
+            //}
         }
 
         public void Initialize()
@@ -631,47 +631,45 @@ namespace Unity.Netcode
             var position = writer.Position;
             var debugPosition = position;
             writer.WriteByteSafe(AxisWritten);
-            var uX = ((uint)Arithmetic.ZigZagEncode(X)) << 3;
-            var uY = ((uint)Arithmetic.ZigZagEncode(Y)) << 3;
-            var uZ = ((uint)Arithmetic.ZigZagEncode(Z)) << 3;
-            var xBytes = (uint)BitCounter.GetUsedByteCount(uX);
-            var yBytes = (uint)BitCounter.GetUsedByteCount(uY);
-            var zBytes = (uint)BitCounter.GetUsedByteCount(uZ);
-            var debugInfo = "[Vector3Half]";
+            //var uX = ((uint)Arithmetic.ZigZagEncode(X)) << 3;
+            //var uY = ((uint)Arithmetic.ZigZagEncode(Y)) << 3;
+            //var uZ = ((uint)Arithmetic.ZigZagEncode(Z)) << 3;
+            //var xBytes = (uint)BitCounter.GetUsedByteCount(uX);
+            //var yBytes = (uint)BitCounter.GetUsedByteCount(uY);
+            //var zBytes = (uint)BitCounter.GetUsedByteCount(uZ);
+           // var debugInfo = "[Vector3Half]";
             //if (xBytes > 0)
-            if (X > 0)
+            if (math.abs(X) > 0)
             {
                 AxisWritten |= 0x01;
-                BytePacker.WriteValuePacked(writer, Axis.x);
-                debugInfo += $"[X: {writer.Position - debugPosition} | {X}]";
+                BytePacker.WriteValuePacked(writer, Axis.x.value);
+                //debugInfo += $"[X: {writer.Position - debugPosition} | {X}]";
                 debugPosition = writer.Position;
             }
             //if (yBytes > 0)
-            if (Y > 0)
+            if (math.abs(Y) > 0)
             {
                 AxisWritten |= 0x02;
-                BytePacker.WriteValuePacked(writer, Axis.y);
-                //BytePacker.WriteValuePacked(writer, Axis.y.value);
-                debugInfo += $"[Y: {writer.Position - debugPosition} | {Y}]";
+                BytePacker.WriteValuePacked(writer, Axis.y.value);
+                //debugInfo += $"[Y: {writer.Position - debugPosition} | {Y}]";
                 debugPosition = writer.Position;
             }
             //if (zBytes > 0)
-            if (Z > 0)
+            if (math.abs(Z) > 0)
             {
                 AxisWritten |= 0x04;
-                BytePacker.WriteValuePacked(writer, Axis.z);
-                //BytePacker.WriteValuePacked(writer, Axis.z.value);
-                debugInfo += $"[Z: {writer.Position - debugPosition} | {Z}]";
+                BytePacker.WriteValuePacked(writer, Axis.z.value);
+                //debugInfo += $"[Z: {writer.Position - debugPosition} | {Z}]";
                 debugPosition = writer.Position;
             }
             var tailPosition = writer.Position;
             writer.Seek(position);
             writer.WriteByteSafe(AxisWritten);
             writer.Seek(tailPosition);
-            if ((xBytes + yBytes + zBytes) > 0)
-            {
-                Debug.Log(debugInfo);
-            }
+            //if ((xBytes + yBytes + zBytes) > 0)
+            //{
+            //    Debug.Log(debugInfo);
+            //}
         }
         public void ReadState(FastBufferReader reader)
         {
@@ -686,7 +684,6 @@ namespace Unity.Netcode
             }
             if ((AxisWritten & 0x02) == 0x02)
             {
-                AxisWritten |= 0x02;
                 ByteUnpacker.ReadValuePacked(reader, out halfValue);
                 Axis.y.value = halfValue;
             }
@@ -696,6 +693,24 @@ namespace Unity.Netcode
                 Axis.z.value = halfValue;
             }
         }
+
+        public Vector3 UpdateFromValue(Vector3 value)
+        {
+            var stateUpdate = ToVector3();
+            if ((AxisWritten & 0x01) != 0x01)
+            {
+                stateUpdate.x = value.x;
+            }
+            if ((AxisWritten & 0x02) != 0x02)
+            {
+                stateUpdate.y = value.y;
+            }
+            if ((AxisWritten & 0x04) != 0x04)
+            {
+                stateUpdate.z = value.z;
+            }
+            return stateUpdate;
+        }
     }
 
     [BurstCompile]
@@ -704,10 +719,10 @@ namespace Unity.Netcode
         public bool IsDirty;
         public uint Compressed;
 
-        public uint X;
-        public uint Y;
-        public uint Z;
-        public uint W;
+        public int X;
+        public int Y;
+        public int Z;
+        public int W;
 
         public Quaternion Rotation;
 
@@ -1042,6 +1057,9 @@ namespace Unity.Netcode
         public int Index;
         public ushort TransformIdentifier;
 
+        public Vector3 CurrentPosition;
+        public Vector3 CurrentScale;
+
         public void ApplyState(TransformGridState state)
         {
             if (TransformIdentifier != state.TransformIdentifier)
@@ -1064,8 +1082,8 @@ namespace Unity.Netcode
         public bool HasDelta()
         {
             //return Scale.HasDelta() || Position.HasDelta() || Rotation.HasDelta();
-            //return Position.HasDelta() || Rotation.HasDelta();
-            return Position.HasDelta() || Forward.HasDelta();
+            return Position.HasDelta() || Rotation.HasDelta();
+            //return Position.HasDelta() || Forward.HasDelta();
         }
 
         public void Clear()
@@ -1122,14 +1140,14 @@ namespace Unity.Netcode
             if (DirtyScale)
             {
                 Scale.InvPrecision = InvPrecision;
-                ScaleFloat = Scale.ToVector3();
+                ScaleFloat = Scale.UpdateFromValue(CurrentScale);
             }
 
             if (DirtyPosition)
             {
                 Position.InvPrecision = InvPrecision;
                 // TODO: Add grid offset here
-                PositionFloat = Position.ToVector3();
+                PositionFloat = Position.UpdateFromValue(CurrentPosition);
             }
 
             if (DirtyRotation)
@@ -1166,17 +1184,17 @@ namespace Unity.Netcode
                 Position.WriteState(writer);
             }
 
-            //if (Rotation.HasDelta())
-            //{
-            //    dirtyFlags |= 0x04;
-            //    Rotation.WriteState(writer);
-            //}
-
-            if (Forward.HasDelta())
+            if (Rotation.HasDelta())
             {
                 dirtyFlags |= 0x04;
-                Forward.WriteState(writer);
+                Rotation.WriteState(writer);
             }
+
+            //if (Forward.HasDelta())
+            //{
+            //    dirtyFlags |= 0x04;
+            //    Forward.WriteState(writer);
+            //}
 
             var tail = writer.Position;
             writer.Seek(dirtyPosition);
@@ -1210,18 +1228,18 @@ namespace Unity.Netcode
                 PositionFloat = math.float3(Position.Axis);
             }
 
-            //if ((dirtyFlags & 0x04) == 0x04)
-            //{
-            //    DirtyRotation = true;
-            //    Rotation.ReadState(reader);
-            //    Rotation.Decompress();
-            //}
-
             if ((dirtyFlags & 0x04) == 0x04)
             {
                 DirtyRotation = true;
-                Forward.ReadState(reader);
+                Rotation.ReadState(reader);
+                Rotation.Decompress();
             }
+
+            //if ((dirtyFlags & 0x04) == 0x04)
+            //{
+            //    DirtyRotation = true;
+            //    Forward.ReadState(reader);
+            //}
 
             Payload_Size = reader.Position - startPosition;
             DirtyFlags = dirtyFlags;

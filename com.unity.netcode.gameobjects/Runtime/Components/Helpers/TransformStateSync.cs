@@ -348,8 +348,8 @@ namespace Unity.Netcode
 
             if (state.DirtyRotation)
             {
-                m_ForwardInterpolator.AddMeasurement(transform.parent, state.Forward.Forward, time);
-                //m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
+                //m_ForwardInterpolator.AddMeasurement(transform.parent, state.Forward.Forward, time);
+                m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
             }
         }
 
@@ -423,16 +423,17 @@ namespace Unity.Netcode
 
             m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
-            //m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
-            m_ForwardInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
+            m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
+            //m_ForwardInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
 
             var scale = m_ScaleInterpolator.GetInterpolatedValue();
             var position = m_PositionInterpolator.GetInterpolatedValue();
-            //var rotation = m_RotationInterpolator.GetInterpolatedValue();
-            var forward = m_ForwardInterpolator.GetInterpolatedValue();
+            var rotation = m_RotationInterpolator.GetInterpolatedValue();
+            //var forward = m_ForwardInterpolator.GetInterpolatedValue();
 
-            transform.position = position;
-            transform.forward = forward;
+            //transform.position = position;
+            //transform.forward = forward;
+            transform.SetPositionAndRotation(position, rotation);
             transform.localScale = scale;
         }
     }
