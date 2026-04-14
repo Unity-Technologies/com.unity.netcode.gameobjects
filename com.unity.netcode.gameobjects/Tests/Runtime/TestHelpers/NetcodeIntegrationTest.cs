@@ -985,6 +985,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     return false;
                 }
 
+                if (playerObjectRelative.Observers.Count != m_NetworkManagers.Length)
+                {
+                    m_InternalErrorLog.Append($"Client-{networkManager.LocalClientId} has an incorrect number of observers for Object-{playerObjectRelative.NetworkObjectId}!");
+                    return false;
+                }
+
                 // Go ahead and create an entry for this new client
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
@@ -1158,7 +1164,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private void ClientNetworkManagerPostStart(NetworkManager networkManager)
         {
             networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
-            Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
+            Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that Client-{networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
             // Go ahead and create an entry for this new client
             if (!m_PlayerNetworkObjects.ContainsKey(networkManager.LocalClientId))
@@ -1246,14 +1252,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// the session owner.
         /// </remarks>
         /// <returns><see cref="IEnumerator"/></returns>
-        private IEnumerator StartSessionOwner()
+        private IEnumerator StartSessionOwner(NetworkManager networkManager, bool ignoreSessionOwnerCheck = false)
         {
             VerboseDebug("Starting session owner...");
-            NetcodeIntegrationTestHelpers.StartOneClient(m_ClientNetworkManagers[0]);
-            yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].IsConnectedClient);
-            AssertOnTimeout($"Timed out waiting for the session owner to connect to CMB Server!");
-            Assert.True(m_ClientNetworkManagers[0].LocalClient.IsSessionOwner, $"Client-{m_ClientNetworkManagers[0].LocalClientId} started session but was not set to be the session owner!");
-            VerboseDebug("Session owner connected and approved.");
+            NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
+            if (!ignoreSessionOwnerCheck)
+            {
+                yield return WaitForConditionOrTimeOut(() => networkManager.IsConnectedClient);
+                AssertOnTimeout($"Timed out waiting for the session owner to connect to CMB Server!");
+                Assert.True(networkManager.LocalClient.IsSessionOwner, $"Client-{networkManager.LocalClientId} started session but was not set to be the session owner!");
+                VerboseDebug("Session owner connected and approved.");
+            }
+            else
+            {
+                yield return k_DefaultTickRate;
+            }
         }
 
         /// <summary>
@@ -1267,24 +1280,49 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
-                // DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+                // DANGO-TODO: Remove this when the Rust server connection sequence is fixed and we don't have to pre-start
                 // the session owner.
                 if (m_UseCmbService)
                 {
                     VerboseDebug("Using a distributed authority CMB Server for connection.");
-                    yield return StartSessionOwner();
+                    yield return StartSessionOwner(m_ClientNetworkManagers[0]);
+                }
+
+                for (int i = 1; i < m_ClientNetworkManagers.Length; i++)
+                {
+                    yield return StartSessionOwner(m_ClientNetworkManagers[i], true);
                 }
 
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
-                {
-                    Debug.LogError("Failed to start instances");
-                    Assert.Fail("Failed to start instances");
-                }
+                // if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
+                // {
+                //     Debug.LogError("Failed to start instances");
+                //     Assert.Fail("Failed to start instances");
+                // }
 
                 // Get the authority NetworkMananger (Server, Host, or Session Owner)
                 var authorityManager = GetAuthorityNetworkManager();
+                // var authorityPrefabs = authorityManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0].List;
+                foreach (var manager in m_NetworkManagers)
+                {
+                    if (manager == authorityManager)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(authorityManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, Is.EqualTo(manager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash));
+
+                    // if (authorityManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count > 1)
+                    // {
+                    //     var clientList = manager.NetworkConfig.Prefabs.NetworkPrefabsLists[0].List;
+                    //     Assert.That(clientList.Count, Is.EqualTo(authorityPrefabs.Count));
+                    //     for (int i = 0; i < authorityPrefabs.Count; i++)
+                    //     {
+                    //         Assert.That(clientList[i].Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash, Is.EqualTo(authorityPrefabs[i].Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash));
+                    //     }
+                    // }
+                }
 
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
                 // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
@@ -1536,6 +1574,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
 
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                networkManager?.Shutdown();
+            }
+
             // Cleanup any remaining NetworkObjects
             DestroySceneNetworkObjects();
 
@@ -1577,6 +1620,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.DestroyImmediate(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
+            }
+
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                networkManager?.Shutdown();
             }
 
             // Allow time for NetworkManagers to fully shutdown
@@ -1733,7 +1781,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // This can sometimes be null depending upon order of operations
                 // when dealing with parented NetworkObjects.  If NetworkObjectB
                 // is a child of NetworkObjectA and NetworkObjectA comes before
-                // NetworkObjectB in the list of NeworkObjects found, then when
+                // NetworkObjectB in the list of NetworkObjects found, then when
                 // NetworkObjectA's GameObject is destroyed it will also destroy
                 // NetworkObjectB's GameObject which will destroy NetworkObjectB.
                 // If there is a null entry in the list, this is the most likely

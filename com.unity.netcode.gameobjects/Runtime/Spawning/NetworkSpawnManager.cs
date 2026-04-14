@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
@@ -884,20 +885,29 @@ namespace Unity.Netcode
         /// <param name="position">conditional position in place of the network prefab's default position</param>
         /// <param name="rotation">conditional rotation in place of the network prefab's default rotation</param>
         /// <returns>the instance of the <see cref="NetworkObject"/></returns>
-        internal NetworkObject InstantiateNetworkPrefab(GameObject networkPrefab, uint prefabGlobalObjectIdHash, Vector3? position, Quaternion? rotation)
+        internal NetworkObject InstantiateNetworkPrefab([NotNull] GameObject networkPrefab, uint prefabGlobalObjectIdHash, Vector3? position, Quaternion? rotation)
         {
-            var networkObject = UnityEngine.Object.Instantiate(networkPrefab).GetComponent<NetworkObject>();
+            var gameObject = Object.Instantiate(networkPrefab);
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"No {nameof(NetworkObject)} found on NetworkPrefab {networkPrefab.name}!");
+                }
+                Object.Destroy(gameObject);
+                return null;
+            }
             networkObject.transform.SetPositionAndRotation(position ?? networkObject.transform.position, rotation ?? networkObject.transform.rotation);
             networkObject.PrefabGlobalObjectIdHash = prefabGlobalObjectIdHash;
             return networkObject;
         }
 
         /// <summary>
-        /// Creates a local NetowrkObject to be spawned.
+        /// Creates a local NetworkObject to be spawned.
         /// </summary>
         /// <remarks>
-        /// For most cases this is client-side only, with the exception of when the server
-        /// is spawning a player.
+        /// For most cases this is client-side only, except when the server is spawning a player.
         /// </remarks>
         internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null)
         {
@@ -923,105 +933,110 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                     }
+
+                    return null;
                 }
 
                 // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
                 // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
+                if (!networkObject.gameObject.activeInHierarchy)
                 {
                     networkObject.gameObject.SetActive(true);
                 }
             }
 
-            if (networkObject != null)
+            if (networkObject == null)
             {
-                networkObject.DestroyWithScene = serializedObject.DestroyWithScene;
-                networkObject.NetworkSceneHandle = serializedObject.NetworkSceneHandle;
-                networkObject.DontDestroyWithOwner = serializedObject.DontDestroyWithOwner;
-                networkObject.Ownership = (NetworkObject.OwnershipStatus)serializedObject.OwnershipFlags;
+                return null;
+            }
 
-                var nonNetworkObjectParent = false;
-                // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
-                // This is a special case scenario where a late joining client has joined and loaded one or
-                // more scenes that contain nested in-scene placed NetworkObject children yet the server's
-                // synchronization information does not indicate the NetworkObject in question has a parent =or=
-                // the parent has changed.
-                // For this we will want to remove the parent before spawning and setting the transform values based
-                // on several possible scenarios.
-                if (serializedObject.IsSceneObject && networkObject.transform.parent != null)
+            networkObject.DestroyWithScene = serializedObject.DestroyWithScene;
+            networkObject.NetworkSceneHandle = serializedObject.NetworkSceneHandle;
+            networkObject.DontDestroyWithOwner = serializedObject.DontDestroyWithOwner;
+            networkObject.Ownership = (NetworkObject.OwnershipStatus)serializedObject.OwnershipFlags;
+
+            var nonNetworkObjectParent = false;
+            // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
+            // This is a special case scenario where a late joining client has joined and loaded one or
+            // more scenes that contain nested in-scene placed NetworkObject children yet the server's
+            // synchronization information does not indicate the NetworkObject in question has a parent =or=
+            // the parent has changed.
+            // For this we will want to remove the parent before spawning and setting the transform values based
+            // on several possible scenarios.
+            if (serializedObject.IsSceneObject && networkObject.transform.parent != null)
+            {
+                var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
+
+                // special case to handle being parented under a GameObject with no NetworkObject
+                nonNetworkObjectParent = !parentNetworkObject && serializedObject.HasParent;
+
+                // If the in-scene placed NetworkObject has a parent NetworkObject...
+                if (parentNetworkObject)
                 {
-                    var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
-
-                    // special case to handle being parented under a GameObject with no NetworkObject
-                    nonNetworkObjectParent = !parentNetworkObject && serializedObject.HasParent;
-
-                    // If the in-scene placed NetworkObject has a parent NetworkObject...
-                    if (parentNetworkObject)
+                    // Then remove the parent only if:
+                    // - The authority says we don't have a parent (but locally we do).
+                    // - The auhtority says we have a parent but either of the two are true:
+                    // -- It isn't the same parent.
+                    // -- It was parented using world position stays.
+                    if (!serializedObject.HasParent || (serializedObject.IsLatestParentSet
+                        && (serializedObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || serializedObject.WorldPositionStays)))
                     {
-                        // Then remove the parent only if:
-                        // - The authority says we don't have a parent (but locally we do).
-                        // - The auhtority says we have a parent but either of the two are true:
-                        // -- It isn't the same parent.
-                        // -- It was parented using world position stays.
-                        if (!serializedObject.HasParent || (serializedObject.IsLatestParentSet
-                            && (serializedObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || serializedObject.WorldPositionStays)))
-                        {
-                            // If parenting without notifications then we are temporarily removing the parent to set the transform
-                            // values before reparenting under the current parent.
-                            networkObject.ApplyNetworkParenting(true, true, enableNotification: !serializedObject.HasParent);
-                        }
+                        // If parenting without notifications then we are temporarily removing the parent to set the transform
+                        // values before reparenting under the current parent.
+                        networkObject.ApplyNetworkParenting(true, true, enableNotification: !serializedObject.HasParent);
                     }
-                }
-
-                // Set the transform only if the sceneObject includes transform information.
-                if (serializedObject.HasTransform)
-                {
-                    // If world position stays is true or we have auto object parent synchronization disabled
-                    // then we want to apply the position and rotation values world space relative
-                    if ((worldPositionStays && !nonNetworkObjectParent) || !networkObject.AutoObjectParentSync)
-                    {
-                        networkObject.transform.SetPositionAndRotation(position, rotation);
-                    }
-                    else
-                    {
-                        networkObject.transform.SetLocalPositionAndRotation(position, rotation);
-                    }
-
-                    // SPECIAL CASE:
-                    // Since players are created uniquely we don't apply scale because
-                    // the ConnectionApprovalResponse does not currently provide the
-                    // ability to specify scale. So, we just use the default scale of
-                    // the network prefab used to represent the player.
-                    // Note: not doing this would set the player's scale to zero since
-                    // that is the default value of Vector3.
-                    if (!serializedObject.IsPlayerObject)
-                    {
-                        // Since scale is always applied to local space scale, we do the transform
-                        // space logic during serialization such that it works out whether AutoObjectParentSync
-                        // is enabled or not (see NetworkObject.SceneObject)
-                        networkObject.transform.localScale = scale;
-                    }
-                }
-
-                if (serializedObject.HasParent)
-                {
-                    // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
-                    // (we always want to set worldPositionStays)
-                    ulong? parentId = null;
-                    if (serializedObject.IsLatestParentSet)
-                    {
-                        parentId = parentNetworkId;
-                    }
-                    networkObject.SetNetworkParenting(parentId, worldPositionStays);
-                }
-
-                // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
-                // until the scene is loaded. They are then migrated back into the newly loaded and currently active scene.
-                if (!serializedObject.IsSceneObject && NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
-                {
-                    UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
             }
+
+            // Set the transform only if the sceneObject includes transform information.
+            if (serializedObject.HasTransform)
+            {
+                // If world position stays is true or we have auto object parent synchronization disabled
+                // then we want to apply the position and rotation values world space relative
+                if ((worldPositionStays && !nonNetworkObjectParent) || !networkObject.AutoObjectParentSync)
+                {
+                    networkObject.transform.SetPositionAndRotation(position, rotation);
+                }
+                else
+                {
+                    networkObject.transform.SetLocalPositionAndRotation(position, rotation);
+                }
+
+                // SPECIAL CASE:
+                // Since players are created uniquely we don't apply scale because
+                // the ConnectionApprovalResponse does not currently provide the
+                // ability to specify scale. So, we just use the default scale of
+                // the network prefab used to represent the player.
+                // Note: not doing this would set the player's scale to zero since
+                // that is the default value of Vector3.
+                if (!serializedObject.IsPlayerObject)
+                {
+                    // Since scale is always applied to local space scale, we do the transform
+                    // space logic during serialization such that it works out whether AutoObjectParentSync
+                    // is enabled or not (see NetworkObject.SceneObject)
+                    networkObject.transform.localScale = scale;
+                }
+            }
+
+            if (serializedObject.HasParent)
+            {
+                // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
+                // (we always want to set worldPositionStays)
+                ulong? parentId = null;
+                if (serializedObject.IsLatestParentSet)
+                {
+                    parentId = parentNetworkId;
+                }
+                networkObject.SetNetworkParenting(parentId, worldPositionStays);
+            }
+
+            // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
+            // until the scene is loaded. They are then migrated back into the newly loaded and currently active scene.
+            if (!serializedObject.IsSceneObject && NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
+            {
+                Object.DontDestroyOnLoad(networkObject.gameObject);
+            }
+
             return networkObject;
         }
 
@@ -1037,14 +1052,14 @@ namespace Unity.Netcode
         /// Server is the only instance that invokes this method.
         ///
         /// Distributed Authority:
-        /// DAHost client and standard DA clients invoke this method.
+        /// All clients can invoke this method.
         /// </summary>
-        internal void AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal bool AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
-            if (networkObject.IsSpawned)
+            if (networkObject.IsSpawned || NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
             {
                 Debug.LogError($"{networkObject.name} is already spawned!");
-                return;
+                return false;
             }
 
             if (!sceneObject)
@@ -1092,7 +1107,7 @@ namespace Unity.Netcode
                     }
 
                     // Sanity check to make sure the owner is always included
-                    // Itentionally checking as opposed to just assigning in order to generate notification.
+                    // Intentionally checking as opposed to just assigning in order to generate notification.
                     if (!networkObject.Observers.Contains(ownerClientId))
                     {
                         Debug.LogError($"Client-{ownerClientId} is the owner of {networkObject.name} but is not an observer! Adding owner, but there is a bug in observer synchronization!");
@@ -1101,12 +1116,20 @@ namespace Unity.Netcode
                 }
             }
 
-            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+            if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} {networkObject.name} with Hash {networkObject.GlobalObjectIdHash}.");
+                }
+
+                return false;
+            }
 
             // When done spawning invoke post spawn
             networkObject.InvokeBehaviourNetworkPostSpawn();
 
-            // No need to check for deferred messages since this method is used for authority spawning.
+            return true;
         }
 
         /// <summary>
@@ -1117,35 +1140,105 @@ namespace Unity.Netcode
         /// <remarks>
         /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.Deserialize"/>.
         /// </remarks>
-        internal void NonAuthorityLocalSpawn([NotNull] NetworkObject networkObject, in NetworkObject.SerializedObject serializedObject, bool destroyWithScene)
+        /// <returns>boolean indicating whether the spawn succeeded</returns>
+        internal bool NonAuthorityLocalSpawn(in NetworkObject.SerializedObject serializedObject, out NetworkObject networkObject, FastBufferReader reader, bool destroyWithScene)
         {
+            if (SpawnedObjects.ContainsKey(serializedObject.NetworkObjectId))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogWarning($"Trying to spawn a {nameof(NetworkObject)} with a {nameof(NetworkObject.NetworkObjectId)} of {serializedObject.NetworkObjectId} but an object with that id already in the spawned list!");
+                }
+                networkObject = null;
+                return false;
+            }
+
+            byte[] instantiationData = null;
+            if (serializedObject.HasInstantiationData)
+            {
+                reader.ReadValueSafe(out instantiationData);
+            }
+
+            // Attempt to create a local NetworkObject
+            networkObject = CreateLocalNetworkObject(serializedObject, instantiationData);
+
+            // Log the error that the NetworkObject failed to construct
+            if (networkObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
+                }
+
+                return false;
+            }
+
+            networkObject.NetworkManagerOwner = NetworkManager;
+
+            // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
+            // in order to be able to determine which NetworkVariables the client will be allowed to read.
+            networkObject.OwnerClientId = serializedObject.OwnerClientId;
+
+            // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
+            networkObject.InvokeBehaviourNetworkPreSpawn();
+
+            // Process the remaining synchronization data from the buffer
+            try
+            {
+                // Synchronize NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, NetworkManager.LocalClientId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                // We can continue processing the NetworkObject spawn even if the NetworkBehaviours failed to synchronize
+            }
+
             if (networkObject.IsSpawned)
             {
-                Debug.LogError($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
-                return;
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogErrorServer($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
+                }
+
+                // Mark the spawn as a success if the object is already spawned
+                return true;
+            }
+
+            // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
+            // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
+            // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
+            // the in-scene placed Networkobject changes several times over different sessions.
+            if (serializedObject.IsSceneObject && !serializedObject.HasParent && networkObject.GetNetworkParenting().HasValue)
+            {
+                networkObject.ClearNetworkParenting();
             }
 
             // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
-            SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsSceneObject, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
+            var succeeded = SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsSceneObject, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
+            if (!succeeded)
+            {
+                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
+                return false;
+            }
 
             // It is ok to invoke NetworkBehaviour.OnPostSpawn methods
             networkObject.InvokeBehaviourNetworkPostSpawn();
 
-            // Process any deferred messages once the object is 100% finished spawning,
-            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, networkObject.NetworkObjectId);
+            return true;
         }
 
-        internal void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        /// <summary>
+        /// Handles the all the final setup and spawning needed for
+        /// </summary>
+        /// <returns>boolean indicating whether the spawn succeeded. Internal dev note: THIS IS A CATCH FOR OURSELVES. DON'T PULL OUT</returns>
+        internal bool SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject.NetworkManagerOwner == null)
             {
                 Debug.LogError("NetworkManagerOwner should not be null!");
-            }
-
-            if (SpawnedObjects.ContainsKey(networkId))
-            {
-                Debug.LogWarning($"[{NetworkManager.name}] Trying to spawn {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkId} but it is already in the spawned list!");
-                return;
+                return false;
             }
 
             networkObject.IsSceneObject = sceneObject;
@@ -1236,6 +1329,8 @@ namespace Unity.Netcode
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
+
+            return true;
         }
 
         internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
@@ -1489,23 +1584,31 @@ namespace Unity.Netcode
         {
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
             var networkObjectsToSpawn = new List<NetworkObject>();
-            for (int i = 0; i < networkObjects.Length; i++)
+            foreach (var networkObject in networkObjects)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                if (networkObject.NetworkManager != NetworkManager)
                 {
-                    // This used to be two loops.
-                    // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
-                    // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                    if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
-                    {
-                        var ownerId = networkObjects[i].OwnerClientId;
-                        if (NetworkManager.DistributedAuthorityMode)
-                        {
-                            ownerId = NetworkManager.LocalClientId;
-                        }
+                    continue;
+                }
 
-                        AuthorityLocalSpawn(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
-                        networkObjectsToSpawn.Add(networkObjects[i]);
+                // This used to be two loops.
+                // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
+                // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
+                if (networkObject.IsSceneObject == null || (networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value))
+                {
+                    var ownerId = networkObject.OwnerClientId;
+                    if (NetworkManager.DistributedAuthorityMode)
+                    {
+                        ownerId = NetworkManager.LocalClientId;
+                    }
+
+                    if (AuthorityLocalSpawn(networkObject, GetNetworkObjectId(), true, false, ownerId, true))
+                    {
+                        networkObjectsToSpawn.Add(networkObject);
+                    }
+                    else
+                    {
+                        networkObject.ResetOnDespawn();
                     }
                 }
             }
