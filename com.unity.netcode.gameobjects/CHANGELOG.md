@@ -13,17 +13,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Remove exceptions and replaced Debug usage by NetcodeLog on `NetworkSpawnManager`. (#3933)
-- Improve performance of `NetworkBehaviour`. (#3915)
-- Improve performance of `NetworkTransform`. (#3907)
-- Improve performance of `NetworkRigidbodyBase`. (#3906)
-- Improve performance of `NetworkAnimator`. (#3905)
+- Replaced Debug usage by NetcodeLog on `NetworkSpawnManager` and `NetworkObject`. (#3933)
+- Improved performance of `NetworkBehaviour`. (#3915)
+- Improved performance of `NetworkTransform`. (#3907)
+- Improved performance of `NetworkRigidbodyBase`. (#3906)
+- Improved performance of `NetworkAnimator`. (#3905)
 
 ### Deprecated
 
 
 ### Removed
 
+- Removed un-needed exceptions on `NetworkSpawnManager`. (#3933)
 
 ### Fixed
 
