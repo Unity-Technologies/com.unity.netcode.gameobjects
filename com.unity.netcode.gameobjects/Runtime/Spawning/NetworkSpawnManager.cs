@@ -1949,8 +1949,8 @@ namespace Unity.Netcode
 
         internal void Shutdown()
         {
-            NetworkObjectsToSynchronizeSceneChanges.Clear();
-            CleanUpDisposedObjects.Clear();
+            NetworkObjectsToSynchronizeSceneChanges?.Clear();
+            CleanUpDisposedObjects?.Clear();
         }
 
         /// <summary>

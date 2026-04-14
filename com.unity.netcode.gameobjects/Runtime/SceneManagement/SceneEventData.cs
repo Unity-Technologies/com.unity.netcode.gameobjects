@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -196,6 +197,7 @@ namespace Unity.Netcode
             return SceneHandlesToSynchronize.Dequeue();
         }
 
+        internal bool IsStartingSynchronization;
         /// <summary>
         /// Client Side:
         /// Determines if all scenes have been processed during the synchronization process
@@ -586,6 +588,7 @@ namespace Unity.Netcode
             // Write the scenes we want to load, in the order we want to load them
             writer.WriteValueSafe(ScenesToSynchronize.ToArray());
             writer.WriteValueSafe(SceneHandlesToSynchronize.ToArray());
+            Debug.Log($"[Client-1][WriteSceneSynchronizationData] ScenesToSynchronize={ScenesToSynchronize.Count}, SceneHandlesToSynchronize={SceneHandlesToSynchronize.Count}");
             // Store our current position in the stream to come back and say how much data we have written
             var positionStart = writer.Position;
 
@@ -781,7 +784,8 @@ namespace Unity.Netcode
                         {
                             LogArray(reader.ToArray(), 0, reader.Length);
                         }
-                        CopySceneSynchronizationData(reader);
+                        CopySceneSynchronizationData(reader, TargetClientId);
+                        IsStartingSynchronization = true;
                         break;
                     }
                 case SceneEventType.SynchronizeComplete:
@@ -823,13 +827,15 @@ namespace Unity.Netcode
         /// into the internal buffer to be used throughout the synchronization process.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CopySceneSynchronizationData(FastBufferReader reader)
+        internal void CopySceneSynchronizationData(FastBufferReader reader, ulong targetClientId)
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
             reader.ReadValueSafe(out NetworkSceneHandle[] sceneHandlesToSynchronize);
             ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
             SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>(sceneHandlesToSynchronize);
+            Debug.Log($"[Client-{targetClientId}] CopySceneSynchronizationData! ScenesToSynchronize={ScenesToSynchronize.Count}, SceneHandlesToSynchronize={SceneHandlesToSynchronize.Count}");
+
 
             // is not packed!
             reader.ReadValueSafe(out int sizeToCopy);
@@ -916,9 +922,9 @@ namespace Unity.Netcode
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
-                    if (!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
+                    if (networkObject.IsSpawned)
                     {
-                        networkObjectIdToNetworkObject.Add(networkObject.NetworkObjectId, networkObject);
+                        networkObjectIdToNetworkObject.TryAdd(networkObject.NetworkObjectId, networkObject);
                     }
                 }
 
@@ -940,7 +946,7 @@ namespace Unity.Netcode
                             {
                                 m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
                             }
-                            NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                            m_NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                         }
                         else
                         {
@@ -975,7 +981,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server Side:
+        /// All clients:
         /// Determines if the client needs to be re-synchronized if during the deserialization
         /// process the server finds NetworkObjects that the client still thinks are spawned but
         /// have since been despawned.
