@@ -657,6 +657,12 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+            if (!NetworkManager.IsConnectedClient)
+            {
+                return true;
+            }
+
             var synchronizeEventDetected = false;
             var loadingEventDetected = false;
             foreach (var entry in SceneEventDataStore)

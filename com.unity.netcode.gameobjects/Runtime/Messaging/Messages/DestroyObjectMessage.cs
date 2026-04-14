@@ -112,7 +112,7 @@ namespace Unity.Netcode
             }
 
             // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
-            if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
+            if (!networkManager.DistributedAuthorityMode || !networkManager.IsConnectedClient || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
             }
