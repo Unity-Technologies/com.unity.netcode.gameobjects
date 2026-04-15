@@ -2303,146 +2303,146 @@ namespace Unity.Netcode
                         break;
                     }
                 case SceneEventType.Synchronize:
-                {
-                    if (sceneEventData.IsStartingSynchronization)
                     {
-                        sceneEventData.IsStartingSynchronization = false;
-
-                        OnSceneEvent?.Invoke(new SceneEvent()
+                        if (sceneEventData.IsStartingSynchronization)
                         {
-                            SceneEventType = SceneEventType.Synchronize,
-                            ClientId = NetworkManager.LocalClientId,
-                        });
+                            sceneEventData.IsStartingSynchronization = false;
 
-                        OnSynchronize?.Invoke(NetworkManager.LocalClientId);
-                    }
-
-                    if (!sceneEventData.IsDoneWithSynchronization())
-                    {
-                        OnClientBeginSync(sceneEventId);
-                    }
-                    else
-                    {
-                        // Include anything in the DDOL scene
-                        PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
-
-                        // If needed, set the currently active scene
-                        if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
-                        {
-                            var targetActiveScene = SceneManager.GetSceneByBuildIndex(HashToBuildIndex[sceneEventData.ActiveSceneHash]);
-                            if (targetActiveScene.isLoaded && targetActiveScene.handle != SceneManager.GetActiveScene().handle)
+                            OnSceneEvent?.Invoke(new SceneEvent()
                             {
-                                SceneManager.SetActiveScene(targetActiveScene);
-                            }
+                                SceneEventType = SceneEventType.Synchronize,
+                                ClientId = NetworkManager.LocalClientId,
+                            });
+
+                            OnSynchronize?.Invoke(NetworkManager.LocalClientId);
                         }
 
-                        // Spawn and Synchronize all NetworkObjects
-                        sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
-
-                        // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
-                        SynchronizeNetworkObjectScene();
-
-                        // Process any pending create object messages that the client received during synchronization
-                        ProcessDeferredCreateObjectMessages();
-
-                        sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
-                        if (NetworkManager.DistributedAuthorityMode)
+                        if (!sceneEventData.IsDoneWithSynchronization())
                         {
-                            sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
-                            sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                            var message = new SceneEventMessage
-                            {
-                                EventData = sceneEventData,
-                            };
-                            var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                            var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
-                            NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
+                            OnClientBeginSync(sceneEventId);
                         }
                         else
                         {
-                            SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
+                            // Include anything in the DDOL scene
+                            PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
+
+                            // If needed, set the currently active scene
+                            if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
+                            {
+                                var targetActiveScene = SceneManager.GetSceneByBuildIndex(HashToBuildIndex[sceneEventData.ActiveSceneHash]);
+                                if (targetActiveScene.isLoaded && targetActiveScene.handle != SceneManager.GetActiveScene().handle)
+                                {
+                                    SceneManager.SetActiveScene(targetActiveScene);
+                                }
+                            }
+
+                            // Spawn and Synchronize all NetworkObjects
+                            sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
+
+                            // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
+                            SynchronizeNetworkObjectScene();
+
+                            // Process any pending create object messages that the client received during synchronization
+                            ProcessDeferredCreateObjectMessages();
+
+                            sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
+                            if (NetworkManager.DistributedAuthorityMode)
+                            {
+                                sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
+                                sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                                var message = new SceneEventMessage
+                                {
+                                    EventData = sceneEventData,
+                                };
+                                var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
+                                NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
+                            }
+                            else
+                            {
+                                SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
+                            }
+
+                            // All scenes are synchronized, let the server know we are done synchronizing
+                            NetworkManager.IsConnectedClient = true;
+
+                            // With distributed authority, either the client-side automatically spawns the default assigned player prefab or
+                            // if AutoSpawnPlayerPrefabClientSide is disabled the client-side will determine what player prefab to spawn and
+                            // when it gets spawned.
+                            if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
+                            {
+                                NetworkManager.ConnectionManager.CreateAndSpawnPlayer(NetworkManager.LocalClientId);
+                            }
+
+                            // Process any SceneEventType.ObjectSceneChanged messages that
+                            // were deferred while synchronizing and migrate the associated
+                            // NetworkObjects to their newly assigned scenes.
+                            sceneEventData.ProcessDeferredObjectSceneChangedEvents();
+
+                            // Only if PostSynchronizationSceneUnloading is set and we are running in client synchronization
+                            // mode additive do we unload any remaining scene that was not synchronized (otherwise any loaded
+                            // scene not synchronized by the server will remain loaded)
+                            if (PostSynchronizationSceneUnloading && ClientSynchronizationMode == LoadSceneMode.Additive)
+                            {
+                                SceneManagerHandler.UnloadUnassignedScenes(NetworkManager);
+                            }
+
+                            // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
+                            NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
+
+                            // Notify the client that they have finished synchronizing
+                            OnSceneEvent?.Invoke(new SceneEvent()
+                            {
+                                SceneEventType = sceneEventData.SceneEventType,
+                                ClientId = NetworkManager.LocalClientId, // Client sent this to the server
+                            });
+
+                            OnSynchronizeComplete?.Invoke(NetworkManager.LocalClientId);
+
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                            {
+                                NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}][Scene Management Enabled] Synchronization complete!");
+                            }
+                            // For convenience, notify all NetworkBehaviours that synchronization is complete.
+                            NetworkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
+
+                            if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession)
+                            {
+                                IsRestoringSession = false;
+                                PostSynchronizationSceneUnloading = m_OriginalPostSynchronizationSceneUnloading;
+                            }
+
+                            EndSceneEvent(sceneEventId);
                         }
-
-                        // All scenes are synchronized, let the server know we are done synchronizing
-                        NetworkManager.IsConnectedClient = true;
-
-                        // With distributed authority, either the client-side automatically spawns the default assigned player prefab or
-                        // if AutoSpawnPlayerPrefabClientSide is disabled the client-side will determine what player prefab to spawn and
-                        // when it gets spawned.
-                        if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
-                        {
-                            NetworkManager.ConnectionManager.CreateAndSpawnPlayer(NetworkManager.LocalClientId);
-                        }
-
-                        // Process any SceneEventType.ObjectSceneChanged messages that
-                        // were deferred while synchronizing and migrate the associated
-                        // NetworkObjects to their newly assigned scenes.
-                        sceneEventData.ProcessDeferredObjectSceneChangedEvents();
-
-                        // Only if PostSynchronizationSceneUnloading is set and we are running in client synchronization
-                        // mode additive do we unload any remaining scene that was not synchronized (otherwise any loaded
-                        // scene not synchronized by the server will remain loaded)
-                        if (PostSynchronizationSceneUnloading && ClientSynchronizationMode == LoadSceneMode.Additive)
-                        {
-                            SceneManagerHandler.UnloadUnassignedScenes(NetworkManager);
-                        }
-
-                        // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
-                        NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
-
-                        // Notify the client that they have finished synchronizing
+                        break;
+                    }
+                case SceneEventType.ReSynchronize:
+                    {
+                        // Notify the local client that they have been re-synchronized after being synchronized with an in progress game session
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             SceneEventType = sceneEventData.SceneEventType,
-                            ClientId = NetworkManager.LocalClientId, // Client sent this to the server
+                            ClientId = NetworkManager.ServerClientId,  // Server sent this to client
                         });
 
-                        OnSynchronizeComplete?.Invoke(NetworkManager.LocalClientId);
-
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}][Scene Management Enabled] Synchronization complete!");
-                        }
-                        // For convenience, notify all NetworkBehaviours that synchronization is complete.
-                        NetworkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
-
-                        if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession)
-                        {
-                            IsRestoringSession = false;
-                            PostSynchronizationSceneUnloading = m_OriginalPostSynchronizationSceneUnloading;
-                        }
+                        EndSceneEvent(sceneEventId);
+                        break;
+                    }
+                case SceneEventType.LoadEventCompleted:
+                case SceneEventType.UnloadEventCompleted:
+                    {
+                        // Notify the local client that all clients have finished loading or unloading
+                        var clientId = NetworkManager.CMBServiceConnection ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                        InvokeSceneEvents(clientId, sceneEventData);
 
                         EndSceneEvent(sceneEventId);
+                        break;
                     }
-                    break;
-                }
-            case SceneEventType.ReSynchronize:
-                {
-                    // Notify the local client that they have been re-synchronized after being synchronized with an in progress game session
-                    OnSceneEvent?.Invoke(new SceneEvent()
+                default:
                     {
-                        SceneEventType = sceneEventData.SceneEventType,
-                        ClientId = NetworkManager.ServerClientId,  // Server sent this to client
-                    });
-
-                    EndSceneEvent(sceneEventId);
-                    break;
-                }
-            case SceneEventType.LoadEventCompleted:
-            case SceneEventType.UnloadEventCompleted:
-                {
-                    // Notify the local client that all clients have finished loading or unloading
-                    var clientId = NetworkManager.CMBServiceConnection ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                    InvokeSceneEvents(clientId, sceneEventData);
-
-                    EndSceneEvent(sceneEventId);
-                    break;
-                }
-            default:
-                {
-                    Debug.LogWarning($"{sceneEventData.SceneEventType} is not currently supported!");
-                    break;
-                }
+                        Debug.LogWarning($"{sceneEventData.SceneEventType} is not currently supported!");
+                        break;
+                    }
             }
         }
 

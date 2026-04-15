@@ -1503,7 +1503,7 @@ namespace Unity.Netcode
                 if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.DestroyWithScene && sobj.gameObject.scene != NetworkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     SpawnedObjectsList.Remove(sobj);
-                    UnityEngine.Object.Destroy(sobj.gameObject);
+                    Object.Destroy(sobj.gameObject);
                 }
             }
         }
@@ -1587,7 +1587,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                            Object.Destroy(networkObjects[i].gameObject);
                         }
                     }
                 }
@@ -1834,7 +1834,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(gobj);
+                    Object.Destroy(gobj);
                 }
             }
         }
