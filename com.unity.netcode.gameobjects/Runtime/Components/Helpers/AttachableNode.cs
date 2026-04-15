@@ -93,12 +93,10 @@ public class AttachableNode : NetworkBehaviour
 
     internal override void InternalOnDestroy()
     {
-        // Notify any attached behaviours that this node is being destroyed.
-        for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
+        if (m_AttachedBehaviours.Count > 0)
         {
-            m_AttachedBehaviours[i]?.OnAttachNodeDestroy();
+            OnIsDestroying();
         }
-        m_AttachedBehaviours.Clear();
         base.InternalOnDestroy();
     }
 
@@ -140,5 +138,22 @@ public class AttachableNode : NetworkBehaviour
         }
         m_AttachedBehaviours.Remove(attachableBehaviour);
         OnDetached(attachableBehaviour);
+    }
+
+    /// <summary>
+    /// When we know this instance is being destroyed or will be destroyed
+    /// by something outside of NGO's realm of control, this gets invoked.
+    /// We should notify any attached AttachableBehaviour that this node
+    /// is being destroyed.
+    /// </summary>
+    protected internal override void OnIsDestroying()
+    {
+        // Notify any attached behaviours that this node is being destroyed.
+        for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
+        {
+            m_AttachedBehaviours[i]?.OnAttachNodeDestroy();
+        }
+        m_AttachedBehaviours.Clear();
+        base.OnIsDestroying();
     }
 }

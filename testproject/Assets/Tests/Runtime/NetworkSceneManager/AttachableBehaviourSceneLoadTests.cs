@@ -284,7 +284,7 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(response == SceneEventProgressStatus.Started, $"Failed to begin scene loading event for {k_SceneToLoad} with a status of {response}!");
             yield return WaitForConditionOrTimeOut(() => m_AuthoritySceneLoaded.IsValid() && m_AuthoritySceneLoaded.isLoaded && m_SceneLoadCompleted);
             AssertOnTimeout($"Timed out waiting for all clients to load scene {k_SceneToLoad}!");
-
+            var persistedObjects = new Dictionary<NetworkManager, ulong>();
             // Now, make the newly loaded scene the currently active scene so everything instantiates in the scene authority's newly loaded scene instance.
             SceneManager.SetActiveScene(m_AuthoritySceneLoaded);
             foreach (var networkManager in m_NetworkManagers)
@@ -315,7 +315,10 @@ namespace TestProject.RuntimeTests
 
                 // Keep track of the spawned instances we expect to not persist a scene load
                 var doesNotPersist = m_Persists == Persists.AttachableNode ? m_SourceInstance.NetworkObjectId : m_TargetInstance.NetworkObjectId;
+                var persists = m_Persists == Persists.AttachableNode ? m_TargetInstance.NetworkObjectId : m_SourceInstance.NetworkObjectId;
                 m_DoesNotPersistNetworkObjectIds.Add(doesNotPersist);
+                persistedObjects.Add(networkManager, persists);
+                Debug.Log($"[{networkManager.name}] Spawned attachable and attached it.");
             }
 
             // This is the actual validation point where the scene is unloaded and either the attachable or

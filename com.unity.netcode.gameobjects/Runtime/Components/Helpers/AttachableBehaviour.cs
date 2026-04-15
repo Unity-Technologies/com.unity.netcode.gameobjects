@@ -261,18 +261,17 @@ namespace Unity.Netcode.Components
             ForceComponentChange(false, true);
 
             InternalDetach();
-            // Notify of the changed attached state
-            NotifyAttachedStateChanged(m_AttachState, m_AttachableNode);
+
+            if (m_AttachableNode != null && !m_AttachableNode.IsDestroying)
+            {
+                // Notify of the changed attached state
+                NotifyAttachedStateChanged(m_AttachState, m_AttachableNode);
+                // Only notify of the detach if the node is still valid.
+                m_AttachableNode.Detach(this);
+            }
 
             m_AttachedNodeReference = new NetworkBehaviourReference(null);
-
-            // When detaching, we want to make our final action
-            // the invocation of the AttachableNode's Detach method.
-            if (m_AttachableNode)
-            {
-                m_AttachableNode.Detach(this);
-                m_AttachableNode = null;
-            }
+            m_AttachableNode = null;
         }
 
         /// <inheritdoc/>
@@ -312,16 +311,18 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // If we are attached to some other AttachableNode, then detach from that before attaching to a new one.
+            // If we are attaching and already attached to some other AttachableNode,
+            // then detach from that before attaching to a new one.
             if (isAttaching && m_AttachableNode != null && m_AttachState == AttachState.Attached)
             {
-                // Run through the same process without being triggerd by a NetVar update.
+                // Detach the current attachable
                 NotifyAttachedStateChanged(AttachState.Detaching, m_AttachableNode);
                 InternalDetach();
                 NotifyAttachedStateChanged(AttachState.Detached, m_AttachableNode);
-
                 m_AttachableNode.Detach(this);
                 m_AttachableNode = null;
+
+                // Now attach the new attachable
             }
 
             // Change the state to attaching or detaching
@@ -466,7 +467,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void InternalDetach()
         {
-            if (!IsDestroying && m_AttachableNode && !m_AttachableNode.IsDestroying)
+            if (!IsDestroying && m_AttachableNode && (!m_AttachableNode.IsDestroying || m_AttachableNode.gameObject.scene.isLoaded))
             {
                 if (m_DefaultParent)
                 {
@@ -562,12 +563,33 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void OnAttachNodeDestroy()
         {
-            // If this instance should force a detach on destroy
-            if (AutoDetach.HasFlag(AutoDetachTypes.OnAttachNodeDestroy))
+            // We force a detach on destroy if there is a flag =or= if we are attached to a node that is being destroyed.
+            if (AutoDetach.HasFlag(AutoDetachTypes.OnAttachNodeDestroy) ||
+                (AutoDetach.HasFlag(AutoDetachTypes.OnDespawn) && m_AttachState == AttachState.Attached && m_AttachableNode && m_AttachableNode.IsDestroying))
             {
-                // Force a detach
                 ForceDetach();
             }
+        }
+
+
+        /// <summary>
+        /// When we know this instance is being destroyed or will be destroyed
+        /// by something outside of NGO's realm of control, this gets invoked.
+        /// We should detach from any AttachableNode when this is invoked.
+        /// </summary>
+        protected internal override void OnIsDestroying()
+        {
+            // If we are not already marked as being destroyed, attached, this instance is the authority instance, and the node we are attached
+            // to is not in the middle of being destroyed...detach normally.
+            if (!IsDestroying && HasAuthority && m_AttachState == AttachState.Attached && m_AttachableNode && !m_AttachableNode.IsDestroying)
+            {
+                Detach();
+            }
+            else // Otherwise force the detach.
+            {
+                ForceDetach();
+            }
+            base.OnIsDestroying();
         }
     }
 }

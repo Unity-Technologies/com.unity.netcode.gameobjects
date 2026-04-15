@@ -653,9 +653,11 @@ namespace Unity.Netcode.RuntimeTests
                     attachable.AutoDetach = AttachableBehaviour.AutoDetachTypes.OnAttachNodeDestroy;
                 }
                 var attachableNodeName = m_AttachableNodeInstance.name;
+                var attachableBehaviourName = m_AttachableBehaviourInstance.name;
+
                 Object.Destroy(m_TargetInstance.gameObject);
                 yield return WaitForConditionOrTimeOut(AllInstancesDetached);
-                AssertOnTimeout($"[OnAttachNodeDestroy] Timed out waiting for all clients to detach {m_AttachableBehaviourInstance.name} from {attachableNodeName}!\n {m_ErrorLog}");
+                AssertOnTimeout($"[OnAttachNodeDestroy] Timed out waiting for all clients to detach {attachableBehaviourName} from {attachableNodeName}!\n {m_ErrorLog}");
             }
         }
 

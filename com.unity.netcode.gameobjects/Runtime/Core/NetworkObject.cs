@@ -1703,29 +1703,30 @@ namespace Unity.Netcode
         /// its child NetworkBehaviours. Private to assure this is
         /// only invoked from within OnDestroy.
         /// </summary>
-        private void SetIsDestroying()
+        internal void SetIsDestroying()
         {
-            IsDestroying = true;
-
-            // Exit early if null
-            if (m_ChildNetworkBehaviours == null)
+            if (IsDestroying)
             {
                 return;
             }
 
-            foreach (var childBehaviour in m_ChildNetworkBehaviours)
+            if (m_ChildNetworkBehaviours != null)
             {
-                // Just ignore and continue processing through the entries
-                if (!childBehaviour)
+                foreach (var childBehaviour in m_ChildNetworkBehaviours)
                 {
-                    continue;
-                }
+                    // Just ignore and continue processing through the entries
+                    if (!childBehaviour)
+                    {
+                        continue;
+                    }
 
-                // Keeping the property a private set to assure this is
-                // the only way it can be set as it should never be reset
-                // back to false once invoked.
-                childBehaviour.SetDestroying();
+                    // Keeping the property a private set to assure this is
+                    // the only way it can be set as it should never be reset
+                    // back to false once invoked.
+                    childBehaviour.SetIsDestroying();
+                }
             }
+            IsDestroying = true;
         }
 
         private void OnDestroy()

@@ -652,8 +652,31 @@ namespace Unity.Netcode
         /// </remarks>
         internal bool IsDestroying { get; private set; }
 
-        internal void SetDestroying()
+        /// <summary>
+        /// This provides us with a way to track when something is in the middle
+        /// of being destroyed or will be destroyed by something like SceneManager.
+        /// root <see cref="GameObject"/> is 
+        /// </summary>
+        protected internal virtual void OnIsDestroying()
         {
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="NetworkObject.SetIsDestroying"/>.
+        /// </summary>
+        /// <remarks>
+        /// We want to invoke the virtual method prior to setting the
+        /// IsDestroying flag to be able to distinguish between knowing
+        /// when something will be destroyed (i.e. scene manager unload
+        /// or load in single mode) or is in the middle of being
+        /// destroyed.
+        /// Setting the flag provides a way for other instances or internals
+        /// to determine if this <see cref="NetworkBehaviour"/> instance is
+        /// in the middle of being destroyed.
+        /// </remarks>
+        internal void SetIsDestroying()
+        {
+            OnIsDestroying();
             IsDestroying = true;
         }
 
