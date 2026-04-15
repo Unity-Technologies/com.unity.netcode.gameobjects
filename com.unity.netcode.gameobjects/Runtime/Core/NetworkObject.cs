@@ -1762,7 +1762,6 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"[{name}] When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManagerOwner.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!");
                     }
-                    return;
                 }
                 else
                 {
@@ -1770,8 +1769,8 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"[{name}] Only server can spawn {nameof(NetworkObject)}s.");
                     }
-                    return;
                 }
+                return;
             }
 
             if (NetworkManagerOwner.DistributedAuthorityMode)
@@ -2296,7 +2295,7 @@ namespace Unity.Netcode
         private void OnTransformParentChanged()
         {
             var networkManager = NetworkManager;
-            if (!AutoObjectParentSync || networkManager.ShutdownInProgress)
+            if (!AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
             {
                 return;
             }
@@ -2308,18 +2307,9 @@ namespace Unity.Netcode
 
             if (networkManager == null || !networkManager.IsListening)
             {
-                // DANGO-TODO: Review as to whether we want to provide a better way to handle changing parenting of objects when the
-                // object is not spawned. Really, we shouldn't care about these types of changes.
-                if (networkManager.DistributedAuthorityMode && m_CachedParent != null && transform.parent == null)
-                {
-                    m_CachedParent = null;
-                    return;
-                }
                 transform.parent = m_CachedParent;
-                if (networkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
-                }
+                // We want to log at any LogLevel, since we may not have a network manager may here.
+                NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 return;
             }
 
@@ -2351,9 +2341,9 @@ namespace Unity.Netcode
             if (!isParentingAuthority)
             {
                 transform.parent = m_CachedParent;
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                if (networkManager.LogLevel <= LogLevel.Error)
                 {
-                    if (NetworkManagerOwner.DistributedAuthorityMode)
+                    if (networkManager.DistributedAuthorityMode)
                     {
                         NetworkLog.LogError($"[{name}][Not Owner] Only the owner-authority of child {gameObject.name}'s {nameof(NetworkObject)} component can re-parent it!");
                     }
@@ -2373,7 +2363,7 @@ namespace Unity.Netcode
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                    if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent");
                     }
@@ -2383,7 +2373,7 @@ namespace Unity.Netcode
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
+                    if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented under another spawned {nameof(NetworkObject)}.");
                     }
@@ -2424,20 +2414,20 @@ namespace Unity.Netcode
             }
 
             // If we're not the server, we should tell the server about this parent change
-            if (!NetworkManagerOwner.IsServer)
+            if (!networkManager.IsServer)
             {
                 // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
-                if (NetworkManagerOwner.DistributedAuthorityMode && Observers.Count <= 1)
+                if (networkManager.DistributedAuthorityMode && Observers.Count <= 1)
                 {
                     return;
                 }
 
-                NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 return;
             }
 
             // Otherwise we are a Server (client-server or DAHost). Send to all observers
-            foreach (var clientId in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId)
                 {
@@ -2445,7 +2435,7 @@ namespace Unity.Netcode
                 }
                 if (Observers.Contains(clientId))
                 {
-                    NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
@@ -3369,10 +3359,7 @@ namespace Unity.Netcode
                 // Ensure that the buffer is completely reset
                 if (reader.Position != endOfSynchronizationData)
                 {
-                    if (networkManager.LogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
-                    }
+                    Debug.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
                     reader.Seek(endOfSynchronizationData);
                 }
             }
@@ -3642,9 +3629,9 @@ namespace Unity.Netcode
                         return PrefabGlobalObjectIdHash;
                     }
                     // For legacy manual instantiation and spawning, check the OverrideToNetworkPrefab for a possible match
-                    if (networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                    if (networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.TryGetValue(GlobalObjectIdHash, out var overrideHash))
                     {
-                        return networkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                        return overrideHash;
                     }
                 }
             }

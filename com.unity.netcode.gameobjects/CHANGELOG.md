@@ -28,7 +28,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Early return when `ChangeOwnership` is called while not spawned. (#3933)
 - Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security
