@@ -2038,7 +2038,6 @@ namespace Unity.Netcode
                 // If we are just a normal client and in distributed authority mode, then always use the known server scene handle
                 if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
                 {
-                    Debug.Log($"[Client-{NetworkManager.LocalClientId}] Adding scene to synchronize: {scene.name}");
                     sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), ClientSceneHandleToServerSceneHandle[scene.handle]);
                 }
                 else

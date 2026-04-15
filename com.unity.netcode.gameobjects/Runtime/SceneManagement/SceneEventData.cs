@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -588,7 +587,6 @@ namespace Unity.Netcode
             // Write the scenes we want to load, in the order we want to load them
             writer.WriteValueSafe(ScenesToSynchronize.ToArray());
             writer.WriteValueSafe(SceneHandlesToSynchronize.ToArray());
-            Debug.Log($"[Client-1][WriteSceneSynchronizationData] ScenesToSynchronize={ScenesToSynchronize.Count}, SceneHandlesToSynchronize={SceneHandlesToSynchronize.Count}");
             // Store our current position in the stream to come back and say how much data we have written
             var positionStart = writer.Position;
 
@@ -784,7 +782,7 @@ namespace Unity.Netcode
                         {
                             LogArray(reader.ToArray(), 0, reader.Length);
                         }
-                        CopySceneSynchronizationData(reader, TargetClientId);
+                        CopySceneSynchronizationData(reader);
                         IsStartingSynchronization = true;
                         break;
                     }
@@ -827,14 +825,13 @@ namespace Unity.Netcode
         /// into the internal buffer to be used throughout the synchronization process.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CopySceneSynchronizationData(FastBufferReader reader, ulong targetClientId)
+        internal void CopySceneSynchronizationData(FastBufferReader reader)
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
             reader.ReadValueSafe(out NetworkSceneHandle[] sceneHandlesToSynchronize);
             ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
             SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>(sceneHandlesToSynchronize);
-            Debug.Log($"[Client-{targetClientId}] CopySceneSynchronizationData! ScenesToSynchronize={ScenesToSynchronize.Count}, SceneHandlesToSynchronize={SceneHandlesToSynchronize.Count}");
 
 
             // is not packed!
