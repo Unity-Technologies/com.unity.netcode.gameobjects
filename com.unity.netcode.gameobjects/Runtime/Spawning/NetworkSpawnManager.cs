@@ -1056,18 +1056,30 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
-            if (networkObject.IsSpawned || NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+            if (networkObject.IsSpawned)
             {
-                Debug.LogError($"{networkObject.name} is already spawned!");
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Cannot process spawn of {networkObject.name} as it is already spawned!");
+                }
                 return false;
             }
 
-            if (!sceneObject)
+            if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out var existingObj))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Cannot spawn {networkObject.name} with {nameof(networkId)}={networkId} as {existingObj.name} has already been spawned using this id!");
+                }
+                return false;
+            }
+
+            if (!sceneObject && NetworkManager.LogLevel <= LogLevel.Error)
             {
                 var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
                 if (networkObjectChildren.Length > 1)
                 {
-                    Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
+                    NetworkLog.LogWarning("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
 
@@ -1123,12 +1135,14 @@ namespace Unity.Netcode
                     NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} {networkObject.name} with Hash {networkObject.GlobalObjectIdHash}.");
                 }
 
+                networkObject.ResetOnDespawn();
                 return false;
             }
 
             // When done spawning invoke post spawn
             networkObject.InvokeBehaviourNetworkPostSpawn();
 
+            networkObject.IsSpawnAuthority = false;
             return true;
         }
 
