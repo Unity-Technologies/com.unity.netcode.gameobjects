@@ -655,7 +655,6 @@ namespace Unity.Netcode
         /// <summary>
         /// This provides us with a way to track when something is in the middle
         /// of being destroyed or will be destroyed by something like SceneManager.
-        /// root <see cref="GameObject"/> is 
         /// </summary>
         protected internal virtual void OnIsDestroying()
         {
