@@ -2709,7 +2709,11 @@ namespace Unity.Netcode
                 }
                 else if (networkObject.HasAuthority)
                 {
-                    networkObject.Despawn();
+                    networkObject.SetIsDestroying();
+                    var isSceneObject = networkObject.IsSceneObject;
+                    // Only destroy non-scene placed NetworkObjects to avoid warnings about destroying in-scene placed NetworkObjects.
+                    // (MoveObjectsToDontDestroyOnLoad is only invoked during a scene event type of load and the load scene mode is single)
+                    networkObject.Despawn(isSceneObject.HasValue && isSceneObject.Value == false);
                 }
             }
         }
