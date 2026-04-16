@@ -644,11 +644,10 @@ namespace Unity.Netcode
         public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
-        /// Returns true if the NetworkObject is in the middle of being destroyed or
-        /// if there is no valid assigned NetworkObject.
+        /// Returns true if the NetworkObject is in the middle of being destroyed.
         /// </summary>
         /// <remarks>
-        /// <see cref="NetworkObject.IsDestroying"/>
+        /// <see cref="SetIsDestroying"/>
         /// </remarks>
         internal bool IsDestroying { get; private set; }
 
@@ -675,6 +674,7 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SetIsDestroying()
         {
+            // We intentionally invoke this before setting the IsDestroying flag.
             OnIsDestroying();
             IsDestroying = true;
         }

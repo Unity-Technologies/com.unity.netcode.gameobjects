@@ -467,6 +467,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void InternalDetach()
         {
+            // If this instance is not in the middle of being destroyed, the attachable node is not null, and the node is not destroying
+            // =or= the scene it is located in is in the middle of being unloaded, then re-parent under the default parent.
             if (!IsDestroying && m_AttachableNode && (!m_AttachableNode.IsDestroying || m_AttachableNode.gameObject.scene.isLoaded))
             {
                 if (m_DefaultParent)
