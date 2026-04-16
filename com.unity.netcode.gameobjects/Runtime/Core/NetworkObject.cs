@@ -3232,7 +3232,10 @@ namespace Unity.Netcode
                 {
                     reader.ReadValueSafe(out ushort networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    if (networkBehaviour != null)
+                    {
+                        networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    }
                 }
             }
         }
