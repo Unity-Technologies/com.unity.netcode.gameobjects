@@ -61,10 +61,9 @@ namespace Unity.Netcode.RuntimeTests
                 return;
             }
             // client can't access server player
-            Assert.Throws<NotServerException>(() =>
-            {
-                m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(serverSideClientId);
-            });
+            string expectedLog = $"[Netcode-Server Sender=0] {serverSideClientId} Only the server can find player objects from other clients.";
+            LogAssert.Expect(UnityEngine.LogType.Error, expectedLog);
+            m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(serverSideClientId);
         }
 
         [Test]
@@ -100,10 +99,9 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // client can't access other player
-            Assert.Throws<NotServerException>(() =>
-            {
-                m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
-            });
+            string expectedLog = $"[Netcode-Server Sender=0] {otherClientSideClientId} Only the server can find player objects from other clients.";
+            LogAssert.Expect(UnityEngine.LogType.Error, expectedLog);
+            m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
         }
 
         [Test]
