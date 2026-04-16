@@ -3324,12 +3324,23 @@ namespace Unity.Netcode
         {
             var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 
+            if (serializedObject.NetworkObjectId == default)
+            {
+                if (networkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogErrorServer($"[{nameof(GlobalObjectIdHash)}={serializedObject.Hash}] Received spawn request with invalid {nameof(NetworkObjectId)} {serializedObject.NetworkObjectId}. This should not happen!");
+                }
+
+                reader.Seek(endOfSynchronizationData);
+                return null;
+            }
+
             // Do the SpawnManager parts of the object spawn
             var succeeded = networkManager.SpawnManager.NonAuthorityLocalSpawn(in serializedObject, out var networkObject, reader, serializedObject.DestroyWithScene);
 
             // Process any deferred messages once the object is 100% finished spawning
             // Ensure this is done whether the spawn succeeds or fails
-            networkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, networkObject.NetworkObjectId);
+            networkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serializedObject.NetworkObjectId);
 
             // Ensure that the buffer is completely reset
             if (reader.Position != endOfSynchronizationData)

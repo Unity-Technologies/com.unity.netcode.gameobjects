@@ -896,7 +896,7 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
+                    NetworkLog.LogErrorServer($"[{nameof(globalObjectIdHash)}={globalObjectIdHash}] Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
                 }
                 return null;
             }
@@ -1199,7 +1199,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogWarning($"Trying to spawn a {nameof(NetworkObject)} with a {nameof(NetworkObject.NetworkObjectId)} of {serializedObject.NetworkObjectId} but an object with that id already in the spawned list!");
+                    NetworkLog.LogWarning($"Trying to spawn a {nameof(NetworkObject)} with a {nameof(NetworkObject.NetworkObjectId)} of {serializedObject.NetworkObjectId} but an object with that id is already in the spawned list. This should not happen!");
                 }
                 networkObject = null;
                 return false;
@@ -1219,7 +1219,7 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
+                    NetworkLog.LogError($"[{nameof(NetworkObject.GlobalObjectIdHash)}={serializedObject.Hash}] Failed to spawn {nameof(NetworkObject)}!");
                 }
 
                 return false;
@@ -1271,7 +1271,7 @@ namespace Unity.Netcode
             var succeeded = SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsSceneObject, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
             if (!succeeded)
             {
-                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
+                // Don't need to log here as SpawnNetworkObjectLocallyCommon should log the specific error
                 return false;
             }
 
