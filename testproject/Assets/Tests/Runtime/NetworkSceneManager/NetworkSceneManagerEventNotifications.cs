@@ -103,10 +103,10 @@ namespace TestProject.RuntimeTests
             {
                 // Validates that we sent the proper number of synchronize events to the clients
                 case SceneEventType.Synchronize:
-                {
-                    m_ClientsReceivedSynchronize.Add(sceneEvent.ClientId);
-                    break;
-                }
+                    {
+                        m_ClientsReceivedSynchronize.Add(sceneEvent.ClientId);
+                        break;
+                    }
                 // Validate that the clients finish synchronization and they used the proper synchronization mode
                 case SceneEventType.SynchronizeComplete:
                     {
