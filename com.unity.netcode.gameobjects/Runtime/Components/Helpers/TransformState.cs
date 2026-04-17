@@ -174,40 +174,10 @@ namespace Unity.Netcode
             var deltaX = (((uint)(math.abs(m_Delta.x * precision))) & 0x7FFFFF);
             var deltaY = (((uint)(math.abs(m_Delta.y * precision))) & 0x7FFFFF);
             var deltaZ = (((uint)(math.abs(m_Delta.z * precision))) & 0x7FFFFF);
-            if (deltaX > 0)
-            {
-                X = (((uint)(math.abs(m_Delta.x * precision))) & 0x7FFFFF);
-                X = (X << 1) | (uint)((m_Delta.x < 0.0f) ? 0b1 : 0b0);
-            }
-            else
-            {
-                X = 0;
-            }
-
-            if (deltaY > 0)
-            {
-                Y = (((uint)(math.abs(m_Delta.y * precision))) & 0x7FFFFF);
-                Y = (Y << 1) | (uint)((m_Delta.y < 0.0f) ? 0b1 : 0b0);
-            }
-            else
-            {
-                Y = 0;
-            }
-
-            if (deltaZ > 0)
-            {
-                Z = (((uint)(math.abs(m_Delta.z * precision))) & 0x7FFFFF);
-                Z = (Z << 1) | (uint)((m_Delta.z < 0.0f) ? 0b1 : 0b0);
-            }
-            else
-            {
-                Z = 0;
-            }
-
             //if (deltaX > 0)
             //{
-            //    X = (((uint)(math.abs(current.m_RawState.x * precision))) & 0x7FFFFF);
-            //    X = (X << 1) | (uint)((current.m_RawState.x < 0.0f) ? 0b1 : 0b0);
+            //    X = (((uint)(math.abs(m_Delta.x * precision))) & 0x7FFFFF);
+            //    X = (X << 1) | (uint)((m_Delta.x < 0.0f) ? 0b1 : 0b0);
             //}
             //else
             //{
@@ -216,8 +186,8 @@ namespace Unity.Netcode
 
             //if (deltaY > 0)
             //{
-            //    Y = (((uint)(math.abs(current.m_RawState.y * precision))) & 0x7FFFFF);
-            //    Y = (Y << 1) | (uint)((current.m_RawState.y < 0.0f) ? 0b1 : 0b0);
+            //    Y = (((uint)(math.abs(m_Delta.y * precision))) & 0x7FFFFF);
+            //    Y = (Y << 1) | (uint)((m_Delta.y < 0.0f) ? 0b1 : 0b0);
             //}
             //else
             //{
@@ -226,13 +196,43 @@ namespace Unity.Netcode
 
             //if (deltaZ > 0)
             //{
-            //    Z = (((uint)(math.abs(current.m_RawState.z * precision))) & 0x7FFFFF);
-            //    Z = (Z << 1) | (uint)((current.m_RawState.z < 0.0f) ? 0b1 : 0b0);
+            //    Z = (((uint)(math.abs(m_Delta.z * precision))) & 0x7FFFFF);
+            //    Z = (Z << 1) | (uint)((m_Delta.z < 0.0f) ? 0b1 : 0b0);
             //}
             //else
             //{
             //    Z = 0;
             //}
+
+            if (deltaX > 0)
+            {
+                X = (((uint)(math.abs(current.m_RawState.x * precision))) & 0x7FFFFF);
+                X = (X << 1) | (uint)((current.m_RawState.x < 0.0f) ? 0b1 : 0b0);
+            }
+            else
+            {
+                X = 0;
+            }
+
+            if (deltaY > 0)
+            {
+                Y = (((uint)(math.abs(current.m_RawState.y * precision))) & 0x7FFFFF);
+                Y = (Y << 1) | (uint)((current.m_RawState.y < 0.0f) ? 0b1 : 0b0);
+            }
+            else
+            {
+                Y = 0;
+            }
+
+            if (deltaZ > 0)
+            {
+                Z = (((uint)(math.abs(current.m_RawState.z * precision))) & 0x7FFFFF);
+                Z = (Z << 1) | (uint)((current.m_RawState.z < 0.0f) ? 0b1 : 0b0);
+            }
+            else
+            {
+                Z = 0;
+            }
             if (HasDelta())
             {
                 m_Delta = current.m_RawState;
