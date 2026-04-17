@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode.Components;
 using UnityEngine;
 using static Unity.Netcode.Components.NetworkTransform;
 
@@ -151,7 +152,6 @@ namespace Unity.Netcode
 
         private ushort m_TransformIdentifier;
         internal ushort TransformIdentifier => m_TransformIdentifier;
-
         public bool IsMotionAuthority => m_IsMotionAuthority;
         private bool m_IsMotionAuthority;
 
@@ -166,14 +166,30 @@ namespace Unity.Netcode
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             serializer.SerializeValue(ref m_TransformIdentifier);
+            var halfVector3 = new HalfVector3(transform.position);
+            var rotation = transform.rotation;
+            var rotationCompressed = (uint)0;
+            if (serializer.IsWriter)
+            {
+                rotationCompressed = QuaternionCompressor.CompressQuaternion(ref rotation);
+            }
+
+            serializer.SerializeValue(ref halfVector3);
+            serializer.SerializeValue(ref rotationCompressed);
+
+            if (serializer.IsReader)
+            {
+                QuaternionCompressor.DecompressQuaternion(ref rotation, rotationCompressed);
+                transform.SetPositionAndRotation(halfVector3.ToVector3(), rotation);
+            }
             base.OnSynchronize(ref serializer);
         }
 
         /// <summary>
         /// TODO: Add editor inspector view way of configuring whether the kinematic state should
         /// be set or not and for which Rigidbody(ies).
-        /// <see cref="Components.ComponentController"/>
-        /// We could use a <see cref="Components.NetworkRigidbodyBase"/> derived component, but that
+        /// <see cref="ComponentController"/>
+        /// We could use a <see cref="NetworkRigidbodyBase"/> derived component, but that
         /// requires removing the required component and making adjustments.
         /// For now, just mock the same kind of behaviour.
         /// </summary>
@@ -249,6 +265,7 @@ namespace Unity.Netcode
             m_PositionInterpolator.ResetTo(transform.parent, (HasParent ? transform.localPosition : transform.position), serverTime.Time);
             m_RotationInterpolator.ResetTo(transform.parent, (HasParent ? transform.localRotation : transform.rotation), serverTime.Time);
             m_ForwardInterpolator.ResetTo(transform.parent, transform.forward, serverTime.Time);
+            LastPositionUpdate = (HasParent ? transform.localPosition : transform.position);
         }
 
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
@@ -296,6 +313,12 @@ namespace Unity.Netcode
 
             InitializeInterpolators();
             NetworkManager.TransformStateManager.TrackTransformStateChanges(this, true);
+            var rigidBody = GetComponent<Rigidbody>();
+            if (rigidBody != null && !IsMotionAuthority)
+            {
+                rigidBody.isKinematic = true;
+            }
+
             base.OnInternalOnNetworkSpawn();
         }
 
@@ -331,6 +354,8 @@ namespace Unity.Netcode
             base.OnDestroy();
         }
 
+        internal Vector3 LastPositionUpdate;
+
         internal void UpdateState(double time, TransformGridState state)
         {
             if (state.DirtyScale)
@@ -341,8 +366,11 @@ namespace Unity.Netcode
             if (state.DirtyPosition)
             {
 #if DEBUG_TRANSFORMSTATE
-                Debug.Log($"[{name}][NetworkObjectId: {NetworkObjectId}][{nameof(TransformStateSync)}][{nameof(UpdateState)}][Position] {state.PositionFloat}");
+                Debug.Log($"[{name}][NetworkObjectId: {NetworkObjectId}][{nameof(TransformStateSync)}][{nameof(UpdateState)}][Position] ({state.PositionFloat}) | " +
+                    $"({state.Position.X}, {state.Position.Y}, {state.Position.Z}) ToVector3 ({state.Position.ToVector3(state.InvPrecision)})");
 #endif
+                // Just keep up to date with the most current position which is used when getting the next state update
+                LastPositionUpdate = state.PositionFloat;
                 m_PositionInterpolator.AddMeasurement(transform.parent, state.PositionFloat, time);
             }
 

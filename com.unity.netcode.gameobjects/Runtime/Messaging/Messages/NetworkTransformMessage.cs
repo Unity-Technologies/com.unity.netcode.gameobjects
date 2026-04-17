@@ -34,12 +34,18 @@ namespace Unity.Netcode
             }
             else
             {
+#if DEBUG_TRANSFORMSTATE
                 var position = writer.Position;
+#endif
                 BytePacker.WriteValuePacked(writer, Count);
+#if DEBUG_TRANSFORMSTATE
                 var countSize = writer.Position - position;
+#endif
 
                 writer.WriteBytesSafe(State, Size);
+#if DEBUG_TRANSFORMSTATE
                 Debug.Log($"[{k_Name}][Start: {position}][Count-Size: {countSize}][Size: {Size}][Wrote {Size + countSize} bytes!");
+#endif
             }
         }
 

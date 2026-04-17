@@ -261,14 +261,18 @@ namespace Unity.Netcode
 
 #if DEBUG_TRANSFORMSTATE
                             var header = $"[{nameof(TransformStateManager)}][Send][NetworkObjectId: {entry.GridStateDelta.TransformIdentifier}][Index: {entry.GridStateDelta.Index}][Total Size: {totalSize}][Header: {writeSize.Item2}][PayloadSize: {writeSize.Item3}]";
-                            if ((writeSize.Item1 & 0x01) == 0x01)
-                            {
-                                header += $"[S: {entry.GridStateDelta.Scale.ToVector3()}]";
-                            }
+                            //if ((writeSize.Item1 & 0x01) == 0x01)
+                            //{
+                            //    header += $"[S: {entry.GridStateDelta.Scale.ToVector3()}]";
+                            //}
 
                             if ((writeSize.Item1 & 0x02) == 0x02)
                             {
-                                header += $"[P: {entry.GridStateDelta.Position.ToVector3()}]";
+                                var positionState = entry.GridStateDelta.Position;
+                                entry.GridStateDelta.Position.Decompress();
+                                var decompressed = entry.GridStateDelta.Position.ToVector3(1.0f / m_Precision);
+                                header += $"[P-Decompressed: {decompressed}] vs [P-OrignalDelta: {positionState.Delta}]";
+                                header += $"[P: ({positionState.X} | {positionState.Delta.x} , {positionState.Y} | {positionState.Delta.y}, {positionState.Z} | | {positionState.Delta.z})]";
                             }
 
                             if ((writeSize.Item1 & 0x04) == 0x04)
@@ -440,7 +444,7 @@ namespace Unity.Netcode
                             AvPayLoadSize = AvPayLoadSize == 0 ? transformState.Payload_Size : (int)(0.5f * (AvPayLoadSize + transformState.Payload_Size));
                             transformState.Precision = m_Precision;
                             transformState.InvPrecision = 1.0f / m_Precision;
-                            transformState.CurrentPosition = transformStateSync.transform.position;
+                            transformState.CurrentPosition = transformStateSync.LastPositionUpdate;
                             transformState.CurrentScale = transformStateSync.transform.localScale;
                             transformState.Decompress();
 
