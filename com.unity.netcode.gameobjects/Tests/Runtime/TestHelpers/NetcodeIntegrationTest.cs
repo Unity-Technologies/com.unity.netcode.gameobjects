@@ -594,6 +594,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
             NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
+            // NetworkLog.Config.LogNetworkManagerRole = true;
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
 
@@ -808,7 +809,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_NumberOfClients = numberOfClients;
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
-            NetworkLog.NetworkManagerOverride = server;
+            NetworkLog.SetNetworkManager(server);
 
             var managers = clients.ToList();
             if (!m_UseCmbService)

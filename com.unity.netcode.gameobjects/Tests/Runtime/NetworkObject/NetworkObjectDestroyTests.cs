@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
                 // The non-authority client is =NOT= allowed to destroy any spawned object it does not
                 // have authority over during runtime.
                 LogAssert.ignoreFailingMessages = true;
-                NetworkLog.NetworkManagerOverride = nonAuthorityClient;
+                NetworkLog.SetNetworkManager(nonAuthorityClient);
                 Object.Destroy(clientPlayerClone.gameObject);
             }
 
@@ -199,12 +199,6 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
             return true;
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            NetworkLog.NetworkManagerOverride = null;
-            return base.OnTearDown();
         }
 
         protected override void OnOneTimeTearDown()
