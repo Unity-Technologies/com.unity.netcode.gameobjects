@@ -1543,11 +1543,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
 
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager?.Shutdown();
-            }
-
             // Cleanup any remaining NetworkObjects
             DestroySceneNetworkObjects();
 
@@ -1573,6 +1568,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 DeRegisterSceneManagerHandler();
 
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    networkManager?.Shutdown();
+                }
+
                 NetcodeIntegrationTestHelpers.Destroy();
 
                 m_PlayerNetworkObjects.Clear();
@@ -1580,7 +1580,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             catch (Exception e)
             {
-                throw e;
+                Debug.LogException(e);
             }
             finally
             {
@@ -1589,11 +1589,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.DestroyImmediate(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
-            }
-
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager?.Shutdown();
             }
 
             // Allow time for NetworkManagers to fully shutdown
