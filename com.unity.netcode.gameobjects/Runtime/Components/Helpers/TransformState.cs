@@ -1340,7 +1340,7 @@ namespace Unity.Netcode
                 {
                     if (update[i] != 0.0f)
                     {
-                        PositionFloat[i] += update[i];
+                        PositionFloat[i] = update[i];
                     }
                 }
                 //PositionFloat.x = (Position.X * InvPrecision);// + CurrentPosition.x;
