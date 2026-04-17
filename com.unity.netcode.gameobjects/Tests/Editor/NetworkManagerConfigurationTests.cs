@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
+using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -42,7 +44,7 @@ namespace Unity.Netcode.EditorTests
             var messageToCheck = NetworkManager.GenerateNestedNetworkManagerMessage(networkManagerObject.transform);
 
             // Trap for the nested NetworkManager exception
-            LogAssert.Expect(LogType.Error, messageToCheck);
+            LogAssert.Expect(LogType.Error, new Regex(messageToCheck));
 
             // Since this is an in-editor test, we must force this invocation
             NetworkManagerHelper.Singleton.NotifyUserOfNestedNetworkManager(networkManager, false, true);
@@ -73,7 +75,7 @@ namespace Unity.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
 
             // Trap for the error message generated when a NetworkObject is discovered on the same GameObject or any children under it
-            LogAssert.Expect(LogType.Error, NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage());
+            LogAssert.Expect(LogType.Error, new Regex(NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage()));
 
             // Add the NetworkObject
             var networkObject = targetforNetworkObject.AddComponent<NetworkObject>();
@@ -119,7 +121,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkPrefabHandler.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+            LogAssert.Expect(LogType.Warning, new Regex($"{parent.name}\\] Prefab has child {nameof(NetworkObject)}\\(s\\) but they will not be spawned across the network \\(unsupported {nameof(NetworkPrefab)} setup\\)"));
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);

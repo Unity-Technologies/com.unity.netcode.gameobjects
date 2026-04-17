@@ -298,7 +298,7 @@ namespace Unity.Netcode.Editor
 #else
                         string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
 #endif
-                        Debug.Log("Saving migrated Network Prefabs List to " + path);
+                        m_NetworkManager.Log.Info(new Context(LogLevel.Normal, "Saving migrated Network Prefabs List").With("Path", path));
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
                     }
