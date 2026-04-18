@@ -1,7 +1,7 @@
 {
   "disableProjectUpdate": false,
   "dependencies": {
-    "com.unity.ide.rider": "3.0.39",
+    "com.unity.ide.rider": "3.0.40",
     "com.unity.multiplayer.tools": "1.1.1",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.test-framework": "1.4.6",
