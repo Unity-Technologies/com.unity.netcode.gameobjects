@@ -66,11 +66,11 @@ namespace Unity.Netcode
                 if (m_MotionAuthorityObjectMap.ContainsKey(clientId))
                 {
                     m_MotionAuthorityObjectMap[clientId].Remove(identifier);
-                }
 
-                if (m_MotionAuthorityObjectMap[clientId].Count == 0)
-                {
-                    m_MotionAuthorityObjectMap.Remove(clientId);
+                    if (m_MotionAuthorityObjectMap[clientId].Count == 0)
+                    {
+                        m_MotionAuthorityObjectMap.Remove(clientId);
+                    }
                 }
             }
 

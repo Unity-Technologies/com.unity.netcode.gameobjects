@@ -1363,30 +1363,34 @@ namespace Unity.Netcode
 
         public void WriteState(FastBufferWriter writer)
         {
-            var dirtyFlags = (byte)0;
+            //var dirtyFlags = (byte)0;
             var startPosition = writer.Position;
-            BytePacker.WriteValueBitPacked(writer, TransformIdentifier);
-            var dirtyPosition = writer.Position;
-            writer.WriteByteSafe(dirtyFlags);
+            var transformInfo = (uint)TransformIdentifier;
+            transformInfo = transformInfo << 3;
+            transformInfo |= (uint)(Position.HasDelta() ? 1 : 0);
+            transformInfo |= (uint)(Rotation.HasDelta() ? 2 : 0);
+            transformInfo |= (uint)(Scale.HasDelta() ? 4 : 0);
+            BytePacker.WriteValueBitPacked(writer, transformInfo);
+
+            //BytePacker.WriteValueBitPacked(writer, TransformIdentifier);
+            //var dirtyPosition = writer.Position;
+            //writer.WriteByteSafe(dirtyFlags);
             Header_Size = writer.Position - startPosition;
             startPosition = writer.Position;
 
-            if (Scale.HasDelta())
-            {
-                dirtyFlags |= 0x01;
-                Scale.WriteState(writer);
-            }
-
             if (Position.HasDelta())
             {
-                dirtyFlags |= 0x02;
                 Position.WriteState(writer);
             }
 
             if (Rotation.HasDelta())
             {
-                dirtyFlags |= 0x04;
                 Rotation.WriteState(writer);
+            }
+
+            if (Scale.HasDelta())
+            {
+                Scale.WriteState(writer);
             }
 
             //if (Forward.HasDelta())
@@ -1395,12 +1399,13 @@ namespace Unity.Netcode
             //    Forward.WriteState(writer);
             //}
 
-            var tail = writer.Position;
-            writer.Seek(dirtyPosition);
-            writer.WriteValueSafe(dirtyFlags);
-            writer.Seek(tail);
+            //var tail = writer.Position;
+            //writer.Seek(dirtyPosition);
+            //writer.WriteValueSafe(dirtyFlags);
+            //writer.Seek(tail);
             Payload_Size = writer.Position - startPosition;
-            DirtyFlags = dirtyFlags;
+            //DirtyFlags = dirtyFlags;
+            DirtyFlags = (byte)(transformInfo & 0b111);
 
         }
 
@@ -1408,30 +1413,43 @@ namespace Unity.Netcode
         {
             var dirtyFlags = (byte)0;
             var startPosition = reader.Position;
-            ByteUnpacker.ReadValuePacked(reader, out TransformIdentifier);
+            var transformInfo = (uint)0;
 
-            reader.ReadValueSafe(out dirtyFlags);
+            ByteUnpacker.ReadValuePacked(reader, out transformInfo);
+            //ByteUnpacker.ReadValuePacked(reader, out TransformIdentifier);
+            //reader.ReadValueSafe(out dirtyFlags);
+            dirtyFlags = (byte)(transformInfo & 0b111);
+            transformInfo |= (uint)(Position.HasDelta() ? 1 : 0);
+            transformInfo |= (uint)(Rotation.HasDelta() ? 2 : 0);
+            transformInfo |= (uint)(Scale.HasDelta() ? 4 : 0);
+            DirtyPosition = (transformInfo & 1) == 1;
+            DirtyRotation = (transformInfo & 2) == 2;
+            DirtyScale = (transformInfo & 4) == 4;
+
+            TransformIdentifier = (ushort)(transformInfo >> 3);
+
             Header_Size = reader.Position - startPosition;
             startPosition = reader.Position;
-            if ((dirtyFlags & 0x01) == 0x01)
-            {
-                DirtyScale = true;
-                Scale.ReadState(reader);
-                ScaleFloat = math.float3(Scale.Axis);
-            }
 
-            if ((dirtyFlags & 0x02) == 0x02)
+
+            if (DirtyPosition)
             {
                 DirtyPosition = true;
                 Position.ReadState(reader);
                 //PositionFloat = math.float3(Position.Axis);
             }
 
-            if ((dirtyFlags & 0x04) == 0x04)
+            if (DirtyRotation)
             {
                 DirtyRotation = true;
                 Rotation.ReadState(reader);
                 Rotation.Decompress();
+            }
+
+            if (DirtyScale)
+            {
+                Scale.ReadState(reader);
+                ScaleFloat = math.float3(Scale.Axis);
             }
 
             //if ((dirtyFlags & 0x04) == 0x04)
