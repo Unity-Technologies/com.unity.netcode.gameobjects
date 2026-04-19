@@ -30,6 +30,8 @@ namespace Unity.Netcode
         public int Index;
         public ushort TransformIdentifier;
 
+        internal ushort PreviousTransformIdentifier;
+
         public Vector3 LastPositionUpdate;
         public Vector3 CurrentScale;
 
@@ -139,8 +141,9 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe (byte, int, int) DebugWriteState(FastBufferWriter writer)
+        public unsafe (byte, int, int) DebugWriteState(FastBufferWriter writer, ushort previousTranaformIdentifier)
         {
+            PreviousTransformIdentifier = previousTranaformIdentifier;
             WriteState(writer);
             return (DirtyFlags, Header_Size, Payload_Size);
         }
@@ -155,7 +158,17 @@ namespace Unity.Netcode
             // For additional configurations, we can use the upper bits
             // of the transform information header to signal there is
             // additional information being provided (i.e. synchronize, teleport, etc.).
-            var transformInfo = (uint)TransformIdentifier;
+            // Optimization on identifier size:
+            // Just send the delta between identifiers. Under scenarios where the delta
+            // is less than 16 then the total transform header size is 1 byte. For everything
+            // between 16 and 4096 (very unlikely) the header size will be 2 bytes. Anything
+            // beyond that number it becomes a 3 byte header per state update.
+            // Note:
+            // This could be handled by breaking updates into area of interest and organizing
+            // transforms by their grid node. Then, depending upon the number of spawned instances
+            // we would send further nodes at a lesser tick frequency that is interleaved between
+            // network ticks.
+            var transformInfo = (uint)(TransformIdentifier - PreviousTransformIdentifier);
 
             // The lower 3 bits are reserved for axis type flags.
             transformInfo = transformInfo << 3;
@@ -191,6 +204,12 @@ namespace Unity.Netcode
             DirtyFlags = (byte)(transformInfo & 0b111);
         }
 
+        public unsafe void ReadStateWithPrevious(FastBufferReader reader, ushort previousIdentifier)
+        {
+            PreviousTransformIdentifier = previousIdentifier;
+            ReadState(reader);
+        }
+
         public unsafe void ReadState(FastBufferReader reader)
         {
             var dirtyFlags = (byte)0;
@@ -210,8 +229,10 @@ namespace Unity.Netcode
             DirtyRotation = (transformInfo & 2) == 2;
             DirtyScale = (transformInfo & 4) == 4;
 
-            // Get the transform identifier
-            TransformIdentifier = (ushort)(transformInfo >> 3);
+            // Get the transform identifier delta from the previous one
+            TransformIdentifier = ((ushort)(transformInfo >> 3));
+            // Add the previous identifier value to the delta
+            TransformIdentifier += PreviousTransformIdentifier;
 
             // Tacking the size of the read header (keeping this for tracking and future purposes)
             Header_Size = reader.Position - startPosition;

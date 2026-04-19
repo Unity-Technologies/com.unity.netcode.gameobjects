@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 // For JobHandle & IJobParallelForTransform
@@ -198,13 +199,27 @@ namespace Unity.Netcode
             m_LastTickUpdate = networkManager.LocalTime.Tick;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool CanCheckForUpdates()
+        {
+            if (m_LocalTime.Tick != m_LastTickUpdate)
+            {
+                // Adjust based on bandwidth consumption
+                if (m_LocalTime.Tick % m_TickModulus != 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         internal void OnEarlyUpdate()
         {
             // Only update when there is something to update
             if (m_SpawnedInstances.Count > 0)
             {
                 m_LocalTime = m_NetworkManager.LocalTime;
-                if (m_LocalTime.Tick != m_LastTickUpdate)
+                if (CanCheckForUpdates())
                 {
                     if (m_NativeStates == null || (m_NativeStates.Length != m_SpawnedInstances.Count))
                     {
@@ -215,7 +230,11 @@ namespace Unity.Netcode
                     {
                         InitializeNativeStates(false);
                     }
-
+                    // Adjust based on bandwidth consumption
+                    if ((m_LocalTime.Tick % m_TickModulus) != 0)
+                    {
+                        return;
+                    }
                     m_CurrentJob = new CheckTransformStateDeltasJob
                     {
                         Current = m_NativeStates,
@@ -231,9 +250,11 @@ namespace Unity.Netcode
 
         private int m_MessageTicketNumber = 0;
 
+        private int m_TickModulus = 1;
+
         internal void OnPreLateUpdate()
         {
-            if (m_JobRunning && m_LocalTime.Tick != m_LastTickUpdate)
+            if (m_JobRunning && CanCheckForUpdates())
             {
                 var lastTick = m_LastTickUpdate;
                 m_LastTickUpdate = m_LocalTime.Tick;
@@ -258,6 +279,7 @@ namespace Unity.Netcode
                     var offset = FastBufferWriter.Position;
                     var lastPosition = FastBufferWriter.Position;
                     var internalCount = 0;
+                    var previousTransformIdentifier = (ushort)0;
 #if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(BEGIN - {m_MessageTicketNumber} Header: {FastBufferWriter.Position - startOfBuffer})======================");
 #endif
@@ -266,9 +288,9 @@ namespace Unity.Netcode
                         if (entry.GridStateDelta.HasDelta())
                         {
                             var start = FastBufferWriter.Position;
-                            var writeSize = entry.GridStateDelta.DebugWriteState(FastBufferWriter);
+                            var writeSize = entry.GridStateDelta.DebugWriteState(FastBufferWriter, previousTransformIdentifier);
+                            previousTransformIdentifier = entry.GridStateDelta.TransformIdentifier;
                             var totalSize = FastBufferWriter.Position - start;
-
 #if DEBUG_TRANSFORMSTATE
                             var header = $"[{nameof(TransformStateManager)}][Send][NetworkObjectId: {entry.GridStateDelta.TransformIdentifier}][Index: {entry.GridStateDelta.Index}][Total Size: {totalSize}][Header: {writeSize.Item2}][PayloadSize: {writeSize.Item3}]";
                             //if ((writeSize.Item1 & 0x01) == 0x01)
@@ -294,8 +316,8 @@ namespace Unity.Netcode
                             count++;
                             var readSize = FastBufferWriter.Position - lastPosition;
                             AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
-                            AvHeaderSize = AvHeaderSize == 0 ? entry.GridStateDelta.Header_Size : (int)(0.5f * (AvHeaderSize + entry.GridStateDelta.Header_Size));
-                            AvPayLoadSize = AvPayLoadSize == 0 ? entry.GridStateDelta.Payload_Size : (int)(0.5f * (AvPayLoadSize + entry.GridStateDelta.Payload_Size));
+                            AvHeaderSize = AvHeaderSize == 0 ? writeSize.Item2 : (int)(0.5f * (AvHeaderSize + writeSize.Item2));
+                            AvPayLoadSize = AvPayLoadSize == 0 ? writeSize.Item3 : (int)(0.5f * (AvPayLoadSize + writeSize.Item3));
                             lastPosition = FastBufferWriter.Position;
                             internalCount++;
                         }
@@ -308,16 +330,34 @@ namespace Unity.Netcode
                         FastBufferWriter.Seek(0);
                         return;
                     }
+                    var totalUpdateSize = FastBufferWriter.Position - startOfBuffer;
+
+                    // TODO:
+                    // Make this maximum adjustable.
+                    // Replace the tick modulus with a smoother transition where
+                    // the "can update" is based on partial tick values while under
+                    // a whole tick adjustment until it reaches the minimum update frequency
+                    // which we might make adjustable as well.
+                    // which is most likely going to
+                    // TODO-Future:
+                    // Make this adjustable based on RTT to client or service.
+                    if (totalUpdateSize > 11000)
+                    {
+                        m_TickModulus = 2;
+                    }
+                    else
+                    {
+                        m_TickModulus = 1;
+                    }
+
+                    AvTotalUpdateSize = AvTotalUpdateSize == 0 ? totalUpdateSize : (int)(0.5f * (AvTotalUpdateSize + totalUpdateSize));
                     m_MessageTicketNumber++;
-                    //var position = FastBufferWriter.Position;
-                    //FastBufferWriter.Seek(offset);
-                    //FastBufferWriter.WriteValueSafe(count);
-                    //FastBufferWriter.Seek(position);
+
                     var delivery = MessageDelivery.GetDelivery(NetworkMessageTypes.TransformStateUpdateMessage);
                     var transfromStateUpdateMessage = new TransformStateUpdateMessage()
                     {
                         State = FastBufferWriter.ToArray(),
-                        Size = FastBufferWriter.Position - startOfBuffer,
+                        Size = totalUpdateSize,
                         Count = count
                     };
 
@@ -355,9 +395,10 @@ namespace Unity.Netcode
             }
         }
 
-        public int AvBytesPerUpdate;
-        public int AvHeaderSize;
-        public int AvPayLoadSize;
+        public static int AvTotalUpdateSize;
+        public static int AvBytesPerUpdate;
+        public static int AvHeaderSize;
+        public static int AvPayLoadSize;
 
         internal void UpdateTransformStates(ushort count, FastBufferReader reader)
         {
@@ -374,17 +415,20 @@ namespace Unity.Netcode
                 var ticketNumber = 0;
                 var clientSender = (ulong)0;
                 ByteUnpacker.ReadValuePacked(reader, out clientSender);
+                // For debugging purposes, add a ticket number to each message. Makes it easier
+                // to match on both the sender's and receiver's sides.
                 //ByteUnpacker.ReadValuePacked(reader, out ticketNumber);
                 ByteUnpacker.ReadValuePacked(reader, out tick);
-                //reader.ReadValueSafe(out count);
                 var networkTime = new NetworkTime(m_NetworkManager.NetworkConfig.TickRate, tick);
                 var lastPosition = reader.Position;
 #if DEBUG_TRANSFORMSTATE
                 NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][{ticketNumber}][Receive][Count: {count}");
 #endif
+                var previousIdentifier = (ushort)0;
                 for (var i = 0; i < count; i++)
                 {
-                    transformState.ReadState(reader);
+                    transformState.ReadStateWithPrevious(reader, previousIdentifier);
+                    previousIdentifier = transformState.TransformIdentifier;
 #if DEBUG_TRANSFORMSTATE
                     var scale = (transformState.DirtyFlags & 0x01) == 0x01 ? $"[ScaleUpdated]" : string.Empty;
                     var position = (transformState.DirtyFlags & 0x02) == 0x02 ? $"[PositionUpdated]" : string.Empty;

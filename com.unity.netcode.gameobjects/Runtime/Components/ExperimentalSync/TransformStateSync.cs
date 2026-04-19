@@ -5,6 +5,13 @@ using static Unity.Netcode.Components.NetworkTransform;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The transform state sync component that registers with the <see cref="TransformStateManager"/>.
+    /// </summary>
+    /// <remarks>
+    /// Each spawn authority has their own transform identifier map. This is generated prior to spawning
+    /// and synchronized within <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/>
+    /// </remarks>
     public class TransformStateSync : NetworkBehaviour, INetworkUpdateSystem
     {
         internal struct IdentifierObjectMap
@@ -29,6 +36,8 @@ namespace Unity.Netcode
 
             private HashSet<ReleaseId> m_ReleasedIds = new HashSet<ReleaseId>();
             private ushort m_HighestIdAssigned = 0;
+
+            // Everyone keeps track of each spawn authority's transform identifiers
             // [Client Identifier][Transform Identifier][NetworkObjectId][NetworkBehaviourId]
             private Dictionary<ulong, Dictionary<ushort, IdentifierObjectMap>> m_MotionAuthorityObjectMap = new Dictionary<ulong, Dictionary<ushort, IdentifierObjectMap>>();
 
@@ -165,12 +174,17 @@ namespace Unity.Netcode
 
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
+            // Authority synchronizes this instance's transform identifier
             serializer.SerializeValue(ref m_TransformIdentifier);
+            // TODO: We will be synchronizing the grid information here as well.
+            // For now, we just synchronize the transform in a semi-compressed fashion.
             var halfVector3 = new HalfVector3(transform.position);
             var rotation = transform.rotation;
             var rotationCompressed = (uint)0;
+            
             if (serializer.IsWriter)
             {
+                // Authority compresses the quaternion down to 4 bytes.
                 rotationCompressed = QuaternionCompressor.CompressQuaternion(ref rotation);
             }
 
@@ -179,6 +193,7 @@ namespace Unity.Netcode
 
             if (serializer.IsReader)
             {
+                // Non-authority decompresses.
                 QuaternionCompressor.DecompressQuaternion(ref rotation, rotationCompressed);
                 transform.SetPositionAndRotation(halfVector3.ToVector3(), rotation);
             }
@@ -408,7 +423,8 @@ namespace Unity.Netcode
             // updates are received.
             var tickLatency = Mathf.Max(1, NetworkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset);
 
-            // TODO: Investigate if this matters anymore
+            // TODO: Investigate if this matters anymore (it might no longer be applicable but is how NetworkTransform handled RTT when there is a
+            // proxy between the motion authority and the non-authority instances.
             //// If using an owner authoritative motion model
             //if (!IsServerAuthoritative())
             //{
@@ -452,15 +468,15 @@ namespace Unity.Netcode
             m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
+            // Experimental
             //m_ForwardInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
 
             var scale = m_ScaleInterpolator.GetInterpolatedValue();
             var position = m_PositionInterpolator.GetInterpolatedValue();
             var rotation = m_RotationInterpolator.GetInterpolatedValue();
+            // Experimental
             //var forward = m_ForwardInterpolator.GetInterpolatedValue();
 
-            //transform.position = position;
-            //transform.forward = forward;
             transform.SetPositionAndRotation(position, rotation);
             transform.localScale = scale;
         }
