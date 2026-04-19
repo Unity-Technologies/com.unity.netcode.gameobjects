@@ -55,8 +55,8 @@ namespace Unity.Netcode
                 {
                     m_MotionAuthorityObjectMap[clientId].Add(identifier, new IdentifierObjectMap()
                     {
-                       NetworkObjectId = networkObjectId,
-                       NetworkBehaviourId = networkBehaviourId
+                        NetworkObjectId = networkObjectId,
+                        NetworkBehaviourId = networkBehaviourId
                     });
                 }
             }
@@ -146,7 +146,7 @@ namespace Unity.Netcode
             SendingDeltas,
             ReceivingDeltas,
         }
-        
+
 
         public TransformStateSyncStates CurrentState { get; private set; }
 
@@ -324,21 +324,21 @@ namespace Unity.Netcode
 
         public override void OnNetworkPreDespawn()
         {
-            if (m_IsMotionAuthority)
+            if (s_TransformIdentifierHandlers.ContainsKey(OwnerClientId))
             {
-                s_TransformIdentifierHandlers[OwnerClientId].ReleaseIdentifier(TransformIdentifier);
-                m_TransformIdentifier = 0;
-            }
-            else
-            {
-                if (s_TransformIdentifierHandlers.ContainsKey(OwnerClientId))
+                if (m_IsMotionAuthority)
+                {
+                    s_TransformIdentifierHandlers[OwnerClientId].ReleaseIdentifier(TransformIdentifier);
+                    m_TransformIdentifier = 0;
+                }
+                else
                 {
                     s_TransformIdentifierHandlers[OwnerClientId].RemoveIdentifier(OwnerClientId, TransformIdentifier);
                 }
             }
 
             UpdateMotionAuthority(true);
-            
+
             m_RotationInterpolator = null;
             m_PositionInterpolator = null;
             m_ScaleInterpolator = null;
@@ -367,7 +367,7 @@ namespace Unity.Netcode
             {
 #if DEBUG_TRANSFORMSTATE
                 Debug.Log($"[{name}][NetworkObjectId: {NetworkObjectId}][{nameof(TransformStateSync)}][{nameof(UpdateState)}][Position] ({state.PositionFloat}) | " +
-                    $"({state.Position.X}, {state.Position.Y}, {state.Position.Z}) ToVector3 ({state.Position.ToVector3(state.InvPrecision)})");
+                    $"{state.Position.CompressValuesAsString()} ToVector3 ({state.Position.ToVector3(state.InvPrecision)})");
 #endif
                 // Just keep up to date with the most current position which is used when getting the next state update
                 LastPositionUpdate = state.PositionFloat;

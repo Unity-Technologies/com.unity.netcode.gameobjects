@@ -12,13 +12,15 @@ using UnityEngine.Jobs;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// 
+    /// The authority's transform state delta check job.
     /// </summary>
     [BurstCompile]
     internal struct CheckTransformStateDeltasJob : IJobParallelForTransform
     {
-        public bool NextTick;
         public int Precision;
+
+        // TODO: I believe this can be removed
+        public bool NextTick;
 
         // The current state
         public NativeArray<TransformState> Current;
@@ -37,17 +39,20 @@ namespace Unity.Netcode
             Current[index] = current;
         }
 
+        /// <summary>
+        /// Returns the number of axis types that have deltas.
+        /// </summary>
+        /// <returns>number of axis types (position, rotation, and scale) that have deltas</returns>
         public int HasDeltas()
         {
             if (!Current.IsCreated)
             {
                 return 0;
             }
-            //return DirtyCount;
             var deltaCount = 0;
             for (int i = 0; i < Current.Length; i++)
             {
-                //if (Current[i].Delta.HasDelta())
+                // We only need to check the delta state for...well...deltas.
                 if (Current[i].GridStateDelta.HasDelta())
                 {
                     deltaCount++;
@@ -57,7 +62,10 @@ namespace Unity.Netcode
         }
     }
 
-
+    /// <summary>
+    /// Instantiated by <see cref="NetworkManager"/> and assigned to <see cref="NetworkManager.TransformStateManager"/>.
+    /// This is the primary funnel for transform state updates as jobs.
+    /// </summary>
     public class TransformStateManager : IDisposable
     {
         internal bool DebugMode;
@@ -73,6 +81,9 @@ namespace Unity.Netcode
         private List<TransformStateSync> m_SpawnedInstances = new List<TransformStateSync>();
 
         private NetworkManager m_NetworkManager;
+        /// <summary>
+        /// This will be configurable via inspector view
+        /// </summary>
         private int m_Precision = 100;
 
         private bool m_JobRunning;
@@ -107,11 +118,11 @@ namespace Unity.Netcode
                 {
                     m_TransformAccessArray.SetTransformHandle(i, instance.transform.transformHandle);
                 }
-
                 var state = m_NativeStates[i];
+
                 if (allocate)
                 {
-                    state.GridStateDelta.Initialize();
+                    state.Initialize();
                 }
                 state.UpdateIds(instance);
                 m_NativeStates[i] = state;
@@ -229,9 +240,6 @@ namespace Unity.Netcode
                 // Ensure the job is completed before the next frame
                 m_JobHandle.Complete();
                 m_JobRunning = false;
-#if DEBUGDELTACOMPRESSION
-                DebugJobResults();
-#endif
                 AvBytesPerUpdate = 0;
                 AvHeaderSize = 0;
                 AvPayLoadSize = 0;
@@ -242,6 +250,8 @@ namespace Unity.Netcode
                     var count = (ushort)0;
                     var tick = m_NetworkManager.LocalTime.Tick;
                     BytePacker.WriteValueBitPacked(FastBufferWriter, m_NetworkManager.LocalClientId);
+                    // For debugging purposes, add a ticket number to each message. Makes it easier
+                    // to match on both the sender's and receiver's sides.
                     //BytePacker.WriteValueBitPacked(FastBufferWriter, m_MessageTicketNumber);
                     BytePacker.WriteValueBitPacked(FastBufferWriter, tick);
 
@@ -272,7 +282,7 @@ namespace Unity.Netcode
                                 entry.GridStateDelta.Position.Decompress();
                                 var decompressed = entry.GridStateDelta.Position.ToVector3(1.0f / m_Precision);
                                 header += $"[P-Decompressed: {decompressed}] vs [P-OrignalDelta: {positionState.Delta}]";
-                                header += $"[P: ({positionState.X} | {positionState.Delta.x} , {positionState.Y} | {positionState.Delta.y}, {positionState.Z} | | {positionState.Delta.z})]";
+                                header += $"[P: Comp-{positionState.CompressValuesAsString()}  Delta-{positionState.Delta}]";
                             }
 
                             if ((writeSize.Item1 & 0x04) == 0x04)
@@ -307,7 +317,7 @@ namespace Unity.Netcode
                     var transfromStateUpdateMessage = new TransformStateUpdateMessage()
                     {
                         State = FastBufferWriter.ToArray(),
-                        Size  = FastBufferWriter.Position - startOfBuffer,
+                        Size = FastBufferWriter.Position - startOfBuffer,
                         Count = count
                     };
 
@@ -344,44 +354,7 @@ namespace Unity.Netcode
                 }
             }
         }
-#if DEBUGDELTACOMPRESSION
-        private void DebugJobResults()
-        {
-            var deltas = CurrentJob.HasDeltas();
-            if (m_NextTick && deltas > 0)
-            {
-                // We would send the compressed deltas here.
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine($"[TransformStateManager][Tick: {lastTick}] DirtyTransforms: {deltas}");
-                            
-                for(int i = 0; i < CurrentJob.Current.Length; i++)
-                {
-                    var entry = CurrentJob.Current[i];
-                    var entryTransform = m_Transforms[i];
-                    if (entry.Delta.HasDelta())
-                    {
-                        sb.Append($"[{entryTransform.name}][Deltas] Total size: {entry.Delta.TotalCompressedSize} of a possible {sizeof(int) * 10}:\n");
-                        //if (entry.Delta.Scale.HasDelta())
-                        //{
-                        //    sb.Append($"Scale: Compressed down to ({entry.Delta.Scale.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
-                        //}
-                        if (entry.Delta.Position.HasDelta())
-                        {
-                            sb.Append($"Position: Compressed down to ({entry.Delta.Position.CompressedSize}) bytes of possible {sizeof(int) * 3} | ");
-                            sb.Append($"Position: Decompressed ({entry.Delta.DecompressedPosition}) vs Original ({entry.Delta.OriginalPosition}).");
-                        }
-                        //if (entry.Delta.Rotation.HasDelta())
-                        //{
-                        //    sb.Append($"Rotation: Compressed down to ({entry.Delta.Rotation.CompressedSize}) bytes of possible {sizeof(int) * 4}.");
-                        //}
 
-                        sb.AppendLine();
-                    }
-                }
-                Debug.Log(sb.ToString());
-            }
-        }
-#endif
         public int AvBytesPerUpdate;
         public int AvHeaderSize;
         public int AvPayLoadSize;
@@ -438,16 +411,17 @@ namespace Unity.Netcode
                                 continue;
                             }
 
+                            // For debugging purposes to get byte averages.
+                            // Can be removed or the like later
                             var readSize = reader.Position - lastPosition;
                             AvBytesPerUpdate = AvBytesPerUpdate == 0 ? readSize : (int)(0.5f * (AvBytesPerUpdate + readSize));
                             AvHeaderSize = AvHeaderSize == 0 ? transformState.Header_Size : (int)(0.5f * (AvHeaderSize + transformState.Header_Size));
                             AvPayLoadSize = AvPayLoadSize == 0 ? transformState.Payload_Size : (int)(0.5f * (AvPayLoadSize + transformState.Payload_Size));
                             transformState.Precision = m_Precision;
                             transformState.InvPrecision = 1.0f / m_Precision;
-                            transformState.CurrentPosition = transformStateSync.LastPositionUpdate;
+                            transformState.LastPositionUpdate = transformStateSync.LastPositionUpdate;
                             transformState.CurrentScale = transformStateSync.transform.localScale;
                             transformState.Decompress();
-
 
                             m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
                         }
@@ -490,9 +464,7 @@ namespace Unity.Netcode
             }
             for (int i = 0; i < m_NativeStates.Length; i++)
             {
-                var state = m_NativeStates[i];
-                state.GridStateDelta.Dispose();
-                m_NativeStates[i] = state;
+                m_NativeStates[i].Dispose();
             }
             if (m_NativeStates.IsCreated)
             {
