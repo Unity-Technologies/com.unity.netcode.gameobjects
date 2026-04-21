@@ -1298,7 +1298,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (networkObject.NetworkObjectId == default)
+            if (networkId == default)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
