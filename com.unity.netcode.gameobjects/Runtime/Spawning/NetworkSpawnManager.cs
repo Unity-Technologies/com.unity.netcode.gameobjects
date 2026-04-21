@@ -1287,11 +1287,22 @@ namespace Unity.Netcode
         /// <returns>boolean indicating whether the spawn succeeded. Internal dev note: THIS IS A CATCH FOR OURSELVES. DON'T PULL OUT</returns>
         internal bool SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
+            // TODO: Replace the following checks with internal Netcode asserts
+            // We want our tests to double check this without impacting users.
             if (networkObject.NetworkManagerOwner == null)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogError($"{networkObject.name}'s NetworkManagerOwner should not be null!");
+                }
+                return false;
+            }
+
+            if (networkObject.NetworkObjectId == default)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"[{networkObject.name}] Trying to spawn {nameof(NetworkObject)} with invalid {nameof(NetworkObject.NetworkObjectId)} {networkObject.NetworkObjectId}. This should not happen!");
                 }
                 return false;
             }
@@ -1725,20 +1736,10 @@ namespace Unity.Netcode
         /// <param name="networkObject">The <see cref="NetworkObject"/> to despawn.</param>
         /// <param name="destroyGameObject">Whether to destroy the underlying game object, or to simply despawn the object.</param>
         /// <param name="authorityOverride">Gives the DAHost server permissions. Otherwise, DAHost only has authority on objects it owns.</param>
-        internal void OnDespawnObject(NetworkObject networkObject, bool destroyGameObject, bool authorityOverride = false)
+        internal void OnDespawnObject([NotNull] NetworkObject networkObject, bool destroyGameObject, bool authorityOverride = false)
         {
             if (!NetworkManager)
             {
-                return;
-            }
-
-            // We have to do this check first as subsequent checks assume we can access NetworkObjectId.
-            if (!networkObject)
-            {
-                if (NetworkManager.LogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Trying to destroy network object but it is null");
-                }
                 return;
             }
 

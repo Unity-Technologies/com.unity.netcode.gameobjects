@@ -919,6 +919,7 @@ namespace Unity.Netcode
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
+                    // If the NetworkObject isn't spawned then we don't need to destroy it
                     if (networkObject.IsSpawned)
                     {
                         networkObjectIdToNetworkObject.TryAdd(networkObject.NetworkObjectId, networkObject);
@@ -927,28 +928,13 @@ namespace Unity.Netcode
 
                 foreach (var networkObjectId in networkObjectsToRemove)
                 {
-                    if (networkObjectIdToNetworkObject.ContainsKey(networkObjectId))
+                    if (networkObjectIdToNetworkObject.TryGetValue(networkObjectId, out var networkObject))
                     {
-                        var networkObject = networkObjectIdToNetworkObject[networkObjectId];
-                        networkObjectIdToNetworkObject.Remove(networkObjectId);
-
-                        networkObject.IsSpawned = false;
-                        if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
+                        if (m_NetworkManager.LogLevel <= LogLevel.Developer)
                         {
-                            if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                            {
-                                m_NetworkManager.SpawnManager.SpawnedObjects.Remove(networkObjectId);
-                            }
-                            if (m_NetworkManager.SpawnManager.SpawnedObjectsList.Contains(networkObject))
-                            {
-                                m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
-                            }
-                            m_NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                            NetworkLog.LogWarning($"[ReadClientReSynchronizationData][{networkObject.name}] Despawning and destroying {nameof(NetworkObject)}.");
                         }
-                        else
-                        {
-                            UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
-                        }
+                        m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true, true);
                     }
                 }
             }
