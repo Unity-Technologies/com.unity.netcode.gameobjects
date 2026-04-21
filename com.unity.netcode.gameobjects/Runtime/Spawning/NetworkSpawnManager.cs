@@ -1614,7 +1614,7 @@ namespace Unity.Netcode
                             // and set its parent to root
                             if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
                             {
-                                childObject.TryRemoveParent(childObject.WorldPositionStays());
+                                childObject.TryRemoveParentCachedWorldPositionStays();
                             }
                         }
                     }
