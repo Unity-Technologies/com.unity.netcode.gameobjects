@@ -1,8 +1,22 @@
 using Unity.Netcode.Components;
 using UnityEngine;
 
+
 namespace Unity.Netcode
 {
+    public static class TransformSyncMessageInfo
+    {
+        public static float LargestSize;
+
+        public static float TotalBytes;
+
+        public static void Reset()
+        {
+            LargestSize = 0;
+            TotalBytes = 0;
+        }
+    }
+
     /// <summary>
     /// TODO:
     /// - Generate 1 state buffer per client/observer when getting deltas.
@@ -34,18 +48,20 @@ namespace Unity.Netcode
             }
             else
             {
-#if DEBUG_TRANSFORMSTATE
                 var position = writer.Position;
-#endif
                 BytePacker.WriteValuePacked(writer, Count);
-#if DEBUG_TRANSFORMSTATE
                 var countSize = writer.Position - position;
-#endif
 
                 writer.WriteBytesSafe(State, Size);
 #if DEBUG_TRANSFORMSTATE
                 Debug.Log($"[{k_Name}][Start: {position}][Count-Size: {countSize}][Size: {Size}][Wrote {Size + countSize} bytes!");
 #endif
+                var totalSize = writer.Position - position;
+                if (TransformSyncMessageInfo.LargestSize < totalSize)
+                {
+                    TransformSyncMessageInfo.LargestSize = totalSize;
+                }
+                TransformSyncMessageInfo.TotalBytes += totalSize;
             }
         }
 
@@ -87,6 +103,12 @@ namespace Unity.Netcode
                 // Dispose of the reader used for forwarding
                 currentMessage.m_CurrentReader.Dispose();
             }
+            var readSize = reader.Position - startPosition; 
+            if (TransformSyncMessageInfo.LargestSize < readSize)
+            {
+                TransformSyncMessageInfo.LargestSize = readSize;
+            }
+            
             return true;
         }
 

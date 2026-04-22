@@ -20,8 +20,7 @@ namespace Unity.Netcode
     {
         public int Precision;
 
-        // TODO: I believe this can be removed
-        public bool NextTick;
+        public bool IsFullSynch;
 
         // The current state
         public NativeArray<TransformState> Current;
@@ -35,7 +34,7 @@ namespace Unity.Netcode
             }
             var current = Current[index];
 
-            current.ProcessCurrentState(index, transform, Precision, NextTick);
+            current.ProcessCurrentState(index, transform, Precision, IsFullSynch);
 
             Current[index] = current;
         }
@@ -71,7 +70,7 @@ namespace Unity.Netcode
     {
         internal bool DebugMode;
 
-        internal FastBufferWriter FastBufferWriter = new FastBufferWriter(1024 * 256, Allocator.Persistent);
+        internal FastBufferWriter FastBufferWriter = new FastBufferWriter(1024 * 64, Allocator.Persistent);
 
         private TransformAccessArray m_TransformAccessArray;
         private JobHandle m_JobHandle;
@@ -85,7 +84,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This will be configurable via inspector view
         /// </summary>
-        private int m_Precision = 100;
+        private int m_Precision = 1000;
 
         private bool m_JobRunning;
         private int m_LastTickUpdate;
@@ -210,7 +209,15 @@ namespace Unity.Netcode
                     return false;
                 }
             }
+            ShouldSendFullSynch(m_LocalTime.Tick);
             return true;
+        }
+
+        private bool m_IsFullSynch;
+
+        private void ShouldSendFullSynch(int tick)
+        {
+            m_IsFullSynch = (tick % m_NetworkManager.NetworkConfig.TickRate) == 0;
         }
 
         internal void OnEarlyUpdate()
@@ -239,7 +246,7 @@ namespace Unity.Netcode
                     {
                         Current = m_NativeStates,
                         Precision = m_Precision,
-                        NextTick = true
+                        IsFullSynch = m_IsFullSynch,
                     };
 
                     m_JobHandle = m_CurrentJob.Schedule(m_TransformAccessArray);
@@ -251,13 +258,10 @@ namespace Unity.Netcode
         private int m_MessageTicketNumber = 0;
 
         private int m_TickModulus = 1;
-
         internal void OnPreLateUpdate()
         {
-            if (m_JobRunning && CanCheckForUpdates())
+            if (m_JobRunning)
             {
-                var lastTick = m_LastTickUpdate;
-                m_LastTickUpdate = m_LocalTime.Tick;
                 // Ensure the job is completed before the next frame
                 m_JobHandle.Complete();
                 m_JobRunning = false;
@@ -269,12 +273,25 @@ namespace Unity.Netcode
                     FastBufferWriter.Seek(0);
                     var startOfBuffer = FastBufferWriter.Position;
                     var count = (ushort)0;
-                    var tick = m_NetworkManager.LocalTime.Tick;
-                    BytePacker.WriteValueBitPacked(FastBufferWriter, m_NetworkManager.LocalClientId);
+                    var currentTick = m_NetworkManager.LocalTime.Tick;
+                    m_LastTickUpdate = currentTick;
+
+                    // The header for the internal processing. Adding values here for global changes in state
+                    // has much less of an impact than adding additional data/bits to any axis type's serialized
+                    // data.
+                    var idInfo = (ushort)0;
+                    // TODO: Determine if we need to provide more than 1 byte (255) potential clients.
+                    idInfo = (byte)m_NetworkManager.LocalClientId;
+                    // Pack the client id and full sync information together
+                    idInfo = (byte)((idInfo << 1) | (m_IsFullSynch ? 1 : 0));
+                    BytePacker.WriteValueBitPacked(FastBufferWriter, idInfo);
                     // For debugging purposes, add a ticket number to each message. Makes it easier
                     // to match on both the sender's and receiver's sides.
                     //BytePacker.WriteValueBitPacked(FastBufferWriter, m_MessageTicketNumber);
-                    BytePacker.WriteValueBitPacked(FastBufferWriter, tick);
+
+                    // Add the modulus to the tick;
+                    currentTick = currentTick << 2 | (m_TickModulus & 3);
+                    BytePacker.WriteValueBitPacked(FastBufferWriter, currentTick);
 
                     var offset = FastBufferWriter.Position;
                     var lastPosition = FastBufferWriter.Position;
@@ -283,6 +300,8 @@ namespace Unity.Netcode
 #if DEBUG_TRANSFORMSTATE
                     NetworkLog.LogInfo($"[{nameof(TransformStateManager)}][Send] ======================(BEGIN - {m_MessageTicketNumber} Header: {FastBufferWriter.Position - startOfBuffer})======================");
 #endif
+                    // !!! Any additional data added to each transform's grid state will increase the bandwdith by:
+                    // !!! (size added in bits or bytes) * (instances spawned) * (tick rate) --> Total bytes per second 
                     foreach (var entry in m_CurrentJob.Current)
                     {
                         if (entry.GridStateDelta.HasDelta())
@@ -298,16 +317,24 @@ namespace Unity.Netcode
                             //    header += $"[S: {entry.GridStateDelta.Scale.ToVector3()}]";
                             //}
 
-                            if ((writeSize.Item1 & 0x02) == 0x02)
+                            if (entry.GridStateDelta.DirtyPosition)
                             {
                                 var positionState = entry.GridStateDelta.Position;
                                 entry.GridStateDelta.Position.Decompress();
                                 var decompressed = entry.GridStateDelta.Position.ToVector3(1.0f / m_Precision);
-                                header += $"[P-Decompressed: {decompressed}] vs [P-OrignalDelta: {positionState.Delta}]";
+                                if (m_IsFullSynch)
+                                {
+                                    header += $"[P-Decompressed: {decompressed}] vs [Current: {entry.GridStateCurrent.Position.Position}]";
+                                }
+                                else
+                                {
+                                    header += $"[P-Decompressed: {decompressed}] vs [P-OrignalDelta: {positionState.Delta}]";
+                                }
+                                    
                                 header += $"[P: Comp-{positionState.CompressValuesAsString()}  Delta-{positionState.Delta}]";
                             }
 
-                            if ((writeSize.Item1 & 0x04) == 0x04)
+                            if (entry.GridStateDelta.DirtyRotation)
                             {
                                 header += $"[R: {entry.GridStateDelta.Rotation.Rotation}]";
                             }
@@ -341,14 +368,15 @@ namespace Unity.Netcode
                     // which is most likely going to
                     // TODO-Future:
                     // Make this adjustable based on RTT to client or service.
-                    if (totalUpdateSize > 11000)
-                    {
-                        m_TickModulus = 2;
-                    }
-                    else
+                    //if (totalUpdateSize > 9000)
+                    //{
+                    //    m_TickModulus = 2;
+                    //}
+                    //else
                     {
                         m_TickModulus = 1;
                     }
+                    TickModulus = m_TickModulus;
 
                     AvTotalUpdateSize = AvTotalUpdateSize == 0 ? totalUpdateSize : (int)(0.5f * (AvTotalUpdateSize + totalUpdateSize));
                     m_MessageTicketNumber++;
@@ -399,6 +427,7 @@ namespace Unity.Netcode
         public static int AvBytesPerUpdate;
         public static int AvHeaderSize;
         public static int AvPayLoadSize;
+        public static int TickModulus;
 
         internal void UpdateTransformStates(ushort count, FastBufferReader reader)
         {
@@ -413,12 +442,18 @@ namespace Unity.Netcode
             {
                 transformState.Initialize();
                 var ticketNumber = 0;
-                var clientSender = (ulong)0;
-                ByteUnpacker.ReadValuePacked(reader, out clientSender);
+                var idInfo = (ushort)0;
+                
+                ByteUnpacker.ReadValuePacked(reader, out idInfo);
+                transformState.IsFullSynch = (idInfo & 1) == 1;
+                var clientSender = (ulong)(idInfo >> 1);
                 // For debugging purposes, add a ticket number to each message. Makes it easier
                 // to match on both the sender's and receiver's sides.
                 //ByteUnpacker.ReadValuePacked(reader, out ticketNumber);
                 ByteUnpacker.ReadValuePacked(reader, out tick);
+                TickModulus = (tick & 3);
+                tick = tick >> 2;
+
                 var networkTime = new NetworkTime(m_NetworkManager.NetworkConfig.TickRate, tick);
                 var lastPosition = reader.Position;
 #if DEBUG_TRANSFORMSTATE
@@ -430,9 +465,10 @@ namespace Unity.Netcode
                     transformState.ReadStateWithPrevious(reader, previousIdentifier);
                     previousIdentifier = transformState.TransformIdentifier;
 #if DEBUG_TRANSFORMSTATE
-                    var scale = (transformState.DirtyFlags & 0x01) == 0x01 ? $"[ScaleUpdated]" : string.Empty;
-                    var position = (transformState.DirtyFlags & 0x02) == 0x02 ? $"[PositionUpdated]" : string.Empty;
-                    var rotation = (transformState.DirtyFlags & 0x04) == 0x04 ? $"[RotationUpdated]" : string.Empty;
+                    
+                    var position = transformState.DirtyPosition ? $"[PositionUpdated]" : string.Empty;
+                    var rotation = transformState.DirtyRotation ? $"[RotationUpdated]" : string.Empty;
+                    var scale = transformState.DirtyScale ? $"[ScaleUpdated]" : string.Empty;
                     NetworkLog.LogInfo($"[Read][TransformIdentifier: {transformState.TransformIdentifier}]{scale}{position}{rotation}");
 #endif
 
@@ -467,7 +503,7 @@ namespace Unity.Netcode
                             transformState.CurrentScale = transformStateSync.transform.localScale;
                             transformState.Decompress();
 
-                            m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId].UpdateState(networkTime.Time, transformState);
+                            m_TransformStates[identifierObjectMap.NetworkObjectId][identifierObjectMap.NetworkBehaviourId].UpdateState(networkTime.Time, m_TickModulus, transformState);
                         }
                         else if (DebugMode)
                         {

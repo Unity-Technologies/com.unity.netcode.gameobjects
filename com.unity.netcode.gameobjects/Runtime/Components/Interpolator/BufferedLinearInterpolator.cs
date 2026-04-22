@@ -106,6 +106,23 @@ namespace Unity.Netcode
             /// </summary>
             public double TimeSent;
 
+            public int TickModulus;
+
+            /// <summary>
+            /// Constructor that accepts an item identifier.
+            /// </summary>
+            /// <param name="item">The item value.</param>
+            /// <param name="timeSent">The time the item was sent.</param>
+            /// <param name="itemId">The item identifier</param>
+            public BufferedItem(T item, double timeSent, int itemId, int tickModulus)
+            {
+                Item = item;
+                TimeSent = timeSent;
+                ItemId = itemId;
+                MeasurementParent = default;
+                TickModulus = tickModulus;
+            }
+
             /// <summary>
             /// Constructor that accepts an item identifier.
             /// </summary>
@@ -118,6 +135,7 @@ namespace Unity.Netcode
                 TimeSent = timeSent;
                 ItemId = itemId;
                 MeasurementParent = default;
+                TickModulus = 1;
             }
 
             /// <summary>
@@ -132,6 +150,7 @@ namespace Unity.Netcode
                 // Generate a unique item id based on the time to the 2nd decimal place
                 ItemId = (int)(timeSent * 100);
                 MeasurementParent = default;
+                TickModulus = 1;
             }
         }
 
@@ -376,10 +395,10 @@ namespace Unity.Netcode
                             alreadyHasBufferItem = true;
                             InterpolateState.NextValue = InterpolateState.CurrentValue;
                             InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                            InterpolateState.SetTimeToTarget(minDeltaTime);
+                            InterpolateState.SetTimeToTarget(minDeltaTime * target.TickModulus);
                             startTime = InterpolateState.Target.Value.TimeSent;
                             InterpolateState.TargetReached = false;
-                            InterpolateState.MaxDeltaTime = maxDeltaTime;
+                            InterpolateState.MaxDeltaTime = maxDeltaTime * target.TickModulus;
                         }
                         else
                         {
@@ -388,7 +407,7 @@ namespace Unity.Netcode
                                 alreadyHasBufferItem = true;
                                 InterpolateState.LastRemainingTime = InterpolateState.FinalTimeToTarget;
                                 InterpolateState.TargetReached = false;
-                                InterpolateState.MaxDeltaTime = maxDeltaTime;
+                                InterpolateState.MaxDeltaTime = maxDeltaTime * target.TickModulus;
                                 InterpolateState.PreviousValue = InterpolateState.NextValue;
                                 startTime = InterpolateState.Target.Value.TimeSent;
                             }
@@ -673,6 +692,43 @@ namespace Unity.Netcode
             {
                 m_BufferCount++;
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
+                {
+                    MeasurementParent = parent,
+                };
+                m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
+                m_LastMeasurementAddedTime = sentTime;
+            }
+        }
+
+        internal void AddMeasurement(Transform parent, T newMeasurement, double sentTime, int tickModulus)
+        {
+            m_NbItemsReceivedThisFrame++;
+            // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
+            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
+            if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
+            {
+                if (m_LastBufferedItemReceived.TimeSent < sentTime)
+                {
+                    // Clear the interpolator
+                    Clear();
+                    // Reset to the new value but don't automatically add the measurement (prevents recursion)
+                    InternalReset(parent, newMeasurement, sentTime, false);
+                    m_LastMeasurementAddedTime = sentTime;
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount, tickModulus)
+                    {
+                        MeasurementParent = parent,
+                    };
+                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
+                    m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
+                }
+                return;
+            }
+
+            // Drop measurements that are received out of order/late (i.e. user unreliable delta)
+            if (sentTime > m_LastMeasurementAddedTime || m_BufferCount == 0)
+            {
+                m_BufferCount++;
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount, tickModulus)
                 {
                     MeasurementParent = parent,
                 };

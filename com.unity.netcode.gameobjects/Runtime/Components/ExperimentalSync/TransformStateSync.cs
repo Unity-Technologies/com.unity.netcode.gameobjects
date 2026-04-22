@@ -278,6 +278,8 @@ namespace Unity.Netcode
             var serverTime = NetworkManager.ServerTime;
             m_ScaleInterpolator.ResetTo(transform.parent, transform.localScale, serverTime.Time);
             m_PositionInterpolator.ResetTo(transform.parent, (HasParent ? transform.localPosition : transform.position), serverTime.Time);
+            m_PositionInterpolator.LerpSmoothEnabled = true;
+            m_PositionInterpolator.MaxInterpolationBound = 0.50f;
             m_RotationInterpolator.ResetTo(transform.parent, (HasParent ? transform.localRotation : transform.rotation), serverTime.Time);
             m_ForwardInterpolator.ResetTo(transform.parent, transform.forward, serverTime.Time);
             LastPositionUpdate = (HasParent ? transform.localPosition : transform.position);
@@ -286,11 +288,18 @@ namespace Unity.Netcode
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
-            m_PositionInterpolator = new BufferedLinearInterpolatorVector3();
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion()
+            {
+                LerpSmoothEnabled = true,
+            };
+            
+            m_PositionInterpolator = new BufferedLinearInterpolatorVector3()
+            {
+                LerpSmoothEnabled = true,
+            };
+
             m_ScaleInterpolator = new BufferedLinearInterpolatorVector3();
             m_ForwardInterpolator = new BufferedLinearInterpolatorVector3();
-
             CurrentState = TransformStateSyncStates.Spawning;
 
             var localClientId = networkManager.LocalClientId;
@@ -371,7 +380,7 @@ namespace Unity.Netcode
 
         internal Vector3 LastPositionUpdate;
 
-        internal void UpdateState(double time, TransformGridState state)
+        internal void UpdateState(double time,int tickModulus, TransformGridState state)
         {
             if (state.DirtyScale)
             {
@@ -386,13 +395,13 @@ namespace Unity.Netcode
 #endif
                 // Just keep up to date with the most current position which is used when getting the next state update
                 LastPositionUpdate = state.PositionFloat;
-                m_PositionInterpolator.AddMeasurement(transform.parent, state.PositionFloat, time);
+                m_PositionInterpolator.AddMeasurement(transform.parent, state.PositionFloat, time, tickModulus);
             }
 
             if (state.DirtyRotation)
             {
                 //m_ForwardInterpolator.AddMeasurement(transform.parent, state.Forward.Forward, time);
-                m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time);
+                m_RotationInterpolator.AddMeasurement(transform.parent, state.Rotation.Rotation, time, tickModulus);
             }
         }
 
@@ -440,9 +449,9 @@ namespace Unity.Netcode
             //        }
             //    }
             //}
-
+            //tickLatency += 1;
             // Get the tick latency (ticks ago) as time (in the past) to process state updates in the queue.
-            var tickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time;
+            var tickLatencyAsTime = timeSystem.TimeTicksAgo(1).Time;
 
             //#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             //            // If using rigid body for motion, then we need to increment

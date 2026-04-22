@@ -35,6 +35,8 @@ namespace Unity.Netcode
         public Vector3 LastPositionUpdate;
         public Vector3 CurrentScale;
 
+        public bool IsFullSynch;
+
         public void ApplyState(TransformGridState state)
         {
             if (TransformIdentifier != state.TransformIdentifier)
@@ -130,7 +132,15 @@ namespace Unity.Netcode
                     // Only update axis with something other than 0.0f.
                     if (update[i] != 0.0f)
                     {
-                        PositionFloat[i] = update[i];
+                        // When sending grid relative
+                        if (IsFullSynch)
+                        {
+                            PositionFloat[i] = update[i];
+                        }
+                        else // When sending deltas
+                        {
+                            PositionFloat[i] += update[i];
+                        }
                     }
                 }
             }
@@ -160,9 +170,9 @@ namespace Unity.Netcode
             // additional information being provided (i.e. synchronize, teleport, etc.).
             // Optimization on identifier size:
             // Just send the delta between identifiers. Under scenarios where the delta
-            // is less than 16 then the total transform header size is 1 byte. For everything
-            // between 16 and 4096 (very unlikely) the header size will be 2 bytes. Anything
-            // beyond that number it becomes a 3 byte header per state update.
+            // is less than 15 then the total transform header size is 1 byte. For everything
+            // between 16 and 4096 (very unlikely value for NGO) the header size will be 2 bytes.
+            // Anything beyond that number it becomes a 3 byte header per state update.
             // Note:
             // This could be handled by breaking updates into area of interest and organizing
             // transforms by their grid node. Then, depending upon the number of spawned instances
@@ -172,9 +182,16 @@ namespace Unity.Netcode
 
             // The lower 3 bits are reserved for axis type flags.
             transformInfo = transformInfo << 3;
-            transformInfo |= (uint)(Position.HasDelta() ? 1 : 0);
-            transformInfo |= (uint)(Rotation.HasDelta() ? 2 : 0);
-            transformInfo |= (uint)(Scale.HasDelta() ? 4 : 0);
+            transformInfo |= (uint)(Position.HasDelta() ? 0b001 : 0b000);
+            transformInfo |= (uint)(Rotation.HasDelta() ? 0b010 : 0b000);
+            transformInfo |= (uint)(Scale.HasDelta() ? 0b100 : 0b000);
+
+            // Set the local dirty flags from the transform info
+            // (This is more for current debugging purposes.)
+            DirtyFlags = (byte)(transformInfo & 0b111);
+            DirtyPosition = (DirtyFlags & 1) == 1;
+            DirtyRotation = (DirtyFlags & 2) == 2;
+            DirtyScale = (DirtyFlags & 4) == 4;
             BytePacker.WriteValueBitPacked(writer, transformInfo);
 
             // Tacking the size of the written header (keeping this for tracking and future purposes)
@@ -182,26 +199,22 @@ namespace Unity.Netcode
             startPosition = writer.Position;
 
             // Write any axis type that has a delta
-            if (Position.HasDelta())
+            if (DirtyPosition)
             {
                 Position.WriteState(writer);
             }
 
-            if (Rotation.HasDelta())
+            if (DirtyRotation)
             {
                 Rotation.WriteState(writer);
             }
 
-            if (Scale.HasDelta())
+            if (DirtyScale)
             {
                 Scale.WriteState(writer);
             }
             // Tacking the size of the written payload (keeping this for tracking and future purposes)
             Payload_Size = writer.Position - startPosition;
-
-            // Set the local dirty flags from the transform info
-            // (This is more for current debugging purposes.)
-            DirtyFlags = (byte)(transformInfo & 0b111);
         }
 
         public unsafe void ReadStateWithPrevious(FastBufferReader reader, ushort previousIdentifier)
@@ -241,15 +254,12 @@ namespace Unity.Netcode
             // Read state updates based on dirty flags
             if (DirtyPosition)
             {
-                DirtyPosition = true;
                 Position.ReadState(reader);
             }
 
             if (DirtyRotation)
             {
-                DirtyRotation = true;
                 Rotation.ReadState(reader);
-                Rotation.Decompress();
             }
 
             if (DirtyScale)

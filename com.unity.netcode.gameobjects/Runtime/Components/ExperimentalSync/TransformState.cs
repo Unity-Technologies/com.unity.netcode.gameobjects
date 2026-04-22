@@ -49,9 +49,9 @@ namespace Unity.Netcode
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ProcessCurrentState(int index, TransformAccess transformAccess, int precision, bool isNextTick)
+        public bool ProcessCurrentState(int index, TransformAccess transformAccess, int precision, bool isFullSynch)
         {
-            if (isNextTick && transformAccess.isValid)
+            if (transformAccess.isValid)
             {
 
                 // Get and set the current transform state
@@ -84,7 +84,7 @@ namespace Unity.Netcode
                 GridStateDelta.Scale.Z = GridStateCurrent.Scale.Z - GridStatePrevious.Scale.Z;
 
 
-                GridStateDelta.Position.ToDelta(GridStateCurrent.Position, GridStatePrevious.Position);
+                GridStateDelta.Position.ToDelta(GridStateCurrent.Position, GridStatePrevious.Position, isFullSynch);
 
                 // Experimental forward vector synchronization
                 //GridStateDelta.Forward.X = GridStateCurrent.Forward.X - GridStatePrevious.Forward.X;
