@@ -1579,7 +1579,7 @@ namespace Unity.Netcode
                     {
                         // Mark the object and associated NetworkBehaviours as in the process (or will be) destroyed.
                         networkObject.SetIsDestroying();
-                        UnityEngine.Object.Destroy(networkObject.gameObject);
+                        Object.Destroy(networkObject.gameObject);
                         SpawnedObjectsList.Remove(networkObject);
                     }
                 }
