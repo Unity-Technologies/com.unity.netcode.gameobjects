@@ -986,6 +986,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     return false;
                 }
 
+                if (playerObjectRelative.Observers.Count != m_NetworkManagers.Length)
+                {
+                    m_InternalErrorLog.Append($"Client-{networkManager.LocalClientId} has an incorrect number of observers for Object-{playerObjectRelative.NetworkObjectId}!");
+                    return false;
+                }
+
                 // Go ahead and create an entry for this new client
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
@@ -1268,7 +1274,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
-                // DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+                // DANGO-TODO: Remove this when the Rust server connection sequence is fixed and we don't have to pre-start
                 // the session owner.
                 if (m_UseCmbService)
                 {
@@ -1562,6 +1568,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 DeRegisterSceneManagerHandler();
 
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    networkManager?.Shutdown();
+                }
+
                 NetcodeIntegrationTestHelpers.Destroy();
 
                 m_PlayerNetworkObjects.Clear();
@@ -1569,7 +1580,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             catch (Exception e)
             {
-                throw e;
+                Debug.LogException(e);
             }
             finally
             {
@@ -1734,7 +1745,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // This can sometimes be null depending upon order of operations
                 // when dealing with parented NetworkObjects.  If NetworkObjectB
                 // is a child of NetworkObjectA and NetworkObjectA comes before
-                // NetworkObjectB in the list of NeworkObjects found, then when
+                // NetworkObjectB in the list of NetworkObjects found, then when
                 // NetworkObjectA's GameObject is destroyed it will also destroy
                 // NetworkObjectB's GameObject which will destroy NetworkObjectB.
                 // If there is a null entry in the list, this is the most likely
