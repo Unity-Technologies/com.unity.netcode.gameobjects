@@ -19,6 +19,7 @@ namespace Unity.Netcode
         public TransformGridState GridStateDelta;
 
         public ulong EntityIdentifier;
+        public bool IsFirstSync;
 
         /// <summary>
         /// Initializes the 3 state (current, previous, and the delta between the two)
@@ -31,6 +32,7 @@ namespace Unity.Netcode
             GridStateCurrent.Initialize();
             GridStateDelta = new TransformGridState();
             GridStateDelta.Initialize();
+            IsFirstSync = true;
         }
 
         public void Dispose()
@@ -53,7 +55,6 @@ namespace Unity.Netcode
         {
             if (transformAccess.isValid)
             {
-
                 // Get and set the current transform state
                 GridStateCurrent.Index = index;
 
@@ -84,7 +85,7 @@ namespace Unity.Netcode
                 GridStateDelta.Scale.Z = GridStateCurrent.Scale.Z - GridStatePrevious.Scale.Z;
 
 
-                GridStateDelta.Position.ToDelta(GridStateCurrent.Position, GridStatePrevious.Position, isFullSynch);
+                GridStateDelta.Position.ToDelta(GridStateCurrent.Position, GridStatePrevious.Position, isFullSynch || IsFirstSync);
 
                 // Experimental forward vector synchronization
                 //GridStateDelta.Forward.X = GridStateCurrent.Forward.X - GridStatePrevious.Forward.X;
@@ -115,7 +116,7 @@ namespace Unity.Netcode
 
                     // TODO: this could be removed
                     //GridStateDelta.Position.InvPrecision = 1.0f / precision;
-
+                    IsFirstSync = false;
                 }
 
                 GridStateDelta.DirtyRotation = false;

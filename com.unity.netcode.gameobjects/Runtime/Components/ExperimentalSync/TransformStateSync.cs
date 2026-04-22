@@ -176,27 +176,27 @@ namespace Unity.Netcode
         {
             // Authority synchronizes this instance's transform identifier
             serializer.SerializeValue(ref m_TransformIdentifier);
-            // TODO: We will be synchronizing the grid information here as well.
-            // For now, we just synchronize the transform in a semi-compressed fashion.
-            var halfVector3 = new HalfVector3(transform.position);
-            var rotation = transform.rotation;
-            var rotationCompressed = (uint)0;
+            //// TODO: We will be synchronizing the grid information here as well.
+            //// For now, we just synchronize the transform in a semi-compressed fashion.
+            //var halfVector3 = new HalfVector3(transform.position);
+            //var rotation = transform.rotation;
+            //var rotationCompressed = (uint)0;
             
-            if (serializer.IsWriter)
-            {
-                // Authority compresses the quaternion down to 4 bytes.
-                rotationCompressed = QuaternionCompressor.CompressQuaternion(ref rotation);
-            }
+            //if (serializer.IsWriter)
+            //{
+            //    // Authority compresses the quaternion down to 4 bytes.
+            //    rotationCompressed = QuaternionCompressor.CompressQuaternion(ref rotation);
+            //}
 
-            serializer.SerializeValue(ref halfVector3);
-            serializer.SerializeValue(ref rotationCompressed);
+            //serializer.SerializeValue(ref halfVector3);
+            //serializer.SerializeValue(ref rotationCompressed);
 
-            if (serializer.IsReader)
-            {
-                // Non-authority decompresses.
-                QuaternionCompressor.DecompressQuaternion(ref rotation, rotationCompressed);
-                transform.SetPositionAndRotation(halfVector3.ToVector3(), rotation);
-            }
+            //if (serializer.IsReader)
+            //{
+            //    // Non-authority decompresses.
+            //    QuaternionCompressor.DecompressQuaternion(ref rotation, rotationCompressed);
+            //    transform.SetPositionAndRotation(halfVector3.ToVector3(), rotation);
+            //}
             base.OnSynchronize(ref serializer);
         }
 

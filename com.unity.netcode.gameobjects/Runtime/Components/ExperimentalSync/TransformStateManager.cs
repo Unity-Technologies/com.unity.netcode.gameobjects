@@ -84,7 +84,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This will be configurable via inspector view
         /// </summary>
-        private int m_Precision = 1000;
+        private int m_Precision = 100;
 
         private bool m_JobRunning;
         private int m_LastTickUpdate;
@@ -95,10 +95,19 @@ namespace Unity.Netcode
 
         private void InitializeNativeStates(bool allocate = true)
         {
+            var prevNativeStateLength = 0;
             if (allocate)
             {
                 m_TransformAccessArray = new TransformAccessArray(m_SpawnedInstances.Count, 1);
-                m_NativeStates = new NativeArray<TransformState>(m_SpawnedInstances.Count, Allocator.Persistent);
+
+                var increasedArray = new NativeArray<TransformState>(m_SpawnedInstances.Count, Allocator.Persistent);
+                if (m_NativeStates != null && m_NativeStates.IsCreated)
+                {
+                    prevNativeStateLength = m_NativeStates.Length;
+                    NativeArray<TransformState>.Copy(m_NativeStates, increasedArray, prevNativeStateLength);
+                    m_NativeStates.Dispose();
+                }
+                m_NativeStates = increasedArray;
             }
             else if (m_TransformAccessArray.length != m_NativeStates.Length)
             {
@@ -107,12 +116,13 @@ namespace Unity.Netcode
                 return;
             }
             // Assure our transform access array is aligned with our native states array.
-            for (int i = 0; i < m_NativeStates.Length; i++)
+            for (int i = 0; i < m_SpawnedInstances.Count; i++)
             {
                 var instance = m_SpawnedInstances[i];
                 if (allocate)
                 {
                     m_TransformAccessArray.Add(instance.transform);
+                    m_TransformAccessArray.SetTransformHandle(i, instance.transform.transformHandle);
                 }
                 else
                 {
@@ -120,7 +130,7 @@ namespace Unity.Netcode
                 }
                 var state = m_NativeStates[i];
 
-                if (allocate)
+                if (allocate && i >= prevNativeStateLength)
                 {
                     state.Initialize();
                 }
@@ -217,7 +227,7 @@ namespace Unity.Netcode
 
         private void ShouldSendFullSynch(int tick)
         {
-            m_IsFullSynch = (tick % m_NetworkManager.NetworkConfig.TickRate) == 0;
+            m_IsFullSynch = true;// (tick % m_NetworkManager.NetworkConfig.TickRate) == 0;
         }
 
         internal void OnEarlyUpdate()
@@ -230,7 +240,7 @@ namespace Unity.Netcode
                 {
                     if (m_NativeStates == null || (m_NativeStates.Length != m_SpawnedInstances.Count))
                     {
-                        DisposeNativeStates();
+                        DisposeNativeStates(true);
                         InitializeNativeStates();
                     }
                     else
@@ -368,11 +378,11 @@ namespace Unity.Netcode
                     // which is most likely going to
                     // TODO-Future:
                     // Make this adjustable based on RTT to client or service.
-                    //if (totalUpdateSize > 9000)
-                    //{
-                    //    m_TickModulus = 2;
-                    //}
-                    //else
+                    if (totalUpdateSize > 9000)
+                    {
+                        m_TickModulus = 2;
+                    }
+                    else
                     {
                         m_TickModulus = 1;
                     }
@@ -536,19 +546,22 @@ namespace Unity.Netcode
             }
         }
 
-        private void DisposeNativeStates()
+        private void DisposeNativeStates(bool ignoreNativeStates = false)
         {
             if (m_NativeStates == null)
             {
                 return;
             }
-            for (int i = 0; i < m_NativeStates.Length; i++)
+            if (!ignoreNativeStates)
             {
-                m_NativeStates[i].Dispose();
-            }
-            if (m_NativeStates.IsCreated)
-            {
-                m_NativeStates.Dispose();
+                for (int i = 0; i < m_NativeStates.Length; i++)
+                {
+                    m_NativeStates[i].Dispose();
+                }
+                if (m_NativeStates.IsCreated)
+                {
+                    m_NativeStates.Dispose();
+                }
             }
             if (m_TransformAccessArray.isCreated)
             {

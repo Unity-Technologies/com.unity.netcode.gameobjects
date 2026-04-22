@@ -91,31 +91,36 @@ namespace Unity.Netcode
             m_Delta = current.m_Position - previous.m_Position;
             var currentPos = current.m_Position;
             var negativeMask = (byte)(1 << 3);
+
+            var adjustPrecision = !fullSynch && math.abs(currentPos.magnitude) <= 0.75f;
+            // If the delta is relatively small, then increase precision by 1 decimal place
+            var precisionAdjusted = adjustPrecision ? m_Precision * 10f : m_Precision;
+            var precisionAdjustMask = adjustPrecision ? (byte)(1 << 6) : (byte)0;
             var axisValue = (uint)0;
             var axisDelta = (uint)0;
-            var forceSynch = false;
+
             for (int i = 0; i < 3; i++)
             {
-                axisDelta = (((uint)(math.abs(m_Delta[i] * m_Precision))) & 0x7FFFFF);
+                axisDelta = (((uint)(math.abs(m_Delta[i] * precisionAdjusted))) & 0x7FFFFF);
                 AxisDelta[i] = axisDelta;
-                forceSynch = forceSynch ? forceSynch : fullSynch && axisDelta > 0;
             }
 
-            var negativeCheck = forceSynch ? current.m_Position : m_Delta;
+            var negativeCheck = fullSynch ? current.m_Position : m_Delta;
 
             for (int i = 0; i < 3; i++)
             {
                 negativeMask = (byte)(negativeMask << i);
-                axisValue = forceSynch ? (((uint)(math.abs(currentPos[i] * m_Precision))) & 0x7FFFFF) : AxisDelta[i];
+                axisValue = fullSynch ? (((uint)(math.abs(currentPos[i] * precisionAdjusted))) & 0x7FFFFF) : AxisDelta[i];
 
                 axisDelta = AxisDelta[i];
 
 
                 // TODO-MAYBE: Combine the signed bit flag in the axis information and not the number;
-                
+
                 // If this axis has a delta, then convert the delta value, shift the delta
                 // by 1 bit, and then apply the negative sign bit to the 1st bit position.
-                if (forceSynch || (!forceSynch && axisDelta > 0))
+                //if (fullSynch || (!fullSynch && axisDelta > 0))
+                if (fullSynch && axisDelta > 0)
                 {
                     //var axis = (((uint)(math.abs(currentAxis * m_Precision))) & 0x7FFFFF);
                     //axis = (axis << 1) | (uint)((currentAxis < 0.0f) ? 0b1 : 0b0);
@@ -125,6 +130,7 @@ namespace Unity.Netcode
                     var axisMask = (byte)(1 << i);
                     AxisWritten |= axisMask;
                     AxisWritten |= negativeCheck[i] < 0.0f ? negativeMask : (byte)0;
+                    AxisWritten |= precisionAdjustMask;
                 }
                 else
                 {
@@ -204,6 +210,9 @@ namespace Unity.Netcode
             var isNegative = 0.0f;
             var negativeMask = 1 << 3;
             var mask = (byte)0;
+            var precisionAdjustMask = (byte)(1 << 6);
+            // If the precision mask is set, then adjust by 1 decimal place for the current precision
+            var precision = (AxisWritten & precisionAdjustMask) == precisionAdjustMask ? invPrecision * 0.10f : invPrecision;
             for (int i = 0; i < 3; i++)
             {
                 mask = (byte)(0b1 << i);
