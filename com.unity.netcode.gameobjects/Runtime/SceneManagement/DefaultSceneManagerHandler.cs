@@ -318,10 +318,19 @@ namespace Unity.Netcode
                 }
                 else if (networkObject.HasAuthority)
                 {
+                    // We know this instance is going to be destroyed (when it receives the destroy object message).
+                    // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                    // preparation of being destroyed by the SceneManager.
+                    networkObject.SetIsDestroying();
+                    // This sends a de-spawn message prior to the scene event.
                     networkObject.Despawn();
                 }
                 else // We are a client, migrate the object into the DDOL temporarily until it receives the destroy command from the server
                 {
+                    // We know this instance is going to be destroyed (when it receives the destroy object message).
+                    // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                    // preparation of being destroyed by the SceneManager.
+                    networkObject.SetIsDestroying();
                     UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
             }
