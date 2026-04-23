@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
 using Unity.Netcode.Logging;
-using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
 using UnityEngine;

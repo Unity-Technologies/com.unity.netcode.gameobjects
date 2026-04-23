@@ -57,13 +57,13 @@ namespace Unity.Netcode
             switch (LogType)
             {
                 case NetworkLog.LogType.Info:
-                    networkManager.Log.Info(NetworkLog.ContextWithSenderId(networkManager, LogLevel.Normal, senderId, Message));
+                    networkManager.Log.Info(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Normal, senderId, Message));
                     break;
                 case NetworkLog.LogType.Warning:
-                    networkManager.Log.Warning(NetworkLog.ContextWithSenderId(networkManager, LogLevel.Error, senderId, Message));
+                    networkManager.Log.Warning(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Error, senderId, Message));
                     break;
                 case NetworkLog.LogType.Error:
-                    networkManager.Log.Error(NetworkLog.ContextWithSenderId(networkManager, LogLevel.Error, senderId, Message));
+                    networkManager.Log.Error(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Error, senderId, Message));
                     break;
             }
         }

@@ -16,7 +16,7 @@ namespace Unity.Netcode
     /// </summary>
     public static class NetworkLog
     {
-        private static readonly ContextualLogger k_Log =  new(true);
+        private static readonly ContextualLogger k_Log = new(true);
 
         internal static void SetNetworkManager(NetworkManager networkManager)
         {
@@ -38,7 +38,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfo(string message, [CallerMemberName] string memberName = "") => k_Log.Info(new Context(LogLevel.Normal, message, memberName));
+        public static void LogInfo(string message) => k_Log.Info(new Context(LogLevel.Normal, message));
         [HideInCallstack]
         internal static void LogInfo(Context context) => k_Log.Info(context);
 
@@ -47,7 +47,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarning(string message, [CallerMemberName] string memberName = "") => k_Log.Warning(new Context(LogLevel.Error, message, memberName));
+        public static void LogWarning(string message) => k_Log.Warning(new Context(LogLevel.Error, message));
         [HideInCallstack]
         internal static void LogWarning(Context context) => k_Log.Warning(context);
 
@@ -56,7 +56,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogError(string message, [CallerMemberName] string memberName = "") => k_Log.Error(new Context(LogLevel.Error, message, memberName));
+        public static void LogError(string message) => k_Log.Error(new Context(LogLevel.Error, message));
         [HideInCallstack]
         internal static void LogError(Context context) => k_Log.Error(context);
 
@@ -67,28 +67,28 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoServer(string message, [CallerMemberName] string memberName = "") => k_Log.InfoServer(new Context(LogLevel.Normal, message, memberName));
+        public static void LogInfoServer(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message));
 
         /// <summary>
         /// Logs an info log locally and on the session owner if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoSessionOwner(string message, [CallerMemberName] string memberName = "") => k_Log.InfoServer(new Context(LogLevel.Normal, message, memberName));
+        public static void LogInfoSessionOwner(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message));
 
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarningServer(string message, [CallerMemberName] string memberName = "") => k_Log.WarningServer(new Context(LogLevel.Error, message, memberName));
+        public static void LogWarningServer(string message) => k_Log.WarningServer(new Context(LogLevel.Error, message));
 
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogErrorServer(string message, [CallerMemberName] string memberName = "") => k_Log.ErrorServer(new Context(LogLevel.Error, message, memberName));
+        public static void LogErrorServer(string message) => k_Log.ErrorServer(new Context(LogLevel.Error, message));
 
         internal static LogType GetMessageLogType(UnityEngine.LogType engineLogType)
         {
@@ -114,7 +114,7 @@ namespace Unity.Netcode
         }
 
         private const string k_SenderId = "SenderId";
-        internal static Context ContextWithSenderId([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)
+        internal static Context BuildContextForServerMessage([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)
         {
             var ctx = new Context(level, message, true).AddInfo(k_SenderId, senderId);
             if (TryGetNetworkObjectName(networkManager, message, out var name))

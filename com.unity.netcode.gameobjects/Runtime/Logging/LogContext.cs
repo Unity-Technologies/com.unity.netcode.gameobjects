@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -69,9 +68,9 @@ namespace Unity.Netcode.Logging
             return this;
         }
 
-        public Context ForGameObject(GameObject prefabObj)
+        public Context ForGameObject(GameObject obj)
         {
-            RelevantObjectOverride = prefabObj.gameObject;
+            RelevantObjectOverride = obj;
             return this;
         }
     }

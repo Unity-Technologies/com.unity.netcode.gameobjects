@@ -90,7 +90,7 @@ namespace Unity.Netcode.Logging
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CaptureFunctionCall([CallerMemberName] string memberName = "")
         {
-            Log(LogType.Log, new Context(LogLevel.Developer, memberName,  true));
+            Log(LogType.Log, new Context(LogLevel.Developer, memberName, true));
         }
 
         [HideInCallstack]
@@ -155,7 +155,8 @@ namespace Unity.Netcode.Logging
             m_Builder.Append(k_NetcodeHeader);
 
             if (m_UseCompatibilityMode)
-            { ;
+            {
+                ;
                 m_Builder.Append(context.Message);
             }
             else
@@ -174,7 +175,7 @@ namespace Unity.Netcode.Logging
         /// <summary>
         /// Removes the configured context from the logger when this object is disposed.
         /// </summary>
-        public readonly struct DisposableContext: IDisposable
+        public readonly struct DisposableContext : IDisposable
         {
             private readonly ContextualLogger m_Logger;
             private readonly string m_ToClear;

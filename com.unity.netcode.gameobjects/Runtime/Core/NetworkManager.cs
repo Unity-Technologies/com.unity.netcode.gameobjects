@@ -11,7 +11,6 @@ using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
 {

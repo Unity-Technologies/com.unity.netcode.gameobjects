@@ -87,7 +87,8 @@ namespace Unity.Netcode.Logging
             {
                 // [Session Owner]
                 builder.Append(k_SessionOwnerString);
-            } else if (m_NetworkManager.IsServer)
+            }
+            else if (m_NetworkManager.IsServer)
             {
                 // [Server]
                 builder.Append(k_ServerString);
