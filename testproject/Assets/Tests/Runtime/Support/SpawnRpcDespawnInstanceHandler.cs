@@ -49,7 +49,7 @@ namespace TestProject.RuntimeTests.Support
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Failed to create object locally. [{nameof(m_PrefabHash)}={m_PrefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
+                    NetworkLog.LogError($"[{nameof(m_PrefabHash)}={m_PrefabHash}] Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                 }
                 return null;
             }

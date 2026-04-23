@@ -196,6 +196,7 @@ namespace Unity.Netcode
             return SceneHandlesToSynchronize.Dequeue();
         }
 
+        internal bool IsStartingSynchronization;
         /// <summary>
         /// Client Side:
         /// Determines if all scenes have been processed during the synchronization process
@@ -782,6 +783,7 @@ namespace Unity.Netcode
                             LogArray(reader.ToArray(), 0, reader.Length);
                         }
                         CopySceneSynchronizationData(reader);
+                        IsStartingSynchronization = true;
                         break;
                     }
                 case SceneEventType.SynchronizeComplete:
@@ -830,6 +832,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out NetworkSceneHandle[] sceneHandlesToSynchronize);
             ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
             SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>(sceneHandlesToSynchronize);
+
 
             // is not packed!
             reader.ReadValueSafe(out int sizeToCopy);
@@ -916,36 +919,22 @@ namespace Unity.Netcode
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
-                    if (!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
+                    // If the NetworkObject isn't spawned then we don't need to destroy it
+                    if (networkObject.IsSpawned)
                     {
-                        networkObjectIdToNetworkObject.Add(networkObject.NetworkObjectId, networkObject);
+                        networkObjectIdToNetworkObject.TryAdd(networkObject.NetworkObjectId, networkObject);
                     }
                 }
 
                 foreach (var networkObjectId in networkObjectsToRemove)
                 {
-                    if (networkObjectIdToNetworkObject.ContainsKey(networkObjectId))
+                    if (networkObjectIdToNetworkObject.TryGetValue(networkObjectId, out var networkObject))
                     {
-                        var networkObject = networkObjectIdToNetworkObject[networkObjectId];
-                        networkObjectIdToNetworkObject.Remove(networkObjectId);
-
-                        networkObject.IsSpawned = false;
-                        if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
+                        if (m_NetworkManager.LogLevel <= LogLevel.Developer)
                         {
-                            if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                            {
-                                m_NetworkManager.SpawnManager.SpawnedObjects.Remove(networkObjectId);
-                            }
-                            if (m_NetworkManager.SpawnManager.SpawnedObjectsList.Contains(networkObject))
-                            {
-                                m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
-                            }
-                            NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                            NetworkLog.LogWarning($"[ReadClientReSynchronizationData][{networkObject.name}] Despawning and destroying {nameof(NetworkObject)}.");
                         }
-                        else
-                        {
-                            UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
-                        }
+                        m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true, true);
                     }
                 }
             }
@@ -975,7 +964,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server Side:
+        /// All clients:
         /// Determines if the client needs to be re-synchronized if during the deserialization
         /// process the server finds NetworkObjects that the client still thinks are spawned but
         /// have since been despawned.

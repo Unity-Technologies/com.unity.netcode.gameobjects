@@ -37,6 +37,7 @@ namespace TestProject.RuntimeTests
         }
 
         private List<SceneTestInfo> m_ShouldWaitList = new List<SceneTestInfo>();
+        private List<ulong> m_ServerReceivedSynchronize = new List<ulong>();
         private List<ulong> m_ClientsReceivedSynchronize = new List<ulong>();
 
         public NetworkSceneManagerEventNotifications(HostOrServer hostOrServer) : base(hostOrServer) { }
@@ -58,6 +59,7 @@ namespace TestProject.RuntimeTests
         {
             m_ScenesLoaded.Clear();
             m_CanStartServerOrClients = false;
+            m_ServerReceivedSynchronize.Clear();
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
             return base.OnSetup();
@@ -70,6 +72,13 @@ namespace TestProject.RuntimeTests
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
             return base.OnTearDown();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            var authority = GetAuthorityNetworkManager();
+
+            base.OnServerAndClientsCreated();
         }
 
         protected override IEnumerator OnStartedServerAndClients()
@@ -92,6 +101,12 @@ namespace TestProject.RuntimeTests
         {
             switch (sceneEvent.SceneEventType)
             {
+                // Validates that we sent the proper number of synchronize events to the clients
+                case SceneEventType.Synchronize:
+                    {
+                        m_ClientsReceivedSynchronize.Add(sceneEvent.ClientId);
+                        break;
+                    }
                 // Validate that the clients finish synchronization and they used the proper synchronization mode
                 case SceneEventType.SynchronizeComplete:
                     {
@@ -107,13 +122,13 @@ namespace TestProject.RuntimeTests
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
             var authority = GetAuthorityNetworkManager();
-            VerboseDebug($"[SceneEvent] ClientId:{sceneEvent.ClientId} | EventType: {sceneEvent.SceneEventType}");
+            VerboseLog($"[SceneEvent] ClientId:{sceneEvent.ClientId} | EventType: {sceneEvent.SceneEventType}");
             switch (sceneEvent.SceneEventType)
             {
                 // Validates that we sent the proper number of synchronize events to the clients
                 case SceneEventType.Synchronize:
                     {
-                        m_ClientsReceivedSynchronize.Add(sceneEvent.ClientId);
+                        m_ServerReceivedSynchronize.Add(sceneEvent.ClientId);
                         break;
                     }
                 case SceneEventType.Load:
@@ -238,8 +253,11 @@ namespace TestProject.RuntimeTests
             m_CanStartServerOrClients = true;
             yield return StartServerAndClients();
 
+            yield return WaitForConditionOrTimeOut(() => m_ServerReceivedSynchronize.Count == NumberOfClients);
+            AssertOnTimeout($"Timed out waiting for the authority to receive synchronization events for all clients! Received: {m_ServerReceivedSynchronize.Count} | Expected: {NumberOfClients}");
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == NumberOfClients);
             AssertOnTimeout($"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {NumberOfClients}");
+
             if (loadSceneMode == LoadSceneMode.Single)
             {
                 m_ClientToTestLoading.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
