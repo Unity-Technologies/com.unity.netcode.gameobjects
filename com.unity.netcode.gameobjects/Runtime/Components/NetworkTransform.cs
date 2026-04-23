@@ -3741,7 +3741,7 @@ namespace Unity.Netcode.Components
         /// The internal initialzation method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
-        private void InternalInitialization(bool isOwnershipChange = false)
+        internal virtual void InternalInitialization(bool isOwnershipChange = false)
         {
 
 #if UNIFIED_NETCODE

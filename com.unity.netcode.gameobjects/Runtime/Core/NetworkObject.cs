@@ -3886,7 +3886,7 @@ namespace Unity.Netcode
         private void InitGhost()
         {
             // All instances with Ghosts are automatically registered
-            if (HasGhost && NetworkObjectBridge)
+            if (HasGhost && NetworkObjectBridge && !GhostAdapter.IsPrefab())
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {

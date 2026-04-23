@@ -253,8 +253,10 @@ namespace Unity.Netcode.Unified
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
-
-                connectionInfo.Connection.SendOutOfBandMessage(rpc);
+                
+                var req = m_NetworkManager.NetcodeWorld.EntityManager.CreateEntity(ComponentType.ReadWrite<SendRpcCommandRequest>(), ComponentType.ReadWrite<TransportRpc>());
+                m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, new SendRpcCommandRequest{TargetConnection = connectionInfo.Connection.ConnectionEntity});
+                m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, rpc);
 
                 connectionInfo.SendQueue.Consume(amount);
             }
@@ -369,41 +371,63 @@ namespace Unity.Netcode.Unified
         {
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
+        
+        private void OnClientConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
+        {
+            switch (connectionEvent.State)
+            {
+                case ConnectionState.State.Connected:
+                    OnClientConnectedToServer(connection, connectionEvent);
+                    break;
+                case ConnectionState.State.Disconnected:
+                    OnClientDisconnectFromServer(connection, connectionEvent);
+                    break;
+            }
+        }
+        
+        private void OnServerConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
+        {
+            switch (connectionEvent.State)
+            {
+                case ConnectionState.State.Connected:
+                    OnServerNewClientConnection(connection, connectionEvent);
+                    break;
+                case ConnectionState.State.Disconnected:
+                    OnServerClientDisconnected(connection, connectionEvent);
+                    break;
+            }
+        }
 
         public override bool StartClient()
         {
-            NetCode.Netcode.Client.OnConnect = OnClientConnectedToServer;
-            NetCode.Netcode.Client.OnDisconnect = OnClientDisconnectFromServer;
-            var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            m_NetworkManager.NetcodeWorld.OnConnectionEvent += OnClientConnectionEvent;
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
             return true;
         }
 
         public override bool StartServer()
         {
-            foreach (var connection in NetCode.Netcode.Server.Connections)
+            foreach (var connection in m_NetworkManager.NetcodeWorld.AllConnections)
             {
                 OnServerNewClientConnection(connection, default);
             }
 
-            NetCode.Netcode.Server.OnConnect = OnServerNewClientConnection;
-            NetCode.Netcode.Server.OnDisconnect = OnServerClientDisconnected;
-            var updateSystem = NetCode.Netcode.GetWorld(true).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            m_NetworkManager.NetcodeWorld.OnConnectionEvent += OnServerConnectionEvent;
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
             return true;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            var updateSystem = NetCode.Netcode.GetWorld(true).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
-            updateSystem.Disconnect(m_Connections[(int)clientId].Connection);
+            m_NetworkManager.NetcodeWorld.DisconnectAClient(m_Connections[(int)clientId].Connection);
             m_Connections.Remove((int)clientId);
         }
 
         public override void DisconnectLocalClient()
         {
-            var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
-            updateSystem.Disconnect(m_Connections[(int)ServerClientId].Connection);
+            m_NetworkManager.NetcodeWorld.RequestDisconnectFromServer();
             m_Connections.Remove((int)ServerClientId);
         }
 

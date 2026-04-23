@@ -1319,20 +1319,25 @@ namespace Unity.Netcode
             return true;
         }
 
+        public NetcodeWorld NetcodeWorld { get; internal set; }
+
 #if UNIFIED_NETCODE
         private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
         {
-            if (NetCode.Netcode.IsActive)
+            if (this == Singleton)
             {
-                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Netcode is not active but has an instance at this point.");
+                if (NetCode.Netcode.IsActive)
+                {
+                    NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Netcode is not active but has an instance at this point.");
+                }
+                /// !! Important !!
+                /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
+                NetCode.Netcode.Reset();
             }
-
-            /// !! Important !!
-            /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
-            NetCode.Netcode.Reset();
 
             /// !! Initialize worlds here !!
             /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
+            UnifiedBootStrap.CurrentNetworkManagerForInitialization = this;
             DefaultWorldInitialization.Initialize("Default World", false);
 
             // This should not be needed at this point, but this is here in the event something changes.

@@ -13,7 +13,9 @@
         "Unity.Netcode.TestHelpers.Runtime",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.NetCode",
+        "Unity.Entities"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -2,10 +2,12 @@
 using System;
 using Unity.Entities;
 using Unity.NetCode;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
 
+#if UNIFIED_NETCODE
     /// <summary>
     /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// </summary>
@@ -15,7 +17,7 @@ namespace Unity.Netcode
     public partial class NetworkObjectBridge : GhostBehaviour
     {
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_INCLUDE_TESTS
         [UnityEngine.HideInInspector]
         [UnityEngine.SerializeField]
         private bool m_Sorted = false;
@@ -52,6 +54,7 @@ namespace Unity.Netcode
             NetworkObjectId.Value = value;
         }
     }
+#endif
 
     /// <summary>
     /// TODO-UNIFIED: Would need to be reviewed for alternate ways of handling this.
@@ -63,13 +66,20 @@ namespace Unity.Netcode
         public static UnifiedBootStrap Instance { get; private set; }
         public static Action OnInitialized;
         public static ushort Port = 7979;
+        public static NetworkManager CurrentNetworkManagerForInitialization;
 
-        public static World World { get; private set; }
+        public static World LastCreatedWorld { get; private set; }
 
+        private static int WorldCounter = 0;
+        
         public override bool Initialize(string defaultWorldName)
         {
-            var networkManager = NetworkManager.Singleton;
-            Instance = this;
+            var networkManager = CurrentNetworkManagerForInitialization;
+            if (networkManager == NetworkManager.Singleton)
+            {
+                Instance = this;
+            }
+
             AutoConnectPort = Port;
             if (base.Initialize(defaultWorldName))
             {
@@ -77,32 +87,44 @@ namespace Unity.Netcode
                 return true;
             }
 
-            World = networkManager.IsServer ? CreateSingleWorldHost("ClientAndServerWorld") : CreateClientWorld("ClientWorld");
-
-            if (World == null)
+            if (networkManager != null)
             {
-                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World is null!");
-                return false;
-            }
+                Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
+                LastCreatedWorld = networkManager.IsServer
+                    ? CreateSingleWorldHost($"ClientAndServerWorld {WorldCounter++}")
+                    : CreateClientWorld($"ClientWorld {WorldCounter++}");
 
-            if (!World.IsCreated)
-            {
-                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World was not created!");
-                return false;
-            }
-
-            if (networkManager.LogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Created world: {World.Name}");
-            }
-
-            if (networkManager.NetworkConfig.Prefabs.HasPendingGhostPrefabs)
-            {
-                if (networkManager.LogLevel <= LogLevel.Developer)
+                if (LastCreatedWorld == null)
                 {
-                    NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Registering hybrid prefabs...");
+                    UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World is null!");
+                    return false;
                 }
-                networkManager.NetworkConfig.Prefabs.RegisterGhostPrefabs(networkManager);
+
+                if (!LastCreatedWorld.IsCreated)
+                {
+                    UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World was not created!");
+                    return false;
+                }
+
+                //if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Created world: {LastCreatedWorld.Name} / {LastCreatedWorld.SequenceNumber}");
+                }
+
+                networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
+                if (networkManager.NetworkConfig.Prefabs.HasPendingGhostPrefabs)
+                {
+                    if (networkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"[{nameof(UnifiedBootStrap)}] Registering hybrid prefabs...");
+                    }
+
+                    networkManager.NetworkConfig.Prefabs.RegisterGhostPrefabs(networkManager);
+                }
+            }
+            else
+            {
+                LastCreatedWorld = CreateLocalWorld("LocalWorld");
             }
 
             OnInitialized?.Invoke();
@@ -112,7 +134,7 @@ namespace Unity.Netcode
 
         ~UnifiedBootStrap()
         {
-            World = null;
+            LastCreatedWorld = null;
             Instance = null;
         }
     }

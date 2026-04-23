@@ -228,6 +228,8 @@ namespace Unity.Netcode
         {
             unsafe
             {
+                
+                //Debug.Log($"Receiving {data.Count} bytes: {ByteArrayToString(data.Array, data.Offset, data.Count)}");
                 fixed (byte* dataPtr = data.Array)
                 {
                     var batchReader = new FastBufferReader(dataPtr + data.Offset, Allocator.None, data.Count);
@@ -394,6 +396,7 @@ namespace Unity.Netcode
                 };
 
                 var type = m_ReverseTypeMap[header.MessageType];
+                Debug.Log($"Got message of type {type}");
                 if (!CanReceive(senderId, type, reader, ref context))
                 {
                     return;
@@ -870,6 +873,7 @@ namespace Unity.Netcode
 
                     try
                     {
+                        //Debug.Log($"Sending {queueItem.Writer.Length} bytes: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
                         m_Sender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
 
                         for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)

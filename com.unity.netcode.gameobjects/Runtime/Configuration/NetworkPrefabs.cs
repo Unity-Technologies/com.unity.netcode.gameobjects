@@ -362,7 +362,7 @@ namespace Unity.Netcode
                 var networkPrefab = m_PendingGhostRegistration[i];
 
                 // Returns false if the single world is not available yet
-                if (NetCode.Netcode.RegisterPrefabSingleWorld(networkPrefab.Prefab, isHost))
+                if (NetCode.Netcode.RegisterPrefabSingleWorld(networkPrefab.Prefab, isHost, networkManager.NetcodeWorld))
                 {
                     Debug.Log($"[{nameof(NetworkPrefabs)}][{nameof(RegisterGhostPrefabs)}] Registered hybrid spawned object: {networkPrefab.Prefab.name}");
                     m_PendingGhostRegistration.RemoveAt(i);
@@ -394,9 +394,9 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkPrefab.HasGhost)
             {
-                HasPendingGhostPrefabs = true;
+                //HasPendingGhostPrefabs = true;
                 HasGhostPrefabs = true;
-                m_PendingGhostRegistration.Add(networkPrefab);
+                //m_PendingGhostRegistration.Add(networkPrefab);
             }
 #endif
 
