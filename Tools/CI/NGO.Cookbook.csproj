@@ -12,7 +12,7 @@
         <PackageReference Include="RecipeEngine.Api" Version="12.8.0" />
         <PackageReference Include="RecipeEngine.Api.Extensions" Version="7.2.1" />
         <PackageReference Include="RecipeEngine.Modules.Api" Version="5.1.0" />
-        <PackageReference Include="RecipeEngine.Modules.Wrench" Version="2.7.0" />
+        <PackageReference Include="RecipeEngine.Modules.Wrench" Version="2.7.1" />
     </ItemGroup>
 
 </Project>
