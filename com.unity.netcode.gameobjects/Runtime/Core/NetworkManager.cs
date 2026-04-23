@@ -1057,7 +1057,7 @@ namespace Unity.Netcode
                 Log = new ContextualLogger(this, this);
             }
 
-            NetworkConfig?.InitializePrefabs(Log);
+            NetworkConfig?.InitializePrefabs();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
 #if UNITY_EDITOR
@@ -1263,7 +1263,7 @@ namespace Unity.Netcode
             BehaviourUpdater = new NetworkBehaviourUpdater();
             BehaviourUpdater.Initialize(this);
 
-            NetworkConfig.InitializePrefabs(Log);
+            NetworkConfig.InitializePrefabs();
             PrefabHandler.RegisterPlayerPrefab();
 #if UNITY_EDITOR
             BeginNetworkSession();
