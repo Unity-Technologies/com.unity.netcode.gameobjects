@@ -2197,42 +2197,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 #if UNIFIED_NETCODE
-        
-        private GameObject CreatePrefab(string directoryPath, GameObject go)
-        {
-            if (!Directory.Exists(directoryPath))
-                Directory.CreateDirectory(directoryPath);
-            var assetPath = $"{directoryPath}/{go.name}.prefab";
-            if (AssetDatabase.AssetPathExists(assetPath))
-                AssetDatabase.DeleteAsset(assetPath);
-            Assert.IsFalse(AssetDatabase.AssetPathExists(assetPath), $"path already exists for asset {assetPath}");
-            var prefab = PrefabUtility.SaveAsPrefabAsset(go, assetPath);
-            
-            var networkPrefab = new NetworkPrefab() { Prefab = prefab };
-
-            var authorityNetworkManager = GetAuthorityNetworkManager();
-            var clients = m_ClientNetworkManagers;
-            // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
-            // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            authorityNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            authorityNetworkManager.NetworkConfig.Prefabs.Remove(go);
-            foreach (var clientNetworkManager in clients)
-            {
-                if (clientNetworkManager == authorityNetworkManager)
-                {
-                    continue;
-                }
-                clientNetworkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = prefab });
-                clientNetworkManager.NetworkConfig.Prefabs.Remove(go);
-            }
-            Object.DestroyImmediate(go);
-
-            return prefab;
-        }
-        
         protected void SetupGhostAdapterForNetworkObjectPrefab(ref GameObject prefabObject)
         {
-            prefabObject.SetActive(false);
             var adapter = prefabObject.AddComponent<GhostAdapter>();
             var bridge = prefabObject.AddComponent<NetworkObjectBridge>();
             var no = prefabObject.GetComponent<NetworkObject>();
@@ -2241,8 +2207,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             no.HadBridge = true;
             no.NetworkObjectBridge = bridge;
 
-            /*prefabObject = CreatePrefab("Assets/Temp", prefabObject);*/
-            
             GhostPrefabReference.s_IsPostProcessing = true;
             adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
             adapter.prefabReference.name = "GhostPrefabReference";
@@ -2250,39 +2214,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             adapter.prefabReference.Prefab = prefabObject;
             adapter.prefabReference.Ghost = adapter;
             GhostPrefabReference.s_IsPostProcessing = false;
-            
-            //prefabObject.SetActive(true);
-            UpdateGhostPrefabs();
         }
-
-        void UpdateGhostPrefabs()
-        {
-            foreach (var prefabObject in GameObject.FindObjectsByType<GhostAdapter>())
-            {
-                var reference =  prefabObject.GetComponent<GhostPrefabReference>();
-                if (!reference || reference.Prefab != prefabObject.gameObject)
-                {
-                    continue;
-                }
-                
-                foreach (var world in World.All)
-                {
-                    // check all possible worlds for the prefab that was just created and reenable it there too, since normal prefab creation would think the prefab is inactive
-                    // and automatically set the associated entity disabled too
-                    var link = GhostEntityMapping.LookupEntityReferencePrefab(prefabObject.GetEntityId(), world.Unmanaged);
-                    if (link.WasInitialized)
-                    {
-                        link.World.EntityManager.SetEnabled(link.Entity, true);
-                        // also have to override this in tests, since prefab registration will have had the wrong value during registration
-                        var pendingGameObjectSpawn =
-                            link.World.EntityManager.GetComponentData<PendingClientGameObjectSpawn>(link.Entity);
-                        pendingGameObjectSpawn.ShouldBeActive = true;
-                        link.World.EntityManager.SetComponentData(link.Entity, pendingGameObjectSpawn);
-                    }
-                }
-            }
-        }
-        
 #endif
 
         /// <summary>
@@ -2404,7 +2336,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             NetCode.Netcode.Instance.m_ActiveWorld = owner.NetcodeWorld;
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
-            newInstance.SetActive(true);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
             SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);
             return newInstance;
@@ -2453,9 +2384,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var topologyType = OnGetNetworkTopologyType();
             InitializeTestConfiguration(topologyType, null);
-#if UNIFIED_NETCODE
-            UnifiedBootStrap.OnInitialized += UpdateGhostPrefabs;
-#endif
         }
 
         /// <summary>
