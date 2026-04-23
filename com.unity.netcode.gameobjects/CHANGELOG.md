@@ -29,6 +29,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where either an `AttachableBehaviour` or an `AttachableNode` can throw an exception if they are attached during a scene unload where one of the two persists the scene unload event and the other does not. (#3931)
 - Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security

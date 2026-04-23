@@ -165,10 +165,16 @@ namespace Unity.Netcode
                     m_PlayerObjectsTable.Remove(playerObject.OwnerClientId);
                 }
             }
-
+            // If the client exists locally and we are destroying...
             if (NetworkManager.ConnectionManager.ConnectedClients.ContainsKey(playerObject.OwnerClientId) && destroyingObject)
             {
-                NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].PlayerObject = null;
+                var client = NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId];
+                // and the client's currently assigned player object is what is being destroyed...
+                if (client != null && client.PlayerObject == playerObject)
+                {
+                    // then clear out the clients currently assigned player object.
+                    client.PlayerObject = null;
+                }
             }
         }
 
@@ -1551,21 +1557,31 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called only by NetworkSceneManager.SwitchScene
+        /// Gets called only by <see cref="NetworkManager.Load"/> and the load scene mode
+        /// is set to <see cref="UnityEngine.SceneManagement.LoadSceneMode.Single"/>.
         /// </summary>
         internal void ServerDestroySpawnedSceneObjects()
         {
-            // This Allocation is "OK" for now because this code only executes when a new scene is switched to
-            // We need to create a new copy the HashSet of NetworkObjects (SpawnedObjectsList) so we can remove
-            // objects from the HashSet (SpawnedObjectsList) without causing a list has been modified exception to occur.
+            // This Allocation is "OK" for now because this code only executes when transitioning to a new scene (i.e. lots of allocations and de-allocations).
+            // We create new copy of the NetworkObjects (SpawnedObjectsList) HashSet so we can remove from the original list as needed.
             var spawnedObjects = SpawnedObjectsList.ToList();
 
-            foreach (var sobj in spawnedObjects)
+            foreach (var networkObject in spawnedObjects)
             {
-                if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.DestroyWithScene && sobj.gameObject.scene != NetworkManager.SceneManager.DontDestroyOnLoadScene)
+                if (networkObject.IsSceneObject != null && networkObject.IsSceneObject.Value && networkObject.DestroyWithScene
+                    && networkObject.gameObject.scene != NetworkManager.SceneManager.DontDestroyOnLoadScene)
                 {
-                    SpawnedObjectsList.Remove(sobj);
-                    Object.Destroy(sobj.gameObject);
+                    if (networkObject.IsSpawned && networkObject.HasAuthority)
+                    {
+                        networkObject.Despawn(false);
+                    }
+                    else // Non-authority objects should just be destroyed (i.e. DAHost)
+                    {
+                        // Mark the object and associated NetworkBehaviours as in the process (or will be) destroyed.
+                        networkObject.SetIsDestroying();
+                        Object.Destroy(networkObject.gameObject);
+                        SpawnedObjectsList.Remove(networkObject);
+                    }
                 }
             }
         }
@@ -1811,6 +1827,10 @@ namespace Unity.Netcode
                 }
             }
 
+            if (destroyGameObject)
+            {
+                networkObject.SetIsDestroying();
+            }
             networkObject.InvokeBehaviourNetworkDespawn();
 
             // Whether we are in distributedAuthority mode and have authority on this object
