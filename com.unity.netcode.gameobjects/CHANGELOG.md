@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improve handling of destroyed NetworkBehaviours. (#3953)
 - Hardened error handling and recovery during `NetworkObject` spawn. (#3941)
 - Replaced Debug usage by NetcodeLog on `NetworkSpawnManager` and `NetworkObject`. (#3933)
 - Improved performance of `NetworkBehaviour`. (#3915)
