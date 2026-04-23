@@ -1711,20 +1711,15 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (m_ChildNetworkBehaviours != null)
+            if (ChildNetworkBehaviours != null)
             {
-                foreach (var childBehaviour in m_ChildNetworkBehaviours)
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
                 {
-                    // Just ignore and continue processing through the entries
-                    if (!childBehaviour)
-                    {
-                        continue;
-                    }
-
+                    // Tell the childBehaviour that this NetworkObject is being destroyed.
                     // Keeping the property a private set to assure this is
                     // the only way it can be set as it should never be reset
                     // back to false once invoked.
-                    childBehaviour.SetIsDestroying();
+                    childBehaviour?.SetIsDestroying();
                 }
             }
             IsDestroying = true;
