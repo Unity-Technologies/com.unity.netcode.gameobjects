@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using Unity.Netcode.Logging;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -115,10 +116,10 @@ namespace Unity.Netcode
         private const string k_SenderId = "SenderId";
         internal static Context ContextWithSenderId([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)
         {
-            var ctx = new Context(level, message, true).With(k_SenderId, senderId);
+            var ctx = new Context(level, message, true).AddInfo(k_SenderId, senderId);
             if (TryGetNetworkObjectName(networkManager, message, out var name))
             {
-                ctx.With(name);
+                ctx.AddTag(name);
             }
             return ctx;
         }

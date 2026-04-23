@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Logging
 {
     internal struct LogContextNetworkManager : ILogContext, IDisposable
     {
@@ -71,7 +71,7 @@ namespace Unity.Netcode
             WatchForSingleton();
         }
 
-        public readonly void AppendTo(ContextBuilder builder)
+        public readonly void AppendTo(LogBuilder builder)
         {
             if (m_NetworkManager == null)
             {
@@ -95,7 +95,7 @@ namespace Unity.Netcode
             if (!m_NetworkManager.IsServer)
             {
                 // [Client:1]
-                builder.AppendContext(k_ClientString, m_NetworkManager.LocalClientId);
+                builder.AppendInfo(k_ClientString, m_NetworkManager.LocalClientId);
             }
         }
 

@@ -1,11 +1,13 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Logging
 {
     internal interface ILogContext
     {
-        public void AppendTo(ContextBuilder builder)
+        public void AppendTo(LogBuilder builder)
         {
         }
     }
@@ -15,8 +17,7 @@ namespace Unity.Netcode
         public readonly LogLevel Level;
         private readonly string m_CallingFunction;
         internal readonly string Message;
-        public GameObject GameObjectOverride;
-
+        internal Object RelevantObjectOverride;
 
         private readonly GenericContext m_Other;
 
@@ -27,7 +28,7 @@ namespace Unity.Netcode
             m_CallingFunction = memberName;
 
             m_Other = GenericContext.Create();
-            GameObjectOverride = null;
+            RelevantObjectOverride = null;
         }
 
         internal Context(LogLevel level, string msg, bool noCaller)
@@ -37,15 +38,15 @@ namespace Unity.Netcode
             m_CallingFunction = null;
 
             m_Other = GenericContext.Create();
-            GameObjectOverride = null;
+            RelevantObjectOverride = null;
         }
 
-        public void AppendTo(ContextBuilder builder)
+        public void AppendTo(LogBuilder builder)
         {
             // [CallingFunction]
             if (!string.IsNullOrEmpty(m_CallingFunction))
             {
-                builder.AppendContext(m_CallingFunction);
+                builder.AppendTag(m_CallingFunction);
             }
 
             // [SomeContext][SomeName:SomeValue]
@@ -56,22 +57,21 @@ namespace Unity.Netcode
             builder.Append(Message);
         }
 
-        public Context With(object key, object value)
+        public Context AddInfo(object key, object value)
         {
             m_Other.StoreInfo(key, value);
             return this;
         }
 
-        public Context With(string msg)
+        public Context AddTag(string msg)
         {
-            m_Other.StoreContext(msg);
+            m_Other.StoreTag(msg);
             return this;
         }
 
-        public Context ForNetworkPrefab(NetworkPrefab networkPrefab)
+        public Context ForGameObject(GameObject prefabObj)
         {
-            GameObjectOverride = networkPrefab.Prefab.gameObject;
-            m_Other.StoreInfo(nameof(NetworkPrefab), networkPrefab.Prefab.name);
+            RelevantObjectOverride = prefabObj.gameObject;
             return this;
         }
     }

@@ -2,37 +2,55 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Text;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using LogType = UnityEngine.LogType;
+using Object = UnityEngine.Object;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Logging
 {
+    /// <summary>
+    /// Configurable structured logger.
+    /// Each logger instance collects system-wide context
+    /// (e.g. which <see cref="Object"/> to attribute the logs to; or the <see cref="NetworkManager"/> relating to this object)
+    /// Each log is made with a <see cref="Context"/> object that collects the local context of this individual log line
+    /// The contextual logger will combine the system-wide context and the local context into one structured log message.
+    /// </summary>
     internal class ContextualLogger
     {
         private const string k_NetcodeHeader = "[Netcode] ";
-        private bool m_UseCompatibilityMode;
-        private readonly GameObject m_GameObject;
-        private readonly ContextBuilder m_Builder = new();
+        private readonly bool m_UseCompatibilityMode;
+        private readonly Object m_Object;
+        private readonly LogBuilder m_Builder = new();
 
         private LogContextNetworkManager m_ManagerContext;
         private readonly GenericContext m_LoggerContext;
 
         private const string k_CompilationCondition = "UNITY_ASSERTIONS";
 
+        /// <summary>
+        /// Creates a minimally configured contextual logger
+        /// </summary>
+        /// <param name="useCompatibilityMode">Suppresses adding </param>
         public ContextualLogger(bool useCompatibilityMode = false)
         {
             m_UseCompatibilityMode = useCompatibilityMode;
             m_ManagerContext = new LogContextNetworkManager(true);
-            m_GameObject = null;
+            m_Object = null;
             m_LoggerContext = GenericContext.Create();
         }
 
-        public ContextualLogger([NotNull] NetworkManager networkManager, GameObject gameObject)
+        public ContextualLogger(Object inspectorObject)
+        {
+            m_ManagerContext = new LogContextNetworkManager(true);
+            m_Object = inspectorObject;
+            m_LoggerContext = GenericContext.Create();
+        }
+
+        public ContextualLogger(Object inspectorObject, [NotNull] NetworkManager networkManager)
         {
             m_ManagerContext = new LogContextNetworkManager(networkManager);
-            m_GameObject = gameObject;
+            m_Object = inspectorObject;
             m_LoggerContext = GenericContext.Create();
         }
 
@@ -44,23 +62,28 @@ namespace Unity.Netcode
         }
 
         [Conditional(k_CompilationCondition)]
-        internal void PushContext(string key, object value)
+        internal void AddInfo(string key, object value)
         {
             m_LoggerContext.StoreInfo(key, value);
         }
 
-        [Conditional(k_CompilationCondition)]
-        internal void PushContext(string key)
+        /// <summary>
+        /// Adds info onto a logger that will be removed once the <see cref="DisposableContext"/> is disposed
+        /// </summary>
+        /// <param name="key">Key to log</param>
+        /// <param name="value">Value to log</param>
+        /// <returns>Object to dispose when context is no longer valid</returns>
+        internal DisposableContext AddDisposableInfo(string key, object value)
         {
-            m_LoggerContext.StoreContext(key);
+            m_LoggerContext.StoreInfo(key, value);
+            return new DisposableContext(this, key);
         }
 
         [Conditional(k_CompilationCondition)]
-        internal void PopContext(string key)
+        internal void RemoveInfo(string key)
         {
             m_LoggerContext.ClearInfo(key);
         }
-
 
         [HideInCallstack]
         [Conditional(k_CompilationCondition)]
@@ -93,7 +116,7 @@ namespace Unity.Netcode
         [HideInCallstack]
         public void Exception(Exception exception)
         {
-            Debug.unityLogger.LogException(exception, m_GameObject);
+            Debug.unityLogger.LogException(exception, m_Object);
         }
 
         [HideInCallstack]
@@ -106,7 +129,7 @@ namespace Unity.Netcode
             }
 
             var message = BuildLog(context);
-            Debug.unityLogger.Log(logType, (object)message, context.GameObjectOverride ?? m_GameObject);
+            Debug.unityLogger.Log(logType, (object)message, context.RelevantObjectOverride ?? m_Object);
         }
 
         [HideInCallstack]
@@ -119,9 +142,9 @@ namespace Unity.Netcode
             }
 
             var message = BuildLog(context);
-            Debug.unityLogger.Log(logType, (object)message, context.GameObjectOverride ?? m_GameObject);
+            Debug.unityLogger.Log(logType, (object)message, context.RelevantObjectOverride ?? m_Object);
 
-            m_ManagerContext.TrySendMessage(logType, message);
+            m_ManagerContext.TrySendMessage(logType, message.Remove(0, k_NetcodeHeader.Length));
         }
 
         private string BuildLog(Context context)
@@ -132,7 +155,7 @@ namespace Unity.Netcode
             m_Builder.Append(k_NetcodeHeader);
 
             if (m_UseCompatibilityMode)
-            {
+            { ;
                 m_Builder.Append(context.Message);
             }
             else
@@ -147,38 +170,25 @@ namespace Unity.Netcode
 
             return m_Builder.Build();
         }
-    }
 
-    internal class ContextBuilder
-    {
-        private readonly StringBuilder m_Builder = new();
-        private const string k_OpenBracket = "[";
-        private const string k_CloseBracket = "]";
-        private const string k_Separator = ":";
-
-        public void Reset()
+        /// <summary>
+        /// Removes the configured context from the logger when this object is disposed.
+        /// </summary>
+        public readonly struct DisposableContext: IDisposable
         {
-            m_Builder.Clear();
+            private readonly ContextualLogger m_Logger;
+            private readonly string m_ToClear;
+
+            internal DisposableContext(ContextualLogger logger, string toClear)
+            {
+                m_Logger = logger;
+                m_ToClear = toClear;
+            }
+
+            public void Dispose()
+            {
+                m_Logger.RemoveInfo(m_ToClear);
+            }
         }
-
-        public void AppendContext(string context)
-        {
-            m_Builder.Append(k_OpenBracket);
-            m_Builder.Append(context);
-            m_Builder.Append(k_CloseBracket);
-        }
-
-        public void AppendContext(object key, object value)
-        {
-            m_Builder.Append(k_OpenBracket);
-            m_Builder.Append(key);
-            m_Builder.Append(k_Separator);
-            m_Builder.Append(value);
-            m_Builder.Append(k_CloseBracket);
-        }
-
-        public void Append(string value) => m_Builder.Append(value);
-
-        public string Build() => m_Builder.ToString();
     }
 }

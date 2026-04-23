@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Logging
 {
     internal readonly struct GenericContext : ILogContext, IDisposable
     {
@@ -14,13 +14,13 @@ namespace Unity.Netcode
             m_Info = info;
         }
 
-        public readonly void AppendTo(ContextBuilder builder)
+        public void AppendTo(LogBuilder builder)
         {
             if (m_Contexts != null)
             {
                 foreach (var ctx in m_Contexts)
                 {
-                    builder.AppendContext(ctx);
+                    builder.AppendTag(ctx);
                 }
             }
 
@@ -28,12 +28,12 @@ namespace Unity.Netcode
             {
                 foreach (var (key, value) in m_Info)
                 {
-                    builder.AppendContext(key, value);
+                    builder.AppendInfo(key, value);
                 }
             }
         }
 
-        public void StoreContext(string msg)
+        public void StoreTag(string msg)
         {
             m_Contexts.Add(msg);
         }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
+using Unity.Netcode.Logging;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
@@ -121,7 +122,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, new Regex($"{parent.name}\\] Prefab has child {nameof(NetworkObject)}\\(s\\) but they will not be spawned across the network \\(unsupported {nameof(NetworkPrefab)} setup\\)"));
+            LogAssert.Expect(LogType.Warning, new Regex($@"{parent.name}\] Prefab has child {nameof(NetworkObject)}\(s\) but they will not be spawned across the network \(unsupported {nameof(NetworkPrefab)} setup\)"));
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);
@@ -150,7 +151,8 @@ namespace Unity.Netcode.EditorTests
                 new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 }
             };
 
-            networkConfig.InitializePrefabs();
+            var log = new ContextualLogger();
+            networkConfig.InitializePrefabs(log);
 
             Assert.IsNull(networkConfig.OldPrefabList);
             Assert.IsNotNull(networkConfig.Prefabs);
@@ -300,14 +302,19 @@ namespace Unity.Netcode.EditorTests
         public void WhenThereAreUninitializedElementsInPrefabsList_NoErrors()
         {
             var networkConfig = new NetworkConfig();
+            var listWithNull = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            listWithNull.List.Add(new NetworkPrefab { Prefab = null });
+            listWithNull.List.Add(null);
 
-            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
+            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null, listWithNull };
 
-            networkConfig.InitializePrefabs();
+            Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(2), "Failed test setup: Both the null element and the list containing a null Prefab should be listed");
 
-            // Null elements will be removed from the list so it should be empty
-            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 0);
-            Assert.IsTrue(networkConfig.Prefabs.Prefabs.Count == 0);
+            var log = new ContextualLogger();
+            networkConfig.InitializePrefabs(log);
+
+            Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(1), "null element should have been removed");
+            Assert.That(networkConfig.Prefabs.Prefabs.Count, Is.EqualTo(0), "Invalid prefab was registered");
 
             networkConfig.Prefabs.Shutdown();
         }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.Logging;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
