@@ -150,8 +150,7 @@ namespace Unity.Netcode.EditorTests
                 new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 }
             };
 
-            var log = new ContextualLogger();
-            networkConfig.InitializePrefabs(log);
+            networkConfig.InitializePrefabs();
 
             Assert.IsNull(networkConfig.OldPrefabList);
             Assert.IsNotNull(networkConfig.Prefabs);
@@ -309,8 +308,7 @@ namespace Unity.Netcode.EditorTests
 
             Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(2), "Failed test setup: Both the null element and the list containing a null Prefab should be listed");
 
-            var log = new ContextualLogger();
-            networkConfig.InitializePrefabs(log);
+            networkConfig.InitializePrefabs();
 
             Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(1), "null element should have been removed");
             Assert.That(networkConfig.Prefabs.Prefabs.Count, Is.EqualTo(0), "Invalid prefab was registered");
