@@ -426,36 +426,37 @@ namespace Unity.Netcode
 
             var connectionManager = NetworkManagerOwner.ConnectionManager;
 
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var behaviour in ChildNetworkBehaviours.Values)
             {
-                ChildNetworkBehaviours[i].PreVariableUpdate();
+                behaviour.PreVariableUpdate();
                 // Notify all NetworkBehaviours that the authority is performing a deferred despawn.
                 // This is when user script would update NetworkVariable states that might be needed
                 // for the deferred despawn sequence on non-authoritative instances.
-                ChildNetworkBehaviours[i].OnDeferringDespawn(DeferredDespawnTick);
+                behaviour.OnDeferringDespawn(DeferredDespawnTick);
             }
 
             // DAHost handles sending updates to all clients
             if (NetworkManagerOwner.DAHost)
             {
-                for (int i = 0; i < connectionManager.ConnectedClientsList.Count; i++)
+                foreach (var client in connectionManager.ConnectedClientsList)
                 {
-                    var client = connectionManager.ConnectedClientsList[i];
-                    if (IsNetworkVisibleTo(client.ClientId))
+                    if (!IsNetworkVisibleTo(client.ClientId))
                     {
-                        // Sync just the variables for just the objects this client sees
-                        for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
-                        {
-                            ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId);
-                        }
+                        continue;
+                    }
+
+                    // Sync just the variables for just the objects this client sees
+                    foreach (var behaviour in ChildNetworkBehaviours.Values)
+                    {
+                        behaviour.NetworkVariableUpdate(client.ClientId);
                     }
                 }
             }
             else // Clients just send their deltas to the service or DAHost
             {
-                for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
+                foreach(var behaviour in ChildNetworkBehaviours.Values)
                 {
-                    ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId);
+                    behaviour.NetworkVariableUpdate(NetworkManager.ServerClientId);
                 }
             }
 
@@ -1995,7 +1996,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            foreach (var behavior in ChildNetworkBehaviours)
+            foreach (var behavior in ChildNetworkBehaviours.Values)
             {
                 behavior.MarkVariablesDirty(false);
             }
@@ -2071,7 +2072,7 @@ namespace Unity.Netcode
                 NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, originalOwnerClientId, true);
             }
 
-            foreach (var childBehaviour in ChildNetworkBehaviours)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
                 childBehaviour.UpdateNetworkProperties();
                 if (distributedAuthorityMode || isServer || isPreviousOwner)
@@ -2084,7 +2085,7 @@ namespace Unity.Netcode
 
             if (distributedAuthorityMode || isServer || isNewOwner)
             {
-                foreach (var childBehaviour in ChildNetworkBehaviours)
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
                 {
                     if (!childBehaviour.gameObject.activeInHierarchy)
                     {
@@ -2101,17 +2102,17 @@ namespace Unity.Netcode
 
         internal void InvokeOwnershipChanged(ulong previous, ulong next)
         {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var child in ChildNetworkBehaviours.Values)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (child.gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].InternalOnOwnershipChanged(previous, next);
+                    child.InternalOnOwnershipChanged(previous, next);
                 }
                 else
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"[{name}] {ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                        NetworkLog.LogWarning($"[{name}] {child.gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {child.GetType().Name} component was skipped during ownership assignment!");
                     }
                 }
             }
@@ -2124,7 +2125,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            foreach (var childBehaviour in ChildNetworkBehaviours)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
                 childBehaviour.IsSessionOwner = isSessionOwner;
             }
@@ -2132,18 +2133,18 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var child in ChildNetworkBehaviours.Values)
             {
                 // Any NetworkBehaviour that is not spawned and the associated GameObject is disabled should be
                 // skipped over (i.e. not supported).
-                if (!ChildNetworkBehaviours[i].IsSpawned && !ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (!child.IsSpawned && !child.gameObject.activeInHierarchy)
                 {
                     continue;
                 }
                 // Invoke internal notification
-                ChildNetworkBehaviours[i].InternalOnNetworkObjectParentChanged(parentNetworkObject);
+                child.InternalOnNetworkObjectParentChanged(parentNetworkObject);
                 // Invoke public notification
-                ChildNetworkBehaviours[i].OnNetworkObjectParentChanged(parentNetworkObject);
+                child.OnNetworkObjectParentChanged(parentNetworkObject);
             }
         }
 
@@ -2591,9 +2592,9 @@ namespace Unity.Netcode
         internal void InvokeBehaviourNetworkPreSpawn()
         {
             var networkManager = NetworkManager;
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager, this);
+                childBehaviour.NetworkPreSpawn(ref networkManager, this);
             }
         }
 
@@ -2607,7 +2608,7 @@ namespace Unity.Netcode
             // prior to invoking OnNetworkSpawn so cross NetworkBehaviour:
             // - accessing of NetworkVariables will work correctly.
             // - invocation of RPCs will work properly (and not throw exception under certain scenarios)
-            foreach (var childBehaviour in ChildNetworkBehaviours)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
                 {
@@ -2621,7 +2622,7 @@ namespace Unity.Netcode
             }
 
             // After initialization, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
-            foreach (var childBehaviour in ChildNetworkBehaviours)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
                 {
@@ -2637,33 +2638,33 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkPostSpawn()
         {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (childBehaviour.gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].NetworkPostSpawn();
+                    childBehaviour.NetworkPostSpawn();
                 }
             }
         }
 
         internal void InternalNetworkSessionSynchronized()
         {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (childBehaviour.gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].NetworkSessionSynchronized();
+                    childBehaviour.NetworkSessionSynchronized();
                 }
             }
         }
 
         internal void InternalInSceneNetworkObjectsSpawned()
         {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (childBehaviour.gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].InSceneNetworkObjectsSpawned();
+                    childBehaviour.InSceneNetworkObjectsSpawned();
                 }
             }
         }
@@ -2671,77 +2672,68 @@ namespace Unity.Netcode
         internal void InvokeBehaviourNetworkDespawn()
         {
             // Invoke OnNetworkPreDespawn on all child behaviours
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                ChildNetworkBehaviours[i].InternalOnNetworkPreDespawn();
+                childBehaviour.InternalOnNetworkPreDespawn();
             }
 
             NetworkManagerOwner.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
             NetworkManagerOwner.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
+                childBehaviour.InternalOnNetworkDespawn();
             }
         }
-
-        private List<NetworkBehaviour> m_ChildNetworkBehaviours;
 
         internal string GenerateDisabledNetworkBehaviourWarning(NetworkBehaviour networkBehaviour)
         {
             return $"[{name}][{networkBehaviour.GetType().Name}][{nameof(isActiveAndEnabled)}: {networkBehaviour.isActiveAndEnabled}] Disabled {nameof(NetworkBehaviour)}s will be excluded from spawning and synchronization!";
         }
 
-        internal List<NetworkBehaviour> ChildNetworkBehaviours
+        internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours;
+        internal bool InitializeChildNetworkBehaviours()
         {
-            get
-            {
-                if (m_ChildNetworkBehaviours != null)
-                {
-                    return m_ChildNetworkBehaviours;
-                }
-
-                m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
-                var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
-                for (int i = 0; i < networkBehaviours.Length; i++)
-                {
-                    // Find the first parent NetworkObject of this child
-                    // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.
-                    var networkObj = networkBehaviours[i].GetComponentInParent<NetworkObject>();
-                    if (networkObj != this)
-                    {
-                        continue;
-                    }
-
-                    // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
-                    var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
-                    networkBehaviours[i].SetNetworkObject(this, nextIndex);
-                    m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
-
-                    var type = networkBehaviours[i].GetType();
-                    if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
-                    {
-                        if (NetworkTransforms == null)
-                        {
-                            NetworkTransforms = new List<NetworkTransform>();
-                        }
-                        var networkTransform = networkBehaviours[i] as NetworkTransform;
-                        networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
-                        NetworkTransforms.Add(networkTransform);
-                    }
+            ChildNetworkBehaviours = new Dictionary<ushort, NetworkBehaviour>();
+            NetworkTransforms = new List<NetworkTransform>();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                    else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
-                    {
-                        if (NetworkRigidbodies == null)
-                        {
-                            NetworkRigidbodies = new List<NetworkRigidbodyBase>();
-                        }
-                        NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
-                    }
+            NetworkRigidbodies = new List<NetworkRigidbodyBase>();
 #endif
+
+            var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
+            foreach(var behaviour in networkBehaviours)
+            {
+                // Find the first parent NetworkObject of this child
+                // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.
+                var networkObj = behaviour.GetComponentInParent<NetworkObject>();
+                if (networkObj != this)
+                {
+                    continue;
                 }
-                return m_ChildNetworkBehaviours;
+
+                // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
+                var nextIndex = (ushort)ChildNetworkBehaviours.Count;
+                behaviour.SetNetworkObject(this, nextIndex);
+                ChildNetworkBehaviours.Add(nextIndex, behaviour);
+
+                var networkTransform = behaviour as NetworkTransform;
+                if (networkTransform != null)
+                {
+                    networkTransform.IsNested = networkTransform.gameObject != gameObject;
+                    NetworkTransforms.Add(networkTransform);
+                }
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+
+                var rigidbodyBase = behaviour as NetworkRigidbodyBase;
+                if (rigidbodyBase != null)
+                {
+                    NetworkRigidbodies.Add(behaviour as NetworkRigidbodyBase);
+                }
+#endif
             }
+
+            return true;
         }
 
         /// <summary>
@@ -2761,9 +2753,9 @@ namespace Unity.Netcode
             var currentOwnerId = OwnerClientId;
             OwnerClientId = originalOwnerId;
             PreviousOwnerId = originalPreviousOwnerId;
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
+                childBehaviour.MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
 
             // Now set the new owner and previous owner identifiers back to their original new values
@@ -2822,29 +2814,7 @@ namespace Unity.Netcode
         /// </returns>
         public ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
-            // read the cached index, and verify it first
-            if (instance.NetworkBehaviourIdCache < ChildNetworkBehaviours.Count)
-            {
-                if (ChildNetworkBehaviours[instance.NetworkBehaviourIdCache] == instance)
-                {
-                    return instance.NetworkBehaviourIdCache;
-                }
-
-                // invalid cached id reset
-                instance.NetworkBehaviourIdCache = default;
-            }
-
-            for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                if (ChildNetworkBehaviours[i] == instance)
-                {
-                    // cache the id, for next query
-                    instance.NetworkBehaviourIdCache = i;
-                    return i;
-                }
-            }
-
-            return 0;
+            return instance.NetworkBehaviourId;
         }
 
         /// <summary>
@@ -2854,28 +2824,26 @@ namespace Unity.Netcode
         /// <returns>The <see cref="NetworkBehaviour"/> at the ordered index value or null if it does not exist.</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
-            if (index >= ChildNetworkBehaviours.Count)
+            if (ChildNetworkBehaviours.TryGetValue(index, out var childBehaviour))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
-                }
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                {
-                    var currentKnownChildren = new StringBuilder();
-                    currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
-                    for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-                    {
-                        var childNetworkBehaviour = ChildNetworkBehaviours[i];
-                        currentKnownChildren.Append($" [{i}] {childNetworkBehaviour.__getTypeName()}");
-                        currentKnownChildren.Append(i < ChildNetworkBehaviours.Count - 1 ? "," : ".");
-                    }
-                    NetworkLog.LogInfo(currentKnownChildren.ToString());
-                }
-                return null;
+                return childBehaviour;
             }
 
-            return ChildNetworkBehaviours[index];
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+            {
+                NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
+            }
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                var currentKnownChildren = new StringBuilder();
+                currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
+                foreach (var (id, behaviour) in ChildNetworkBehaviours)
+                {
+                    currentKnownChildren.Append($"[{id}] {behaviour.__getTypeName()}, ");
+                }
+                NetworkLog.LogInfo(currentKnownChildren.ToString());
+            }
+            return null;
         }
 
         /// <summary>
@@ -3181,10 +3149,10 @@ namespace Unity.Netcode
                 var writer = serializer.GetFastBufferWriter();
 
                 // Synchronize NetworkVariables
-                foreach (var behavior in ChildNetworkBehaviours)
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
                 {
-                    behavior.InitializeVariables();
-                    behavior.WriteNetworkVariableData(writer, targetClientId);
+                    childBehaviour.InitializeVariables();
+                    childBehaviour.WriteNetworkVariableData(writer, targetClientId);
                 }
 
                 // Reserve the NetworkBehaviour synchronization count position
@@ -3195,7 +3163,7 @@ namespace Unity.Netcode
                 // had additional synchronization data written.
                 // (See notes for reading/deserialization below)
                 var synchronizationCount = (byte)0;
-                foreach (var childBehaviour in ChildNetworkBehaviours)
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
                 {
                     if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
@@ -3216,7 +3184,7 @@ namespace Unity.Netcode
                 var reader = serializer.GetFastBufferReader();
 
                 // Apply the network variable synchronization data
-                foreach (var behaviour in ChildNetworkBehaviours)
+                foreach (var behaviour in ChildNetworkBehaviours.Values)
                 {
                     behaviour.InitializeVariables();
                     behaviour.SetNetworkVariableData(reader, targetClientId);
@@ -3525,11 +3493,8 @@ namespace Unity.Netcode
 
         private void Awake()
         {
-            m_ChildNetworkBehaviours = null;
-            NetworkTransforms?.Clear();
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            NetworkRigidbodies?.Clear();
-#endif
+            InitializeChildNetworkBehaviours();
+
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
@@ -3624,7 +3589,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
-                ChildNetworkBehaviours.Remove(networkBehaviour);
+                ChildNetworkBehaviours.Remove(networkBehaviour.NetworkBehaviourId);
             }
         }
     }
