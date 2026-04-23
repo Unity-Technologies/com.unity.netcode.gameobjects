@@ -454,7 +454,7 @@ namespace Unity.Netcode
             }
             else // Clients just send their deltas to the service or DAHost
             {
-                foreach(var behaviour in ChildNetworkBehaviours.Values)
+                foreach (var behaviour in ChildNetworkBehaviours.Values)
                 {
                     behaviour.NetworkVariableUpdate(NetworkManager.ServerClientId);
                 }
@@ -2701,7 +2701,7 @@ namespace Unity.Netcode
 #endif
 
             var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
-            foreach(var behaviour in networkBehaviours)
+            foreach (var behaviour in networkBehaviours)
             {
                 // Find the first parent NetworkObject of this child
                 // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.

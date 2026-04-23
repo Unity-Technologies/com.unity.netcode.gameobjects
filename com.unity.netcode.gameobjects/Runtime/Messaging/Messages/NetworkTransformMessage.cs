@@ -92,7 +92,7 @@ namespace Unity.Netcode
 
             if (isSpawnedLocally)
             {
-                if (!networkObject.ChildNetworkBehaviours.TryGetValue((ushort) networkBehaviourId, out var behaviour) || behaviour == null)
+                if (!networkObject.ChildNetworkBehaviours.TryGetValue((ushort)networkBehaviourId, out var behaviour) || behaviour == null)
                 {
                     Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
                     return false;

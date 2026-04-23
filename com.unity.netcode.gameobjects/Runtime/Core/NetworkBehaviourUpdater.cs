@@ -56,7 +56,7 @@ namespace Unity.Netcode
                 if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
                 {
                     // Sync just the variables for just the objects this client sees
-                    foreach(var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
+                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
                     {
                         behaviour.NetworkVariableUpdate(client.ClientId, forceSend);
                     }
@@ -73,7 +73,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
         {
-            foreach(var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
+            foreach (var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
             {
                 behaviour.NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
             }
@@ -86,7 +86,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PostProcessDirtyObject(NetworkObject dirtyObj)
         {
-            foreach(var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
+            foreach (var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
             {
                 for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                 {
