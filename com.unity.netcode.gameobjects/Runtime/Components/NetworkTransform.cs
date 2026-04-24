@@ -1361,7 +1361,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// When set each state update will contain a state identifier
         /// </summary>
-        internal static bool TrackStateUpdateId = false;
+        internal static bool TrackStateUpdateId;
 
         /// <summary>
         /// Enabled by default.
@@ -4692,7 +4692,7 @@ namespace Unity.Netcode.Components
         /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
         /// <see cref="NetworkTimeSystem.TickLatency"/>
         /// </remarks>
-        public static int InterpolationBufferTickOffset = 0;
+        public static int InterpolationBufferTickOffset;
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (networkManager.IsListening)

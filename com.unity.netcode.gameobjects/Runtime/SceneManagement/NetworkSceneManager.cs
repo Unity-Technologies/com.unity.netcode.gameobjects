@@ -548,7 +548,6 @@ namespace Unity.Netcode
         /// not destroy temporary scene are moved into the active scene
         /// </summary>
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad;
-
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad()
