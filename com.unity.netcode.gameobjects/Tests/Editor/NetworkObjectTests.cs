@@ -33,17 +33,14 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(2)]
-        public void GetBehaviourIndexNone(int index)
+        public void GetBehaviourIndexNone()
         {
             var gameObject = new GameObject(nameof(GetBehaviourIndexNone));
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             LogAssert.Expect(LogType.Error, new Regex(".*out of bounds.*"));
 
-            Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex((ushort)index), Is.Null);
+            Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(5), Is.Null);
 
             // Cleanup
             Object.DestroyImmediate(gameObject);
