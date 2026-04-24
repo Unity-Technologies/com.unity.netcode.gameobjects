@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.Logging
