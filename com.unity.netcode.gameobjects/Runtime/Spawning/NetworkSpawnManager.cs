@@ -572,10 +572,7 @@ namespace Unity.Netcode
 
             if (!networkObject.Observers.Contains(clientId))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
-                {
-                    NetworkLog.LogWarningServer($"[Invalid Owner] Cannot send Ownership change as client-{clientId} cannot see {networkObject.name}! Use {nameof(NetworkObject.NetworkShow)} first.");
-                }
+                NetworkManager.Log.WarningServer(new Context(LogLevel.Developer, $"Cannot send Ownership change as client cannot see {nameof(NetworkObject)}! Use {nameof(NetworkObject.NetworkShow)} first.").AddInfo("Invalid Client", clientId).AddTag(networkObject.name).AddObject(networkObject));
                 return;
             }
 

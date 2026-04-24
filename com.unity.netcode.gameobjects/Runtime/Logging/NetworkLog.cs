@@ -16,6 +16,7 @@ namespace Unity.Netcode
     /// </summary>
     public static class NetworkLog
     {
+        internal static LogConfiguration Config;
         private static readonly ContextualLogger k_Log = new(true);
 
         internal static void SetNetworkManager(NetworkManager networkManager)
@@ -29,8 +30,6 @@ namespace Unity.Netcode
         // [Obsolete("Use the LogLevel directly on the NetworkManager instead")]
         public static LogLevel CurrentLogLevel => NetworkManager.Singleton == null ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
 
-        internal static LogConfiguration Config = new LogConfiguration();
-
         // internal logging
 
         /// <summary>
@@ -38,7 +37,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfo(string message) => k_Log.Info(new Context(LogLevel.Normal, message));
+        public static void LogInfo(string message) => k_Log.Info(new Context(LogLevel.Normal, message, true));
         [HideInCallstack]
         internal static void LogInfo(Context context) => k_Log.Info(context);
 
@@ -47,7 +46,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarning(string message) => k_Log.Warning(new Context(LogLevel.Error, message));
+        public static void LogWarning(string message) => k_Log.Warning(new Context(LogLevel.Error, message, true));
         [HideInCallstack]
         internal static void LogWarning(Context context) => k_Log.Warning(context);
 
@@ -56,7 +55,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogError(string message) => k_Log.Error(new Context(LogLevel.Error, message));
+        public static void LogError(string message) => k_Log.Error(new Context(LogLevel.Error, message, true));
         [HideInCallstack]
         internal static void LogError(Context context) => k_Log.Error(context);
 
@@ -67,28 +66,28 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoServer(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message));
+        public static void LogInfoServer(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message, true));
 
         /// <summary>
         /// Logs an info log locally and on the session owner if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoSessionOwner(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message));
+        public static void LogInfoSessionOwner(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message, true));
 
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarningServer(string message) => k_Log.WarningServer(new Context(LogLevel.Error, message));
+        public static void LogWarningServer(string message) => k_Log.WarningServer(new Context(LogLevel.Error, message, true));
 
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogErrorServer(string message) => k_Log.ErrorServer(new Context(LogLevel.Error, message));
+        public static void LogErrorServer(string message) => k_Log.ErrorServer(new Context(LogLevel.Error, message, true));
 
         internal static LogType GetMessageLogType(UnityEngine.LogType engineLogType)
         {
@@ -101,17 +100,6 @@ namespace Unity.Netcode
             };
         }
 
-        internal static void SendLogToAuthority(NetworkManager networkManager, LogType logType, ulong senderId, string message)
-        {
-            var networkMessage = new ServerLogMessage
-            {
-                LogType = logType,
-                Message = message,
-                SenderId = senderId
-            };
-            var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, MessageDeliveryType<ServerLogMessage>.DefaultDelivery, NetworkManager.ServerClientId);
-            networkManager.NetworkMetrics.TrackServerLogSent(NetworkManager.ServerClientId, (uint)logType, size);
-        }
 
         private const string k_SenderId = "SenderId";
         internal static Context BuildContextForServerMessage([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)

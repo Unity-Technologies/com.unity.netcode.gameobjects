@@ -156,7 +156,6 @@ namespace Unity.Netcode.Logging
 
             if (m_UseCompatibilityMode)
             {
-                ;
                 m_Builder.Append(context.Message);
             }
             else

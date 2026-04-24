@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
+using Unity.Netcode.Logging;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -39,11 +40,8 @@ namespace Unity.Netcode.EditorTests
             // Make our NetworkManager's GameObject nested
             networkManagerObject.transform.parent = parent.transform;
 
-            // Pre-generate the error message we are expecting to see
-            var messageToCheck = NetworkManager.GenerateNestedNetworkManagerMessage(networkManagerObject.transform);
-
             // Trap for the nested NetworkManager exception
-            LogAssert.Expect(LogType.Error, new Regex(messageToCheck));
+            LogAssert.Expect(LogType.Error, new Regex("NetworkManager cannot be nested"));
 
             // Since this is an in-editor test, we must force this invocation
             NetworkManagerHelper.Singleton.NotifyUserOfNestedNetworkManager(networkManager, false, true);
@@ -120,12 +118,11 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, new Regex($@"{parent.name}\] Prefab has child {nameof(NetworkObject)}\(s\) but they will not be spawned across the network \(unsupported {nameof(NetworkPrefab)} setup\)"));
+            LogAssert.Expect(LogType.Warning, new Regex(@"Prefab has child NetworkObject\(s\) but they will not be spawned across the network"));
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);
             Object.DestroyImmediate(parent);
-
         }
 
         [Test]

@@ -445,7 +445,6 @@ namespace Unity.Netcode.RuntimeTests
             // ChangeOwnership should fail
             authorityInstance.ChangeOwnership(otherClient.LocalClientId);
             var senderId = authority.LocalClientId;
-            var receiverId = otherClient.LocalClientId;
             LogAssert.Expect(LogType.Warning, new Regex("Cannot send Ownership change as client cannot see NetworkObject"));
             Assert.True(authorityInstance.IsOwner, $"[Ownership Check] Client-{senderId} should still own this object!");
 

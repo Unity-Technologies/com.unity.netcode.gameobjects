@@ -68,7 +68,7 @@ namespace Unity.Netcode.Logging
             return this;
         }
 
-        public Context ForGameObject(GameObject obj)
+        public Context AddObject(Object obj)
         {
             RelevantObjectOverride = obj;
             return this;

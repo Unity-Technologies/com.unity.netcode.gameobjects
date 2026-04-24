@@ -1019,11 +1019,6 @@ namespace Unity.Netcode
             return isParented;
         }
 
-        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
-        {
-            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
-        }
-
         /// <summary>
         /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
         /// </summary>
@@ -1833,6 +1828,45 @@ namespace Unity.Netcode
             if (GetComponentInChildren<NetworkObject>() != null)
             {
                 Log.Warning(new Context(LogLevel.Normal, $"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}."));
+            }
+
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
+            NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Clear();
+
+            var prefabs = NetworkConfig.Prefabs.Prefabs;
+            // Check network prefabs and assign to dictionary for quick look up
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                var networkPrefab = prefabs[i];
+                var networkPrefabGo = networkPrefab?.Prefab;
+                if (networkPrefabGo == null)
+                {
+                    continue;
+                }
+
+                var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
+                if (networkObject == null)
+                {
+                    Log.Warning(new Context(LogLevel.Normal, $"Cannot register prefab to {nameof(NetworkManager)}, missing a {nameof(NetworkObject)} component at its root").AddObject(networkPrefab.Prefab));
+                    continue;
+                }
+
+                {
+                    var childNetworkObjects = new List<NetworkObject>();
+                    networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
+                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
+                    {
+                        Log.Warning(new Context(LogLevel.Normal, $"Prefab has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)").AddObject(networkPrefab.Prefab));
+                    }
+                }
             }
 
             try

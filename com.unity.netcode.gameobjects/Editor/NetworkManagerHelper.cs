@@ -187,7 +187,7 @@ namespace Unity.Netcode.Editor
             var transform = networkManager.transform;
             var isParented = transform.root != transform;
 
-            var message = NetworkManager.GenerateNestedNetworkManagerMessage(transform);
+            var message = $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
             if (s_LastKnownNetworkManagerParents.ContainsKey(networkManager) && !ignoreNetworkManagerCache)
             {
                 // If we have already notified the user, then don't notify them again

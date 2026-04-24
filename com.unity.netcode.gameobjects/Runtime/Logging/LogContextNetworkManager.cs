@@ -35,10 +35,18 @@ namespace Unity.Netcode.Logging
             if (m_NetworkManager != null
                 && m_NetworkManager.IsListening
                 && (m_NetworkManager?.NetworkConfig.EnableNetworkLogs ?? false)
-                && (m_NetworkManager.IsServer || m_NetworkManager.LocalClient.IsSessionOwner))
+                && !m_NetworkManager.IsServer && !m_NetworkManager.LocalClient.IsSessionOwner)
             {
                 var messageType = NetworkLog.GetMessageLogType(logType);
-                NetworkLog.SendLogToAuthority(m_NetworkManager, messageType, m_NetworkManager.LocalClientId, message);
+
+                var networkMessage = new ServerLogMessage
+                {
+                    LogType = messageType,
+                    Message = message,
+                    SenderId = m_NetworkManager.LocalClientId
+                };
+                var size = m_NetworkManager.ConnectionManager.SendMessage(ref networkMessage, MessageDeliveryType<ServerLogMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                m_NetworkManager.NetworkMetrics.TrackServerLogSent(NetworkManager.ServerClientId, (uint)logType, size);
             }
         }
 

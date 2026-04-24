@@ -193,7 +193,7 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
 
-                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] [SenderId:{m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
                 {
                     return false;
                 }
