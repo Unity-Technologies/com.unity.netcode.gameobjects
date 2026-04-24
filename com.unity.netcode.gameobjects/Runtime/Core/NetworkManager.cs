@@ -1019,6 +1019,11 @@ namespace Unity.Netcode
             return isParented;
         }
 
+        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
         /// <summary>
         /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
         /// </summary>
