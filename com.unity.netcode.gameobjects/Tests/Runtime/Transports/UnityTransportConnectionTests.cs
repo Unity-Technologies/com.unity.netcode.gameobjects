@@ -164,7 +164,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreNotEqual(NetworkFamily.Invalid, endpoint.Family,
                 "Timed out waiting for localhost hostname resolution to complete.");
 
-            m_Server.SetConnectionData(endpoint.Address, 7777, endpoint.Address);
+            // Use the wildcard listen address for the resolved address family. This handles
+            // cases where "localhost" resolves to a non-loopback address (e.g. a device's LAN
+            // IP on some Android versions) and avoids relying on the exact IP in the local
+            // endpoint (which may be a wildcard 0.0.0.0 when UTP binds before routing).
+            var listenAddress = endpoint.Family == NetworkFamily.Ipv6 ? "::" : "0.0.0.0";
+            m_Server.SetConnectionData(listenAddress, 7777, listenAddress);
             m_Server.StartServer();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
