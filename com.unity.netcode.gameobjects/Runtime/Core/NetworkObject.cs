@@ -1688,6 +1688,47 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Returns true if the NetworkObject is in the middle of being destroyed.
+        /// </summary>
+        /// <remarks>
+        /// This is particularly useful when determining if something is being de-spawned
+        /// normally or if it is being de-spawned because the NetworkObject/GameObject is
+        /// being destroyed.
+        /// </remarks>
+        internal bool IsDestroying { get; private set; }
+
+        /// <summary>
+        /// Applies the despawning flag for the local instance and
+        /// its child NetworkBehaviours. Private to assure this is
+        /// only invoked from within OnDestroy.
+        /// </summary>
+        internal void SetIsDestroying()
+        {
+            if (IsDestroying)
+            {
+                return;
+            }
+
+            if (m_ChildNetworkBehaviours != null)
+            {
+                foreach (var childBehaviour in m_ChildNetworkBehaviours)
+                {
+                    // Just ignore and continue processing through the entries
+                    if (!childBehaviour)
+                    {
+                        continue;
+                    }
+
+                    // Keeping the property a private set to assure this is
+                    // the only way it can be set as it should never be reset
+                    // back to false once invoked.
+                    childBehaviour.SetIsDestroying();
+                }
+            }
+            IsDestroying = true;
+        }
+
         private void OnDisable()
         {
             SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
@@ -1695,6 +1736,9 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
+            // Apply the is destroying flag
+            SetIsDestroying();
+
             var networkManager = NetworkManager;
             // If no NetworkManager is assigned, then just exit early
             if (!networkManager)
@@ -1814,7 +1858,15 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
+            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene))
+            {
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"[{name}] Failed to finish spawning!");
+                }
+                ResetOnDespawn();
+                return;
+            }
 
             if ((NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.DAHost) || (!NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.IsServer))
             {
@@ -1878,7 +1930,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
         /// </summary>
-        /// <param name="networkManager">The local instance of the NetworkManager connected to an session in progress.</param>
+        /// <param name="networkManager">The local instance of the NetworkManager connected to a session in progress.</param>
         /// <param name="ownerClientId">The owner of the <see cref="NetworkObject"/> instance (defaults to server).</param>
         /// <param name="destroyWithScene">Whether the <see cref="NetworkObject"/> instance will be destroyed when the scene it is located within is unloaded (default is false).</param>
         /// <param name="isPlayerObject">Whether the <see cref="NetworkObject"/> instance is a player object or not (default is false).</param>
@@ -2188,6 +2240,11 @@ namespace Unity.Netcode
         {
             m_LatestParent = latestParent;
             m_CachedWorldPositionStays = worldPositionStays;
+        }
+
+        internal void ClearNetworkParenting()
+        {
+            m_LatestParent = null;
         }
 
         /// <summary>
@@ -3228,7 +3285,7 @@ namespace Unity.Netcode
                 {
                     reader.ReadValueSafe(out ushort networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    networkBehaviour?.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
@@ -3320,85 +3377,45 @@ namespace Unity.Netcode
         {
             var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 
-            byte[] instantiationData = null;
-            if (serializedObject.HasInstantiationData)
+            if (serializedObject.NetworkObjectId == default)
             {
-                reader.ReadValueSafe(out instantiationData);
-            }
-
-            // Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(serializedObject, instantiationData);
-            if (networkObject == null)
-            {
-                // Log the error that the NetworkObject failed to construct
-                if (networkManager.LogLevel <= LogLevel.Normal)
+                if (networkManager.LogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {serializedObject.Hash}.");
+                    NetworkLog.LogErrorServer($"[{nameof(GlobalObjectIdHash)}={serializedObject.Hash}] Received spawn request with invalid {nameof(NetworkObjectId)} {serializedObject.NetworkObjectId}. This should not happen!");
                 }
 
-                try
-                {
-                    // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.Seek(endOfSynchronizationData);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogException(ex);
-                }
-
-                // We have nothing left to do here.
+                reader.Seek(endOfSynchronizationData);
                 return null;
             }
-            networkObject.NetworkManagerOwner = networkManager;
 
-            // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
-            // in order to be able to determine which NetworkVariables the client will be allowed to read.
-            networkObject.OwnerClientId = serializedObject.OwnerClientId;
+            // Do the SpawnManager parts of the object spawn
+            var succeeded = networkManager.SpawnManager.NonAuthorityLocalSpawn(in serializedObject, out var networkObject, reader, serializedObject.DestroyWithScene);
 
-            // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
-            networkObject.InvokeBehaviourNetworkPreSpawn();
+            // Process any deferred messages once the object is 100% finished spawning
+            // Ensure this is done whether the spawn succeeds or fails
+            networkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serializedObject.NetworkObjectId);
 
-            // Process the remaining synchronization data from the buffer
-            try
+            // Ensure that the buffer is completely reset
+            if (reader.Position != endOfSynchronizationData)
             {
-                // Synchronize NetworkBehaviours
-                var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-                networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
-
-                // Ensure that the buffer is completely reset
-                if (reader.Position != endOfSynchronizationData)
+                if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    Debug.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
-                    reader.Seek(endOfSynchronizationData);
+                    NetworkLog.LogWarning($"[{networkObject.name}][Deserialize][{nameof(NetworkBehaviour)}Synchronization][Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
                 }
-            }
-            catch
-            {
                 reader.Seek(endOfSynchronizationData);
             }
 
-            // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
-            // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
-            // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
-            // the in-scene placed Networkobject changes several times over different sessions.
-            if (serializedObject.IsSceneObject && !serializedObject.HasParent && networkObject.m_LatestParent.HasValue)
+            // If the SpawnManager spawn doesn't succeed, be sure to clean up
+            if (!succeeded)
             {
-                networkObject.m_LatestParent = null;
-            }
-
-            // Spawn the NetworkObject
-            if (networkObject.IsSpawned)
-            {
-                if (NetworkManager.Singleton.LogLevel <= LogLevel.Error)
+                // If the networkObject was created but the spawn failed, the created object needs to be destroyed
+                if (networkObject != null)
                 {
-                    NetworkLog.LogErrorServer($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
+                    Destroy(networkObject.gameObject);
                 }
+
                 return null;
             }
-
-            // Invoke the non-authority local spawn method
-            // (It also invokes post spawn and handles processing derferred messages)
-            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, serializedObject, serializedObject.DestroyWithScene);
 
             if (serializedObject.SyncObservers)
             {

@@ -644,6 +644,42 @@ namespace Unity.Netcode
         public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
+        /// Returns true if the NetworkObject is in the middle of being destroyed.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="SetIsDestroying"/>
+        /// </remarks>
+        internal bool IsDestroying { get; private set; }
+
+        /// <summary>
+        /// This provides us with a way to track when something is in the middle
+        /// of being destroyed or will be destroyed by something like SceneManager.
+        /// </summary>
+        protected internal virtual void OnIsDestroying()
+        {
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="NetworkObject.SetIsDestroying"/>.
+        /// </summary>
+        /// <remarks>
+        /// We want to invoke the virtual method prior to setting the
+        /// IsDestroying flag to be able to distinguish between knowing
+        /// when something will be destroyed (i.e. scene manager unload
+        /// or load in single mode) or is in the middle of being
+        /// destroyed.
+        /// Setting the flag provides a way for other instances or internals
+        /// to determine if this <see cref="NetworkBehaviour"/> instance is
+        /// in the middle of being destroyed.
+        /// </remarks>
+        internal void SetIsDestroying()
+        {
+            // We intentionally invoke this before setting the IsDestroying flag.
+            OnIsDestroying();
+            IsDestroying = true;
+        }
+
+        /// <summary>
         /// Updates properties with network session related
         /// dependencies such as a NetworkObject's spawned
         /// state or NetworkManager's session state.

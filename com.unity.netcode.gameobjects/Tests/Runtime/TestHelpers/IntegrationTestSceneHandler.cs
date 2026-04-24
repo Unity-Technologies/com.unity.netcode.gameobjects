@@ -761,17 +761,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     if (networkObject.HasAuthority && networkObject.NetworkManager == networkManager)
                     {
                         VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Destroying {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
+                        // We know this instance is going to be destroyed (when it receives the destroy object message).
+                        // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                        // preparation of being destroyed by the SceneManager.
+                        networkObject.SetIsDestroying();
                         networkObject.Despawn();
                     }
                     else //For integration testing purposes, migrate remaining into DDOL
                     {
                         if (networkObject.DestroyPendingSceneEvent)
                         {
+                            // We know this instance is going to be destroyed (for integration testing we simulate the destroy).
+                            // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                            // preparation of being destroyed by the SceneManager.
+                            networkObject.SetIsDestroying();
                             Object.Destroy(networkObject.gameObject);
                         }
                         else
                         {
                             VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Temporarily migrating {networkObject.gameObject.name} into DDOL to await server destroy message.");
+                            // We know this instance is going to be destroyed (when it receives the destroy object message).
+                            // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                            // preparation of being destroyed by the SceneManager.
+                            networkObject.SetIsDestroying();
                             Object.DontDestroyOnLoad(networkObject.gameObject);
                         }
                     }

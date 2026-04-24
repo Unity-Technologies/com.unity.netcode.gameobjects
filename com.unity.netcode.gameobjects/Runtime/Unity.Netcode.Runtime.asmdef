@@ -97,6 +97,11 @@
             "name": "Unity",
             "expression": "6000.5.0a7",
             "define": "NGO_FINDOBJECTS_NOSORTING"
+        },
+        {
+          "name": "Unity",
+          "expression": "6000.6.0a3",
+          "define": "NGO_FINDOBJECTS_UNORDERED_IDS"
         }
     ],
     "noEngineReferences": false
