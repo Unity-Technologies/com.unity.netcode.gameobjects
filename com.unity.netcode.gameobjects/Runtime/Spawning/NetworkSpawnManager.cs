@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Unity.Netcode.Logging;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -157,18 +158,34 @@ namespace Unity.Netcode
             }
             playerObject.IsPlayerObject = false;
             m_PlayerObjects.Remove(playerObject);
-            if (m_PlayerObjectsTable.ContainsKey(playerObject.OwnerClientId))
+
+            var originalOwner = playerObject.OwnerClientId;
+
+            // Try on the current owner's table
+            if (m_PlayerObjectsTable.TryGetValue(playerObject.OwnerClientId, out var ownerTable) && ownerTable.Remove(playerObject))
             {
-                m_PlayerObjectsTable[playerObject.OwnerClientId].Remove(playerObject);
-                if (m_PlayerObjectsTable[playerObject.OwnerClientId].Count == 0)
+                if (ownerTable.Count == 0)
                 {
                     m_PlayerObjectsTable.Remove(playerObject.OwnerClientId);
                 }
             }
-            // If the client exists locally and we are destroying...
-            if (NetworkManager.ConnectionManager.ConnectedClients.ContainsKey(playerObject.OwnerClientId) && destroyingObject)
+            // If the object wasn't removed from the owner's list, we need to check on all lists
+            // The ownership could have changed since it was created
+            else
             {
-                var client = NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId];
+                foreach (var (owner, playerObjects) in m_PlayerObjectsTable)
+                {
+                    if (playerObjects.Remove(playerObject))
+                    {
+                        originalOwner = owner;
+                        break;
+                    }
+                }
+            }
+
+            // If the client exists locally, and we are destroying...
+            if (destroyingObject && NetworkManager.ConnectionManager.ConnectedClients.TryGetValue(originalOwner, out var client))
+            {
                 // and the client's currently assigned player object is what is being destroyed...
                 if (client != null && client.PlayerObject == playerObject)
                 {
@@ -378,33 +395,25 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the player object with a given clientId or null if one does not exist. This is only valid server side.
+        /// Returns the player object with a given clientId or null if one does not exist.
         /// </summary>
+        /// <remarks>
+        /// In client-server only the server can get other player's player objects.
+        /// </remarks>
         /// <param name="clientId">the client identifier of the player</param>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
-            if (!NetworkManager.DistributedAuthorityMode)
+            // Only the server can get other player's player objects in client-server mode
+            if (!NetworkManager.DistributedAuthorityMode && !NetworkManager.IsServer && NetworkManager.LocalClientId != clientId)
             {
-                if (!NetworkManager.IsServer && NetworkManager.LocalClientId != clientId)
-                {
-                    if (NetworkManager.LogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogErrorServer($"{clientId} Only the server can find player objects from other clients.");
-                    }
-                    return null;
-                }
-                if (TryGetNetworkClient(clientId, out NetworkClient networkClient))
-                {
-                    return networkClient.PlayerObject;
-                }
+                NetworkManager.Log.Error(new Context(LogLevel.Error, "Only the server can find player objects from other clients."));
+                return null;
             }
-            else
+
+            if (m_PlayerObjectsTable.TryGetValue(clientId, out var playerObjects))
             {
-                if (m_PlayerObjectsTable.ContainsKey(clientId))
-                {
-                    return m_PlayerObjectsTable[clientId].First();
-                }
+                return playerObjects.Count > 0 ? playerObjects[0] : null;
             }
             return null;
         }
@@ -563,10 +572,7 @@ namespace Unity.Netcode
 
             if (!networkObject.Observers.Contains(clientId))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Developer)
-                {
-                    NetworkLog.LogWarningServer($"[Invalid Owner] Cannot send Ownership change as client-{clientId} cannot see {networkObject.name}! Use {nameof(NetworkObject.NetworkShow)} first.");
-                }
+                NetworkManager.Log.WarningServer(new Context(LogLevel.Developer, $"Cannot send Ownership change as client cannot see {nameof(NetworkObject)}! Use {nameof(NetworkObject.NetworkShow)} first.").AddInfo("Invalid Client", clientId).AddTag(networkObject.name).AddObject(networkObject));
                 return;
             }
 

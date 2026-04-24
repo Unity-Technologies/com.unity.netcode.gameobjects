@@ -808,7 +808,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_NumberOfClients = numberOfClients;
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
-            NetworkLog.NetworkManagerOverride = server;
+            NetworkLog.ConfigureIntegrationTestLogging(server, m_EnableVerboseDebug);
 
             var managers = clients.ToList();
             if (!m_UseCmbService)
