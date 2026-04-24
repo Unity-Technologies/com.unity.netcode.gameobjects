@@ -2172,6 +2172,10 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
+            if (ChildNetworkBehaviours == null)
+            {
+                InitializeChildNetworkBehaviours();
+            }
             foreach (var child in ChildNetworkBehaviours.Values)
             {
                 // Any NetworkBehaviour that is not spawned and the associated GameObject is disabled should be
@@ -2711,6 +2715,10 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            if (ChildNetworkBehaviours == null)
+            {
+                InitializeChildNetworkBehaviours();
+            }
             // Invoke OnNetworkPreDespawn on all child behaviours
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
