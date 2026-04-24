@@ -97,10 +97,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // test when client disconnects, player object no longer available.
             var nbConnectedClients = authority.ConnectedClients.Count;
-            authority.DisconnectClient(newClientId);
 
-            yield return WaitForConditionOrTimeOut(() => !newClient.IsConnectedClient);
-            AssertOnTimeout("Timed out waiting for client to disconnect");
+            if (!m_DistributedAuthority)
+            {
+                authority.DisconnectClient(newClientId);
+
+                yield return WaitForConditionOrTimeOut(() => !newClient.IsConnectedClient);
+                AssertOnTimeout("Timed out waiting for client to disconnect");
+            }
 
             // Call this to clean up NetcodeIntegrationTestHelpers
             yield return StopOneClient(newClient);
@@ -115,11 +119,18 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 Assert.That(serverSideNewClientPlayer == null, Is.False, "The server's version of the client's player object shouldn't have been destroyed!");
-                Assert.That(serverSideNewClientPlayer.OwnerClientId, Is.EqualTo(authority.LocalClientId), "Ownership should have transferred to the authority!");
+                var newOwner = authority;
+                if (m_UseCmbService)
+                {
+                    // The CMB service will transfer ownership to another connected client
+                    Assert.That(serverSideNewClientPlayer.OwnerClientId, Is.Not.EqualTo(newClientId), "Ownership should have been removed!");
+                    newOwner = GetOwningNetworkManager(serverSideNewClientPlayer);
+                }
+                Assert.That(serverSideNewClientPlayer.OwnerClientId, Is.EqualTo(newOwner.LocalClientId), "Ownership should have transferred to the authority!");
                 Assert.That(serverSideNewClientPlayer.IsPlayerObject, Is.True, $"{nameof(NetworkObject.IsPlayerObject)} should still be set!");
 
                 // Requesting the player's object after they've left should still while the object hasn't been destroyed
-                var playerObject = authority.SpawnManager.GetPlayerNetworkObject(newClientId);
+                var playerObject = newOwner.SpawnManager.GetPlayerNetworkObject(newClientId);
                 Assert.That(playerObject != null, Is.True, "The authority should still be able to get the player object after the client has disconnected");
 
                 // Despawn and destroy the player object
@@ -131,12 +142,26 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Regression test:
                 // check that the authority's player object isn't destroyed
-                Assert.That(authority.LocalClient.PlayerObject != null, Is.True, "The server's player object should not have been destroyed!");
+                Assert.That(newOwner.LocalClient.PlayerObject != null, Is.True, "The server's player object should not have been destroyed!");
             }
 
             // sanity check that requesting the object from the client who left after the object was destroyed is now null
             var sanity = authority.SpawnManager.GetPlayerNetworkObject(newClientId);
             Assert.Null(sanity, $"{nameof(NetworkSpawnManager.GetPlayerNetworkObject)} shouldn't be able to get the player object after the client has disconnected!");
         }
+
+        private NetworkManager GetOwningNetworkManager(NetworkObject networkObject)
+        {
+            foreach (var manager in m_NetworkManagers)
+            {
+                if (manager.LocalClientId == networkObject.OwnerClientId)
+                {
+                    return manager;
+                }
+            }
+            Assert.Fail($"Failed to find network manager who owns object {networkObject.name}. OwnerClientId: {networkObject.OwnerClientId}");
+            return null;
+        }
     }
+
 }
