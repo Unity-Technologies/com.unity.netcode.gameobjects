@@ -1,7 +1,9 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEngine;
+#endif
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;

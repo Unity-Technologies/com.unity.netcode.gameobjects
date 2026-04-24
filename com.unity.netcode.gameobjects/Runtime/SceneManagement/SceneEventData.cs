@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
+#if UNITY_EDITOR
 using UnityEngine;
+#endif
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -319,7 +321,7 @@ namespace Unity.Netcode
         internal static bool LogSerializationOrder;
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => LogSerializationOrder = false;
+        private static void ResetStaticsOnLoad() => LogSerializationOrder = false;
 #endif
 
         internal void AddSpawnedNetworkObjects()

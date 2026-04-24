@@ -60,7 +60,7 @@ namespace Unity.Netcode
         internal static NetworkManager NetworkManagerOverride;
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => NetworkManagerOverride = null;
+        private static void ResetStaticsOnLoad() => NetworkManagerOverride = null;
 #endif
 
         private static void LogServer(string message, LogType logType)

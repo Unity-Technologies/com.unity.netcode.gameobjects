@@ -369,7 +369,6 @@ namespace Unity.Netcode.Transports.UTP
 #endif
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
-
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad()

@@ -18,11 +18,12 @@ internal static class MessageDelivery
         NetworkMessageTypes.NamedMessage, NetworkMessageTypes.Unnamed};
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void OnSubsystemRegistration()
+    private static void OnApplicationStart()
     {
+#if UNITY_EDITOR
         s_MessageToDelivery = new Dictionary<NetworkMessageTypes, NetworkDelivery>();
         s_MessageToMessageType = new Dictionary<Type, NetworkMessageTypes>();
-
+#endif
         UpdateMessageTypes();
     }
 
