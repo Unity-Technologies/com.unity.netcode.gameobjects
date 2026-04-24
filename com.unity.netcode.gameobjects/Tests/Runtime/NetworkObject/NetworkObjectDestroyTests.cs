@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
                 // The non-authority client is =NOT= allowed to destroy any spawned object it does not
                 // have authority over during runtime.
                 LogAssert.ignoreFailingMessages = true;
-                NetworkLog.SetNetworkManager(nonAuthorityClient);
+                NetworkLog.ConfigureIntegrationTestLogging(nonAuthorityClient);
                 Object.Destroy(clientPlayerClone.gameObject);
             }
 

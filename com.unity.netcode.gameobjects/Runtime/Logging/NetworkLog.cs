@@ -17,17 +17,24 @@ namespace Unity.Netcode
     public static class NetworkLog
     {
         internal static LogConfiguration Config;
-        private static readonly ContextualLogger k_Log = new(true);
+        private static ContextualLogger s_Log = new(true);
 
-        internal static void SetNetworkManager(NetworkManager networkManager)
+        /// <summary>
+        /// Configures the NetworkLog for integration tests.
+        /// </summary>
+        internal static void ConfigureIntegrationTestLogging(NetworkManager networkManager, bool enableVerboseDebug = false)
         {
-            k_Log.UpdateNetworkManagerContext(networkManager);
+            // useCompatibilityMode when verboseDebug is not enabled
+            s_Log = new ContextualLogger(networkManager, !enableVerboseDebug);
+            // This setting will do nothing if the logger is created with useCompatibilityMode=true
+            Config.LogNetworkManagerRole = enableVerboseDebug;
         }
+
         /// <summary>
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        // [Obsolete("Use the LogLevel directly on the NetworkManager instead")]
+        // TODO: Work on deprecating this field.
         public static LogLevel CurrentLogLevel => NetworkManager.Singleton == null ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
 
         // internal logging
@@ -37,27 +44,27 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfo(string message) => k_Log.Info(new Context(LogLevel.Normal, message, true));
+        public static void LogInfo(string message) => s_Log.Info(new Context(LogLevel.Normal, message, true));
         [HideInCallstack]
-        internal static void LogInfo(Context context) => k_Log.Info(context);
+        internal static void LogInfo(Context context) => s_Log.Info(context);
 
         /// <summary>
         /// Locally logs a warning log with Netcode prefixing.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarning(string message) => k_Log.Warning(new Context(LogLevel.Error, message, true));
+        public static void LogWarning(string message) => s_Log.Warning(new Context(LogLevel.Error, message, true));
         [HideInCallstack]
-        internal static void LogWarning(Context context) => k_Log.Warning(context);
+        internal static void LogWarning(Context context) => s_Log.Warning(context);
 
         /// <summary>
         /// Locally logs a error log with Netcode prefixing.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogError(string message) => k_Log.Error(new Context(LogLevel.Error, message, true));
+        public static void LogError(string message) => s_Log.Error(new Context(LogLevel.Error, message, true));
         [HideInCallstack]
-        internal static void LogError(Context context) => k_Log.Error(context);
+        internal static void LogError(Context context) => s_Log.Error(context);
 
         // internal static void Log(LogLevel level, object message, Object gameObject) => Logger.Log($"[Netcode] {message} ({(int)level})");
 
@@ -66,28 +73,28 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoServer(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message, true));
+        public static void LogInfoServer(string message) => s_Log.InfoServer(new Context(LogLevel.Normal, message, true));
 
         /// <summary>
         /// Logs an info log locally and on the session owner if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogInfoSessionOwner(string message) => k_Log.InfoServer(new Context(LogLevel.Normal, message, true));
+        public static void LogInfoSessionOwner(string message) => s_Log.InfoServer(new Context(LogLevel.Normal, message, true));
 
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogWarningServer(string message) => k_Log.WarningServer(new Context(LogLevel.Error, message, true));
+        public static void LogWarningServer(string message) => s_Log.WarningServer(new Context(LogLevel.Error, message, true));
 
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]
-        public static void LogErrorServer(string message) => k_Log.ErrorServer(new Context(LogLevel.Error, message, true));
+        public static void LogErrorServer(string message) => s_Log.ErrorServer(new Context(LogLevel.Error, message, true));
 
         internal static LogType GetMessageLogType(UnityEngine.LogType engineLogType)
         {

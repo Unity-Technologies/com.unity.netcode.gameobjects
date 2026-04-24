@@ -18,15 +18,20 @@ namespace Unity.Netcode.Logging
     /// </summary>
     internal class ContextualLogger
     {
+        private const string k_CompilationCondition = "UNITY_ASSERTIONS";
+
         private const string k_NetcodeHeader = "[Netcode] ";
-        private readonly bool m_UseCompatibilityMode;
         private readonly Object m_Object;
         private readonly LogBuilder m_Builder = new();
 
         private LogContextNetworkManager m_ManagerContext;
         private readonly GenericContext m_LoggerContext;
 
-        private const string k_CompilationCondition = "UNITY_ASSERTIONS";
+        /// <summary>
+        /// Compatibility mode with the old behavior of NetworkLog
+        /// TODO: remove this when enough of the codebase is using the new log system
+        /// </summary>
+        private readonly bool m_UseCompatibilityMode;
 
         /// <summary>
         /// Creates a minimally configured contextual logger
@@ -54,11 +59,13 @@ namespace Unity.Netcode.Logging
             m_LoggerContext = GenericContext.Create();
         }
 
-        [Conditional(k_CompilationCondition)]
-        internal void UpdateNetworkManagerContext(NetworkManager manager)
+        /// Used for the NetworkLog
+        internal ContextualLogger(NetworkManager networkManager,  bool useCompatibilityMode)
         {
-            m_ManagerContext.Dispose();
-            m_ManagerContext = new LogContextNetworkManager(manager);
+            m_UseCompatibilityMode = useCompatibilityMode;
+            m_ManagerContext = new LogContextNetworkManager(networkManager);
+            m_Object = networkManager;
+            m_LoggerContext = GenericContext.Create();
         }
 
         [Conditional(k_CompilationCondition)]
