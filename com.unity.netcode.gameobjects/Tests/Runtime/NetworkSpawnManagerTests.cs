@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
@@ -9,164 +10,133 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host)]
     internal class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
-        private ulong serverSideClientId => NetworkManager.ServerClientId;
-        private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
-        private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
-
         protected override int NumberOfClients => 2;
-
-        // TODO: [CmbServiceTests] Adapt to run with the service. Combine server and client tests
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
 
         public NetworkSpawnManagerTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         [Test]
-        public void TestServerCanAccessItsOwnPlayer()
+        public void TestGetPlayerNetworkObject()
         {
-            // server can access its own player
-            var serverSideServerPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(serverSideClientId);
-            Assert.NotNull(serverSideServerPlayerObject);
-            Assert.AreEqual(serverSideClientId, serverSideServerPlayerObject.OwnerClientId);
-        }
-
-
-        /// <summary>
-        /// Test was converted from a Test to UnityTest so distributed authority mode will pass this test.
-        /// In distributed authority mode, client-side player spawning is enabled by default which requires
-        /// all client (including DAHost) instances to wait for all players to be spawned.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator TestServerCanAccessOtherPlayers()
-        {
-            yield return null;
-            // server can access other players
-            var serverSideClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(clientSideClientId);
-            Assert.NotNull(serverSideClientPlayerObject);
-            Assert.AreEqual(clientSideClientId, serverSideClientPlayerObject.OwnerClientId);
-
-            var serverSideOtherClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
-            Assert.NotNull(serverSideOtherClientPlayerObject);
-            Assert.AreEqual(otherClientSideClientId, serverSideOtherClientPlayerObject.OwnerClientId);
-        }
-
-        [Test]
-        public void TestClientCantAccessServerPlayer()
-        {
-            if (m_DistributedAuthority)
+            foreach (var toTest in m_NetworkManagers)
             {
-                VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_NetworkTopologyType} mode.");
-                return;
-            }
-            // client can't access server player
-            string expectedLog = $"[Netcode-Server Sender=0] {serverSideClientId} Only the server can find player objects from other clients.";
-            LogAssert.Expect(UnityEngine.LogType.Error, expectedLog);
-            m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(serverSideClientId);
-        }
+                foreach (var toGet in m_NetworkManagers)
+                {
+                    // GetPlayerNetworkObject should only be able to get the object
+                    // - When using DA
+                    // - When testing the Server NetworkManager
+                    // - And when the client is getting their own PlayerObject.
+                    var canFetch = m_DistributedAuthority || toTest.IsServer || toTest == toGet;
 
-        [Test]
-        public void TestClientCanAccessOwnPlayer()
-        {
-            // client can access own player
-            var clientSideClientPlayerObject = m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(clientSideClientId);
-            Assert.NotNull(clientSideClientPlayerObject);
-            Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
-        }
+                    if (!canFetch)
+                    {
+                        LogAssert.Expect(UnityEngine.LogType.Error, new Regex("Only the server can find player objects from other clients."));
+                    }
 
-        [Test]
-        public void TestClientCanAccessOtherPlayer()
-        {
+                    var playerObject = toTest.SpawnManager.GetPlayerNetworkObject(toGet.LocalClientId);
 
-            if (!m_DistributedAuthority)
-            {
-                VerboseDebug($"Ignoring test: Clients do not have access to other player objects in {m_NetworkTopologyType} mode.");
-                return;
+                    if (canFetch)
+                    {
+                        Assert.That(playerObject, Is.Not.Null);
+                        Assert.That(toGet.LocalClientId, Is.EqualTo(playerObject.OwnerClientId));
+                    }
+                    else
+                    {
+                        Assert.That(playerObject, Is.Null);
+                    }
+                }
             }
 
-            var otherClientPlayer = m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
-            Assert.NotNull(otherClientPlayer, $"Failed to obtain Client{otherClientSideClientId}'s player object!");
+            // finally, test that an invalid clientId returns a null object
+            var invalid = GetAuthorityNetworkManager().SpawnManager.GetPlayerNetworkObject(9999);
+            Assert.That(invalid, Is.Null);
         }
 
         [Test]
-        public void TestClientCantAccessOtherPlayer()
+        public void TestGetLocalPlayerObject()
         {
-            if (m_DistributedAuthority)
+            foreach (var manager in m_NetworkManagers)
             {
-                VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_NetworkTopologyType} mode.");
-                return;
+                var playerObject = manager.SpawnManager.GetLocalPlayerObject();
+                Assert.That(playerObject, Is.Not.Null);
+                Assert.That(manager.LocalClientId, Is.EqualTo(playerObject.OwnerClientId));
+                Assert.That(manager.LocalClient.PlayerObject, Is.EqualTo(playerObject));
             }
-
-            // client can't access other player
-            string expectedLog = $"[Netcode-Server Sender=0] {otherClientSideClientId} Only the server can find player objects from other clients.";
-            LogAssert.Expect(UnityEngine.LogType.Error, expectedLog);
-            m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
         }
 
-        [Test]
-        public void TestServerGetsNullValueIfInvalidId()
+        public enum DestroyWithOwner
         {
-            // server gets null value if invalid id
-            var nullPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(9999);
-            Assert.Null(nullPlayer);
+            DestroyWithOwner,
+            DontDestroyWithOwner
         }
-
-        [Test]
-        public void TestServerCanUseGetLocalPlayerObject()
-        {
-            // test server can use GetLocalPlayerObject
-            var serverSideServerPlayerObject = m_ServerNetworkManager.SpawnManager.GetLocalPlayerObject();
-            Assert.NotNull(serverSideServerPlayerObject);
-            Assert.AreEqual(serverSideClientId, serverSideServerPlayerObject.OwnerClientId);
-        }
-
-        [Test]
-        public void TestClientCanUseGetLocalPlayerObject()
-        {
-            // test client can use GetLocalPlayerObject
-            var clientSideClientPlayerObject = m_ClientNetworkManagers[0].SpawnManager.GetLocalPlayerObject();
-            Assert.NotNull(clientSideClientPlayerObject);
-            Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
-        }
-
-        private bool m_ClientDisconnected;
 
         [UnityTest]
-        public IEnumerator TestConnectAndDisconnect()
+        public IEnumerator TestPlayerPrefabConnectAndDisconnect([Values] DestroyWithOwner destroySetting)
         {
+            var destroyWithOwner = destroySetting == DestroyWithOwner.DestroyWithOwner;
+            var authority = GetAuthorityNetworkManager();
+            // Regression test: Ensure the authority's player object is set
+            Assert.That(authority.LocalClient.PlayerObject != null, Is.True, "The server should have a player object!");
+
+            // Mark PlayerPrefab as DontDestroyWithOwner
+            m_PlayerPrefab.GetComponent<NetworkObject>().DontDestroyWithOwner = !destroyWithOwner;
+
             // test when client connects, player object is now available
-            yield return CreateAndStartNewClient();
-            var newClientNetworkManager = m_ClientNetworkManagers[NumberOfClients];
-            var newClientLocalClientId = newClientNetworkManager.LocalClientId;
+            var newClient = CreateNewClient();
+            yield return StartClient(newClient);
+            var newClientId = newClient.LocalClientId;
 
             // test new client can get that itself locally
-            var newPlayerObject = newClientNetworkManager.SpawnManager.GetLocalPlayerObject();
+            var newPlayerObject = newClient.SpawnManager.GetLocalPlayerObject();
             Assert.NotNull(newPlayerObject);
-            Assert.AreEqual(newClientLocalClientId, newPlayerObject.OwnerClientId);
+            Assert.AreEqual(newClientId, newPlayerObject.OwnerClientId);
+
             // test server can get that new client locally
-            var serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
+            var serverSideNewClientPlayer = authority.SpawnManager.GetPlayerNetworkObject(newClientId);
             Assert.NotNull(serverSideNewClientPlayer);
-            Assert.AreEqual(newClientLocalClientId, serverSideNewClientPlayer.OwnerClientId);
+            Assert.AreEqual(newClientId, serverSideNewClientPlayer.OwnerClientId);
 
             // test when client disconnects, player object no longer available.
-            var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
-            m_ClientDisconnected = false;
-            newClientNetworkManager.OnClientDisconnectCallback += ClientNetworkManager_OnClientDisconnectCallback;
-            m_ServerNetworkManager.DisconnectClient(newClientLocalClientId);
-            yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client to disconnect");
+            var nbConnectedClients = authority.ConnectedClients.Count;
+            authority.DisconnectClient(newClientId);
+
+            yield return WaitForConditionOrTimeOut(() => !newClient.IsConnectedClient);
+            AssertOnTimeout("Timed out waiting for client to disconnect");
+
             // Call this to clean up NetcodeIntegrationTestHelpers
-            NetcodeIntegrationTestHelpers.StopOneClient(newClientNetworkManager);
+            yield return StopOneClient(newClient);
 
-            Assert.AreEqual(m_ServerNetworkManager.ConnectedClients.Count, nbConnectedClients - 1);
-            serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
-            Assert.Null(serverSideNewClientPlayer);
-        }
+            Assert.AreEqual(authority.ConnectedClients.Count, nbConnectedClients - 1);
+            Assert.True(newPlayerObject == null, "The client's player object should have been destroyed!");
 
-        private void ClientNetworkManager_OnClientDisconnectCallback(ulong obj)
-        {
-            m_ClientDisconnected = true;
+            if (destroyWithOwner)
+            {
+                Assert.That(serverSideNewClientPlayer == null, Is.True, "The server's version of the client's player object should have been destroyed");
+            }
+            else
+            {
+                Assert.That(serverSideNewClientPlayer == null, Is.False, "The server's version of the client's player object shouldn't have been destroyed!");
+                Assert.That(serverSideNewClientPlayer.OwnerClientId, Is.EqualTo(authority.LocalClientId), "Ownership should have transferred to the authority!");
+                Assert.That(serverSideNewClientPlayer.IsPlayerObject, Is.True, $"{nameof(NetworkObject.IsPlayerObject)} should still be set!");
+
+                // Requesting the player's object after they've left should still while the object hasn't been destroyed
+                var playerObject = authority.SpawnManager.GetPlayerNetworkObject(newClientId);
+                Assert.That(playerObject != null, Is.True, "The authority should still be able to get the player object after the client has disconnected");
+
+                // Despawn and destroy the player object
+                playerObject.Despawn();
+
+                // Check that now the player object is null
+                yield return WaitForConditionOrTimeOut(() => playerObject == null);
+                AssertOnTimeout("Timed out waiting for the object to be destroyed.");
+
+                // Regression test:
+                // check that the authority's player object isn't destroyed
+                Assert.That(authority.LocalClient.PlayerObject != null, Is.True, "The server's player object should not have been destroyed!");
+            }
+
+            // sanity check that requesting the object from the client who left after the object was destroyed is now null
+            var sanity = authority.SpawnManager.GetPlayerNetworkObject(newClientId);
+            Assert.Null(sanity, $"{nameof(NetworkSpawnManager.GetPlayerNetworkObject)} shouldn't be able to get the player object after the client has disconnected!");
         }
     }
 }
