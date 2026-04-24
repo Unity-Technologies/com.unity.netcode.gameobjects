@@ -1054,7 +1054,7 @@ namespace Unity.Netcode
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, this);
+                Log = new ContextualLogger(this, false);
             }
 
             NetworkConfig?.InitializePrefabs();
@@ -1824,7 +1824,7 @@ namespace Unity.Netcode
 
             if (Log == null)
             {
-                Log = new ContextualLogger(this, this);
+                Log = new ContextualLogger(this, false);
             }
 
             // Do a validation pass on NetworkConfig properties

@@ -60,7 +60,7 @@ namespace Unity.Netcode.Logging
         }
 
         /// Used for the NetworkLog
-        internal ContextualLogger(NetworkManager networkManager,  bool useCompatibilityMode)
+        internal ContextualLogger(NetworkManager networkManager, bool useCompatibilityMode)
         {
             m_UseCompatibilityMode = useCompatibilityMode;
             m_ManagerContext = new LogContextNetworkManager(networkManager);
