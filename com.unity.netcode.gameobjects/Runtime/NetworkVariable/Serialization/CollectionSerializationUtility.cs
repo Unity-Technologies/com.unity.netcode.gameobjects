@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -264,15 +263,6 @@ namespace Unity.Netcode
             private static List<T> s_AddedList = new List<T>();
             private static List<T> s_RemovedList = new List<T>();
             private static List<T> s_ChangedList = new List<T>();
-#if UNITY_EDITOR
-            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-            private static void ResetStaticsOnLoad()
-            {
-                s_AddedList = new List<T>();
-                s_RemovedList = new List<T>();
-                s_ChangedList = new List<T>();
-            }
-#endif
 
             public static List<T> GetAddedList()
             {
