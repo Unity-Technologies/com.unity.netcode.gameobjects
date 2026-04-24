@@ -291,6 +291,16 @@ namespace Unity.Netcode
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Initialize()
         {
+#if UNITY_EDITOR
+            s_UpdateSystem_Sets = new Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>>();
+            s_UpdateSystem_Arrays = new Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]>();
+            foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            {
+                s_UpdateSystem_Sets.Add(updateStage, new HashSet<INetworkUpdateSystem>());
+                s_UpdateSystem_Arrays.Add(updateStage, new INetworkUpdateSystem[k_UpdateSystem_InitialArrayCapacity]);
+            }
+            UpdateStage = default;
+#endif
             UnregisterLoopSystems();
             RegisterLoopSystems();
         }

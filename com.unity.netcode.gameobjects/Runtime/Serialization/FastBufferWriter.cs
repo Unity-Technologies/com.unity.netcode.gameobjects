@@ -31,7 +31,7 @@ namespace Unity.Netcode
 
         internal unsafe WriterHandle* Handle;
 
-        private static byte[] s_ByteArrayCache = new byte[65535];
+        private static readonly byte[] k_ByteArrayCache = new byte[65535];
 
         /// <summary>
         /// The current write position
@@ -379,17 +379,17 @@ namespace Unity.Netcode
         internal unsafe ArraySegment<byte> ToTempByteArray()
         {
             var length = Length;
-            if (length > s_ByteArrayCache.Length)
+            if (length > k_ByteArrayCache.Length)
             {
                 return new ArraySegment<byte>(ToArray(), 0, length);
             }
 
-            fixed (byte* b = s_ByteArrayCache)
+            fixed (byte* b = k_ByteArrayCache)
             {
                 UnsafeUtility.MemCpy(b, Handle->BufferPointer, length);
             }
 
-            return new ArraySegment<byte>(s_ByteArrayCache, 0, length);
+            return new ArraySegment<byte>(k_ByteArrayCache, 0, length);
         }
 
         /// <summary>

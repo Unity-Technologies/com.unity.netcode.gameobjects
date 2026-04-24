@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -168,7 +169,7 @@ namespace Unity.Netcode
         /// Look for <see cref="NetworkSceneManager.m_ServerSceneHandleToClientSceneHandle"/> usage to see where
         /// entries are being added to or removed from the table
         /// </summary>
-        /// <param name="sceneIndex"></param>
+        /// <param name="sceneHash"></param>
         /// <param name="sceneHandle"></param>
         internal void AddSceneToSynchronize(uint sceneHash, NetworkSceneHandle sceneHandle)
         {
@@ -315,7 +316,11 @@ namespace Unity.Netcode
             }
         }
 
-        internal static bool LogSerializationOrder = false;
+        internal static bool LogSerializationOrder;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => LogSerializationOrder = false;
+#endif
 
         internal void AddSpawnedNetworkObjects()
         {
@@ -1037,8 +1042,6 @@ namespace Unity.Netcode
                         var localSceneHandle = m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle[networkSceneHandle];
                         if (m_NetworkManager.SceneManager.ScenesLoaded.ContainsKey(localSceneHandle))
                         {
-                            var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
-
                             // Find all active and non-active in-scene placed NetworkObjects
                             var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(true, true).Where((c) =>
                             c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();

@@ -549,6 +549,16 @@ namespace Unity.Netcode
         /// </summary>
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad;
 
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            DisableReSynchronization = false;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+            SceneUnloadEventHandler.ResetInstances();
+        }
+#endif
+
         /// <summary>
         /// Client and Server:
         /// Used for all scene event processing
@@ -1564,6 +1574,9 @@ namespace Unity.Netcode
         internal class SceneUnloadEventHandler
         {
             private static Dictionary<NetworkManager, List<SceneUnloadEventHandler>> s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+#if UNITY_EDITOR
+            internal static void ResetInstances() => s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+#endif
 
             internal static void RegisterScene(NetworkSceneManager networkSceneManager, Scene scene, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
             {

@@ -58,6 +58,10 @@ namespace Unity.Netcode
         public static void LogErrorServer(string message) => LogServer(message, LogType.Error);
 
         internal static NetworkManager NetworkManagerOverride;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => NetworkManagerOverride = null;
+#endif
 
         private static void LogServer(string message, LogType logType)
         {

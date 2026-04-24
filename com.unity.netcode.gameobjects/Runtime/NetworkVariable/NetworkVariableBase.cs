@@ -307,6 +307,10 @@ namespace Unity.Netcode
         }
 
         internal static bool IgnoreInitializeWarning;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => IgnoreInitializeWarning = false;
+#endif
 
         /// <summary>
         /// Marks the associated NetworkBehaviour as dirty, indicating it needs synchronization

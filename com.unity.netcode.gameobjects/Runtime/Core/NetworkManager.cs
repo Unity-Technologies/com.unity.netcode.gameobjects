@@ -1809,6 +1809,19 @@ namespace Unity.Netcode
         internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
 
         internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
+        //We already are in an #if UNITY_ENGINE def
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            Singleton = null;
+            OnInstantiated = null;
+            OnDestroying = null;
+            OnSingletonReady = null;
+            OnNetworkManagerReset = null;
+            IsDistributedAuthority = false;
+            s_SerializedType = new List<Type>();
+            DisableNotOptimizedSerializedType = false;
+        }
 
         private void Reset()
         {

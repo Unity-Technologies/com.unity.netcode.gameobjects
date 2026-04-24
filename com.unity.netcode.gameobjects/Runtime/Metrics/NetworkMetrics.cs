@@ -1,6 +1,7 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
@@ -13,6 +14,18 @@ namespace Unity.Netcode
         private const ulong k_MaxMetricsPerFrame = 1000L;
         private static Dictionary<uint, string> s_SceneEventTypeNames;
         private static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            s_SceneEventTypeNames = new Dictionary<uint, string>();
+            foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
+            {
+                s_SceneEventTypeNames[(uint)type] = type.ToString();
+            }
+            s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+        }
+#endif
 
         static NetworkMetrics()
         {

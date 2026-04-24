@@ -2221,13 +2221,11 @@ namespace Unity.Netcode.Components
                 // values are applied.
                 var hasParentNetworkObject = false;
 
-                var parentNetworkObject = (NetworkObject)null;
-
                 // If the NetworkObject belonging to this NetworkTransform instance has a parent
                 // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
                 if (NetworkObject.transform.parent != null)
                 {
-                    parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // In-scene placed NetworkObjects parented under a GameObject with no
                     // NetworkObject preserve their lossyScale when synchronizing.
@@ -4800,6 +4798,21 @@ namespace Unity.Netcode.Components
             }
         }
         private static int s_TickSynchPosition;
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            CurrentTick = 0;
+            TrackStateUpdateId = false;
+            AssignDefaultInterpolationType = false;
+            DefaultInterpolationType = default;
+            s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+            InterpolationBufferTickOffset = 0;
+            s_TickSynchPosition = 0;
+        }
+#endif
+
         private int m_NextTickSync;
 
         internal void RegisterForTickSynchronization()

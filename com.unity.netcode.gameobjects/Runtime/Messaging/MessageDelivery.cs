@@ -15,17 +15,20 @@ internal static class MessageDelivery
     /// when sending the message via public API.
     /// - Skip the time sync messages since it has always used unreliable network delivery.
     /// </summary>
-    private static HashSet<NetworkMessageTypes> s_SkipMessageTypes = new HashSet<NetworkMessageTypes>(){
+    private static readonly HashSet<NetworkMessageTypes> k_SkipMessageTypes = new HashSet<NetworkMessageTypes>(){
         NetworkMessageTypes.NamedMessage, NetworkMessageTypes.Unnamed};
 
-    [RuntimeInitializeOnLoadMethod]
-    private static void OnApplicationStart()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void OnSubsystemRegistration()
     {
+        s_MessageToDelivery = new Dictionary<NetworkMessageTypes, NetworkDelivery>();
+        s_MessageToMessageType = new Dictionary<Type, NetworkMessageTypes>();
+
         UpdateMessageTypes();
     }
 
     /// <summary>
-    /// FIrst pass at providing an easier path to configuring the network
+    /// First pass at providing an easier path to configuring the network
     /// delivery type for the message type.
     /// TODO: Once <see cref="NetworkMessageManager"/> coalesces all reliable messages
     /// and/or organizes by a more unified order of operation tracking built into the
@@ -40,7 +43,7 @@ internal static class MessageDelivery
         foreach (var messageTypeObject in networkMessageTypes)
         {
             var messageType = (NetworkMessageTypes)messageTypeObject;
-            if (s_SkipMessageTypes.Contains(messageType))
+            if (k_SkipMessageTypes.Contains(messageType))
             {
                 continue;
             }
@@ -71,18 +74,10 @@ internal static class MessageDelivery
         MessageDeliveryType<TimeSyncMessage>.Initialize();
     }
 
-#if UNITY_EDITOR
-    [InitializeOnLoadMethod]
-    [InitializeOnEnterPlayMode]
-    private static void OnEnterPlayMode()
-    {
-        UpdateMessageTypes();
-    }
-#endif
     internal static NetworkDelivery GetDelivery(Type type)
     {
         // Return the default if not registered or null
-        if (type == null || s_SkipMessageTypes.Contains(s_MessageToMessageType[type]))
+        if (type == null || k_SkipMessageTypes.Contains(s_MessageToMessageType[type]))
         {
             return NetworkDelivery.ReliableFragmentedSequenced;
         }
@@ -91,7 +86,7 @@ internal static class MessageDelivery
 
     internal static NetworkDelivery GetDelivery(NetworkMessageTypes messageType)
     {
-        if (s_SkipMessageTypes.Contains(messageType))
+        if (k_SkipMessageTypes.Contains(messageType))
         {
             throw new Exception($"{messageType} is not registered in the message type to network delivery map!");
         }

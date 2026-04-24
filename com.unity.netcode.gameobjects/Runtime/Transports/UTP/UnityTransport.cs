@@ -370,6 +370,21 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
 
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, WebSocketPath = "/", ServerListenAddress = string.Empty };
+            s_DriverConstructor = null;
+#if UNITY_6000_2_OR_NEWER
+            OnDriverInitialized = null;
+            OnDisposingDriver = null;
+#endif
+            TransportInitialized = null;
+            TransportDisposed = null;
+        }
+#endif
+
         /// <summary>
         /// Provides access to the <see cref="NetworkDriver"/> for this instance.
         /// </summary>

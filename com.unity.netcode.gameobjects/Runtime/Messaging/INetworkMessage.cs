@@ -1,3 +1,4 @@
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -49,6 +50,7 @@ namespace Unity.Netcode
     internal static class MessageDeliveryType<T> where T : INetworkMessage
     {
         internal static NetworkDelivery DefaultDelivery { get; private set; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void Initialize()
         {
             DefaultDelivery = MessageDelivery.GetDelivery(typeof(T));

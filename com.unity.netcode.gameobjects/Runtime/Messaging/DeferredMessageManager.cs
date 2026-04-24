@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -96,6 +97,10 @@ namespace Unity.Netcode
         /// Used for testing purposes
         /// </summary>
         internal static bool IncludeMessageType = true;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => IncludeMessageType = true;
+#endif
 
         private string GetWarningMessage(IDeferredNetworkMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo, float spawnTimeout)
         {

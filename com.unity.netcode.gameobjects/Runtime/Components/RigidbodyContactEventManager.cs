@@ -20,7 +20,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool ProvideNonRigidBodyContactEvents;
         /// <summary>
-        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will prioritize invoking <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> <br /></br>
+        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will prioritize invoking <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> <br />
         /// if it is the 2nd colliding body in the contact pair being processed. With distributed authority, setting this value to true when a <see cref="NetworkObject"/> is owned by the local client <br />
         /// will assure <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> is only invoked on the authoritative side.
         /// </summary>
@@ -76,6 +76,10 @@ namespace Unity.Netcode.Components
     public class RigidbodyContactEventManager : MonoBehaviour
     {
         public static RigidbodyContactEventManager Instance { get; private set; }
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => Instance = null;
+#endif
 
         private struct JobResultStruct
         {

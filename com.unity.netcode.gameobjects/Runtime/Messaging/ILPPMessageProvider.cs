@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -53,6 +54,9 @@ namespace Unity.Netcode
 
         // Enable this for integration tests that need no message types defined
         internal static bool IntegrationTestNoMessages;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => IntegrationTestNoMessages = false;
 
         /// <summary>
         /// Returns a table of message type to NetworkMessageTypes enum value

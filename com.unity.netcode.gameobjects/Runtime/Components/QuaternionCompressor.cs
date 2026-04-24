@@ -44,6 +44,10 @@ namespace Unity.Netcode
 
         // Used to store the absolute value of the 4 quaternion elements
         private static Quaternion s_QuatAbsValues = Quaternion.identity;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => s_QuatAbsValues = Quaternion.identity;
+#endif
 
         /// <summary>
         /// Compresses a Quaternion into an unsigned integer
