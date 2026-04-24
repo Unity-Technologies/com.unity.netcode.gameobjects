@@ -136,7 +136,7 @@ namespace Unity.Netcode.Logging
         private void LogServer(LogType logType, Context context)
         {
             // Don't act if the configured logging level is higher than the level of this log
-            if (m_ManagerContext.LogLevel <= context.Level)
+            if (m_ManagerContext.LogLevel > context.Level)
             {
                 return;
             }
