@@ -2854,6 +2854,10 @@ namespace Unity.Netcode
         /// </returns>
         public ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
+            if (ChildNetworkBehaviours == null)
+            {
+                InitializeChildNetworkBehaviours();
+            }
             return instance.NetworkBehaviourId;
         }
 
@@ -2864,6 +2868,11 @@ namespace Unity.Netcode
         /// <returns>The <see cref="NetworkBehaviour"/> at the ordered index value or null if it does not exist.</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
+            if (ChildNetworkBehaviours == null)
+            {
+                InitializeChildNetworkBehaviours();
+            }
+
             if (ChildNetworkBehaviours.TryGetValue(index, out var childBehaviour))
             {
                 return childBehaviour;
@@ -3533,8 +3542,6 @@ namespace Unity.Netcode
 
         private void Awake()
         {
-            InitializeChildNetworkBehaviours();
-
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
