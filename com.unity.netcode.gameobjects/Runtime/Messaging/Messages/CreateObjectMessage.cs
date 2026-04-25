@@ -131,7 +131,7 @@ namespace Unity.Netcode
             {
                 if (networkManager.LogLevel == LogLevel.Developer)
                 {
-                    UnityEngine.Debug.Log($"Deferring {nameof(CreateObjectMessage)} to wait for Ghost.");
+                    UnityEngine.Debug.Log($"[{nameof(NetworkObject)}-{ObjectInfo.NetworkObjectId}] Deferring {nameof(CreateObjectMessage)} to wait for Ghost.");
                 }
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, ObjectInfo.NetworkObjectId, reader, ref context, k_Name);
                 return false;

@@ -427,8 +427,29 @@ namespace Unity.Netcode.Unified
 
         public override void DisconnectLocalClient()
         {
-            m_NetworkManager.NetcodeWorld.RequestDisconnectFromServer();
+            // Remove the connection 1st (the world might not be available)
             m_Connections.Remove((int)ServerClientId);
+
+            // TODO-FIX-REVIEW-ME:
+            // This was causing errors to occur upon shutdown during an integration test.
+            // The cases being trapped for below yield no errors, but there might be some
+            // form of other underlying issue here:
+
+            if (m_NetworkManager.NetcodeWorld == null || !m_NetworkManager.NetcodeWorld.IsCreated)
+            {
+                return;
+            }
+
+            if (m_NetworkManager.IsServer || m_NetworkManager.NetcodeWorld.IsHost())
+            {
+                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning("Host is attempting to shutdown the local client which is not required with a single world host.");
+                }
+                return;
+            }
+            m_NetworkManager.NetcodeWorld.RequestDisconnectFromServer();
+
         }
 
         public override ulong GetCurrentRtt(ulong clientId)

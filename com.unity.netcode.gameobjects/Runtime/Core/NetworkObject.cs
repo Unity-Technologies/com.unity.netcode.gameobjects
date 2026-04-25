@@ -3852,9 +3852,13 @@ namespace Unity.Netcode
         private void OnDisable()
         {
             Debug.Log("Disabled!");
-            if (IsSpawned)
+            if (IsSpawned || HasGhost)
             {
-                enabled = true;
+                if (HasGhost && GhostAdapter.IsPrefab())
+                {
+                    return;
+                }
+                gameObject.SetActive(true);
             }
 
             try
@@ -3870,13 +3874,6 @@ namespace Unity.Netcode
 
         private void Start()
         {
-            // TODO-UNIFIED: Remove once the prefab registration is in place.
-            if (!enabled)
-            {
-                Debug.LogWarning($"[{nameof(NetworkObject)}][{name}] Was not enabled on start! Enabling.");
-                enabled = true;
-            }
-
             InitGhost();
         }
         [SerializeField]
@@ -3892,7 +3889,7 @@ namespace Unity.Netcode
                 {
                     Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
                 }
-                if (NetworkObjectBridge.NetworkObjectId.Value != 0)
+                if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
                 {
                     RegisterGhostBridge();
                 }
@@ -3904,9 +3901,23 @@ namespace Unity.Netcode
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
+                if (!NetworkManager.IsListening)
+                {
+                    Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
+                    return;
+                }
             }
 
-            if (!NetworkManager.IsServer)
+            // Set when running through integration tests in order to initially bypass the
+            // normal registration. This is because at this point in the instantiation process,
+            // NetworkObject's NetworkManager is pointing to the singleton which means all instances
+            // (even if intended to be for a specific client) will end up registering with whichever
+            // NetworkManager instance is being pointed to by the singleton.
+            if (NetworkSpawnManager.RegisterPendingGhost != null)
+            {
+                NetworkSpawnManager.RegisterPendingGhost(this, NetworkObjectBridge.NetworkObjectId.Value);
+            }
+            else if (!NetworkManager.IsServer)
             {
                 NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
             }

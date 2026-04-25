@@ -6,9 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-#if UNIFIED_NETCODE
-using Unity.Netcode.Unified;
-#endif
 using Unity.Profiling;
 using UnityEngine;
 using Debug = UnityEngine.Debug;

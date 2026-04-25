@@ -1,11 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.NetCode;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.TestTools;
+
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     /// by the presence of ghost objects in the base class. This is to help be certain that the network transform
     /// is not doing the work, but that the work is being done by N4E's snapshots.
     /// </summary>
-    public class DoNothingNetworkTransform : NetworkTransform
+    internal class DoNothingNetworkTransform : NetworkTransform
     {
         public override void OnNetworkSpawn()
         {
@@ -26,53 +26,93 @@ namespace Unity.Netcode.RuntimeTests
             // Deliberately left empty
         }
     }
-    
-    public class UnifiedNetworkTransformTest : IntegrationTestWithApproximation
+
+    internal class UnifiedNetworkTransformTest : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 2;
 
         private GameObject m_Prefab;
         private NetworkObject m_Instance;
 
-        protected override void OnServerAndClientsCreated()
+        protected override IEnumerator OnSetup()
         {
-            m_Prefab = CreateNetworkObjectPrefab("Test prefab");
-            SetupGhostAdapterForNetworkObjectPrefab(ref m_Prefab);
-            
+            // Creates the hybrid prefab
+            m_Prefab = CreateHybridPrefab("HybridPrefab", true);
             m_Prefab.AddComponent<DoNothingNetworkTransform>();
-
-            /*NetCode.Netcode.RunOnServerStarted(() =>
-            {
-                NetCode.Netcode.RegisterPrefabSingleWorld(m_PlayerPrefab, true);
-            });*/
+            NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
+            return base.OnSetup();
         }
 
-        protected override IEnumerator OnServerAndClientsConnected()
+        protected override IEnumerator OnTearDown()
         {
-            m_Instance = SpawnObject(m_Prefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
-            yield return WaitForConditionOrTimeOut(() =>
-            {
-                foreach (var client in m_ClientNetworkManagers)
-                {
-                    if (!s_GlobalNetworkObjects.ContainsKey(client.LocalClientId) || !s_GlobalNetworkObjects[client.LocalClientId].ContainsKey(m_Instance.NetworkObjectId))
-                    {
-                        return false;
-                    }
-                }
+            NetworkSpawnManager.RegisterPendingGhost = null;
+            m_EnableVerboseDebug = false;
+            return base.OnTearDown();
+        }
 
-                return true;
-            });
-            AssertOnTimeout($"Timed out waiting for objects to spawn!");
-            yield return null;
+        private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
+        {
+            var ghost = networkObject.GetComponent<GhostAdapter>();
+            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostAdapter)}!");
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                // If the world matches, then register the instance with this NetworkManager's spawn manager.
+                if (networkManager.NetcodeWorld == ghost.World)
+                {
+                    networkManager.SpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    return;
+                }
+            }
+            Debug.LogError($"Did not find a world for NetworkObject-{networkObjectId}!!");
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+
+            // Add the hybrid prefab to the prefabs list for
+            // all NetworkManager instances.
+            // TODO: Emma and I discussed actually not making it
+            // a requirement to have NetworkManager instances.
+            // We can get that PR landed and merged back into the
+            // unified branch so this is no longer needed.
+            // (We can modify CreateHybridPrefab to use whatever list
+            // is used to handle this when using the normal prefab creation
+            // methods).
+            var networkPrefab = new NetworkPrefab()
+            {
+                Prefab = m_Prefab,
+            };
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                networkManager.LogLevel = LogLevel.Developer;
+                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                // Set the deferred message timeout to be 5 seconds for this test.
+                // (To see if the messages for the instances ever get processed.)
+                // Enable this to debug deferred
+                //networkManager.NetworkConfig.SpawnTimeout = 5;
+            }
         }
 
         [UnityTest]
         public IEnumerator BasicMovementTest()
         {
+            m_EnableVerboseDebug = true;
             var authority = GetAuthorityNetworkManager();
+            m_Instance = SpawnObject(m_Prefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
+
+            // Wait 5 seconds so we will dump any deferred messages if it failed on clients
+            // when checking to see if it spawned or not on the clients next.
+            // Enable this to debug deferred
+            //yield return new WaitForSeconds(5);
+
+            yield return WaitForSpawnedOnAllOrTimeOut(m_Instance);
+            AssertOnTimeout($"Failed to spawn {m_Instance.name} on all clients!");
+
+            VerboseDebug("All clients spawned instance!");
+
             var originalPos = authority.LocalClient.PlayerObject.transform.position;
             var newPos = originalPos + new Vector3(1, 1, 1);
-            
+
             m_Instance.transform.position = newPos;
 
             foreach (var client in m_ClientNetworkManagers)
@@ -81,11 +121,12 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return new WaitForSeconds(1);
-            
+
             foreach (var client in m_ClientNetworkManagers)
             {
                 Assert.IsTrue(Approximately(newPos, s_GlobalNetworkObjects[client.LocalClientId][m_Instance.NetworkObjectId].transform.position));
             }
+            VerboseDebug("Test Passed!");
         }
     }
 }

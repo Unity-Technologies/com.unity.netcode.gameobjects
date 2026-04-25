@@ -48,10 +48,10 @@ namespace Unity.Netcode
         /// N4E-spawned hybrid prefab instances.
         /// </summary>
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
-
-        public void SetNetworkObjectId(ulong value)
+        public void SetNetworkObjectId(ulong networkObjectId)
         {
-            NetworkObjectId.Value = value;
+            NetworkObjectId.PresetValue(networkObjectId);
+            NetworkObjectId.Value = networkObjectId;
         }
     }
 #endif
@@ -70,7 +70,7 @@ namespace Unity.Netcode
 
         public static World LastCreatedWorld { get; private set; }
 
-        private static int WorldCounter = 0;
+        private static int s_WorldCounter = 0;
         
         public override bool Initialize(string defaultWorldName)
         {
@@ -83,26 +83,28 @@ namespace Unity.Netcode
             AutoConnectPort = Port;
             if (base.Initialize(defaultWorldName))
             {
-                UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] Auto-bootstrap is enabled!!! This will break the POC!");
+                Debug.LogError($"[{nameof(UnifiedBootStrap)}] Auto-bootstrap is enabled!!! This will break the POC!");
                 return true;
             }
 
             if (networkManager != null)
             {
                 Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
-                LastCreatedWorld = networkManager.IsServer
-                    ? CreateSingleWorldHost($"ClientAndServerWorld {WorldCounter++}")
-                    : CreateClientWorld($"ClientWorld {WorldCounter++}");
+                s_WorldCounter++;
+                LastCreatedWorld = networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}")
+                    : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
 
                 if (LastCreatedWorld == null)
                 {
-                    UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World is null!");
+                    s_WorldCounter--;
+                    Debug.LogError($"[{nameof(UnifiedBootStrap)}] World is null!");
                     return false;
                 }
 
                 if (!LastCreatedWorld.IsCreated)
                 {
-                    UnityEngine.Debug.LogError($"[{nameof(UnifiedBootStrap)}] World was not created!");
+                    s_WorldCounter--;
+                    Debug.LogError($"[{nameof(UnifiedBootStrap)}] World was not created!");
                     return false;
                 }
 

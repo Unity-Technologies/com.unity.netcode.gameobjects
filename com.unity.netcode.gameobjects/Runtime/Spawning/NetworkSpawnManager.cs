@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Unity.Entities;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -35,6 +37,13 @@ namespace Unity.Netcode
 
         internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
 
+        // TODO: We might want to make this a mock interfacebut temporary solution to validate
+        // the need to assure we are registering with the right NetworkManager instance when testing (everything
+        // will use the singleton during Awake and Start when we need to register).
+        internal delegate void RegisterPendingGhostDelegateHandler(NetworkObject networkObject, ulong networkObjectId);
+
+        internal static RegisterPendingGhostDelegateHandler RegisterPendingGhost;
+
         internal void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
         {
             if (NetworkManager.LogLevel == LogLevel.Developer)
@@ -43,6 +52,7 @@ namespace Unity.Netcode
             }
             if (GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
             {
+                // TODO-REVIEW-BELOW: *** This is very likely no longer an issue with the new connection sequence ***
                 // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
                 // Edge-Case scenario: During initial client synchronization (i.e. !NetworkManager.IsConnectedClient).
                 //
