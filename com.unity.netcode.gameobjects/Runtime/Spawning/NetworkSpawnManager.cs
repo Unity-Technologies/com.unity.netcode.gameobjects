@@ -4,8 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Unity.Entities;
-using Unity.NetCode;
 using UnityEngine;
 
 namespace Unity.Netcode
