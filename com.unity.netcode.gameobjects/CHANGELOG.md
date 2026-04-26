@@ -6,10 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
-
-### Added
-
+## [2.11.1] - 2026-04-26
 
 ### Changed
 
@@ -21,9 +18,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Improved performance of `NetworkRigidbodyBase`. (#3906)
 - Improved performance of `NetworkAnimator`. (#3905)
 
-### Deprecated
-
-
 ### Removed
 
 - Removed un-needed exceptions on `NetworkSpawnManager`. (#3933)
@@ -32,12 +26,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where either an `AttachableBehaviour` or an `AttachableNode` can throw an exception if they are attached during a scene unload where one of the two persists the scene unload event and the other does not. (#3931)
 - Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.11.0] - 2026-03-19
 
