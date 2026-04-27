@@ -148,43 +148,226 @@ The [synchronization and notification example](#synchronization-and-notification
 The `OnValueChanged` example shows a simple server-authoritative `NetworkVariable` being used to track the state of a door (open or closed) using an RPC that's sent to the server. Each time the door is used by a client, the `Door.ToggleStateRpc` is invoked and the server-side toggles the state of the door. When the `Door.State.Value` changes, all connected clients are synchronized to the (new) current `Value` and the `OnStateChanged` method is invoked locally on each client.
 
 ```csharp
+/// <summary>
+/// A basic NetworkVariable driven door state example.
+/// </summary>
 public class Door : NetworkBehaviour
 {
-    public NetworkVariable<bool> State = new NetworkVariable<bool>();
+    /// <summary>
+    /// Only for UI purposes.
+    /// This provides an initial configuration state for the door.
+    /// </summary>
+    public enum DoorStates
+    {
+        Closed,
+        Open
+    }
 
+    /// <summary>
+    /// Initializes the door to a specific state (server side) when first spawned.
+    /// </summary>
+    [Tooltip("Configures the door's initial state when 1st spawned.")]
+    public DoorStates InitialState = DoorStates.Closed;
+
+    /// <summary>
+    /// A simple door state where the server has write permissions and everyone has read permissions.
+    /// </summary>
+    public NetworkVariable<bool> State = new NetworkVariable<bool>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    /// <summary>
+    /// Invoked while the <see cref="NetworkObject"/> is in the middle of
+    /// being spawned.
+    /// </summary>
     public override void OnNetworkSpawn()
     {
-        State.OnValueChanged += OnStateChanged;
+        // The write authority (server) does not need to know about its
+        // own changes (for this example) since it is the "single point
+        // of truth" for the door instance.
+        if (IsServer)
+        {
+            // Host/Server:
+            // Applies the configurable state upon spawning.
+            State.Value = InitialState == DoorStates.Open;
+        }
+        else
+        {
+            // Clients:
+            // Subscribe to changes in the door's state.
+            State.OnValueChanged += OnStateChanged;
+        }
     }
 
-    public override void OnNetworkDespawn()
+    /// <summary>
+    /// Invoked once the door and all associated <see cref="NetworkAnimator"/>
+    /// components have finished the spawn process.
+    /// </summary>
+    protected override void OnNetworkPostSpawn()
     {
-        State.OnValueChanged -= OnStateChanged;
+        // Everyone updates their door state when finished spawning the door.
+        UpdateFromState();
+        base.OnNetworkPostSpawn();
     }
 
+    /// <summary>
+    /// Invoked just before this instance runs through its de-spawn
+    /// sequence. A good time to unsubscribe from things.
+    /// </summary>
+    public override void OnNetworkPreDespawn()
+    {
+        if (!IsServer)
+        {
+            State.OnValueChanged -= OnStateChanged;
+        }
+        base.OnNetworkPreDespawn();
+    }
+
+    /// <summary>
+    /// Only clients invoke this.
+    /// Server makes changes to the state.
+    /// </summary>
+    /// <remarks>
+    /// When the previous state equals the current state, we are a client
+    /// that is doing its 1st synchronization of this door instance.
+    /// </remarks>
+    /// <param name="previous">The previous state.</param>
+    /// <param name="current">The current state.</param>
     public void OnStateChanged(bool previous, bool current)
     {
-        // note: `State.Value` will be equal to `current` here
+        // Update to the current state while also providing a catch for
+        // the first synchronization where previous == current.
+        UpdateFromState(previous != current);
+    }
+
+    /// <summary>
+    /// Common method used to update the actual door asset based on its current state.
+    /// </summary>
+    /// <param name="isFirstSynchronization">only set upon first spawn by a client</param>
+    private void UpdateFromState(bool isFirstSynchronization = false)
+    {
         if (State.Value)
         {
             // door is open:
             //  - rotate door transform
             //  - play animations, sound etc.
+            // if first sync, reset to open and don't play sound
         }
         else
         {
             // door is closed:
             //  - rotate door transform
             //  - play animations, sound etc.
+            // if first sync, reset to closed and don't play sound
+        }
+
+        // If 1st sync, don't log a message about a change in state
+        // since previous == current (i.e. no change in state)
+        if (!isFirstSynchronization)
+        {
+            var openClosed = State.Value ? "open" : "closed";
+            Debug.Log($"[]The door is now {openClosed}.");
         }
     }
 
-    [Rpc(SendTo.Server)]
-    public void ToggleStateRpc()
+    /// <summary>
+    /// Override to apply specific checks (like a player having the right 
+    /// key to open the door) or make it a non-virtual class and add logic 
+    /// directly to this method.
+    /// </summary>
+    /// <param name="player">The player attempting to open the door.</param>
+    /// <returns></returns>
+    protected virtual bool CanPlayerToggleState(NetworkObject player)
     {
-        // this will cause a replication over the network
-        // and ultimately invoke `OnValueChanged` on receivers
-        State.Value = !State.Value;
+        // For this example, the door can always be toggled.
+        return true;
+    }
+
+    /// <summary>
+    /// Invoked by either a Host or clients to interact with the door.
+    /// </summary>
+    public void Interact()
+    {
+        // Optional:
+        // This is only if you want clients to be able to
+        // interact with doors. A dedicated server would not
+        // be able to do this since it does not have a player.
+        if (IsServer && !IsHost)
+        {
+            // Optional to log a warning about this.
+            return;
+        }
+        
+        if (IsHost)
+        {
+            ToggleState(NetworkManager.LocalClientId);
+        }
+        else
+        {
+            // Clients send an RPC to server (write authority) who applies the
+            // change in state that will be synchronized with all client observers.
+            ToggleStateRpc();
+        }
+    }
+
+    /// <summary>
+    /// Invoked only server-side
+    /// Primary method to handle toggling the door state.
+    /// </summary>
+    /// <param name="clientId">The client toggling the door state.</param>
+    private void ToggleState(ulong clientId)
+    {
+        // Get the server-side client player instance
+        var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
+        if (playerObject != null)
+        {
+            if (CanPlayerToggleState(playerObject))
+            {
+                // Host toggles the state 
+                State.Value = !State.Value;
+                UpdateFromState();
+            }
+            else
+            {
+                ToggleStateFailRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+            }
+        }
+        else
+        {
+            // Optional as to how you handle this. Since ToggleState is only invoked by
+            // sever-side only script, this could mean many things depending upon whether
+            // or not a client could interact with something and not have a player object.
+            // If that is the case, then don't even bother checking for a player object.
+            // If that is not the case, then there could be a timing issue between when 
+            // something can be "interacted with" and when a player is about to be de-spawned.
+            // For this example, we just log a warning as this example was built with 
+            // the requirement that a client has a spawned player object that is used for
+            // reference to determine if the client's player can toggle the state of the
+            // door or not.
+            NetworkLog.LogWarningServer($"Client-{clientId} has no spawned player object!");
+        }
+    }
+
+    /// <summary>
+    /// Invoked by clients.
+    /// Re-directs to the common <see cref="ToggleState(ulong)"/> method.
+    /// </summary>
+    /// <param name="rpcParams">includes <see cref="RpcReceiveParams.SenderClientId"/> that is automatically populated for you.</param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void ToggleStateRpc(RpcParams rpcParams = default)
+    {
+        ToggleState(rpcParams.Receive.SenderClientId);
+    }
+    
+    /// <summary>
+    /// Optional:
+    /// Handling when a player cannot open a door.
+    /// </summary>
+    /// <param name="rpcParams">includes <see cref="RpcReceiveParams.SenderClientId"/> that is automatically populated for you.</param>
+    [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+    private void ToggleStateFailRpc(RpcParams rpcParams = default)
+    {
+        // Provide player feedback that toggling failed.
+        var openOrClose = State.Value ? "close" : "open";
+        Debug.Log($"Failed to {openOrClose} the door!");
     }
 }
 ```
