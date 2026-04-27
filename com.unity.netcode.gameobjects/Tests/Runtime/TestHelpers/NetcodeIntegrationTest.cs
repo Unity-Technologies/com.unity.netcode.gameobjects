@@ -1,17 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
-using Unity.Entities;
 using Unity.NetCode;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -2210,75 +2207,68 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 #if UNIFIED_NETCODE
-
         protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
         {
             // Prevent from trying to register/spawn when creating this hybrid prefab
-            GhostBehaviour.IsCreatingPrefab = true;
             var gameObject = new GameObject
             {
                 name = baseName
             };
 
-            // Wrap the rest in case a bug (or the like) is introduced and an exception is thrown
-            // so we can assure to set IsCreatingPrefab back to false.
-            try
+            // Order of operations in how these execute is actually important.
+            // GhostObject should execute 1st.
+            // NetworkObjectBridge 2nd.
+            // NetworkObject 3rd.
+            // NetworkBehaviours will execute in the order they are arranged unless otherwise specified.
+
+            // When adding a Hybrid/Ghost prefab:
+            // - We disabled the GameObject prior to adding the GhostPrefabReference (so IsPrefab() == true).
+            // - Add the GhostAdapter and GhostPrefabReference
+            // - Then set it back to active.
+            gameObject.SetActive(false);
+            var adapter = gameObject.AddComponent<GhostAdapter>();
+            // Mark the reference as post processing to avoid registering this instance automatically.
+            GhostPrefabReference.s_IsPostProcessing = true;
+            adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
+            adapter.prefabReference.name = "GhostPrefabReference";
+            adapter.prefabReference.Prefab = gameObject;
+            adapter.prefabReference.Ghost = adapter;
+            GhostPrefabReference.s_IsPostProcessing = false;
+
+            // TODO: This might be part of the CreateHybridPrefab parameters
+            // For now, just use normal interpolation until we get integration
+            // tests running.
+            // Once we have validated prediction works and have a working manual
+            // test, we can circle back to this (possibly make that a sub-task
+            // with the dependency to prediction manual test).
+            adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+
+            // Once done with setting up the GhostAdapter, we can set it back to active in the hierarchy
+            gameObject.SetActive(true);
+
+            // GhostBehaviours that are part of a prefab will not invoke Ghost.InternalAcquireEntityReference
+            // Add the bridge
+            var bridge = gameObject.AddComponent<NetworkObjectBridge>();
+
+            // Now add NGO components
+            var no = gameObject.AddComponent<NetworkObject>();
+
+            // NetworkObject Ghost specific settings
+            no.HasGhost = true;
+            no.GhostAdapter = adapter;
+            no.HadBridge = true;
+            no.NetworkObjectBridge = bridge;
+
+            // Disable transform synchronization for NetworkObject serialization
+            // since that is handled by the GhostAdapter.
+            no.SynchronizeTransform = false;
+
+            // Turn it into a test prefab
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(no);
+            if (moveToDDOL)
             {
-                // TODO: We might think if there is a better way to handle this, but GhostBehaviour is dependent
-                // upon GhostObject having run through its Awake prior to it and NetworkObject needs to access
-                // the NetowrkObjectId GhostField which depends upon GhostBehaviour.
-
-                // Order of operations in how these execute is actually important.
-                // GhostObject should execute 1st.
-                // NetworkObjectBridge 2nd.
-                // NetworkObject 3rd.
-                // NetworkBehaviours will execute in the order they are arranged unless otherwise specified.
-                var adapter = gameObject.AddComponent<GhostAdapter>();
-                var bridge = gameObject.AddComponent<NetworkObjectBridge>();
-                var no = gameObject.AddComponent<NetworkObject>();
-
-                // Ghost specific settings
-                no.HasGhost = true;
-                no.GhostAdapter = adapter;
-                no.HadBridge = true;
-                no.NetworkObjectBridge = bridge;
-
-                // This gets automatically disabled when NetworkObject is validated.
-                no.SynchronizeTransform = false;
-                no.SceneMigrationSynchronization = false;
-
-                // Make sure this is not a scene object
-                no.IsSceneObject = false;
-
-                // TODO: This might be part of the CreateHybridPrefab parameters
-                // For now, just use normal interpolation until we get integration
-                // tests running.
-                // Once we have validated prediction works and have a working manual
-                // test, we can circle back to this (possibly make that a sub-task
-                // with the dependency to prediction manual test).
-                adapter.SupportedGhostModes = GhostModeMask.Interpolated;
-
-                // Mark the reference as post processing to avoid registering this instance automatically
-                GhostPrefabReference.s_IsPostProcessing = true;
-                adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
-                adapter.prefabReference.name = "GhostPrefabReference";
-                adapter.prefabReference.Prefab = gameObject;
-                adapter.prefabReference.Ghost = adapter;
-                GhostPrefabReference.s_IsPostProcessing = false;
-
-                // Turn it into a test prefab
-                NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(no);
-                if (moveToDDOL)
-                {
-                    Object.DontDestroyOnLoad(gameObject);
-                }
+                Object.DontDestroyOnLoad(gameObject);
             }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-            // Always reset
-            GhostBehaviour.IsCreatingPrefab = false;
             return gameObject;
         }
 #endif
