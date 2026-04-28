@@ -132,15 +132,15 @@ namespace Unity.Netcode.RuntimeTests
 #if HOSTNAME_RESOLUTION_AVAILABLE
         // Check connection with a single client (hostname).
         [UnityTest]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Test fails on Android for editors 6000.3+ Tracked in MTT-14757
         public IEnumerator ConnectSingleClient_Hostname()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
-            // We don't know if localhost will resolve to 127.0.0.1 or ::1, so we wait until we know
-            // before starting the server. Because localhost is pretty much always defined locally
-            // it should resolve immediatly and thus waiting one frame should be enough.
+            // We don't know if localhost will resolve to 127.0.0.1 or ::1 (or even a device LAN
+            // IP on some Android versions), so we wait until we know before starting the server.
+            // We poll until GetLocalEndpoint() returns a valid endpoint rather than assuming one
+            // frame is always enough — resolution may span multiple driver updates on some platforms.
 
             // We'll need to retry connection requests most likely so make this fast.
             m_Clients[0].ConnectTimeoutMS = 50;
@@ -148,11 +148,28 @@ namespace Unity.Netcode.RuntimeTests
             m_Clients[0].SetConnectionData("localhost", 7777);
             m_Clients[0].StartClient();
 
-            yield return null;
+            // Wait until hostname resolution has completed and the driver has bound.
+            // On some Android devices "localhost" can resolve to the device's LAN IP rather than
+            // a loopback address, so we use the actual resolved address instead of hardcoding
+            // "127.0.0.1" or "::1" based solely on the address family.
+            NetworkEndpoint endpoint;
+            var resolutionDeadline = Time.realtimeSinceStartup + 2f;
+            do
+            {
+                yield return null;
+                endpoint = m_Clients[0].GetLocalEndpoint();
+            } while (endpoint.Family == NetworkFamily.Invalid &&
+                     Time.realtimeSinceStartup < resolutionDeadline);
 
-            var endpoint = m_Clients[0].GetLocalEndpoint();
-            var ip = endpoint.Family == NetworkFamily.Ipv4 ? "127.0.0.1" : "::1";
-            m_Server.SetConnectionData(ip, 7777, ip);
+            Assert.AreNotEqual(NetworkFamily.Invalid, endpoint.Family,
+                "Timed out waiting for localhost hostname resolution to complete.");
+
+            // Use the wildcard listen address for the resolved address family. This handles
+            // cases where "localhost" resolves to a non-loopback address (e.g. a device's LAN
+            // IP on some Android versions) and avoids relying on the exact IP in the local
+            // endpoint (which may be a wildcard 0.0.0.0 when UTP binds before routing).
+            var listenAddress = endpoint.Family == NetworkFamily.Ipv6 ? "::" : "0.0.0.0";
+            m_Server.SetConnectionData(listenAddress, 7777, listenAddress);
             m_Server.StartServer();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
