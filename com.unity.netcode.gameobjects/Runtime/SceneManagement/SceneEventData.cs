@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
-#if UNITY_EDITOR
 using UnityEngine;
-#endif
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -477,7 +475,7 @@ namespace Unity.Netcode
 
             if (!usingExternalBuilder)
             {
-                UnityEngine.Debug.Log(builder.ToString());
+                Debug.Log(builder.ToString());
             }
         }
 
@@ -643,7 +641,7 @@ namespace Unity.Netcode
             }
             if (EnableSerializationLogs)
             {
-                UnityEngine.Debug.Log(builder.ToString());
+                Debug.Log(builder.ToString());
             }
 
             // Write the number of despawned in-scene placed NetworkObjects
@@ -1049,12 +1047,12 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
+                            Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
                         }
                     }
                     else
                     {
-                        UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
+                        Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
                     }
                 }
                 else // Use the cached NetworkObjects if they exist
@@ -1083,7 +1081,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
+                    Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
                 }
             }
         }
@@ -1142,7 +1140,7 @@ namespace Unity.Netcode
                 }
                 if (EnableSerializationLogs)
                 {
-                    UnityEngine.Debug.Log(builder.ToString());
+                    Debug.Log(builder.ToString());
                 }
 
                 // Notify that all in-scene placed NetworkObjects have been spawned
@@ -1160,8 +1158,8 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogException(ex);
-                UnityEngine.Debug.Log(builder.ToString());
+                Debug.LogException(ex);
+                Debug.Log(builder.ToString());
             }
             finally
             {
