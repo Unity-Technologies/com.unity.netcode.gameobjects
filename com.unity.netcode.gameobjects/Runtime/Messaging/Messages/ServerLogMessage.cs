@@ -46,20 +46,24 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            var senderId = networkManager.DistributedAuthorityMode ? SenderId : context.SenderId;
+            var senderId = context.SenderId;
+            if (networkManager.NetworkConfig.UseCMBService && context.SenderId == NetworkManager.ServerClientId)
+            {
+                senderId = SenderId;
+            }
 
             networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, context.MessageSize);
 
             switch (LogType)
             {
                 case NetworkLog.LogType.Info:
-                    NetworkLog.LogInfoServerLocal(Message, senderId);
+                    networkManager.Log.Info(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Normal, senderId, Message));
                     break;
                 case NetworkLog.LogType.Warning:
-                    NetworkLog.LogWarningServerLocal(Message, senderId);
+                    networkManager.Log.Warning(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Error, senderId, Message));
                     break;
                 case NetworkLog.LogType.Error:
-                    NetworkLog.LogErrorServerLocal(Message, senderId);
+                    networkManager.Log.Error(NetworkLog.BuildContextForServerMessage(networkManager, LogLevel.Error, senderId, Message));
                     break;
             }
         }

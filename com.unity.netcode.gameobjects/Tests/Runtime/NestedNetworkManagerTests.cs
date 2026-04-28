@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
@@ -29,15 +30,8 @@ namespace Unity.Netcode.RuntimeTests
             // Make our NetworkManager's GameObject nested
             networkManagerObject.transform.parent = parent.transform;
 
-            // Generate the error message we are expecting to see
-            var messageToCheck = NetworkManager.GenerateNestedNetworkManagerMessage(networkManagerObject.transform);
-
             // Trap for the nested NetworkManager exception
-#if UNITY_EDITOR
-            LogAssert.Expect(LogType.Error, messageToCheck);
-#else
-            LogAssert.Expect(LogType.Exception, $"Exception: {messageToCheck}");
-#endif
+            LogAssert.Expect(LogType.Error, new Regex("NetworkManager cannot be nested"));
 
             // Clean up
             Object.Destroy(parent);

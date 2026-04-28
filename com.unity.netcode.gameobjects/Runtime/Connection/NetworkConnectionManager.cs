@@ -972,27 +972,39 @@ namespace Unity.Netcode
             }
 
             // Server-side spawning (only if there is a prefab hash or player prefab provided)
-            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && (playerPrefabHash.HasValue || NetworkManager.NetworkConfig.PlayerPrefab != null))
+            var idHashToSpawn = playerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab?.GetComponent<NetworkObject>()?.GlobalObjectIdHash;
+            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && idHashToSpawn.HasValue)
             {
-                var playerObject = playerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(playerPrefabHash.Value, ownerClientId, playerPosition, playerRotation)
-                : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
+                var playerObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(idHashToSpawn.Value, ownerClientId, playerPosition, playerRotation);
 
                 if (playerObject == null)
                 {
-                    Debug.LogError($"[{nameof(NetworkObject)}] Player prefab is null! Cannot spawn player object!");
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"[{nameof(NetworkObject)}] Player prefab is null! Cannot spawn player object!");
+                    }
                 }
                 else
                 {
                     // Spawn the player NetworkObject locally
-                    NetworkManager.SpawnManager.AuthorityLocalSpawn(
+                    if (NetworkManager.SpawnManager.AuthorityLocalSpawn(
                         playerObject,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
                         sceneObject: false,
                         playerObject: true,
                         ownerClientId,
-                        destroyWithScene: false);
+                        destroyWithScene: false))
+                    {
+                        client.AssignPlayerObject(ref playerObject);
+                    }
+                    else
+                    {
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"[{nameof(NetworkObject)}] Player prefab failed to spawn!");
+                        }
+                    }
 
-                    client.AssignPlayerObject(ref playerObject);
                 }
             }
 
@@ -1113,18 +1125,37 @@ namespace Unity.Netcode
         /// </summary>
         internal void CreateAndSpawnPlayer(ulong ownerId)
         {
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
+            var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
+            if (playerPrefab == null)
             {
-                var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
-                if (playerPrefab != null)
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
-                    var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
-                    networkObject.IsSceneObject = false;
-                    networkObject.NetworkManagerOwner = NetworkManager;
-                    networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
+                    NetworkLog.LogWarning("Could not fetch a local player to spawn. Ensure PlayerPrefab is set in NetcodeConfig.");
                 }
+                return;
             }
+            var prefabObject = playerPrefab.GetComponent<NetworkObject>();
+            if (prefabObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("Failed to fetch valid player prefab. Ensure PlayerPrefab that is set in NetcodeConfig contains a NetworkObject component.");
+                }
+                return;
+            }
+            var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(prefabObject.GlobalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
+            if (networkObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("Failed to spawn player prefab!");
+                }
+                return;
+            }
+
+            networkObject.IsSceneObject = false;
+            networkObject.NetworkManagerOwner = NetworkManager;
+            networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
         }
 
         /// <summary>
@@ -1312,7 +1343,14 @@ namespace Unity.Netcode
                     }
                     else if (!NetworkManager.ShutdownInProgress)
                     {
-                        playerObject.RemoveOwnership();
+                        if (NetworkManager.DistributedAuthorityMode)
+                        {
+                            NetworkManager.SpawnManager.ChangeOwnership(playerObject, NetworkManager.LocalClientId, true);
+                        }
+                        else
+                        {
+                            playerObject.RemoveOwnership();
+                        }
                     }
                 }
 

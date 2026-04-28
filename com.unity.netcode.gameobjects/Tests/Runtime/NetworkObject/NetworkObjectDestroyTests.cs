@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
                 // The non-authority client is =NOT= allowed to destroy any spawned object it does not
                 // have authority over during runtime.
                 LogAssert.ignoreFailingMessages = true;
-                NetworkLog.NetworkManagerOverride = nonAuthorityClient;
+                NetworkLog.ConfigureIntegrationTestLogging(nonAuthorityClient);
                 Object.Destroy(clientPlayerClone.gameObject);
             }
 
@@ -193,18 +193,12 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
 
-                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] [SenderId:{m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
                 {
                     return false;
                 }
             }
             return true;
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            NetworkLog.NetworkManagerOverride = null;
-            return base.OnTearDown();
         }
 
         protected override void OnOneTimeTearDown()

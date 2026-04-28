@@ -656,6 +656,7 @@ namespace Unity.Netcode.RuntimeTests
         private void RandomizeObjectTransformPositions(GameObject gameObject)
         {
             var networkObject = gameObject.GetComponent<NetworkObject>();
+            networkObject.InitializeChildNetworkBehaviours();
             Assert.True(networkObject.ChildNetworkBehaviours.Count > 0);
 
             foreach (var networkTransform in networkObject.NetworkTransforms)

@@ -7,6 +7,7 @@ using Unity.Entities;
 using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
+using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 #if UNIFIED_NETCODE && OUT_OF_BAND_RPC
 using Unity.Netcode.Unified;
@@ -17,7 +18,6 @@ using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
 
 
 
@@ -82,10 +82,7 @@ namespace Unity.Netcode
             if (!s_SerializedType.Contains(type))
             {
                 s_SerializedType.Add(type);
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                {
-                    Debug.LogWarning($"[{type.Name}] Serialized type has not been optimized for use with Distributed Authority!");
-                }
+                NetworkLog.LogWarning(new Context(LogLevel.Developer, "Serialized type has not been optimized for use with Distributed Authority!").AddTag(type.Name));
             }
         }
 #endif
@@ -157,7 +154,7 @@ namespace Unity.Netcode
         {
             if (!AutoSpawnPlayerPrefabClientSide)
             {
-                Debug.LogError($"[{nameof(FetchLocalPlayerPrefabToSpawn)}] Invoked when {nameof(NetworkConfig.AutoSpawnPlayerPrefabClientSide)} was not set! Check call paths!");
+                Log.Error(new Context(LogLevel.Error, $"Invoked when {nameof(NetworkConfig.AutoSpawnPlayerPrefabClientSide)} was not set! Check call paths!"));
                 return null;
             }
             if (OnFetchLocalPlayerPrefabToSpawn == null && NetworkConfig.PlayerPrefab == null)
@@ -253,12 +250,13 @@ namespace Unity.Netcode
         {
             if (!DistributedAuthorityMode)
             {
-                NetworkLog.LogErrorServer($"[SceneManagement][NotDA] Invoking promote session owner while not in distributed authority mode!");
+                // [Netcode] [PromoteSessionOwner][SceneManagement][NotDA] Invoking promote session owner while not in distributed authority mode!
+                Log.ErrorServer(new Context(LogLevel.Error, "Invoking promote session owner while not in distributed authority mode!").AddTag("SceneManagement").AddTag("NotDA"));
                 return;
             }
             if (!DAHost)
             {
-                NetworkLog.LogErrorServer($"[SceneManagement][NotDAHost] Client is attempting to promote another client as the session owner!");
+                Log.ErrorServer(new Context(LogLevel.Error, "Client is attempting to promote another client as the session owner!").AddTag("SceneManagement").AddTag("NotDAHost"));
                 return;
             }
             SetSessionOwner(clientId);
@@ -325,7 +323,8 @@ namespace Unity.Netcode
             var transportTopology = IsListening && IsConnectedClient ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
             if (transportTopology != NetworkConfig.NetworkTopology)
             {
-                NetworkLog.LogErrorServer($"[Topology Mismatch][{transportTopology}:{transportTopology.GetType().Name}][NetworkManager.NetworkConfig:{NetworkConfig.NetworkTopology}] Transport detected an issue with the topology usage or setting! Disconnecting from session.");
+                Log.ErrorServer(new Context(LogLevel.Error, "Transport detected an issue with the topology usage or setting! Disconnecting from session.")
+                    .AddTag("Topology Mismatch").AddInfo(transportTopology, transportTopology.GetType().Name).AddInfo("NetworkManager.NetworkConfig", NetworkConfig.NetworkTopology));
                 Shutdown(true);
             }
             else
@@ -902,6 +901,12 @@ namespace Unity.Netcode
         public event Action OnClientStarted = null;
 
         /// <summary>
+        /// The callback to invoke once started
+        /// Invoked on both the server and the client
+        /// </summary>
+        internal event Action OnStarted = null;
+
+        /// <summary>
         /// Subscribe to this event to get notifications before a <see cref="NetworkManager"/> instance is being destroyed.
         /// This is useful if you want to use the state of anything the NetworkManager cleans up during its shutdown.
         /// </summary>
@@ -917,6 +922,12 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>The parameter states whether the client was running in host mode</remarks>
         public event Action<bool> OnClientStopped = null;
+
+        /// <summary>
+        /// The callback to invoke once the session stops
+        /// Invoked on both the server and the client
+        /// </summary>
+        internal event Action OnStopped = null;
 
         /// <summary>
         /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
@@ -993,6 +1004,7 @@ namespace Unity.Netcode
         /// </summary>
         internal IRealTimeProvider RealTimeProvider { get; private set; }
 
+        internal ContextualLogger Log;
         internal INetworkMetrics NetworkMetrics => MetricsManager.NetworkMetrics;
         internal NetworkMetricsManager MetricsManager = new NetworkMetricsManager();
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
@@ -1030,6 +1042,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// For testing purposes when you need the singleton to be null
+        /// </summary>
+        internal static void ResetSingleton()
+        {
+            Singleton = null;
+        }
+
+        /// <summary>
         /// Set this NetworkManager instance as the static NetworkManager singleton
         /// </summary>
         public void SetSingleton()
@@ -1041,6 +1061,11 @@ namespace Unity.Netcode
 
         private void Awake()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+            }
+
             NetworkConfig?.InitializePrefabs();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -1179,19 +1204,12 @@ namespace Unity.Netcode
 
             if (NetworkConfig.NetworkTransport == null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError("No transport has been selected!");
-                }
-
+                Log.Error(new Context(LogLevel.Error, "No transport has been selected!"));
                 return;
             }
 
             // Logging initializes first for any logging during systems initialization
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(Initialize));
-            }
+            Log.CaptureFunctionCall();
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -1284,11 +1302,7 @@ namespace Unity.Netcode
         {
             if (IsListening)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Cannot start " + type + " while an instance is already running");
-                }
-
+                Log.Warning(new Context(LogLevel.Normal, "Can't start while listening").AddInfo("Start", type));
                 return false;
             }
 
@@ -1298,10 +1312,7 @@ namespace Unity.Netcode
             {
                 if (ConnectionApprovalCallback == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
-                    }
+                    Log.Warning(new Context(LogLevel.Normal, $"No {nameof(ConnectionApprovalCallback)} defined. Connection approval will timeout").AddInfo("Start", type));
                 }
             }
 
@@ -1309,10 +1320,7 @@ namespace Unity.Netcode
             {
                 if (!NetworkConfig.ConnectionApproval)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning("A ConnectionApproval callback is defined but ConnectionApproval is disabled. In order to use ConnectionApproval it has to be explicitly enabled ");
-                    }
+                    Log.Warning(new Context(LogLevel.Normal, $"{nameof(ConnectionApprovalCallback)} is defined but {nameof(NetworkConfig.ConnectionApproval)} is disabled. In order to use ConnectionApproval it has to be explicitly enabled").AddInfo("Start", type));
                 }
             }
 
@@ -1397,13 +1405,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a server
         /// </summary>
-        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in server mode successfully.</returns>
+        /// <returns>returns true if <see cref="NetworkManager"/> started in server mode successfully; otherwise false</returns>
         public bool StartServer()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartServer));
-            }
+            Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Server))
             {
@@ -1422,7 +1427,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
                 return false;
@@ -1467,6 +1472,7 @@ namespace Unity.Netcode
                     // Notify the server that everything should be synchronized/spawned at this time.
                     SpawnManager.NotifyNetworkObjectsSynchronized();
                     OnServerStarted?.Invoke();
+                    OnStarted?.Invoke();
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
                 }
@@ -1475,7 +1481,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
                 IsListening = false;
@@ -1489,10 +1495,7 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
         public bool StartClient()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartClient));
-            }
+            Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Client))
             {
@@ -1510,7 +1513,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 ShutdownInternal();
                 return false;
             }
@@ -1556,11 +1559,12 @@ namespace Unity.Netcode
                 else
                 {
                     OnClientStarted?.Invoke();
+                    OnStarted?.Invoke();
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 ShutdownInternal();
                 IsListening = false;
             }
@@ -1575,10 +1579,7 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
         public bool StartHost()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartHost));
-            }
+            Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Host))
             {
@@ -1596,7 +1597,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
                 return false;
@@ -1648,7 +1649,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
                 // Always shutdown to assure everything is cleaned up
                 ShutdownInternal();
                 IsListening = false;
@@ -1673,10 +1674,7 @@ namespace Unity.Netcode
                 ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
                 if (!response.Approved)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning("You cannot decline the host connection. The connection was automatically approved.");
-                    }
+                    Log.Warning(new Context(LogLevel.Normal, "You cannot decline the host connection. The connection was automatically approved."));
                 }
 
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response.CreatePlayerObject, response.PlayerPrefabHash, response.Position, response.Rotation);
@@ -1695,6 +1693,7 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
             OnClientStarted?.Invoke();
+            OnStarted?.Invoke();
 
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
@@ -1754,10 +1753,7 @@ namespace Unity.Netcode
         /// </param>
         public void Shutdown(bool discardMessageQueue = false)
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(Shutdown));
-            }
+            Log.CaptureFunctionCall();
 
             // If we're not running, don't start shutting down, it would only cause an immediate
             // shutdown the next time the manager is started.
@@ -1785,10 +1781,7 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             EndNetworkSession();
 #endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(ShutdownInternal));
-            }
+            Log.CaptureFunctionCall();
 
             // Always wrap events that can invoke user script in a
             // try-catch to assure any proceeding script is still
@@ -1804,7 +1797,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
 
             this.UnregisterAllNetworkUpdates();
@@ -1906,6 +1899,8 @@ namespace Unity.Netcode
                 // or not. (why we pass in "IsClient")
                 OnServerStopped?.Invoke(localClient.IsClient);
             }
+
+            OnStopped?.Invoke();
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
@@ -1926,7 +1921,7 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             if (Singleton != null)
             {
-                Debug.LogWarning($"[nameof({nameof(OnApplicationQuit)}][{nameof(NetworkManager)}][{name}] Singleton is not null after invoking OnDestroy. Singleton instance name is {Singleton.name}. Do you have more than one {nameof(NetworkManager)} instance in the DDOL scene?");
+                Log.Warning(new Context(LogLevel.Error, $"Singleton is not null after invoking OnDestroy. Do you have more than one {nameof(NetworkManager)} instance in the DDOL scene?").AddInfo("SingletonInstance", Singleton.name));
             }
 #endif
         }
@@ -1940,7 +1935,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -1954,7 +1949,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
 
             if (Singleton == this)
@@ -2023,15 +2018,17 @@ namespace Unity.Netcode
                 return; // May occur when the component is added
             }
 
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+            }
+
             // Do a validation pass on NetworkConfig properties
             NetworkConfig.OnValidate();
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
-                }
+                Log.Warning(new Context(LogLevel.Normal, $"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}."));
             }
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -2059,11 +2056,7 @@ namespace Unity.Netcode
                 var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
-                    }
-
+                    Log.Warning(new Context(LogLevel.Normal, $"Cannot register prefab to {nameof(NetworkManager)}, missing a {nameof(NetworkObject)} component at its root").AddObject(networkPrefab.Prefab));
                     continue;
                 }
 
@@ -2072,10 +2065,7 @@ namespace Unity.Netcode
                     networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
                     if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
-                        }
+                        Log.Warning(new Context(LogLevel.Normal, $"Prefab has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)").AddObject(networkPrefab.Prefab));
                     }
                 }
             }
@@ -2086,7 +2076,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
         }
 
@@ -2105,7 +2095,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
 
         }
@@ -2121,7 +2111,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
         }
 
@@ -2136,7 +2126,7 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Log.Exception(ex);
             }
         }
 #endif
