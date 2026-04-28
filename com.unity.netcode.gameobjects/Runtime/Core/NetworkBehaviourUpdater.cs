@@ -115,7 +115,7 @@ namespace Unity.Netcode
         {
             foreach (var behaviour in dirtyObj.ChildNetworkBehaviours.Values)
             {
-                behaviour.Value.PostNetworkVariableWrite(forceSend);
+                behaviour.PostNetworkVariableWrite(forceSend);
             }
         }
 

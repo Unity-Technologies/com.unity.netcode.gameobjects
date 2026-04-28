@@ -2087,7 +2087,7 @@ namespace Unity.Netcode
 
             foreach (var behavior in ChildNetworkBehaviours.Values)
             {
-                behavior.Value.MarkVariablesDirty(false);
+                behavior.MarkVariablesDirty(false);
             }
             NetworkManagerOwner.SpawnManager.DespawnObject(this, destroy);
         }
@@ -2216,7 +2216,7 @@ namespace Unity.Netcode
 
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                childBehaviour.Value.IsSessionOwner = isSessionOwner;
+                childBehaviour.IsSessionOwner = isSessionOwner;
             }
         }
 
@@ -2228,7 +2228,6 @@ namespace Unity.Netcode
             }
             foreach (var child in ChildNetworkBehaviours.Values)
             {
-                var behaviour = childBehaviour.Value;
                 // Any NetworkBehaviour that is not spawned and the associated GameObject is disabled should be
                 // skipped over (i.e. not supported).
                 if (!child.IsSpawned && !child.gameObject.activeInHierarchy)
@@ -2712,22 +2711,21 @@ namespace Unity.Netcode
             // - invocation of RPCs will work properly (and not throw exception under certain scenarios)
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                if (!childBehaviour.Value.gameObject.activeInHierarchy)
+                if (!childBehaviour.gameObject.activeInHierarchy)
                 {
                     if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour.Value)}");
+                        NetworkLog.LogWarning($"{GenerateDisabledNetworkBehaviourWarning(childBehaviour)}");
                     }
                     continue;
                 }
-                childBehaviour.Value.InternalOnNetworkSpawn();
+                childBehaviour.InternalOnNetworkSpawn();
             }
 
-            // After initialization, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
+            // After internally spawning, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
-                var behaviour = childBehaviour.Value;
-                if (!behaviour.gameObject.activeInHierarchy)
+                if (!childBehaviour.gameObject.activeInHierarchy)
                 {
                     if (NetworkManager.LogLevel <= LogLevel.Normal)
                     {
@@ -2735,7 +2733,7 @@ namespace Unity.Netcode
                     }
                     continue;
                 }
-                behaviour.NetworkSpawn();
+                childBehaviour.NetworkSpawn();
             }
         }
 
@@ -2870,7 +2868,7 @@ namespace Unity.Netcode
                 {
                     for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
                     {
-                        m_ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
+                        ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
                         Destroy(NetworkRigidbodies[i]);
                     }
                     NetworkRigidbodies.Clear();
@@ -2882,7 +2880,7 @@ namespace Unity.Netcode
                 {
                     for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
                     {
-                        m_ChildNetworkBehaviours.Remove(NetworkTransforms[i].NetworkBehaviourId);
+                        ChildNetworkBehaviours.Remove(NetworkTransforms[i].NetworkBehaviourId);
                         Destroy(NetworkTransforms[i]);
                     }
                     NetworkTransforms.Clear();
@@ -2892,7 +2890,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        #if UNIFIED_NETCODE
+#if UNIFIED_NETCODE
         private void InitializeComponentMarkers(NetworkManager networkManager)
         {
             // TODO: Determine if this would be useful
@@ -2945,7 +2943,7 @@ namespace Unity.Netcode
             {
                 for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
                 {
-                    m_ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
+                    ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
                     Destroy(NetworkRigidbodies[i]);
                 }
                 NetworkRigidbodies.Clear();
@@ -3476,7 +3474,7 @@ namespace Unity.Netcode
                 var synchronizationCount = (byte)0;
                 foreach (var childBehaviour in ChildNetworkBehaviours.Values)
                 {
-                    if (childBehaviour.Value.Synchronize(ref serializer, targetClientId))
+                    if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
                         synchronizationCount++;
                     }
@@ -3497,8 +3495,8 @@ namespace Unity.Netcode
                 // Apply the network variable synchronization data
                 foreach (var behaviour in ChildNetworkBehaviours.Values)
                 {
-                    behaviour.Value.InitializeVariables();
-                    behaviour.Value.SetNetworkVariableData(reader, targetClientId);
+                    behaviour.InitializeVariables();
+                    behaviour.SetNetworkVariableData(reader, targetClientId);
                 }
 
                 // Read the number of NetworkBehaviours to synchronize

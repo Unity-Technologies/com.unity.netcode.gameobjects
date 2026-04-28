@@ -73,7 +73,7 @@ namespace Unity.Netcode
                 // them into the currently active scene upon spawn.
                 if (!NetworkManager.IsConnectedClient && !GhostsPendingSynchronization.ContainsKey(networkObjectId))
                 {
-                    UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                    Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
                 else // There is matching spawn data for this pending Ghost, process the pending spawn for this hybrid instance.
                 {
@@ -98,7 +98,7 @@ namespace Unity.Netcode
                 return null;
             }
             var networkObject = GhostsPendingSpawn[networkObjectId];
-            
+
             GhostsPendingSpawn.Remove(networkObjectId);
             if (networkObject != null)
             {
@@ -1138,17 +1138,14 @@ namespace Unity.Netcode
                 networkObject = GetGhostNetworkObjectForSpawn(serializedObject.NetworkObjectId);
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                    }
-
-                    return null;
+                    throw new Exception($"Failed to get spawned Ghost object!");
                 }
-
-                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
-                // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (!networkObject.gameObject.activeInHierarchy)
+            }
+            else
+#endif
+            {
+                // If scene management is disabled or the NetworkObject was dynamically spawned
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
                 {
                     networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
                 }
@@ -1161,17 +1158,18 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                         }
+
+                        return null;
                     }
 
                     // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
                     // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                    if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
+                    if (!networkObject.gameObject.activeInHierarchy)
                     {
                         networkObject.gameObject.SetActive(true);
                     }
                 }
             }
-
             if (networkObject == null)
             {
                 return null;
