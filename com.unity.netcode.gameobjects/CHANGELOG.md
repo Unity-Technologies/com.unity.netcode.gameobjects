@@ -13,15 +13,33 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.11.1] - 2026-04-26
+
+### Changed
+
+- Improve handling of destroyed NetworkBehaviours. (#3953)
 - Hardened error handling and recovery during `NetworkObject` spawn. (#3941)
 - Replaced Debug usage by NetcodeLog on `NetworkSpawnManager` and `NetworkObject`. (#3933)
 - Improved performance of `NetworkBehaviour`. (#3915)
 - Improved performance of `NetworkTransform`. (#3907)
 - Improved performance of `NetworkRigidbodyBase`. (#3906)
 - Improved performance of `NetworkAnimator`. (#3905)
-
-### Deprecated
-
 
 ### Removed
 
@@ -31,12 +49,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where either an `AttachableBehaviour` or an `AttachableNode` can throw an exception if they are attached during a scene unload where one of the two persists the scene unload event and the other does not. (#3931)
 - Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.11.0] - 2026-03-19
 

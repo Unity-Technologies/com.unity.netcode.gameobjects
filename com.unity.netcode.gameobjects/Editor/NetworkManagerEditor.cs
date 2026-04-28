@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.Logging;
 using UnityEditor;
 using UnityEngine;
 #if UNITY_6000_5_OR_NEWER
@@ -298,7 +299,7 @@ namespace Unity.Netcode.Editor
 #else
                         string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
 #endif
-                        Debug.Log("Saving migrated Network Prefabs List to " + path);
+                        m_NetworkManager.Log.Info(new Context(LogLevel.Normal, "Saving migrated Network Prefabs List").AddInfo("Path", path));
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
                     }

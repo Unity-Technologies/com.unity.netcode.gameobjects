@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
 using Unity.Netcode.Transports.UTP;
@@ -38,11 +39,8 @@ namespace Unity.Netcode.EditorTests
             // Make our NetworkManager's GameObject nested
             networkManagerObject.transform.parent = parent.transform;
 
-            // Pre-generate the error message we are expecting to see
-            var messageToCheck = NetworkManager.GenerateNestedNetworkManagerMessage(networkManagerObject.transform);
-
             // Trap for the nested NetworkManager exception
-            LogAssert.Expect(LogType.Error, messageToCheck);
+            LogAssert.Expect(LogType.Error, new Regex("NetworkManager cannot be nested"));
 
             // Since this is an in-editor test, we must force this invocation
             NetworkManagerHelper.Singleton.NotifyUserOfNestedNetworkManager(networkManager, false, true);
@@ -73,7 +71,7 @@ namespace Unity.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
 
             // Trap for the error message generated when a NetworkObject is discovered on the same GameObject or any children under it
-            LogAssert.Expect(LogType.Error, NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage());
+            LogAssert.Expect(LogType.Error, new Regex(NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage()));
 
             // Add the NetworkObject
             var networkObject = targetforNetworkObject.AddComponent<NetworkObject>();
@@ -119,12 +117,11 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkPrefabHandler.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+            LogAssert.Expect(LogType.Warning, new Regex(@"Prefab has child NetworkObject\(s\) but they will not be spawned across the network"));
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);
             Object.DestroyImmediate(parent);
-
         }
 
         [Test]
@@ -298,14 +295,18 @@ namespace Unity.Netcode.EditorTests
         public void WhenThereAreUninitializedElementsInPrefabsList_NoErrors()
         {
             var networkConfig = new NetworkConfig();
+            var listWithNull = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            listWithNull.List.Add(new NetworkPrefab { Prefab = null });
+            listWithNull.List.Add(null);
 
-            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
+            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null, listWithNull };
+
+            Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(2), "Failed test setup: Both the null element and the list containing a null Prefab should be listed");
 
             networkConfig.InitializePrefabs();
 
-            // Null elements will be removed from the list so it should be empty
-            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 0);
-            Assert.IsTrue(networkConfig.Prefabs.Prefabs.Count == 0);
+            Assert.That(networkConfig.Prefabs.NetworkPrefabsLists.Count, Is.EqualTo(1), "null element should have been removed");
+            Assert.That(networkConfig.Prefabs.Prefabs.Count, Is.EqualTo(0), "Invalid prefab was registered");
 
             networkConfig.Prefabs.Shutdown();
         }

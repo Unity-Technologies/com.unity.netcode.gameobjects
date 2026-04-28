@@ -1343,7 +1343,14 @@ namespace Unity.Netcode
                     }
                     else if (!NetworkManager.ShutdownInProgress)
                     {
-                        playerObject.RemoveOwnership();
+                        if (NetworkManager.DistributedAuthorityMode)
+                        {
+                            NetworkManager.SpawnManager.ChangeOwnership(playerObject, NetworkManager.LocalClientId, true);
+                        }
+                        else
+                        {
+                            playerObject.RemoveOwnership();
+                        }
                     }
                 }
 
