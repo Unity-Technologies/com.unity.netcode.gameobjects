@@ -95,6 +95,7 @@ pr_code_changes_checks:
       (pull_request.comment eq "ngo" OR
       (pull_request.target eq "develop" OR
       pull_request.target eq "develop-2.0.0" OR
+      pull_request.target eq "develop-3.x.x" OR
       pull_request.target match "release/*")) AND
       NOT pull_request.draft AND
       pull_request.changes.any match [
