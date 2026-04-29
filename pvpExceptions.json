@@ -11,12 +11,13 @@
         "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor.PackageChecker",
         "Editor/Unity.Netcode.Editor.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor",
         "Tests/Editor/Unity.Netcode.Editor.Tests.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor.Tests"
-      ],
-      "PVP-132-2": {
-        "errors": [
-          "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: name of editor assembly should end with '.Editor'",
-          "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: name of editor assembly should end with '.Editor'"
-        ]
-      }
+      ]
+    },
+    "PVP-132-2": {
+      "errors": [
+        "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: name of editor assembly should end with '.Editor'",
+        "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: name of editor assembly should end with '.Editor'"
+      ]
     }
   }
+}
