@@ -11,11 +11,7 @@ using Unity.NetCode;
 
 #if UNITY_EDITOR
 using UnityEditor;
-#if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
-#else
-using UnityEditor.Experimental.SceneManagement;
-#endif
 #endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -2691,12 +2687,6 @@ namespace Unity.Netcode
             {
                 childBehaviour.NetworkPreSpawn(ref networkManager, this);
             }
-
-#if UNIFIED_NETCODE
-            InitializeComponentMarkers(NetworkManager);
-#endif
-
-
         }
 
         internal void InvokeBehaviourNetworkSpawn()
@@ -2827,34 +2817,13 @@ namespace Unity.Netcode
                     networkTransform.IsNested = networkTransform.gameObject != gameObject;
                     NetworkTransforms.Add(networkTransform);
                 }
-
-#if UNIFIED_NETCODE
-                // For now, we will just destroy these components during runtime since they will not
-                // be supported in hybrid mode (don't add to the children).
-                if (HasGhost)
-                {
-                    continue;
-                }
-#endif                
-
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-
                 var rigidbodyBase = behaviour as NetworkRigidbodyBase;
                 if (rigidbodyBase != null)
                 {
                     NetworkRigidbodies.Add(behaviour as NetworkRigidbodyBase);
                 }
-#if UNIFIED_NETCODE
-                // For now, we will just destroy these components during runtime since they will not
-                // be supported in hybrid mode (don't add to the children).
-                if (HasGhost)
-                {
-                    continue;
-                }
 #endif
-
-#endif
-
             }
 #if UNIFIED_NETCODE
             // For now, cycle through all known NetworkTransform and NetworkRigidbodyBase derived components
@@ -2886,137 +2855,9 @@ namespace Unity.Netcode
                     NetworkTransforms.Clear();
                 }
             }
-#endif    
+#endif
             return true;
         }
-
-#if UNIFIED_NETCODE
-        private void InitializeComponentMarkers(NetworkManager networkManager)
-        {
-            // TODO: Determine if this would be useful
-            //var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
-            //foreach(var networkBehaviour in networkBehaviours)
-            //{
-            //}
-
-
-            var networkPrefab = GetPrefab(networkManager);
-            // Most likely an in-scene placed NetworkObject that is not a registered prefab
-            if (networkPrefab == null)
-            {
-                return;
-            }
-
-            var rigidbodies = GetComponentsInChildren<Rigidbody>();
-            var prefabRigidbodies = networkPrefab.Prefab.GetComponentsInChildren<Rigidbody>();
-
-            if (rigidbodies.Length != prefabRigidbodies.Length)
-            {
-                Debug.LogError($"[InitializeComponentTable][{name}][{GlobalObjectIdHash}] Rigidbody mismatch between prefab and prefab instance ({rigidbodies.Length} vs {prefabRigidbodies.Length}!");
-                return;
-            }
-
-            var hasAuthority = !NetworkManager.DistributedAuthorityMode ? NetworkManager.IsServer : IsOwner;
-
-            var networkTransforms = GetComponentsInChildren<NetworkTransform>();
-
-            if (!hasAuthority && !NetworkManager.DistributedAuthorityMode && networkTransforms != null && networkTransforms.Length > 0)
-            {
-                foreach (var networkTransform in networkTransforms)
-                {
-                    var shouldHaveAuthority = networkTransform.AuthorityMode == NetworkTransform.AuthorityModes.Owner && NetworkManager.LocalClientId == OwnerClientId;
-                    if (hasAuthority != shouldHaveAuthority)
-                    {
-                        hasAuthority = shouldHaveAuthority;
-                        break;
-                    }
-                }
-            }
-
-            if (hasAuthority)
-            {
-                return;
-            }
-
-            // Remove NetworkRigidbody components first.
-            if (NetworkRigidbodies != null && !NetworkManager.DistributedAuthorityMode)
-            {
-                for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
-                {
-                    ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
-                    Destroy(NetworkRigidbodies[i]);
-                }
-                NetworkRigidbodies.Clear();
-                // Unregister any registered NetworkRigidbody components
-                if (NetworkTransforms != null)
-                {
-                    foreach (var networkTransform in NetworkTransforms)
-                    {
-                        networkTransform.UnregisterRigidbody();
-                    }
-                }
-            }
-
-            /// Mark all rigid bodies with the component marker.
-            /// This provides us with an automated way to remove or add rigid bodies
-            /// while preserving their state via <see cref="ComponentHelpers"/>.
-            for (int i = 0; i < rigidbodies.Length; i++)
-            {
-                var rigidbody = rigidbodies[i];
-                var prefabRigidbody = prefabRigidbodies[i];
-
-                var componentMarker = rigidbody.gameObject.AddComponent<ComponentMarker>();
-                componentMarker.Initialize(networkManager, rigidbody, prefabRigidbody);
-                // If we are in client-server and not the server
-                if (!hasAuthority)
-                {
-                    // Remove the rigid body.
-                    componentMarker.Remove<Rigidbody>();
-                    componentMarker.Remove<Rigidbody2D>();
-                }
-            }
-        }
-
-        public void UpdateComponentStatus<T>(bool shouldAdd) where T : Component
-        {
-            if (!IsSpawned)
-            {
-                return;
-            }
-
-            var gameObjectsTable = ComponentMarker.RegisteredMarkers[NetworkManager];
-            foreach (var gameObjectTable in gameObjectsTable)
-            {
-                foreach (var componentMarker in gameObjectTable.Value)
-                {
-                    if (shouldAdd)
-                    {
-                        componentMarker.Add<T>();
-                    }
-                    else
-                    {
-                        componentMarker.Remove<T>();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// POC Version of this.
-        /// Currently does not take overrides into consideration.
-        /// We could auto-register each instance's source prefab.
-        /// </summary>
-        /// <param name="networkManager"></param>
-        /// <returns></returns>
-        private NetworkPrefab GetPrefab(NetworkManager networkManager)
-        {
-            if (networkManager && networkManager.NetworkConfig.Prefabs.PrefabTable.ContainsKey(GlobalObjectIdHash))
-            {
-                return networkManager.NetworkConfig.Prefabs.PrefabTable[GlobalObjectIdHash];
-            }
-            return null;
-        }
-#endif    
 
         /// <summary>
         /// Used when changing ownership, this will mark any owner read permission base NetworkVariables as dirty
