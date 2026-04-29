@@ -1239,6 +1239,14 @@ namespace Unity.Netcode
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
 #if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+            // TODO-FixMe:
+            // We assign transport at this point to preceed the NetworkConnectionManager
+            // being initialized. However, HasGhostPrefabs might not be set at this point
+            // if the prefabs list was set after instantiating the NetworkManager.
+            // Integration tests do this, but user code could do this too.
+            // To-Investigate:
+            // Determine if this really impacts anything having prefabs initialze/register
+            // at this point versus last.
             NetworkConfig.InitializePrefabs();
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
