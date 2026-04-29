@@ -1341,9 +1341,8 @@ namespace Unity.Netcode
             return true;
         }
 
-        public NetcodeWorld NetcodeWorld { get; internal set; }
-
 #if UNIFIED_NETCODE
+        public NetcodeWorld NetcodeWorld { get; internal set; }
         private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
         {
             if (this == Singleton)
