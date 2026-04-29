@@ -121,10 +121,11 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            if (networkManager.LogLevel == LogLevel.Developer)
-            {
-                UnityEngine.Debug.Log($"Received {nameof(CreateObjectMessage)} for NetworkObjectId-{ObjectInfo.NetworkObjectId}.");
-            }
+            // Leaving for debugging purposes
+            //if (networkManager.LogLevel == LogLevel.Developer)
+            //{
+            //    UnityEngine.Debug.Log($"Received {nameof(CreateObjectMessage)} for NetworkObjectId-{ObjectInfo.NetworkObjectId}.");
+            //}
             
             // For now, we will defer the create object message until the associated Ghost is spawned
             if (ObjectInfo.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(ObjectInfo.NetworkObjectId))
