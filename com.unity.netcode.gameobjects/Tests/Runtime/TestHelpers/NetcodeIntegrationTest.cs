@@ -1763,7 +1763,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
                     // Handle removing the prefab reference and destroying it
                     // and then destroying the ghostAdapter prior to destroying
-                    // a hybrid prefab. 
+                    // a hybrid prefab.
                     var ghostAdapter = networkObject.GetComponent<GhostAdapter>();
                     if (ghostAdapter != null && ghostAdapter.prefabReference != null)
                     {
@@ -2397,7 +2397,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 NetCode.Netcode.Instance.m_ActiveWorld = owner.NetcodeWorld;
             }
-#endif            
+#endif
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
             SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);

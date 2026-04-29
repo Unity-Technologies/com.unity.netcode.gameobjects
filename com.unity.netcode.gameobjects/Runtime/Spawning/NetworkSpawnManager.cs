@@ -63,10 +63,10 @@ namespace Unity.Netcode
                 // active scene was when the client was processing the synchronization data. If the ghosts pending
                 // synchrpnization are in the currently active scene when the new scene is loaded in SingleMode, then
                 // they would be destroyed.
-                // 
+                //
                 // Current Fix:
                 // If the client is not yet synchronized, then any ghost pending spawn get migrated into the DDOL.
-                // 
+                //
                 // Further review:
                 // We need to make sure that we are migrating NetworkObjects into their assigned scene (if scene
                 // management is enabled). Currently, we assume all instances were in the DDOL and just migrate

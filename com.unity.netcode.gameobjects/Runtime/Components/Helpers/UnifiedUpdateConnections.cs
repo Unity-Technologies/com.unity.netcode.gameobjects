@@ -32,7 +32,7 @@ namespace Unity.Netcode.Components
         private List<NetcodeConnection> m_TempConnections = new List<NetcodeConnection>();
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
-        
+
         protected override void OnUpdate()
         {
             var isServer = World.IsServer();
@@ -105,7 +105,7 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-            
+
             commandBuffer.Playback(EntityManager);
         }
 

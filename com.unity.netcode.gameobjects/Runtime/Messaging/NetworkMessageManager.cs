@@ -228,7 +228,7 @@ namespace Unity.Netcode
         {
             unsafe
             {
-                
+
                 //Debug.Log($"Receiving {data.Count} bytes: {ByteArrayToString(data.Array, data.Offset, data.Count)}");
                 fixed (byte* dataPtr = data.Array)
                 {

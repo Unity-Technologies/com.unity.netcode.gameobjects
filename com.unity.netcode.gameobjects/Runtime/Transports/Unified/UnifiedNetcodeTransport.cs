@@ -253,7 +253,7 @@ namespace Unity.Netcode.Unified
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Buffer.Length = amount;
                 rpc.Order = ++connectionInfo.LastSent;
-                
+
                 var req = m_NetworkManager.NetcodeWorld.EntityManager.CreateEntity(ComponentType.ReadWrite<SendRpcCommandRequest>(), ComponentType.ReadWrite<TransportRpc>());
                 m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, new SendRpcCommandRequest{TargetConnection = connectionInfo.Connection.ConnectionEntity});
                 m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, rpc);
@@ -371,7 +371,7 @@ namespace Unity.Netcode.Unified
         {
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
-        
+
         private void OnClientConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)
@@ -384,7 +384,7 @@ namespace Unity.Netcode.Unified
                     break;
             }
         }
-        
+
         private void OnServerConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)
