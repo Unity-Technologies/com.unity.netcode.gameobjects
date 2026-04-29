@@ -3861,7 +3861,7 @@ namespace Unity.Netcode.Components
         {
             InternalInitialization();
         }
-#endregion
+        #endregion
 
         #region PARENTING AND OWNERSHIP
         /// <inheritdoc/>
