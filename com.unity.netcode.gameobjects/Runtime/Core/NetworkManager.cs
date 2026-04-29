@@ -1359,7 +1359,7 @@ namespace Unity.Netcode
 
             /// !! Initialize worlds here !!
             /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
-            UnifiedBootStrap.CurrentNetworkManagerForInitialization = this;
+            UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             DefaultWorldInitialization.Initialize("Default World", false);
 
             // This should not be needed at this point, but this is here in the event something changes.
