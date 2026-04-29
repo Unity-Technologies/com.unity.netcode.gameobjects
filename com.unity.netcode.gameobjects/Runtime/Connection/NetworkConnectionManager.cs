@@ -947,7 +947,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// The checks to find the right GlobalObjectIdHash value 
+        /// The checks to find the right GlobalObjectIdHash value
         /// are complex enough to deserve a method that includes
         /// an easy to follow logical flow.
         /// This also makes it a quick check to determine if there
