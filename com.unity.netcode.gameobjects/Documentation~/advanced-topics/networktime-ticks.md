@@ -9,9 +9,7 @@ Netcode for GameObjects (Netcode) uses a star topology. That means all communica
 - `LocalTime` on a client is ahead of the server. If a server RPC is sent at `LocalTime` from a client it will roughly arrive at `ServerTime` on the server.
 - `ServerTime` on clients is behind the server. If a client RPC is sent at `ServerTime` from the server to clients it will roughly arrive at `ServerTime` on the clients.
 
-
-
-<Mermaid chart={`
+```mermaid
 sequenceDiagram
     participant Owner as Client LocalTime
     participant Server as Server ServerTime & LocalTime
@@ -23,10 +21,7 @@ sequenceDiagram
     Note over Server: Send message to clients at LocalTime.
     Server->>Receiver: Delay when sending message
     Note over Receiver: Message arrives at ServerTime.
-`}/>
-
-
-
+```
 
 `LocalTime`
 - Use for player objects with client authority.
@@ -115,7 +110,7 @@ public class SyncedEventExample : NetworkBehaviour
 }
 ```
 
-<Mermaid chart={`
+```mermaid
 sequenceDiagram
     participant Owner as Owner
     participant Server as Server
@@ -133,7 +128,7 @@ sequenceDiagram
     Note over Receiver: StartCoroutine(WaitAndSpawnSyncedEffect(0.07))
     Receiver->>Receiver: WaitForSeconds(0.07);
     Note over Receiver: Instantiate effect at ServerTime = 10.0
-`}/>
+```
 
 > [!NOTE]
 > Some components such as NetworkTransform add additional buffering. When trying to align an RPC event like in this example, an additional delay would need to be added.
