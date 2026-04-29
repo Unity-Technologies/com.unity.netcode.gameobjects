@@ -1018,11 +1018,13 @@ namespace Unity.Netcode
         {
 #if UNITY_EDITOR
             var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+
+
 #else
-            var isParented = transform.root != transform;
+            var isParented = transform.parent != null;
             if (isParented)
             {
-                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+                Log.Error(new Context(LogLevel.Error, GenerateNestedNetworkManagerMessage(transform)));
             }
 #endif
             return isParented;
@@ -1038,7 +1040,17 @@ namespace Unity.Netcode
         /// </summary>
         private void OnTransformParentChanged()
         {
+#if UNITY_EDITOR
+            // During editor playmode, we log the message as a dialog box
+            // and that script sets the parent back to root/null.
             NetworkManagerCheckForParent();
+#else
+            if (NetworkManagerCheckForParent())
+            {
+                // During runtime, we log the message and set our parent back to root/null.
+                transform.parent = null;
+            }
+#endif
         }
 
         /// <summary>
@@ -1227,6 +1239,7 @@ namespace Unity.Netcode
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
 #if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+            NetworkConfig.InitializePrefabs();
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
                 NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
@@ -1279,8 +1292,9 @@ namespace Unity.Netcode
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
             BehaviourUpdater.Initialize(this);
-
+#if !UNIFIED_NETCODE
             NetworkConfig.InitializePrefabs();
+#endif
             PrefabHandler.RegisterPlayerPrefab();
 #if UNITY_EDITOR
             BeginNetworkSession();
@@ -1844,7 +1858,7 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
             // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
-            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            if (NetworkConfig != null && NetworkConfig.Prefabs != null && NetworkConfig.Prefabs.HasGhostPrefabs)
             {
                 try
                 {
