@@ -972,7 +972,7 @@ namespace Unity.Netcode
             }
 
             // Server-side spawning (only if there is a prefab hash or player prefab provided)
-            var idHashToSpawn = playerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab?.GetComponent<NetworkObject>()?.GlobalObjectIdHash;
+            var idHashToSpawn = (playerPrefabHash != null && playerPrefabHash.HasValue) ? playerPrefabHash.Value : NetworkManager.NetworkConfig.PlayerPrefab != null ? NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>()?.GlobalObjectIdHash : null;
             if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && idHashToSpawn.HasValue)
             {
                 var playerObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(idHashToSpawn.Value, ownerClientId, playerPosition, playerRotation);
