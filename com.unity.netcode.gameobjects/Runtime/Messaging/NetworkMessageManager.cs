@@ -396,7 +396,6 @@ namespace Unity.Netcode
                 };
 
                 var type = m_ReverseTypeMap[header.MessageType];
-                Debug.Log($"Got message of type {type}");
                 if (!CanReceive(senderId, type, reader, ref context))
                 {
                     return;
