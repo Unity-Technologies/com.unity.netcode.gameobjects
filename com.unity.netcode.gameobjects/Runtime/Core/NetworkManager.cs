@@ -1350,6 +1350,9 @@ namespace Unity.Netcode
         }
 
 #if UNIFIED_NETCODE
+        /// <summary>
+        /// The world instance assigned to this NetworkManager instance.
+        /// </summary>
         public NetcodeWorld NetcodeWorld { get; internal set; }
         private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
         {
@@ -1420,7 +1423,6 @@ namespace Unity.Netcode
             }
             return true;
         }
-
 #endif
 
         /// <summary>
