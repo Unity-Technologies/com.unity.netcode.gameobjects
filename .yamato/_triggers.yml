@@ -76,13 +76,13 @@ pr_code_changes_checks:
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
 
-    # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.0)
+    # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.3)
     - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
-    - .yamato/package-tests.yml#package_test_-_ngo_6000.0_win
+    - .yamato/package-tests.yml#package_test_-_ngo_6000.3_win
 
-    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (6000.0)
+    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (6000.3)
     - .yamato/project-tests.yml#test_testproject_win_trunk
-    - .yamato/project-tests.yml#test_testproject_mac_6000.0
+    - .yamato/project-tests.yml#test_testproject_mac_6000.3
 
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
