@@ -176,13 +176,12 @@ validation_editors:
     default:
         - 6000.3
     all:
-        - 6000.0
         - 6000.3
         - 6000.4
         - 6000.5
         - trunk
     minimal:
-        - 6000.0
+        - 6000.3
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
