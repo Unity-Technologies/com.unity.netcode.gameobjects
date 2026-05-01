@@ -148,14 +148,22 @@ The [synchronization and notification example](#synchronization-and-notification
 The `OnValueChanged` example shows a simple server-authoritative `NetworkVariable` being used to track the state of a door (open or closed) using an RPC that's sent to the server. Each time the door is used by a client, the `Door.ToggleStateRpc` is invoked and the server-side toggles the state of the door. When the `Door.State.Value` changes, all connected clients are synchronized to the (new) current `Value` and the `OnStateChanged` method is invoked locally on each client.
 
 ```csharp
+using System.Runtime.CompilerServices;
+using Unity.Netcode;
+using UnityEngine;
+
 /// <summary>
-/// A basic NetworkVariable driven door state example.
+/// Example of using a <see cref="NetworkVariable{T}"/> to drive changes
+/// in state.
 /// </summary>
-public class Door : NetworkBehaviour
+/// <remarks>
+/// This is a simple state driven door example.
+/// This script was written with recommended usages patterns in mind.
+/// </remarks>
+public class Door : NetworkBehaviour, INetworkUpdateSystem
 {
     /// <summary>
-    /// Only for UI purposes.
-    /// This provides an initial configuration state for the door.
+    /// The two door states.
     /// </summary>
     public enum DoorStates
     {
@@ -170,9 +178,21 @@ public class Door : NetworkBehaviour
     public DoorStates InitialState = DoorStates.Closed;
 
     /// <summary>
+    /// Used for <see cref="CanPlayerToggleState"/> example purposes.
+    /// When true, only the server can open and close the door.
+    /// Clients will receive a console log saying they could not open the door.
+    /// </summary>
+    public bool IsLocked;
+
+    /// <summary>
     /// A simple door state where the server has write permissions and everyone has read permissions.
     /// </summary>
-    public NetworkVariable<bool> State = new NetworkVariable<bool>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<DoorStates> m_State = new NetworkVariable<DoorStates>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    /// <summary>
+    /// The current state of the door.
+    /// </summary>
+    public DoorStates CurrentState => m_State.Value;
 
     /// <summary>
     /// Invoked while the <see cref="NetworkObject"/> is in the middle of
@@ -187,25 +207,50 @@ public class Door : NetworkBehaviour
         {
             // Host/Server:
             // Applies the configurable state upon spawning.
-            State.Value = InitialState == DoorStates.Open;
+            m_State.Value = InitialState;
         }
         else
         {
             // Clients:
             // Subscribe to changes in the door's state.
-            State.OnValueChanged += OnStateChanged;
+            m_State.OnValueChanged += OnStateChanged;
         }
     }
 
     /// <summary>
-    /// Invoked once the door and all associated <see cref="NetworkAnimator"/>
-    /// components have finished the spawn process.
+    /// Invoked once the door and all associated components
+    /// have finished the spawn process.
     /// </summary>
     protected override void OnNetworkPostSpawn()
     {
-        // Everyone updates their door state when finished spawning the door.
-        UpdateFromState(true);
+        // Everyone updates their door state when finished spawning the door
+        // in order to assure the door reflects (visually) its current state.
+        UpdateFromState();
+
+        // Begin to start updating this NetworkBehaviour instance once all 
+        // netcode related components have finished the spawn process.
+        NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
         base.OnNetworkPostSpawn();
+    }
+
+    /// <summary>
+    /// Example of using the <see cref="INetworkUpdateSystem"/> usage pattern
+    /// where it only updates while spawned.
+    /// </summary>
+    /// <param name="updateStage">The current update stage being invoked.</param>
+    public void NetworkUpdate(NetworkUpdateStage updateStage)
+    {
+        switch (updateStage)
+        {
+            case NetworkUpdateStage.Update:
+                {
+                    if (Input.GetKeyDown(KeyCode.Space))
+                    {
+                        Interact();
+                    }
+                    break;
+                }
+        }
     }
 
     /// <summary>
@@ -216,56 +261,55 @@ public class Door : NetworkBehaviour
     {
         if (!IsServer)
         {
-            State.OnValueChanged -= OnStateChanged;
+            m_State.OnValueChanged -= OnStateChanged;
         }
+
+        // Stop updating this NetworkBehaviour instance prior to running
+        // through the de-spawn process.
+        NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
         base.OnNetworkPreDespawn();
     }
 
     /// <summary>
-    /// Only clients invoke this.
     /// Server makes changes to the state.
+    /// Clients receive the changes in state.
     /// </summary>
     /// <remarks>
     /// When the previous state equals the current state, we are a client
     /// that is doing its 1st synchronization of this door instance.
     /// </remarks>
-    /// <param name="previous">The previous state.</param>
-    /// <param name="current">The current state.</param>
-    public void OnStateChanged(bool previous, bool current)
+    /// <param name="previous">The previous <see cref="DoorStates"/> state.</param>
+    /// <param name="current">The current <see cref="DoorStates"/> state.</param>
+    public void OnStateChanged(DoorStates previous, DoorStates current)
     {
-        // Update to the current state while also providing a catch for
-        // the first synchronization where previous == current.
         UpdateFromState();
     }
 
     /// <summary>
-    /// Common method used to update the actual door asset based on its current state.
+    /// Invoke when the state is updated in order to apply the change
+    /// in door state to the door asset itself.
     /// </summary>
-    /// <param name="isFirstSynchronization">only set upon first spawn by a client</param>
-    private void UpdateFromState(bool isFirstSynchronization = false)
+    private void UpdateFromState()
     {
-        if (State.Value)
+        switch(m_State.Value)
         {
-            // door is open:
-            //  - rotate door transform
-            //  - play animations, sound etc.
-            // if first sync, reset to open and don't play sound
+            case DoorStates.Closed:
+                {
+                    // door is open:
+                    //  - rotate door transform
+                    //  - play animations, sound etc.
+                    /// <see cref="Netcode.Components.Helpers.ComponentCont"
+                    break;
+                }
+            case DoorStates.Open:
+                {
+                    // door is closed:
+                    //  - rotate door transform
+                    //  - play animations, sound etc.
+                    break;
+                }
         }
-        else
-        {
-            // door is closed:
-            //  - rotate door transform
-            //  - play animations, sound etc.
-            // if first sync, reset to closed and don't play sound
-        }
-
-        // Don't log a message about a change in state when first
-        // synchronizing.
-        if (!isFirstSynchronization)
-        {
-            var openClosed = State.Value ? "open" : "closed";
-            Debug.Log($"[]The door is now {openClosed}.");
-        }
+        Debug.Log($"[{name}] Door is currently {m_State.Value}.");
     }
 
     /// <summary>
@@ -277,8 +321,9 @@ public class Door : NetworkBehaviour
     /// <returns></returns>
     protected virtual bool CanPlayerToggleState(NetworkObject player)
     {
-        // For this example, the door can always be toggled.
-        return true;
+        // For this example, if the door "is locked" then clients will
+        // not be able to open the door but the host-client's player can.
+        return !IsLocked || player.IsOwnedByServer;
     }
 
     /// <summary>
@@ -308,6 +353,12 @@ public class Door : NetworkBehaviour
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private DoorStates NextToggleState()
+    {
+        return m_State.Value == DoorStates.Open ? DoorStates.Closed : DoorStates.Open;
+    }
+
     /// <summary>
     /// Invoked only server-side
     /// Primary method to handle toggling the door state.
@@ -319,15 +370,16 @@ public class Door : NetworkBehaviour
         var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
         if (playerObject != null)
         {
+            var nextToggleState = NextToggleState();
             if (CanPlayerToggleState(playerObject))
             {
                 // Host toggles the state
-                State.Value = !State.Value;
+                m_State.Value = nextToggleState;
                 UpdateFromState();
             }
             else
             {
-                ToggleStateFailRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+                ToggleStateFailRpc(nextToggleState, RpcTarget.Single(clientId, RpcTargetUse.Temp));
             }
         }
         else
@@ -363,11 +415,10 @@ public class Door : NetworkBehaviour
     /// </summary>
     /// <param name="rpcParams">includes <see cref="RpcReceiveParams.SenderClientId"/> that is automatically populated for you.</param>
     [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
-    private void ToggleStateFailRpc(RpcParams rpcParams = default)
+    private void ToggleStateFailRpc(DoorStates doorState, RpcParams rpcParams = default)
     {
         // Provide player feedback that toggling failed.
-        var openOrClose = State.Value ? "close" : "open";
-        Debug.Log($"Failed to {openOrClose} the door!");
+        Debug.Log($"Failed to {doorState} the door!");
     }
 }
 ```
