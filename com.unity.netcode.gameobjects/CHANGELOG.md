@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [2.11.2] - 2026-05-01
+
+### Fixed
+
+- Improve handling of destroyed NetworkBehaviours. The collection of which NetworkBehaviours belong to a NetworkObject is now a Dictionary giving stable lookup. (#3953)
+
 ## [2.11.1] - 2026-04-26
 
 ### Added
