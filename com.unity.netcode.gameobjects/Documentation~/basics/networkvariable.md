@@ -204,7 +204,7 @@ public class Door : NetworkBehaviour
     protected override void OnNetworkPostSpawn()
     {
         // Everyone updates their door state when finished spawning the door.
-        UpdateFromState();
+        UpdateFromState(true);
         base.OnNetworkPostSpawn();
     }
 
@@ -235,7 +235,7 @@ public class Door : NetworkBehaviour
     {
         // Update to the current state while also providing a catch for
         // the first synchronization where previous == current.
-        UpdateFromState(previous != current);
+        UpdateFromState();
     }
 
     /// <summary>
@@ -259,8 +259,8 @@ public class Door : NetworkBehaviour
             // if first sync, reset to closed and don't play sound
         }
 
-        // If 1st sync, don't log a message about a change in state
-        // since previous == current (i.e. no change in state)
+        // Don't log a message about a change in state when first
+        // synchronizing.
         if (!isFirstSynchronization)
         {
             var openClosed = State.Value ? "open" : "closed";
