@@ -1165,6 +1165,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private void ClientNetworkManagerPostStart(NetworkManager networkManager)
         {
             networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
+
+            // Always make sure we have a player to check.
+            if (!ShouldCheckForSpawnedPlayers())
+            {
+                return;
+            }
             Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
             // Go ahead and create an entry for this new client
