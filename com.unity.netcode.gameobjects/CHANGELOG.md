@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Improve handling of destroyed NetworkBehaviours. The collection of which NetworkBehaviours belong to a NetworkObject is now a Dictionary giving stable lookup. (#3953)
+- Fixed issue where if the `NetworkManager` player prefab is not assigned an exception is thrown upon starting a host and/or when a client joins. (#3965)
 
 ## [2.11.1] - 2026-04-26
 
