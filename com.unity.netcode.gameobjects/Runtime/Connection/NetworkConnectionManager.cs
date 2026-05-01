@@ -947,6 +947,37 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// The checks to find the right GlobalObjectIdHash value
+        /// are complex enough to deserve a method that includes
+        /// an easy to follow logical flow.
+        /// This also makes it a quick check to determine if there
+        /// even is a player prefab to spawn (it is valid to not
+        /// have any player spawned upon connection).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private (bool IsValid, uint GlobalObjectIdHash) GetPlayerPrefabHash(uint? playerPrefabHash)
+        {
+            if (playerPrefabHash != null && playerPrefabHash.HasValue)
+            {
+                return (true, playerPrefabHash.Value);
+            }
+            else
+            if (NetworkManager.NetworkConfig.PlayerPrefab != null)
+            {
+                var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (networkObject != null)
+                {
+                    return (true, networkObject.GlobalObjectIdHash);
+                }
+                else
+                {
+                    NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
+                }
+            }
+            return (false, 0);
+        }
+
+        /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
         /// <remarks>
@@ -972,10 +1003,10 @@ namespace Unity.Netcode
             }
 
             // Server-side spawning (only if there is a prefab hash or player prefab provided)
-            var idHashToSpawn = playerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab?.GetComponent<NetworkObject>()?.GlobalObjectIdHash;
-            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && idHashToSpawn.HasValue)
+            var idHashToSpawn = GetPlayerPrefabHash(playerPrefabHash);
+            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && idHashToSpawn.IsValid)
             {
-                var playerObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(idHashToSpawn.Value, ownerClientId, playerPosition, playerRotation);
+                var playerObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(idHashToSpawn.GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
 
                 if (playerObject == null)
                 {
