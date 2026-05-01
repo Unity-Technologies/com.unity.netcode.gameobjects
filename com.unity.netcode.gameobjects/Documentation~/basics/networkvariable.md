@@ -269,8 +269,8 @@ public class Door : NetworkBehaviour
     }
 
     /// <summary>
-    /// Override to apply specific checks (like a player having the right 
-    /// key to open the door) or make it a non-virtual class and add logic 
+    /// Override to apply specific checks (like a player having the right
+    /// key to open the door) or make it a non-virtual class and add logic
     /// directly to this method.
     /// </summary>
     /// <param name="player">The player attempting to open the door.</param>
@@ -295,7 +295,7 @@ public class Door : NetworkBehaviour
             // Optional to log a warning about this.
             return;
         }
-        
+
         if (IsHost)
         {
             ToggleState(NetworkManager.LocalClientId);
@@ -321,7 +321,7 @@ public class Door : NetworkBehaviour
         {
             if (CanPlayerToggleState(playerObject))
             {
-                // Host toggles the state 
+                // Host toggles the state
                 State.Value = !State.Value;
                 UpdateFromState();
             }
@@ -336,9 +336,9 @@ public class Door : NetworkBehaviour
             // sever-side only script, this could mean many things depending upon whether
             // or not a client could interact with something and not have a player object.
             // If that is the case, then don't even bother checking for a player object.
-            // If that is not the case, then there could be a timing issue between when 
+            // If that is not the case, then there could be a timing issue between when
             // something can be "interacted with" and when a player is about to be de-spawned.
-            // For this example, we just log a warning as this example was built with 
+            // For this example, we just log a warning as this example was built with
             // the requirement that a client has a spawned player object that is used for
             // reference to determine if the client's player can toggle the state of the
             // door or not.
@@ -356,7 +356,7 @@ public class Door : NetworkBehaviour
     {
         ToggleState(rpcParams.Receive.SenderClientId);
     }
-    
+
     /// <summary>
     /// Optional:
     /// Handling when a player cannot open a door.
