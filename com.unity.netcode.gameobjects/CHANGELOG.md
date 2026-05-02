@@ -22,13 +22,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where if the `NetworkManager` player prefab is not assigned an exception is thrown upon starting a host and/or when a client joins. (#3965)
 
 ### Security
 
 
 ### Obsolete
 
+
+### [2.11.2] - 2026-05-01
+
+### Fixed
+
+- Fixed issue where if the `NetworkManager` player prefab is not assigned an exception is thrown upon starting a host and/or when a client joins. (#3965)
 
 ## [2.11.1] - 2026-04-26
 
