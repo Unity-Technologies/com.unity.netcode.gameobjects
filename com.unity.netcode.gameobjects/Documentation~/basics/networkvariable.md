@@ -227,7 +227,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
         // in order to assure the door reflects (visually) its current state.
         UpdateFromState();
 
-        // Begin to start updating this NetworkBehaviour instance once all 
+        // Begin to start updating this NetworkBehaviour instance once all
         // netcode related components have finished the spawn process.
         NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
         base.OnNetworkPostSpawn();
