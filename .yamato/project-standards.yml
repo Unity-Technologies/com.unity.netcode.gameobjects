@@ -13,7 +13,7 @@
   # Jobs configurations are generated using nested loops through:
     # 1. For all NGO projects (testproject, testproject-tools-interation, minimalproject)
     # 2. For default platform only (Ubuntu) since standards would not vary between platforms (no need for checks on more platforms)
-    # 3. For default editor version {{ validation_editors.default }} since standards would not vary between editors (no need for checks on more editors)
+    # 3. For default editor version {{ validation_editor }} since standards would not vary between editors (no need for checks on more editors)
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
   # Requires .NET SDK installed (should be preinstalled on the image so we just check for version)
@@ -29,9 +29,8 @@
   
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.all -%}
-standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
-  name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
+standards_{{ platform.name }}_{{ project.name }}_{{ validation_editor }}:
+  name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ validation_editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -44,11 +43,10 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     - dotnet --version
     - dotnet format --version
 
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloads basic editor
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloads basic editor
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
     - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix # Auto-fix formatting issues
     - git checkout -- {{ project.path }}/Packages/manifest.json {{ project.path }}/Packages/packages-lock.json {{ project.path }}/ProjectSettings/ProjectVersion.txt 2>/dev/null || true # Restore files that Unity may have modified (we only want to check code formatting)
     - 'git diff --exit-code || (echo "ERROR: Code formatting issues found. Run dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix locally and commit the changes." && exit 1)' # Fail if formatter made any changes
-{% endfor -%}
 {% endfor -%}
 {% endfor -%}

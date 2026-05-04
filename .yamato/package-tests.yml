@@ -25,9 +25,8 @@
 #------------------------------------------------------------------------------------
 
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.all -%}
-package_test_-_ngo_{{ editor }}_{{ platform.name }}:
-  name : Package Test - NGO [{{ platform.name }}, {{ editor }}]
+package_test_-_ngo_{{ validation_editor }}_{{ platform.name }}:
+  name : Package Test - NGO [{{ platform.name }}, {{ validation_editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -39,7 +38,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
     UNITY_EXT_LOGGING: 1
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models.
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models.
 
     # Validate PVP checks for package.
     - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
@@ -56,5 +55,4 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
     - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
-{% endfor -%}
 {% endfor -%}
