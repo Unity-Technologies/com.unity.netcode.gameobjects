@@ -87,7 +87,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_edi
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library --timeout=1800
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
