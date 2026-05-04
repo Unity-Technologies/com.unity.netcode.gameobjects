@@ -1,10 +1,10 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine.SceneManagement;
 #if ENABLE_RELAY_SERVICE
-using System;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
 #endif

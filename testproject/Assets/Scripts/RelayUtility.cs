@@ -12,7 +12,7 @@ public class RelayUtility
         string createJoinCode;
         try
         {
-            allocation = await Relay.Instance.CreateAllocationAsync(maxConnections, region);
+            allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections, region);
         }
         catch (Exception e)
         {
@@ -25,7 +25,7 @@ public class RelayUtility
 
         try
         {
-            createJoinCode = await Relay.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            createJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
         }
         catch
         {
@@ -41,7 +41,7 @@ public class RelayUtility
         JoinAllocation allocation;
         try
         {
-            allocation = await Relay.Instance.JoinAllocationAsync(joinCode);
+            allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
         }
         catch
         {
