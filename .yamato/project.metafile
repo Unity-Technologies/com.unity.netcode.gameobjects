@@ -23,7 +23,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.84.0
+      image: package-ci/ubuntu-22.04:v4.85.0
       flavor: b1.small
 
 
