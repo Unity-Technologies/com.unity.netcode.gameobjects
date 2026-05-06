@@ -8,6 +8,7 @@ namespace Unity.Netcode
 
         public SceneEventData EventData;
 
+        private const string k_Name = "SceneEventMessage";
 
         private FastBufferReader m_ReceivedData;
 
@@ -18,6 +19,15 @@ namespace Unity.Netcode
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+#if UNIFIED_NETCODE
+            if (networkManager.DeferredMessageManager.HasAnyOfTrigger(IDeferredNetworkMessageManager.TriggerType
+                    .OnGhostSpawned))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnOtherTriggerFinishedProcessing, (ulong)IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, reader, ref context, k_Name);
+                return false;
+            }
+#endif
             m_ReceivedData = reader;
             return true;
         }

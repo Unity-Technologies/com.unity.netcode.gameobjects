@@ -39,33 +39,9 @@ namespace Unity.Netcode.RuntimeTests
             // Creates the hybrid prefab
             m_Prefab = CreateHybridPrefab("HybridPrefab", true);
             m_Prefab.AddComponent<DoNothingNetworkTransform>();
-            NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
             return base.OnSetup();
         }
-
-        protected override IEnumerator OnTearDown()
-        {
-            NetworkSpawnManager.RegisterPendingGhost = null;
-            m_EnableVerboseDebug = false;
-            return base.OnTearDown();
-        }
-
-        private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
-        {
-            var ghost = networkObject.GetComponent<GhostAdapter>();
-            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostAdapter)}!");
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                // If the world matches, then register the instance with this NetworkManager's spawn manager.
-                if (networkManager.NetcodeWorld == ghost.World)
-                {
-                    networkManager.SpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
-                    return;
-                }
-            }
-            Debug.LogError($"Did not find a world for NetworkObject-{networkObjectId}!!");
-        }
-
+        
         protected override void OnServerAndClientsCreated()
         {
 

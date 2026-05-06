@@ -49,8 +49,11 @@ namespace TestProject.RuntimeTests
     }
 
 
-    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
-    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
+#endif
     public class RpcUserSerializableTypesTest : NetcodeIntegrationTest
     {
         private UserSerializableClass m_UserSerializableClass;
@@ -88,7 +91,7 @@ namespace TestProject.RuntimeTests
             return false;
         }
 
-        public RpcUserSerializableTypesTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+        public RpcUserSerializableTypesTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {

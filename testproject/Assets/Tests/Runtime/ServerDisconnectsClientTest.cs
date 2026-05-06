@@ -9,8 +9,11 @@ using UnityEngine.TestTools;
 namespace TestProject.RuntimeTests
 {
 
-    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
-    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
+#endif
     public class ServerDisconnectsClientTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -21,7 +24,7 @@ namespace TestProject.RuntimeTests
             return false;
         }
 
-        public ServerDisconnectsClientTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+        public ServerDisconnectsClientTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         protected override void OnCreatePlayerPrefab()
         {

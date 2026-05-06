@@ -11,6 +11,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             OnGhostSpawned,
 #endif
+            OnOtherTriggerFinishedProcessing,
         }
 
         /// <summary>
@@ -30,6 +31,8 @@ namespace Unity.Netcode
         public void CleanupStaleTriggers();
 
         public void ProcessTriggers(TriggerType trigger, ulong key);
+
+        public bool HasAnyOfTrigger(IDeferredNetworkMessageManager.TriggerType trigger);
 
         /// <summary>
         /// Cleans up any trigger that's existed for more than a second.

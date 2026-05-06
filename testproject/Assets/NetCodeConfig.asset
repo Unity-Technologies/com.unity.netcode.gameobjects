@@ -16,7 +16,7 @@ MonoBehaviour:
   EnableClientServerBootstrap: 0
   HostWorldModeSelection: 1
   ClientServerTickRate:
-    SimulationTickRate: 60
+    SimulationTickRate: 30
     PredictedFixedStepSimulationTickRatio: 1
     NetworkTickRate: 0
     MaxSimulationStepsPerFrame: 1

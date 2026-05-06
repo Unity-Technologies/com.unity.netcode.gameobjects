@@ -13,8 +13,12 @@ using UnityEngine.TestTools;
 namespace TestProject.RuntimeTests
 {
     // DAMODE-TODO: When scene management is working in distributed authority mode we need to update this test
-    [TestFixture(SceneManagementTypes.SceneManagementEnabled)]
-    [TestFixture(SceneManagementTypes.SceneManagementDisabled)]
+    [TestFixture(SceneManagementTypes.SceneManagementEnabled, HostOrServer.Host)]
+    [TestFixture(SceneManagementTypes.SceneManagementDisabled, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(SceneManagementTypes.SceneManagementEnabled, HostOrServer.UnifiedHost)]
+    [TestFixture(SceneManagementTypes.SceneManagementDisabled, HostOrServer.UnifiedHost)]
+#endif
     public class PrefabExtendedTests : NetcodeIntegrationTest
     {
         private const string k_PrefabTestScene = "PrefabTestScene";
@@ -42,7 +46,7 @@ namespace TestProject.RuntimeTests
             return false;
         }
 
-        public PrefabExtendedTests(SceneManagementTypes sceneManagementType)
+        public PrefabExtendedTests(SceneManagementTypes sceneManagementType, HostOrServer hostOrServer) : base(hostOrServer)
         {
             m_SceneManagementEnabled = sceneManagementType == SceneManagementTypes.SceneManagementEnabled;
         }

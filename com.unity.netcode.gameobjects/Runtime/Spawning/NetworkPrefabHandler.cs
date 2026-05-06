@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -418,6 +421,19 @@ namespace Unity.Netcode
             {
                 m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
             }
+        
+#if UNIFIED_NETCODE
+            if (m_NetworkManager.IsListening)
+            {
+                var ghost = prefab.GetComponent<GhostAdapter>();
+                if (ghost)
+                {
+                    m_NetworkManager.InitializeNetcodeWorld();
+                    NetCode.Netcode.RegisterPrefabSingleWorld(prefab, m_NetworkManager.IsHost,
+                        m_NetworkManager.NetcodeWorld);
+                }
+            }
+#endif
         }
 
         /// <summary>
