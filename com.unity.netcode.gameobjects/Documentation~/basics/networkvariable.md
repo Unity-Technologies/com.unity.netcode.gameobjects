@@ -195,13 +195,13 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     public DoorStates CurrentState => m_State.Value;
 
     /// <summary>
-    /// Invoked while the <see cref="NetworkObject"/> is in the middle of
+    /// Invoked while the <see cref="NetworkObject"/> is in the process of
     /// being spawned.
     /// </summary>
     public override void OnNetworkSpawn()
     {
-        // The write authority (server) does not need to know about its
-        // own changes (for this example) since it is the "single point
+        // The write authority (server) doesn't need to know about its
+        // own changes (for this example) since it's the "single point
         // of truth" for the door instance.
         if (IsServer)
         {
@@ -224,10 +224,10 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     protected override void OnNetworkPostSpawn()
     {
         // Everyone updates their door state when finished spawning the door
-        // in order to assure the door reflects (visually) its current state.
+        // to ensure the door reflects (visually) its current state.
         UpdateFromState();
 
-        // Begin to start updating this NetworkBehaviour instance once all
+        // Begin updating this NetworkBehaviour instance once all
         // netcode related components have finished the spawn process.
         NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
         base.OnNetworkPostSpawn();
@@ -254,7 +254,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     }
 
     /// <summary>
-    /// Invoked just before this instance runs through its de-spawn
+    /// Invoked just before this instance runs through its despawn
     /// sequence. A good time to unsubscribe from things.
     /// </summary>
     public override void OnNetworkPreDespawn()
@@ -265,7 +265,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
         }
 
         // Stop updating this NetworkBehaviour instance prior to running
-        // through the de-spawn process.
+        // through the despawn process.
         NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
         base.OnNetworkPreDespawn();
     }
@@ -276,7 +276,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     /// </summary>
     /// <remarks>
     /// When the previous state equals the current state, we are a client
-    /// that is doing its 1st synchronization of this door instance.
+    /// that is doing its first synchronization of this door instance.
     /// </remarks>
     /// <param name="previous">The previous <see cref="DoorStates"/> state.</param>
     /// <param name="current">The current <see cref="DoorStates"/> state.</param>
@@ -286,7 +286,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     }
 
     /// <summary>
-    /// Invoke when the state is updated in order to apply the change
+    /// Invoke when the state is updated to apply the change
     /// in door state to the door asset itself.
     /// </summary>
     private void UpdateFromState()
@@ -327,7 +327,7 @@ public class Door : NetworkBehaviour, INetworkUpdateSystem
     }
 
     /// <summary>
-    /// Invoked by either a Host or clients to interact with the door.
+    /// Invoked by either a host or clients to interact with the door.
     /// </summary>
     public void Interact()
     {
