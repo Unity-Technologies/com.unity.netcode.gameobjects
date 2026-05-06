@@ -1,4 +1,7 @@
 using System;
+#if UNITY_6000_6_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Netcode
 {
@@ -9,8 +12,11 @@ namespace Unity.Netcode
     ///     based on which constraints are met by `T` using reflection, which is done at module load time.
     /// </summary>
     /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
+#if UNITY_6000_6_OR_NEWER
+    [AutoStaticsCleanup]
+#endif
     [Serializable]
-    public static class NetworkVariableSerialization<T>
+    public static partial class NetworkVariableSerialization<T>
     {
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 

@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+#if UNITY_6000_6_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace Unity.Netcode
 {
-    internal static class CollectionSerializationUtility
+    internal static partial class CollectionSerializationUtility
     {
         public static void WriteNativeArrayDelta<T>(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) where T : unmanaged
         {
@@ -258,7 +261,10 @@ namespace Unity.Netcode
         // For HashSet and Dictionary, we need to have some local space to hold lists we need to serialize.
         // We don't want to do allocations all the time and we know each one needs a maximum of three lists,
         // so we're going to keep static lists that we can reuse in these methods.
-        private static class ListCache<T>
+#if UNITY_6000_6_OR_NEWER
+        [AutoStaticsCleanup]
+#endif
+        private static partial class ListCache<T>
         {
             private static List<T> s_AddedList = new List<T>();
             private static List<T> s_RemovedList = new List<T>();

@@ -599,7 +599,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handle NetworkSeneManager clean up
+        /// Handle NetworkSceneManager clean up
         /// </summary>
         public void Dispose()
         {
