@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Prefab.AddComponent<DoNothingNetworkTransform>();
             return base.OnSetup();
         }
-        
+
         protected override void OnServerAndClientsCreated()
         {
 

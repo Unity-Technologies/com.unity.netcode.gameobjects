@@ -421,7 +421,7 @@ namespace Unity.Netcode
             {
                 m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
             }
-        
+
 #if UNIFIED_NETCODE
             if (m_NetworkManager.IsListening)
             {

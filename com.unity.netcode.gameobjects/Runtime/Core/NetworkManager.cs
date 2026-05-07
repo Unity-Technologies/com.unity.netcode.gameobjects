@@ -1354,14 +1354,14 @@ namespace Unity.Netcode
         /// The world instance assigned to this NetworkManager instance.
         /// </summary>
         public NetcodeWorld NetcodeWorld { get; internal set; }
-        
+
         internal void InitializeNetcodeWorld()
         {
             if (NetcodeWorld != null)
             {
                 return;
             }
-            
+
             if (this == Singleton)
             {
                 if (NetCode.Netcode.IsActive)
