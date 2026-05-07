@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
         /// <summary>
         /// When enabled, we move ourself to the DontDestroyOnLoad scene
         /// </summary>
-        private void OnEnable()
+        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             DontDestroyOnLoad(this);
         }

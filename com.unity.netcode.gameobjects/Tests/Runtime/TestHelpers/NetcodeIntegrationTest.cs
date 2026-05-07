@@ -1804,6 +1804,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         ghostAdapter.prefabReference = null;
                         Object.Destroy(prefabReference);
                         Object.Destroy(ghostAdapter);
+                        // Only normally destroy hybrid-spawned objects.
+                        Object.Destroy(networkObject.gameObject);
+                        continue;
                     }
 
                     // Destroy the GameObject that holds the NetworkObject component
