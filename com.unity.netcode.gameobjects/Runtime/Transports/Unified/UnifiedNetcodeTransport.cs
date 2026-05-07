@@ -144,7 +144,7 @@ namespace Unity.Netcode.Unified
         {
             var rpcQueue = SystemAPI.GetSingleton<RpcCollection>().GetRpcQueue<TransportRpc, TransportRpc>();
             var ghostInstance = GetComponentLookup<GhostInstance>();
-            foreach (var rpcDataStreamBuffer in SystemAPI.Query<DynamicBuffer<OutgoingRpcDataStreamBuffer>>())
+            foreach (var rpcDataStreamBuffer in SystemAPI.Query<DynamicBuffer<OutgoingOutOfBandRpcDataStreamBuffer>>())
             {
                 rpcQueue.Schedule(rpcDataStreamBuffer, ghostInstance, rpc);
             }
@@ -273,7 +273,7 @@ namespace Unity.Netcode.Unified
             };
             m_ServerClientId = connection.NetworkId.Value;
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
-            var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
@@ -286,7 +286,7 @@ namespace Unity.Netcode.Unified
                 Connection = connection
             }; ;
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
-            var updateSystem = NetCode.Netcode.GetWorld(false).GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
