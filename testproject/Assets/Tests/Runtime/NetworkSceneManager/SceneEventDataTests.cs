@@ -38,12 +38,10 @@ namespace TestProject.RuntimeTests
 
             var networkManager = networkManagerGameObject.AddComponent<NetworkManager>();
             var unityTransport = networkManagerGameObject.AddComponent<UnityTransport>();
-            var prefabs = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            prefabs.Add(new NetworkPrefab());
             networkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList> { prefabs } },
+                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList> { } },
                 NetworkTransport = unityTransport
             };
 

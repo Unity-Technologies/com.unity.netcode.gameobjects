@@ -1354,13 +1354,19 @@ namespace Unity.Netcode
         /// The world instance assigned to this NetworkManager instance.
         /// </summary>
         public NetcodeWorld NetcodeWorld { get; internal set; }
-        private System.Collections.IEnumerator WaitForHybridPrefabRegistration(StartType startType)
+        
+        internal void InitializeNetcodeWorld()
         {
+            if (NetcodeWorld != null)
+            {
+                return;
+            }
+            
             if (this == Singleton)
             {
                 if (NetCode.Netcode.IsActive)
                 {
-                    NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Netcode is not active but has an instance at this point.");
+                    NetworkLog.LogInfo($"[{nameof(InitializeNetcodeWorld)}] Netcode is not active but has an instance at this point.");
                 }
                 /// !! Important !!
                 /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
@@ -1371,42 +1377,6 @@ namespace Unity.Netcode
             /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             DefaultWorldInitialization.Initialize("Default World", false);
-
-            // This should not be needed at this point, but this is here in the event something changes.
-            if (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
-            {
-                NetworkLog.LogWarning($"[{nameof(WaitForHybridPrefabRegistration)}] !!!!! (Ghosts are still pending registration) !!!!!");
-                var waitTime = new WaitForSeconds(0.016f);
-                while (NetworkConfig.Prefabs.HasPendingGhostPrefabs)
-                {
-                    NetworkConfig.Prefabs.RegisterGhostPrefabs(this);
-                    yield return waitTime;
-                }
-            }
-
-            if (LogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] All hybrid prefabs have been registered!");
-                NetworkLog.LogInfo($"[{nameof(WaitForHybridPrefabRegistration)}] Finalizing NetworkManager start...");
-            }
-            switch (startType)
-            {
-                case StartType.Server:
-                    {
-                        InternalStartServer();
-                        break;
-                    }
-                case StartType.Host:
-                    {
-                        InternalStartHost();
-                        break;
-                    }
-                case StartType.Client:
-                    {
-                        InternalStartClient();
-                        break;
-                    }
-            }
         }
 
         private bool UnifiedIsConfiguredCorrectly()
@@ -1470,8 +1440,8 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Server));
-                return true;
+                InitializeNetcodeWorld();
+                return InternalStartServer();
             }
             else
             {
@@ -1555,9 +1525,8 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Client));
-                // TODO-UNIFIED: Need a way to signal everything completed.
-                return true;
+                InitializeNetcodeWorld();
+                return InternalStartClient();
             }
             else
             {
@@ -1640,9 +1609,8 @@ namespace Unity.Netcode
                 {
                     Debug.Log("Creating world: Default world");
                 }
-                StartCoroutine(WaitForHybridPrefabRegistration(StartType.Host));
-                // TODO-UNIFIED: Need a way to signal everything completed.
-                return true;
+                InitializeNetcodeWorld();
+                return InternalStartHost();
             }
             else
             {

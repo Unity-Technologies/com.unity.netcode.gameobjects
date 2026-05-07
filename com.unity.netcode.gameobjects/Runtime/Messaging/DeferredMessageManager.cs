@@ -125,6 +125,16 @@ namespace Unity.Netcode
             triggerInfo.TriggerData.Dispose();
         }
 
+        public bool HasAnyOfTrigger(IDeferredNetworkMessageManager.TriggerType trigger)
+        {
+            if (m_Triggers.TryGetValue(trigger, out var triggers))
+            {
+                return triggers.Count != 0;
+            }
+
+            return false;
+        }
+
         public virtual void ProcessTriggers(IDeferredNetworkMessageManager.TriggerType trigger, ulong key)
         {
             if (m_Triggers.TryGetValue(trigger, out var triggers))
@@ -142,6 +152,11 @@ namespace Unity.Netcode
 
                     triggerInfo.TriggerData.Dispose();
                 }
+            }
+
+            if (trigger != IDeferredNetworkMessageManager.TriggerType.OnOtherTriggerFinishedProcessing)
+            {
+                ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnOtherTriggerFinishedProcessing, (ulong)trigger);
             }
         }
 

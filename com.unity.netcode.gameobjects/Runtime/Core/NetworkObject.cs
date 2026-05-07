@@ -2072,6 +2072,12 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+#if UNIFIED_NETCODE
+            if (HasGhost && destroy == false)
+            {
+                throw new NotSupportedException("Despawn without destroy is not supported for hybrid objects.");
+            }
+#endif
             if (!IsSpawned)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)

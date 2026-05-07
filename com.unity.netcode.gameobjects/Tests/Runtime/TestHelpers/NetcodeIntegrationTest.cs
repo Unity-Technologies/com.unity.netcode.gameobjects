@@ -226,7 +226,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             /// <summary>
             /// Denotes that distributed authority is being used.
             /// </summary>
-            DAHost
+            DAHost,
+#if UNIFIED_NETCODE
+            /// <summary>
+            /// Use N4E-backed hybrid spawning in server mode
+            /// </summary>
+            UnifiedServer,
+            /// <summary>
+            /// Use N4E-backed hybrid spawning in host mode
+            /// </summary>
+            UnifiedHost
+#endif
         }
 
         /// <summary>
@@ -629,6 +639,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns><see cref="IEnumerator"/></returns>
         protected virtual IEnumerator OnSetup()
         {
+            if(m_allPrefabsAsHybrid)
+            {
+                NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
+            }
             yield return null;
         }
 
@@ -642,6 +656,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual void OnInlineSetup()
         {
+            if(m_allPrefabsAsHybrid)
+            {
+                NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
+            }
         }
 
         /// <summary>
@@ -706,6 +724,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             VerboseDebug($"Exiting {nameof(SetUp)}");
+        }
+
+        private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
+        {
+            var ghost = networkObject.GetComponent<GhostAdapter>();
+            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostAdapter)}!");
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                // If the world matches, then register the instance with this NetworkManager's spawn manager.
+                if (networkManager.NetcodeWorld == ghost.World)
+                {
+                    networkManager.SpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    return;
+                }
+            }
+            Debug.LogError($"Did not find a world for NetworkObject-{networkObjectId}!!");
         }
 
         /// <summary>
@@ -1616,6 +1650,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             DestroyNetworkManagers();
         }
 
+        protected void UnifiedCleanup()
+        {
+#if UNIFIED_NETCODE
+            if(m_allPrefabsAsHybrid)
+            {
+                NetworkSpawnManager.RegisterPendingGhost = null;
+                CleanupPrefabReferences();
+            }
+#endif
+        }
+
         /// <summary>
         /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> mode
         /// this is called before ShutdownAndCleanUp.
@@ -1623,6 +1668,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns><see cref="IEnumerator"/></returns>
         protected virtual IEnumerator OnTearDown()
         {
+            UnifiedCleanup();
             yield return null;
         }
 
@@ -1631,6 +1677,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual void OnInlineTearDown()
         {
+            UnifiedCleanup();
         }
 
         /// <summary>
@@ -2206,6 +2253,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks), $"[Messages Not Recieved] {hooks.GetHooksStillWaiting()}");
         }
 
+#if UNIFIED_NETCODE
+        protected bool m_allPrefabsAsHybrid = false;
+#endif
+
         /// <summary>
         /// Creates a basic NetworkObject test prefab, assigns it to a new
         /// NetworkPrefab entry, and then adds it to the server and client(s)
@@ -2215,6 +2266,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The <see cref="GameObject"/> assigned to the new NetworkPrefab entry</returns>
         protected GameObject CreateNetworkObjectPrefab(string baseName)
         {
+#if UNIFIED_NETCODE
+            if (m_allPrefabsAsHybrid)
+            {
+                return CreateHybridPrefab(baseName);
+            }
+#endif
             var prefabCreateAssertError = $"You can only invoke this method during {nameof(OnServerAndClientsCreated)} " +
                                           $"but before {nameof(OnStartedServerAndClients)}!";
             var authorityNetworkManager = GetAuthorityNetworkManager();
@@ -2228,6 +2285,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 #if UNIFIED_NETCODE
+        protected void CleanupPrefabReferences()
+        {
+            foreach (var reference in Object.FindObjectsByType<GhostPrefabReference>())
+            {
+                Object.Destroy(reference);
+            }
+        }
         protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
         {
             // Prevent from trying to register/spawn when creating this hybrid prefab
@@ -2289,6 +2353,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (moveToDDOL)
             {
                 Object.DontDestroyOnLoad(gameObject);
+            }
+            var authorityNetworkManager = GetAuthorityNetworkManager();
+            authorityNetworkManager.AddNetworkPrefab(gameObject);
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager == authorityNetworkManager)
+                {
+                    continue;
+                }
+                clientNetworkManager.AddNetworkPrefab(gameObject);
             }
             return gameObject;
         }
@@ -2509,8 +2583,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Note: For m_DistributedAuthority to be true, the m_NetworkTopologyType must be set to NetworkTopologyTypes.DistributedAuthority
                 hostOrServer = m_DistributedAuthority ? HostOrServer.DAHost : HostOrServer.Host;
             }
+#if UNIFIED_NETCODE
+            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
+            m_allPrefabsAsHybrid = (hostOrServer ==  HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+#else
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
-
+#endif
             // If we are using a distributed authority network topology and the environment variable
             // to use the CMBService is set, then perform the m_UseCmbService check.
             if (m_DistributedAuthority && GetServiceEnvironmentVariable())

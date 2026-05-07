@@ -745,18 +745,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
             var gameObject = CreateNetworkObject(baseName);
-            var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
             // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            authorityNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+            authorityNetworkManager.AddNetworkPrefab(gameObject);
             foreach (var clientNetworkManager in clients)
             {
                 if (clientNetworkManager == authorityNetworkManager)
                 {
                     continue;
                 }
-                clientNetworkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = gameObject });
+                clientNetworkManager.AddNetworkPrefab(gameObject);
             }
             return gameObject;
         }
