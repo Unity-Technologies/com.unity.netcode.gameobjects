@@ -12,7 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Changed
-
+- Minimal supported editor was updated to 6000.0 as 2022.3 is now out of support
+- Updated transport dependency to latest 2.7.2
 
 ### Deprecated
 
