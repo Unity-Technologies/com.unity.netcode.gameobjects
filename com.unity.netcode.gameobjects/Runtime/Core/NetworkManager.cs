@@ -472,9 +472,10 @@ namespace Unity.Netcode
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
-
+#if !UNIFIED_NETCODE
                         // Process outbound messages
                         MessageManager.ProcessSendQueues();
+#endif
 
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
