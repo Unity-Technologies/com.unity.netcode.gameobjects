@@ -1,3 +1,4 @@
+#if UNIFIED_NETCODE
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -106,3 +107,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

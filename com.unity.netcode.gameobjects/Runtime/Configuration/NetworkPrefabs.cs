@@ -331,6 +331,10 @@ namespace Unity.Netcode
         }
 
 #if UNIFIED_NETCODE
+        /// <summary>
+        /// TODO: Either keep or remove prior to freeze.
+        /// Leaving this here in case we have to control when things get registered.
+        /// </summary>
         internal bool HasPendingGhostPrefabs { get; private set; }
         internal bool HasGhostPrefabs { get; private set; }
         private List<NetworkPrefab> m_PendingGhostRegistration = new List<NetworkPrefab>();

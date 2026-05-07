@@ -29,6 +29,33 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Obsolete
 
 
+### [2.11.2] - 2026-05-01
+
+### Fixed
+
+- Fixed issue where if the `NetworkManager` player prefab is not assigned an exception is thrown upon starting a host and/or when a client joins. (#3965)
+
+## [2.11.1] - 2026-04-26
+
+### Changed
+
+- Improve handling of destroyed NetworkBehaviours. (#3953)
+- Hardened error handling and recovery during `NetworkObject` spawn. (#3941)
+- Replaced Debug usage by NetcodeLog on `NetworkSpawnManager` and `NetworkObject`. (#3933)
+- Improved performance of `NetworkBehaviour`. (#3915)
+- Improved performance of `NetworkTransform`. (#3907)
+- Improved performance of `NetworkRigidbodyBase`. (#3906)
+- Improved performance of `NetworkAnimator`. (#3905)
+
+### Removed
+
+- Removed un-needed exceptions on `NetworkSpawnManager`. (#3933)
+
+### Fixed
+
+- Fixed issue where either an `AttachableBehaviour` or an `AttachableNode` can throw an exception if they are attached during a scene unload where one of the two persists the scene unload event and the other does not. (#3931)
+- Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
+
 ## [2.11.0] - 2026-03-19
 
 ### Added

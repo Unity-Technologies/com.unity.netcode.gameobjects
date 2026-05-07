@@ -67,9 +67,9 @@ namespace Unity.Netcode
             var lastRoundTripTime = m_NetworkManager.LocalTime.Time - LastAnticipationAckTime;
             foreach (var item in ObjectsToReanticipate)
             {
-                foreach (var behaviour in item.OwnerObject.ChildNetworkBehaviours)
+                foreach (var behaviour in item.OwnerObject.ChildNetworkBehaviours.Values)
                 {
-                    behaviour.Value.OnReanticipate(lastRoundTripTime);
+                    behaviour.OnReanticipate(lastRoundTripTime);
                 }
                 item.ResetAnticipation();
             }

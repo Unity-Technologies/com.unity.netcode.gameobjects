@@ -160,6 +160,14 @@ namespace TestProject.RuntimeTests
             // Setup expected events
             m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
             {
+                SceneEvent = new SceneEvent()
+                {
+                    SceneEventType = SceneEventType.Synchronize,
+                    ClientId = expectedClientId,
+                },
+            });
+            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            {
                 ConnectionEvent = new ConnectionEventData()
                 {
                     EventType = ConnectionEvent.ClientConnected,

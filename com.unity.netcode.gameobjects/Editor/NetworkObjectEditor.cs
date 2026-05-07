@@ -20,7 +20,7 @@ namespace Unity.Netcode.GameObjects.Editor
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
-        
+
         private static readonly string[] k_HiddenFields = { "m_Script" };
 
         private void Initialize()

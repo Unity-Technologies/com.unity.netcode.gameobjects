@@ -368,7 +368,7 @@ namespace Unity.Netcode.Unified
         {
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
-        
+
         private void OnClientConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)
@@ -381,7 +381,7 @@ namespace Unity.Netcode.Unified
                     break;
             }
         }
-        
+
         private void OnServerConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)

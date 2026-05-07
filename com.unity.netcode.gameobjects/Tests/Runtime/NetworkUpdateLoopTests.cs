@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -41,9 +41,10 @@ namespace Unity.Netcode.RuntimeTests
                 PlayerLoop.SetPlayerLoop(curPlayerLoop);
 
                 NetworkUpdateLoop.UnregisterLoopSystems();
-
+                var subSystemArray = PlayerLoop.GetCurrentPlayerLoop().subSystemList[0].subSystemList;
+                var lastType = subSystemArray[subSystemArray.Length - 1].type;
                 // our custom `PlayerLoopSystem` with the type of `NetworkUpdateLoopTests` should still exist
-                Assert.AreEqual(typeof(NetworkUpdateLoopTests), PlayerLoop.GetCurrentPlayerLoop().subSystemList[0].subSystemList.Last().type);
+                Assert.AreEqual(typeof(NetworkUpdateLoopTests), lastType);
             }
             // replace the current PlayerLoop with the cached PlayerLoop after the test
             PlayerLoop.SetPlayerLoop(cachedPlayerLoop);
@@ -94,7 +95,14 @@ namespace Unity.Netcode.RuntimeTests
             for (int i = 0; i < currentPlayerLoop.subSystemList.Length; i++)
             {
                 var playerLoopSystem = currentPlayerLoop.subSystemList[i];
-                var subsystems = playerLoopSystem.subSystemList.ToList();
+                // New behaviour (6000.6.x)
+                // Some PlayerLoopSystems can evidently now have no sub-system lists.
+                if (playerLoopSystem.subSystemList == null)
+                {
+                    // Ignore any PlayerLoopSystem with no sub-system lists.
+                    continue;
+                }
+                var subsystems = new List<PlayerLoopSystem>(playerLoopSystem.subSystemList);
 
                 if (playerLoopSystem.type == typeof(Initialization))
                 {
