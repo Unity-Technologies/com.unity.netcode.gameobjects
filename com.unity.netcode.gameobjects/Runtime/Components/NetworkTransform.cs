@@ -2062,19 +2062,6 @@ namespace Unity.Netcode.Components
                             childNetworkTransform.OnNetworkTick(true);
                         }
                     }
-
-                    // Synchronize any parented children with the parent's motion
-                    foreach (var child in m_ParentedChildren)
-                    {
-                        // Synchronize any nested NetworkTransforms of the child with the parent's
-                        foreach (var childNetworkTransform in child.NetworkTransforms)
-                        {
-                            if (childNetworkTransform.CanCommitToTransform)
-                            {
-                                childNetworkTransform.OnNetworkTick(true);
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -3361,19 +3348,6 @@ namespace Unity.Netcode.Components
                         childNetworkTransform.OnNetworkTick(true);
                     }
                 }
-
-                // Synchronize any parented children with the parent's motion
-                foreach (var child in m_ParentedChildren)
-                {
-                    // Synchronize any nested NetworkTransforms of the child with the parent's
-                    foreach (var childNetworkTransform in child.NetworkTransforms)
-                    {
-                        if (childNetworkTransform.CanCommitToTransform)
-                        {
-                            childNetworkTransform.OnNetworkTick(true);
-                        }
-                    }
-                }
             }
 
             // Provide notifications when the state has been updated
@@ -3632,8 +3606,6 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            m_ParentedChildren.Clear();
-
             Initialize();
 
             if (CanCommitToTransform && !SwitchTransformSpaceWhenParented)
@@ -3645,7 +3617,6 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
-            m_ParentedChildren.Clear();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var forUpdate = !m_UseRigidbodyForMotion;
 #else
@@ -3859,7 +3830,6 @@ namespace Unity.Netcode.Components
         }
 
         internal bool IsNested;
-        private List<NetworkObject> m_ParentedChildren = new List<NetworkObject>();
 
         private bool m_IsFirstNetworkTransform;
 
