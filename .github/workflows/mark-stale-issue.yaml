@@ -22,17 +22,17 @@ jobs:
         with:
           # Only mark issues (not PRs) as stale
           any-of-labels: 'stat:awaiting-response'
-          days-before-stale: 30
-          days-before-close: 30
+          days-before-stale: 14
+          days-before-close: 14
           stale-issue-label: 'Stale'
           exempt-issue-labels: 'stat:import,stat:imported'
           stale-issue-message: >
             This issue has been automatically marked as stale because it has been awaiting 
-            response for over 30 days without any activity.
+            response for over 2 weeks without any activity.
 
-            Please update the issue with any new information or it may be closed in 30 days.
+            Please update the issue with any new information or it may be closed in 2 weeks.
           close-issue-message: >
-            This issue has been automatically closed because it has been stale for 30 days 
+            This issue has been automatically closed because it has been stale for 2 weeks 
             without any activity. Feel free to reopen if you have new information to add.
           # Prevent the action from marking/closing PRs
           days-before-pr-stale: -1
