@@ -639,10 +639,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns><see cref="IEnumerator"/></returns>
         protected virtual IEnumerator OnSetup()
         {
-            if(m_allPrefabsAsHybrid)
+#if UNIFIED_NETCODE
+            if(m_AllPrefabsAsHybrid)
             {
                 NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
             }
+#endif
             yield return null;
         }
 
@@ -656,10 +658,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual void OnInlineSetup()
         {
-            if(m_allPrefabsAsHybrid)
+#if UNIFIED_NETCODE
+            if(m_AllPrefabsAsHybrid)
             {
                 NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
             }
+#endif
         }
 
         /// <summary>
@@ -726,6 +730,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(SetUp)}");
         }
 
+#if UNIFIED_NETCODE
         private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
         {
             var ghost = networkObject.GetComponent<GhostAdapter>();
@@ -741,6 +746,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             Debug.LogError($"Did not find a world for NetworkObject-{networkObjectId}!!");
         }
+#endif
 
         /// <summary>
         /// Override this to add components or adjustments to the default player prefab
@@ -1650,10 +1656,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
             DestroyNetworkManagers();
         }
 
+        /// <summary>
+        /// When using hybrid spawning, this handles clean up.
+        /// </summary>
         protected void UnifiedCleanup()
         {
 #if UNIFIED_NETCODE
-            if(m_allPrefabsAsHybrid)
+            if(m_AllPrefabsAsHybrid)
             {
                 NetworkSpawnManager.RegisterPendingGhost = null;
                 CleanupPrefabReferences();
@@ -2257,7 +2266,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 #if UNIFIED_NETCODE
-        protected bool m_allPrefabsAsHybrid = false;
+        protected bool m_AllPrefabsAsHybrid = false;
 #endif
 
         /// <summary>
@@ -2270,7 +2279,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected GameObject CreateNetworkObjectPrefab(string baseName)
         {
 #if UNIFIED_NETCODE
-            if (m_allPrefabsAsHybrid)
+            if (m_AllPrefabsAsHybrid)
             {
                 return CreateHybridPrefab(baseName);
             }
@@ -2588,7 +2597,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 #if UNIFIED_NETCODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
-            m_allPrefabsAsHybrid = (hostOrServer ==  HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+            m_AllPrefabsAsHybrid = (hostOrServer ==  HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
 #else
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
 #endif

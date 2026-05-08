@@ -1366,7 +1366,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            
+
             if (this == Singleton)
             {
                 if (NetCode.Netcode.IsActive)

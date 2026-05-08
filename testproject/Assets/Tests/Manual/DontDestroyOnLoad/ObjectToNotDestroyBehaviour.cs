@@ -9,8 +9,11 @@ namespace TestProject.ManualTests
     /// </summary>
     public class ObjectToNotDestroyBehaviour : NetworkBehaviour
     {
+        public static bool VerboseDebug;
+
         private bool m_ContinueSendingPing;
         private uint m_PingCounter;
+
 
         public uint CurrentPing
         {
@@ -20,12 +23,19 @@ namespace TestProject.ManualTests
             }
         }
 
-        /// <summary>
-        /// When enabled, we move ourself to the DontDestroyOnLoad scene
-        /// </summary>
+        private void Log(string msg)
+        {
+            if (VerboseDebug)
+            {
+                Debug.Log(msg);
+            }
+        }
+
+        // Migrate into DDOL during pre-spawn
         protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             DontDestroyOnLoad(this);
+            base.OnNetworkPreSpawn(ref networkManager);
         }
 
         /// <summary>
@@ -38,11 +48,11 @@ namespace TestProject.ManualTests
         {
             if (IsHost)
             {
-                Debug.Log($"Sent ping number ({pingNumber}).");
+                Log($"Sent ping number ({pingNumber}).");
             }
             else if (IsClient)
             {
-                Debug.Log($"Receiving ping number ({pingNumber}) from server");
+                Log($"Receiving ping number ({pingNumber}) from server");
                 m_PingCounter = pingNumber;
             }
         }
