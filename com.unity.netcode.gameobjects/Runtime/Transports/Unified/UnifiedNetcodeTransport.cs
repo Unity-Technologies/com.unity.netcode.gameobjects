@@ -140,14 +140,12 @@ namespace Unity.Netcode.Unified
             DisconnectQueue.Add(connection);
         }
         
-        public void SendRpc(TransportRpc rpc)
+        public void SendRpc(TransportRpc rpc, Entity connectionEntity)
         {
             var rpcQueue = SystemAPI.GetSingleton<RpcCollection>().GetRpcQueue<TransportRpc, TransportRpc>();
             var ghostInstance = GetComponentLookup<GhostInstance>();
-            foreach (var rpcDataStreamBuffer in SystemAPI.Query<DynamicBuffer<OutgoingOutOfBandRpcDataStreamBuffer>>())
-            {
-                rpcQueue.Schedule(rpcDataStreamBuffer, ghostInstance, rpc);
-            }
+            var rpcDataStreamBuffer = EntityManager.GetBuffer<OutgoingOutOfBandRpcDataStreamBuffer>(connectionEntity);
+            rpcQueue.Schedule(rpcDataStreamBuffer, ghostInstance, rpc);
         }
 
         protected override void OnUpdate()
@@ -249,7 +247,7 @@ namespace Unity.Netcode.Unified
                 rpc.Value.Buffer.Length = amount;
                 
                 var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
-                updateSystem.SendRpc(rpc);
+                updateSystem.SendRpc(rpc, connectionInfo.Connection.ConnectionEntity);
 
                 connectionInfo.SendQueue.Consume(amount);
             }
