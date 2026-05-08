@@ -1837,6 +1837,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             Object.Destroy(prefabReference);
                         }
                         Object.Destroy(networkObject.gameObject);
+                        continue;
                     }
 #endif
                     // Destroy the GameObject that holds the NetworkObject component
