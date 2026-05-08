@@ -184,8 +184,7 @@ validation_editors:
         - 77e2e2eea1be7153f85edac158fd663828839731
     minimal:
         - 6000.0
-    pinnedTrunk:
-        - 77e2e2eea1be7153f85edac158fd663828839731
+pinnedTrunk:  77e2e2eea1be7153f85edac158fd663828839731
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
