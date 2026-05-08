@@ -37,7 +37,15 @@ run_all_package_tests_trunk:
   name: Run All Package Tests [Trunk only]
   dependencies:
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
+    - .yamato/package-tests.yml#package_test_-_ngo_trunk_{{ platform.name }}
+{% endfor -%}
+
+# Runs all package tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_package_tests_pinnedTrunk:
+  name: Run All Package Tests [Pinned Trunk only]
+  dependencies:
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.pinnedTrunk -%}
     - .yamato/package-tests.yml#package_test_-_ngo_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
@@ -73,7 +81,19 @@ run_all_project_tests_trunk:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_trunk
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+
+# Runs all projects tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_project_tests_pinnedTrunk:
+  name: Run All Project Tests [Pinned Trunk only]
+  dependencies:
+{% for project in projects.all -%}
+{% if project.has_tests == "true" -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.pinnedTrunk -%}
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
@@ -125,7 +145,18 @@ run_all_webgl_builds_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_trunk
+{% endfor -%}
+{% endfor -%}
+
+
+# Runs all WebGL builds on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_webgl_builds_pinnedTrunk:
+  name: Run All WebGl Build [Pinned Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.pinnedTrunk -%} 
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
@@ -163,8 +194,20 @@ run_all_project_tests_desktop_standalone_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.default -%}
 {% for backend in scripting_backends -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_trunk
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all Desktop tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_project_tests_desktop_standalone_pinnedTrunk:
+  name: Run All Standalone Tests - Desktop [Pinned Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for backend in scripting_backends -%}
+{% for editor in validation_editors.pinnedTrunk -%} 
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
@@ -202,7 +245,17 @@ run_all_project_tests_mobile_standalone_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-{% for editor in validation_editors.default -%}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_trunk
+{% endfor -%}
+{% endfor -%}
+
+# Runs all Mobile tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_project_tests_mobile_standalone_pinnedTrunk:
+  name: Run All Standalone Tests - Mobile [Pinned Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.mobile_test -%}
+{% for editor in validation_editors.pinnedTrunk -%} 
     - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
@@ -238,7 +291,17 @@ run_all_project_tests_console_standalone_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-{% for editor in validation_editors.default -%}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_trunk
+{% endfor -%}
+{% endfor -%}
+
+# Runs all Console tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_project_tests_console_standalone_pinnedTrunk:
+  name: Run All Standalone Tests - Console [Pinned Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.console_test -%}
+{% for editor in validation_editors.pinnedTrunk -%} 
     - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
@@ -277,6 +340,20 @@ run_all_project_tests_cmb_service_trunk:
 {% for platform in test_platforms.default -%}
 {% for backend in scripting_backends -%}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_trunk
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all CMB service tests on pinned trunk editor (This is used for PR testing as we want to avoid blocking failures)
+run_all_project_tests_cmb_service_pinnedTrunk:
+  name: Run All CMB Service Tests [Pinned Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for backend in scripting_backends -%}
+{% for editor in validation_editors.pinnedTrunk -%} 
+    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
