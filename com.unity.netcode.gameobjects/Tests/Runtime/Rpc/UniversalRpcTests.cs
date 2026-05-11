@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Received = methodName;
             ReceivedCount++;
         }
-        public void OnRpcReceivedWithParams(int a, bool b, float f, string s, [CallerMemberName()] string methodName = "")
+        public void OnRpcReceivedWithParams(int a, bool b, float f, string s, [CallerMemberName] string methodName = "")
         {
             Received = methodName;
             ReceivedCount++;
