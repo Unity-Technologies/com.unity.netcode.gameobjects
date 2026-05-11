@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
 
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
-        
+
         public SenderIdTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         [UnityTest]

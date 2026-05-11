@@ -29,7 +29,7 @@ namespace TestProject.RuntimeTests
 
         public RpcTestsAutomated(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            
+
         }
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()

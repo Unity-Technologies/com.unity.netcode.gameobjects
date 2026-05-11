@@ -82,7 +82,7 @@ namespace TestProject.RuntimeTests
             throw new Exception("Exception thrown in OnNetworkDespawn");
         }
     }
-    
+
     [TestFixture(HostOrServer.Server)]
 #if UNIFIED_NETCODE
     [TestFixture(HostOrServer.UnifiedServer)]
@@ -108,7 +108,7 @@ namespace TestProject.RuntimeTests
 
         public OnNetworkSpawnExceptionTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            
+
         }
 
         [UnityTest]

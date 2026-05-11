@@ -32,7 +32,7 @@ namespace Unity.Netcode
 
         public void ProcessTriggers(TriggerType trigger, ulong key);
 
-        public bool HasAnyOfTrigger(IDeferredNetworkMessageManager.TriggerType trigger);
+        public bool HasAnyOfTrigger(TriggerType trigger);
 
         /// <summary>
         /// Cleans up any trigger that's existed for more than a second.
