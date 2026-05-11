@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -28,12 +29,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         public ulong ReceivedFrom = ulong.MaxValue;
         public int ReceivedCount;
 
-        public void OnRpcReceived(string methodName)
+        public void OnRpcReceived([CallerMemberName] string methodName = "")
         {
             Received = methodName;
             ReceivedCount++;
         }
-        public void OnRpcReceivedWithParams(string methodName, int a, bool b, float f, string s)
+        public void OnRpcReceivedWithParams(int a, bool b, float f, string s, [CallerMemberName()] string methodName = "")
         {
             Received = methodName;
             ReceivedCount++;
@@ -45,61 +46,61 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone)]
         public void DefaultToEveryoneRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToEveryoneRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Me)]
         public void DefaultToMeRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToMeRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Owner)]
         public void DefaultToOwnerRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToOwnerRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotOwner)]
         public void DefaultToNotOwnerRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotOwnerRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Server)]
         public void DefaultToServerRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToServerRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotMe)]
         public void DefaultToNotMeRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotMeRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotServer)]
         public void DefaultToNotServerRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotServerRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.ClientsAndHost)]
         public void DefaultToClientsAndHostRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToClientsAndHostRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Authority)]
         public void DefaultToAuthorityRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToAuthorityRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotAuthority)]
         public void DefaultToNotAuthorityRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotAuthorityRpc)}");
+            OnRpcReceived();
         }
 
         // RPCs with parameters
@@ -107,61 +108,61 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone)]
         public void DefaultToEveryoneWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToEveryoneWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Me)]
         public void DefaultToMeWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToMeWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Owner)]
         public void DefaultToOwnerWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToOwnerWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotOwner)]
         public void DefaultToNotOwnerWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotOwnerWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Server)]
         public void DefaultToServerWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToServerWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotMe)]
         public void DefaultToNotMeWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotMeWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotServer)]
         public void DefaultToNotServerWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotServerWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.ClientsAndHost)]
         public void DefaultToClientsAndHostWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToClientsAndHostWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Authority)]
         public void DefaultToAuthorityWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToAuthorityWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotAuthority)]
         public void DefaultToNotAuthorityWithParamsRpc(int i, bool b, float f, string s)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotAuthorityWithParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         // RPCs with RPC parameters
@@ -169,70 +170,70 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone)]
         public void DefaultToEveryoneWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToEveryoneWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.Me)]
         public void DefaultToMeWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToMeWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.Owner)]
         public void DefaultToOwnerWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToOwnerWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.NotOwner)]
         public void DefaultToNotOwnerWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotOwnerWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.Server)]
         public void DefaultToServerWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToServerWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.NotMe)]
         public void DefaultToNotMeWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotMeWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.NotServer)]
         public void DefaultToNotServerWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotServerWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.ClientsAndHost)]
         public void DefaultToClientsAndHostWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToClientsAndHostWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.Authority)]
         public void DefaultToAuthorityWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToAuthorityWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
         [Rpc(SendTo.NotAuthority)]
         public void DefaultToNotAuthorityWithRpcParamsRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotAuthorityWithRpcParamsRpc)}");
+            OnRpcReceived();
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
@@ -241,61 +242,61 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone)]
         public void DefaultToEveryoneWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToEveryoneWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Me)]
         public void DefaultToMeWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToMeWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Owner)]
         public void DefaultToOwnerWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToOwnerWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotOwner)]
         public void DefaultToNotOwnerWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotOwnerWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Server)]
         public void DefaultToServerWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToServerWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotMe)]
         public void DefaultToNotMeWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotMeWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotServer)]
         public void DefaultToNotServerWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotServerWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.ClientsAndHost)]
         public void DefaultToClientsAndHostWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToClientsAndHostWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.Authority)]
         public void DefaultToAuthorityWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToAuthorityWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         [Rpc(SendTo.NotAuthority)]
         public void DefaultToNotAuthorityWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
         {
-            OnRpcReceivedWithParams($"{nameof(DefaultToNotAuthorityWithParamsAndRpcParamsRpc)}", i, b, f, s);
+            OnRpcReceivedWithParams(i, b, f, s);
         }
 
         // RPCs with AllowTargetOverride = true
@@ -305,67 +306,67 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.SpecifiedInParams)]
         public void DefaultToSpecifiedInParamsAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToSpecifiedInParamsAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Everyone, AllowTargetOverride = true)]
         public void DefaultToEveryoneAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToEveryoneAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Me, AllowTargetOverride = true)]
         public void DefaultToMeAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToMeAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Owner, AllowTargetOverride = true)]
         public void DefaultToOwnerAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToOwnerAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotOwner, AllowTargetOverride = true)]
         public void DefaultToNotOwnerAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotOwnerAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Server, AllowTargetOverride = true)]
         public void DefaultToServerAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToServerAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotMe, AllowTargetOverride = true)]
         public void DefaultToNotMeAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotMeAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotServer, AllowTargetOverride = true)]
         public void DefaultToNotServerAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotServerAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.ClientsAndHost, AllowTargetOverride = true)]
         public void DefaultToClientsAndHostAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToClientsAndHostAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Authority, AllowTargetOverride = true)]
         public void DefaultToAuthorityAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToAuthorityAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotAuthority, AllowTargetOverride = true)]
         public void DefaultToNotAuthorityAllowOverrideRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotAuthorityAllowOverrideRpc)}");
+            OnRpcReceived();
         }
 
         // RPCs with DeferLocal = true
@@ -373,55 +374,55 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone, DeferLocal = true)]
         public void DefaultToEveryoneDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToEveryoneDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Me, DeferLocal = true)]
         public void DefaultToMeDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToMeDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Owner, DeferLocal = true)]
         public void DefaultToOwnerDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToOwnerDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotOwner, DeferLocal = true)]
         public void DefaultToNotOwnerDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotOwnerDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Server, DeferLocal = true)]
         public void DefaultToServerDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToServerDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotServer, DeferLocal = true)]
         public void DefaultToNotServerDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotServerDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.ClientsAndHost, DeferLocal = true)]
         public void DefaultToClientsAndHostDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToClientsAndHostDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Authority, DeferLocal = true)]
         public void DefaultToAuthorityDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToAuthorityDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotAuthority, DeferLocal = true)]
         public void DefaultToNotAuthorityDeferLocalRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(DefaultToNotAuthorityDeferLocalRpc)}");
+            OnRpcReceived();
         }
 
         // RPCs with InvokePermission.Owner
@@ -429,67 +430,67 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToEveryoneRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToEveryoneRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Me, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToMeRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToMeRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToOwnerRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToOwnerRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotOwner, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotOwnerRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotOwnerRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToServerRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToServerRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotMe, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotMeRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotMeRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotServer, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotServerRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotServerRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToClientsAndHostRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToClientsAndHostRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Owner)]
         public void SpecifiedInParamsRequireOwnershipRpc(RpcParams rpcParams)
         {
-            OnRpcReceived($"{nameof(SpecifiedInParamsRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.Authority, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToAuthorityRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToAuthorityRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         [Rpc(SendTo.NotAuthority, InvokePermission = RpcInvokePermission.Owner)]
         public void DefaultToNotAuthorityRequireOwnershipRpc()
         {
-            OnRpcReceived($"{nameof(DefaultToNotAuthorityRequireOwnershipRpc)}");
+            OnRpcReceived();
         }
 
         // Mutual RPC Recursion
@@ -502,14 +503,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                 Stop = false;
                 return;
             }
-            OnRpcReceived($"{nameof(MutualRecursionServerRpc)}");
+            OnRpcReceived();
             MutualRecursionClientRpc();
         }
 
         [Rpc(SendTo.NotServer, DeferLocal = true)]
         public void MutualRecursionClientRpc()
         {
-            OnRpcReceived($"{nameof(MutualRecursionClientRpc)}");
+            OnRpcReceived();
             MutualRecursionServerRpc();
         }
 
@@ -522,7 +523,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                 Stop = false;
                 return;
             }
-            OnRpcReceived($"{nameof(SelfRecursiveRpc)}");
+            OnRpcReceived();
             SelfRecursiveRpc();
         }
     }
