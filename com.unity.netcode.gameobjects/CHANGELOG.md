@@ -10,9 +10,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor.
 
 ### Changed
 
+- `NetworkMetricsPipelineStage` is now defined even when the multiplayer tools package is not installed, removing the need to guard its registration behind a version define when using a custom driver in `UnityTransport`.
 
 ### Deprecated
 
