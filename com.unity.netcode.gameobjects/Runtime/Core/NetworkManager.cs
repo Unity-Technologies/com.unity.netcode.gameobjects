@@ -1013,7 +1013,7 @@ namespace Unity.Netcode
             var isParented = transform.root != transform;
             if (isParented)
             {
-                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+                Log.Error(new Context(LogLevel.Error, GenerateNestedNetworkManagerMessage(transform)));
             }
 #endif
             return isParented;
