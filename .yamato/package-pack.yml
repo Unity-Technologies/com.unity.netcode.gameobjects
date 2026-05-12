@@ -40,7 +40,7 @@ package_pack_-_ngo_{{ platform.name }}:
 {% endif %}
   timeout: 0.25
   variables:
-    XRAY_PROFILE: "gold ./pvpExceptions.json"
+    XRAY_PROFILE: "gold ./pvpExceptions.json rme"
   commands:
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
