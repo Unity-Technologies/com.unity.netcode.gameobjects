@@ -2,9 +2,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -29,22 +29,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         public ulong ReceivedFrom = ulong.MaxValue;
         public int ReceivedCount;
 
-        public void OnRpcReceived()
+        public void OnRpcReceived([CallerMemberName] string methodName = "")
         {
-            var st = new StackTrace();
-            var sf = st.GetFrame(1);
-
-            var currentMethod = sf.GetMethod();
-            Received = currentMethod.Name;
+            Received = methodName;
             ReceivedCount++;
         }
-        public void OnRpcReceivedWithParams(int a, bool b, float f, string s)
+        public void OnRpcReceivedWithParams(int a, bool b, float f, string s, [CallerMemberName] string methodName = "")
         {
-            var st = new StackTrace();
-            var sf = st.GetFrame(1);
-
-            var currentMethod = sf.GetMethod();
-            Received = currentMethod.Name;
+            Received = methodName;
             ReceivedCount++;
             ReceivedParams = new Tuple<int, bool, float, string>(a, b, f, s);
         }
@@ -1031,7 +1023,8 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         public void VerifySentToClientsAndHostWithParams(ulong objectOwner, ulong sender, string methodName, int i, bool b, float f, string s)
         {
-            if (m_ServerNetworkManager.IsHost)
+            var authority = GetAuthorityNetworkManager();
+            if (authority.IsHost)
             {
                 VerifySentToEveryoneWithParams(objectOwner, sender, methodName, i, b, f, s);
             }
@@ -1319,11 +1312,33 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}WithParamsRpc";
             var verifyMethodName = $"VerifySentTo{sendTo}WithParams";
 
+            VerboseDebug("Get player object...");
             var senderObject = GetPlayerObject(objectOwner, sender);
+            if (senderObject == null)
+            {
+                Debug.LogError($"Sender object is NULL!");
+                Assert.Fail();
+                return;
+            }
+
+            VerboseDebug($"Getting send method: {sendMethodName}");
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+            if (sendMethod == null)
+            {
+                Debug.LogError($"Send method for {sendMethodName} is NULL!");
+                Assert.Fail();
+                return;
+            }
             sendMethod.Invoke(senderObject, new object[] { i, b, f, s });
 
+            VerboseDebug($"Getting verify method: {verifyMethodName}");
             var verifyMethod = GetType().GetMethod(verifyMethodName);
+            if (verifyMethod == null)
+            {
+                Debug.LogError($"Verify method for {verifyMethodName} is NULL!");
+                Assert.Fail();
+                return;
+            }
             verifyMethod.Invoke(this, new object[] { objectOwner, sender, sendMethodName, i, b, f, s });
         }
 
@@ -1344,11 +1359,33 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}WithParamsAndRpcParamsRpc";
             var verifyMethodName = $"VerifySentTo{sendTo}WithParams";
 
+            VerboseDebug("Get player object...");
             var senderObject = GetPlayerObject(objectOwner, sender);
+            if (senderObject == null)
+            {
+                Debug.LogError($"Sender object is NULL!");
+                Assert.Fail();
+                return;
+            }
+
+            VerboseDebug($"Getting send method: {sendMethodName}");
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+            if (sendMethod == null)
+            {
+                Debug.LogError($"Send method for {sendMethodName} is NULL!");
+                Assert.Fail();
+                return;
+            }
             sendMethod.Invoke(senderObject, new object[] { i, b, f, s, new RpcParams() });
 
+            VerboseDebug($"Getting verify method: {verifyMethodName}");
             var verifyMethod = GetType().GetMethod(verifyMethodName);
+            if (verifyMethod == null)
+            {
+                Debug.LogError($"Verify method for {verifyMethodName} is NULL!");
+                Assert.Fail();
+                return;
+            }
             verifyMethod.Invoke(this, new object[] { objectOwner, sender, sendMethodName, i, b, f, s });
         }
 
@@ -1383,7 +1420,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var defaultSendTo in sendToValues)
                 {
-                    UnityEngine.Debug.Log($"[{testType}][{defaultSendTo}]");
+                    VerboseDebug($"[{testType}][{defaultSendTo}]");
                     foreach (var overrideSendTo in sendToValues)
                     {
                         for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
