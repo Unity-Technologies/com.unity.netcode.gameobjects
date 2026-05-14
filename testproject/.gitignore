@@ -78,6 +78,8 @@ crashlytics-build.properties
 
 InitTestScene*
 
+# Do not include the packages-lock file
+packages-lock.json
 boot.config
 SceneTemplateSettings.json
 *BurstAotSettings*.json

@@ -176,14 +176,13 @@ validation_editors:
     default:
         - 6000.3
     all:
-        - 6000.0
         - 6000.3
         - 6000.4
         - 6000.5
         - trunk
         - a4ce83e807ca9aff8394d1cc07341168dc49df03
     minimal:
-        - 6000.0
+        - 6000.3
 pinnedTrunk:  a4ce83e807ca9aff8394d1cc07341168dc49df03
 
 
