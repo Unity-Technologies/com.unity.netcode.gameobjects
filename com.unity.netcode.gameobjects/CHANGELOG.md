@@ -6,13 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [Unreleased - 3.x]
 
 ### Added
 
 
 ### Changed
 
+- All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
+  - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
+  - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
+  - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
+  - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
 
 ### Deprecated
 

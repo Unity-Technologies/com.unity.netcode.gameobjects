@@ -6,7 +6,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     internal class FastBufferWriterTests : BaseFastBufferReaderWriterTest
     {

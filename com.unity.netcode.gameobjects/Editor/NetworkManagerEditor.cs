@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Logging;
 using UnityEditor;
 using UnityEngine;
@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Assemblies;
 #endif
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// This <see cref="CustomEditor"/> handles the translation between the <see cref="NetworkConfig"/> and

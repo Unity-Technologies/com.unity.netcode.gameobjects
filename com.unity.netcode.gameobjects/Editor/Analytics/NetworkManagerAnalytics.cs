@@ -4,7 +4,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Analytics;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     [Serializable]
     internal struct NetworkManagerAnalytics : IAnalytic.IData, IEquatable<NetworkManagerAnalytics>

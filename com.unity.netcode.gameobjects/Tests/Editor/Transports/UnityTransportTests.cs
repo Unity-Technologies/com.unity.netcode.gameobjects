@@ -4,7 +4,7 @@ using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     internal class UnityTransportTests
     {

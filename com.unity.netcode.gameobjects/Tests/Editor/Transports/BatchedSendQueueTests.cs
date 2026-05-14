@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.Transports.UTP;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     internal class BatchedSendQueueTests
     {
