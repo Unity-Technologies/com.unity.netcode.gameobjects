@@ -17,7 +17,7 @@
     # 1) Minimal PR checks that run on all PRs (even if only docs are changed)
     # 2) More extensive pr_code_changes_checks that run if code is changed. This test validates Standards, Package tests, Project tests and Desktop standalone tests to ensure that main platforms are covered
   # By default pr_minimal_required_checks it's triggered if
-    # 1) PR targets develop, develop-2.0.0 or release branches
+    # 1) PR targets develop, develop-2.0.0, develop-3.x.x or release branches
     # 2) PR is not a draft
   # Then pr_code_changes_checks it's triggered if the same conditions apply plus:
     # 1) PR changes code in com.unity.netcode.gameobjects package (Editor, Runtime or Tests folders) or in testproject folder or package.json file
@@ -58,6 +58,7 @@ pr_minimal_required_checks:
       (pull_request.comment eq "ngo" OR
       (pull_request.target eq "develop" OR
       pull_request.target eq "develop-2.0.0" OR
+      pull_request.target eq "develop-3.x.x" OR
       pull_request.target match "release/*")) AND
       NOT pull_request.draft
     cancel_old_ci: true
@@ -75,13 +76,13 @@ pr_code_changes_checks:
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
 
-    # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.0)
+    # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.3)
     - .yamato/package-tests.yml#package_test_-_ngo_{{ pinnedTrunk }}_mac
-    - .yamato/package-tests.yml#package_test_-_ngo_6000.0_win
+    - .yamato/package-tests.yml#package_test_-_ngo_6000.3_win
 
-    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (6000.0)
+    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (6000.3)
     - .yamato/project-tests.yml#test_testproject_win_{{ pinnedTrunk }}
-    - .yamato/project-tests.yml#test_testproject_mac_6000.0
+    - .yamato/project-tests.yml#test_testproject_mac_6000.3
 
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
@@ -94,6 +95,7 @@ pr_code_changes_checks:
       (pull_request.comment eq "ngo" OR
       (pull_request.target eq "develop" OR
       pull_request.target eq "develop-2.0.0" OR
+      pull_request.target eq "develop-3.x.x" OR
       pull_request.target match "release/*")) AND
       NOT pull_request.draft AND
       pull_request.changes.any match [

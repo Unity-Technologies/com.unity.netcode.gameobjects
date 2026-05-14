@@ -14,6 +14,7 @@ on:
     branches:
       - develop
       - develop-2.0.0
+      - develop-3.x.x
       - release/*
 
 jobs:
@@ -29,14 +30,14 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const body = pr.body || '';
-            
+
             // List of users to skip description validation
             // This should be automations where we don't care that much about the description format
             const skipUsersPrefixes = [
               'unity-renovate',
               'svc-'
             ];
-            
+
             // If PR author is in the skip list, exit early
             const author = pr.user.login;
             console.log(`PR author: ${author}`);
@@ -49,7 +50,7 @@ jobs:
             const requiredSections = [
               {
                 header: '## Backports',
-                description: 'PR description must include a "## Backports" section. Please add this section and provide information about this PR backport to develop or develop-2.0.0 branch respectively or explain why backport is not needed.'
+                description: 'PR description must include a "## Backports" section. Please add this section and provide information about this PR backport to develop, develop-2.0.0 or develop-3.x.x branch respectively or explain why backport is not needed.'
               },
               {
                 header: '## Testing & QA',
