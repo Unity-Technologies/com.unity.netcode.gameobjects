@@ -1437,7 +1437,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             }
             catch (Exception ex)
             {
-                Assert.Fail($"Threw Exception:{ex.Message}!\n{ex.StackTrace}");
+                Assert.Fail($"Threw Exception:{ex.Message}!\n{ex.StackTrace}{(ex.InnerException != null ? $"{ex.InnerException.Message}\n{ex.InnerException.StackTrace}" : "")}");
             }
         }
 

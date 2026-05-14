@@ -78,6 +78,7 @@ namespace Unity.Netcode.RuntimeTests
                         if (data.ClientId == m_TargetClientId)
                         {
                             ++m_ClientDisconnectCount;
+                            m_ClientDisconnectsReceived.Add(networkManager.LocalClientId);
                         }
                         break;
                     }
@@ -87,6 +88,7 @@ namespace Unity.Netcode.RuntimeTests
                         {
                             Assert.IsFalse(data.PeerClientIds.IsCreated);
                             ++m_PeerDisconnectCount;
+                            m_PeerDisconnectsReceived.Add(networkManager.LocalClientId);
                         }
                         break;
                     }
@@ -96,6 +98,8 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_TargetClientShutdown;
         private NetworkManager m_TargetClient;
         private ulong m_TargetClientId;
+        private HashSet<ulong> m_ClientDisconnectsReceived;
+        private HashSet<ulong> m_PeerDisconnectsReceived;
 
         private void ClientToDisconnect_OnClientStopped(bool wasHost)
         {
@@ -107,8 +111,10 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestPeerDisconnectCallback([Values] ClientDisconnectType clientDisconnectType, [Values(1ul, 2ul, 3ul)] ulong disconnectedClient)
         {
             m_TargetClientShutdown = false;
-            m_TargetClient = m_ClientNetworkManagers[disconnectedClient - 1];
+            m_TargetClient = m_ClientNetworkManagers.First(c => c.LocalClientId == disconnectedClient);
             m_TargetClientId = m_TargetClient.LocalClientId;
+            m_ClientDisconnectsReceived = new HashSet<ulong>();
+            m_PeerDisconnectsReceived = new HashSet<ulong>();
             m_TargetClient.OnClientStopped += ClientToDisconnect_OnClientStopped;
             foreach (var client in m_NetworkManagers)
             {
@@ -152,11 +158,11 @@ namespace Unity.Netcode.RuntimeTests
 
             // Make sure the target client is shutdown before performing validation
             yield return WaitForConditionOrTimeOut(() => m_TargetClientShutdown);
-            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} to shutdown!");
+            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} ({m_TargetClientId}) to shutdown!");
 
             // Check that the client is disconnected and all NetworkManagers have registered this
             yield return WaitForConditionOrTimeOut(CheckClientDisconnected);
-            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} to register as having shutdown!");
+            AssertOnTimeout($"Timed out waiting for {m_TargetClient.name} ({m_TargetClientId}) to register as having shutdown!");
 
             // If disconnected, the server and the client that disconnected will be notified
             Assert.AreEqual(2, m_ClientDisconnectCount);
@@ -171,11 +177,33 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private bool CheckClientDisconnected(StringBuilder errorLog)
         {
+            if (!m_ClientDisconnectsReceived.Contains(0ul))
+            {
+                errorLog.AppendLine($"[Server] has not received the client disconnect from {m_TargetClientId}!");
+                return false;
+            }
+            if (!m_ClientDisconnectsReceived.Contains(m_TargetClientId))
+            {
+                errorLog.AppendLine($"[Client-{m_TargetClientId}] has not received its own client disconnect!");
+                return false;
+            }
+
+            for (var i = m_UseHost ? 0ul : 1ul; i <= 3ul; ++i)
+            {
+                if (i == m_TargetClientId)
+                {
+                    continue;
+                }
+                if(!m_PeerDisconnectsReceived.Contains(i))
+                {
+                    errorLog.AppendLine($"[Client-{i}] has not received the peer disconnect from {m_TargetClientId}!");
+                    return false;
+                }
+            }
             foreach (var networkManager in m_NetworkManagers)
             {
                 if (!networkManager.IsConnectedClient)
                 {
-
                     continue;
                 }
                 if (networkManager.LocalClientId == m_TargetClientId && ((networkManager.IsConnectedClient) || (networkManager.IsListening)))

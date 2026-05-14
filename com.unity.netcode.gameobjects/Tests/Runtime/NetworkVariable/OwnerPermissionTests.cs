@@ -108,7 +108,13 @@ namespace Unity.Netcode.RuntimeTests
                 NetworkManager ownerManager = m_ServerNetworkManager;
                 if (objectIndex != 0)
                 {
-                    ownerManager = m_ClientNetworkManagers[objectIndex - 1];
+                    foreach (var manager in m_ClientNetworkManagers)
+                    {
+                        if (manager.LocalClientId == (ulong)objectIndex)
+                        {
+                            ownerManager = manager;
+                        }
+                    }
                 }
                 var spawnedInstance = SpawnObject(m_PrefabToSpawn, ownerManager);
 

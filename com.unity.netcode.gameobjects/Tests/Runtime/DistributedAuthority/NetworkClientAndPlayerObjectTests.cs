@@ -157,6 +157,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateNetworkClients()
         {
+            m_ChangedPlayerPrefabs.Clear();
             // Validate the initial clients created
             yield return WaitForConditionOrTimeOut(AllNetworkClientsValidated);
             AssertOnTimeout($"[Start] Not all NetworkClients were valid!\n{m_ErrorLogLevel1}");
