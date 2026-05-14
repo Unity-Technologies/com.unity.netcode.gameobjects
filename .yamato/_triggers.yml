@@ -17,7 +17,7 @@
     # 1) Minimal PR checks that run on all PRs (even if only docs are changed)
     # 2) More extensive pr_code_changes_checks that run if code is changed. This test validates Standards, Package tests, Project tests and Desktop standalone tests to ensure that main platforms are covered
   # By default pr_minimal_required_checks it's triggered if
-    # 1) PR targets develop, develop-2.0.0 or release branches
+    # 1) PR targets develop, develop-2.0.0, develop-3.x.x or release branches
     # 2) PR is not a draft
   # Then pr_code_changes_checks it's triggered if the same conditions apply plus:
     # 1) PR changes code in com.unity.netcode.gameobjects package (Editor, Runtime or Tests folders) or in testproject folder or package.json file

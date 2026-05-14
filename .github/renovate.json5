@@ -1,5 +1,5 @@
 ﻿{
-  "baseBranches": ["develop", "develop-2.0.0"],
+  "baseBranches": ["develop", "develop-2.0.0", "develop-3.x.x"],
   "dependencyDashboard": true,
 
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",

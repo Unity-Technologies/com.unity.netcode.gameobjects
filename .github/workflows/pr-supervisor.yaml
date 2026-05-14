@@ -2,7 +2,7 @@
 # We are using https://cli.github.com/manual/gh_pr_checks
 # The aim is to ensure that conditionally triggered Yamato jobs are completed successfully before allowing merges
 
-# This job will be required in branch protection rules for develop, develop-2.0.0, and release/* branches. It's only goal will be to ensure that Yamato jobs are completed successfully before allowing Pr to merge.
+# This job will be required in branch protection rules for develop, develop-2.0.0, develop-3.x.x, and release/* branches. It's only goal will be to ensure that Yamato jobs are completed successfully before allowing Pr to merge.
 # Note that conditional jobs will have 30s to show which is always the cas since they are showing up as soon as in distribution stage.
 
 name: Yamato PR Supervisor

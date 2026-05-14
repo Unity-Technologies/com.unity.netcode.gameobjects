@@ -12,7 +12,7 @@
     "com.unity.multiplayer.center": "1.0.0",
     "com.unity.multiplayer.playmode": "1.6.1",
     "com.unity.multiplayer.tools": "2.2.6",
-    "com.unity.netcode.gameobjects": "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git?path=com.unity.netcode.gameobjects#develop-2.0.0",
+    "com.unity.netcode.gameobjects": "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git?path=com.unity.netcode.gameobjects#develop-3.x.x",
     "com.unity.purchasing": "4.12.2",
     "com.unity.services.multiplayer": "1.2.0",
     "com.unity.test-framework": "1.6.0",
