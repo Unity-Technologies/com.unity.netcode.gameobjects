@@ -1841,6 +1841,8 @@ namespace Unity.Netcode
                 {
                     // Dispose of all worlds
                     World.DisposeAllWorlds();
+                    // Clear the world assigned from previous session
+                    NetcodeWorld = null;
                 }
                 catch (Exception ex)
                 {

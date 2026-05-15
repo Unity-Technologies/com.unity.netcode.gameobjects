@@ -37,15 +37,17 @@ namespace Unity.Netcode.Components
         {
             var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-//            var networkManager = NetworkManager.Singleton;
-            foreach (var networkManager in GameObject.FindObjectsByType<NetworkManager>())
+            foreach (var networkManager in Object.FindObjectsByType<NetworkManager>())
             {
-                foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>()
-                             .WithNone<NetworkStreamConnection>().WithEntityAccess())
+                foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);
                     m_TempConnections.Add(new NetcodeConnection
-                        { World = World, Entity = entity, NetworkId = networkId.Value });
+                    {
+                        World = World,
+                        Entity = entity,
+                        NetworkId = networkId.Value
+                    });
                 }
 
                 foreach (var con in m_TempConnections)
@@ -62,7 +64,7 @@ namespace Unity.Netcode.Components
                     if (!m_NewConnections.ContainsKey(networkId.Value))
                     {
                         var newConnection = new NetcodeConnection
-                            { World = World, Entity = entity, NetworkId = networkId.Value };
+                        { World = World, Entity = entity, NetworkId = networkId.Value };
                         m_NewConnections.Add(networkId.Value, newConnection);
                     }
                 }
@@ -101,11 +103,10 @@ namespace Unity.Netcode.Components
                     {
                         commandBuffer.RemoveComponent<ConnectionState>(entity);
                         NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
-                            { World = World, Entity = entity, NetworkId = networkId.Value });
+                        { World = World, Entity = entity, NetworkId = networkId.Value });
                     }
                 }
             }
-
             commandBuffer.Playback(EntityManager);
         }
 

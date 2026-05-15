@@ -2793,6 +2793,7 @@ namespace Unity.Netcode
         }
 
         internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours;
+
         internal bool InitializeChildNetworkBehaviours()
         {
             ChildNetworkBehaviours = new Dictionary<ushort, NetworkBehaviour>();
@@ -2839,6 +2840,7 @@ namespace Unity.Netcode
             // automatically removed later).
             if (HasGhost)
             {
+
                 if (NetworkRigidbodies != null)
                 {
                     for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
@@ -2849,10 +2851,14 @@ namespace Unity.Netcode
                     NetworkRigidbodies.Clear();
                 }
 
-                // TODO: We might want to make this whole thing a noop as opposed to completely
-                // removing it.
+                // When hybrid spawning, the transform is synchronized by the GhostObject.
+                // As a convenience, we remove and destroy all NetworkTransforms.
+                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostAdapter
+                // Possibly use a "Synchronize" property and display only on children of a root parent GhostAdapter.
                 if (NetworkTransforms != null)
                 {
+                    NetworkManager.Log.Warning(new Logging.Context(LogLevel.Developer, $"[]{name} Hybrid spawned objects do not support {nameof(NetworkTransform)} and " +
+                        $"are removed at runtime. If hybrid spawning is intended, then remove it from the network prefab to avoid allocating and de-allocating at runtime."));
                     for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
                     {
                         ChildNetworkBehaviours.Remove(NetworkTransforms[i].NetworkBehaviourId);

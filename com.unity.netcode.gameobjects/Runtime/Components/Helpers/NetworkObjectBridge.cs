@@ -1,5 +1,6 @@
 #if UNIFIED_NETCODE
 using Unity.NetCode;
+using UnityEditor;
 
 namespace Unity.Netcode
 {
@@ -13,14 +14,14 @@ namespace Unity.Netcode
     public partial class NetworkObjectBridge : GhostBehaviour
     {
 
-#if UNITY_EDITOR && !UNITY_INCLUDE_TESTS
+#if UNITY_EDITOR
         [UnityEngine.HideInInspector]
         [UnityEngine.SerializeField]
         private bool m_Sorted = false;
         private void OnValidate()
         {
             // Sort only once when we have first been added.
-            if (!m_Sorted)
+            if (!m_Sorted && !EditorApplication.isPlaying)
             {
                 while (UnityEditorInternal.ComponentUtility.MoveComponentUp(this))
                 {
