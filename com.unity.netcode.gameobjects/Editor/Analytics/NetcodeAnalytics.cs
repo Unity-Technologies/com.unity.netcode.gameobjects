@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Analytics;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// Used to collection network session configuration information

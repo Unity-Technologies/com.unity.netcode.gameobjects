@@ -5,7 +5,7 @@ using System.Linq;
 
 
 #if UNITY_EDITOR
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEditor;
 
 /// <summary>
@@ -17,7 +17,7 @@ public class PlayerBallMotionEditor : NetworkTransformEditor
 {
     private SerializedProperty m_RotationAxis;
     private SerializedProperty m_RotationSpeed;
-    
+
 
     public override void OnEnable()
     {

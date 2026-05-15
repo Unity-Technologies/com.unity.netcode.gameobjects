@@ -2,7 +2,7 @@
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode;
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
 

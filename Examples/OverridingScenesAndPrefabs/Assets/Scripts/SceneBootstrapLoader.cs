@@ -6,7 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEditor;
 
 /// <summary>
@@ -224,7 +224,7 @@ public class SceneBootstrapLoader : MonoBehaviour
         if (sessionOwnerPromoted == m_NetworkManager.LocalClientId)
         {
             // When we set the client synchronization mode to additive, the session owner will include this setting
-            // setting when synchronizing a newly joining client and the client will use any already loaded scenes 
+            // setting when synchronizing a newly joining client and the client will use any already loaded scenes
             // that the session owner determines should be synchronized. If a scene that is being synchronized is not
             // yet loaded, then the client will load that scene.
             m_NetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);

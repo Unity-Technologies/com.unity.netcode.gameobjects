@@ -4,7 +4,7 @@
     "references": [
         "Unity.Collections",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
+        "Unity.Netcode.GameObjects.Editor",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
@@ -13,8 +13,7 @@
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Runtime.Tests",
-        "Unity.Netcode.GameObjects.Editor"
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"

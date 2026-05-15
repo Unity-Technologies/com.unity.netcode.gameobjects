@@ -4,7 +4,7 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.RuntimeTests",
-        "Unity.Netcode.Editor",
+        "Unity.Netcode.GameObjects.Editor",
         "TestProject.ManualTests",
         "TestProject",
         "Unity.Addressables",
@@ -15,8 +15,7 @@
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Runtime.Tests",
-        "Unity.Netcode.GameObjects.Editor"
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

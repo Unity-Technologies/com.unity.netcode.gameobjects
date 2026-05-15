@@ -2,7 +2,7 @@
 using Unity.Netcode.Components;
 using UnityEditor;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     [CustomEditor(typeof(NetworkRigidbodyBase), true)]
     [CanEditMultipleObjects]
