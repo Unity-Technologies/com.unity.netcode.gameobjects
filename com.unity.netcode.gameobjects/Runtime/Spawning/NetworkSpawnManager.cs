@@ -1000,7 +1000,7 @@ namespace Unity.Netcode
 
             networkObject.DestroyWithScene = serializedObject.DestroyWithScene;
             networkObject.NetworkSceneHandle = serializedObject.NetworkSceneHandle;
-            networkObject.DestroyWithOwner = serializedObject.DestroyWithOwner;
+            networkObject.DontDestroyWithOwner = serializedObject.DontDestroyWithOwner;
             networkObject.Ownership = (NetworkObject.OwnershipStatus)serializedObject.OwnershipFlags;
 
             var nonNetworkObjectParent = false;
