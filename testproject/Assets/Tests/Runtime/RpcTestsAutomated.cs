@@ -120,16 +120,16 @@ namespace TestProject.RuntimeTests
             Assert.IsFalse(m_TimedOut);
 
             // Log the output for visual confirmation (Acceptance Test for this test) that all RPC test types (tracked by counters) executed multiple times
-            Debug.Log("Final Host-Server Status Info:");
-            Debug.Log(serverRpcTests.GetCurrentServerStatusInfo());
+            VerboseDebug("Final Host-Server Status Info:");
+            VerboseDebug(serverRpcTests.GetCurrentServerStatusInfo());
 
             foreach (var rpcClientSideTest in clientRpcQueueManualTestInstsances)
             {
-                Debug.Log($"Final Client {rpcClientSideTest.NetworkManager.LocalClientId} Status Info:");
-                Debug.Log(rpcClientSideTest.GetCurrentClientStatusInfo());
+                VerboseDebug($"Final Client {rpcClientSideTest.NetworkManager.LocalClientId} Status Info:");
+                VerboseDebug(rpcClientSideTest.GetCurrentClientStatusInfo());
             }
 
-            Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
+            VerboseDebug($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
     }
 }

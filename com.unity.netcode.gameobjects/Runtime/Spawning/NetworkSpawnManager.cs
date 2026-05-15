@@ -448,6 +448,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="perviousOwner">not used</param>
         /// <param name="newOwner">not used</param>
+        [Obsolete("This method is no longer used and will be removed in a future version.")]
         protected virtual void InternalOnOwnershipChanged(ulong perviousOwner, ulong newOwner)
         {
 
@@ -999,7 +1000,7 @@ namespace Unity.Netcode
 
             networkObject.DestroyWithScene = serializedObject.DestroyWithScene;
             networkObject.NetworkSceneHandle = serializedObject.NetworkSceneHandle;
-            networkObject.DontDestroyWithOwner = serializedObject.DontDestroyWithOwner;
+            networkObject.DestroyWithOwner = serializedObject.DestroyWithOwner;
             networkObject.Ownership = (NetworkObject.OwnershipStatus)serializedObject.OwnershipFlags;
 
             var nonNetworkObjectParent = false;
