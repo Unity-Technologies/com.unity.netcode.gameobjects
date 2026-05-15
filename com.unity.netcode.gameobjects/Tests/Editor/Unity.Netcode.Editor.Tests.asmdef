@@ -13,8 +13,7 @@
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Runtime.Tests",
-        "Unity.PerformanceTesting"
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"
