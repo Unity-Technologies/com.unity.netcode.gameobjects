@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// The custom editor for the <see cref="NetworkPrefabsList"/> <see cref="ScriptableObject"/>.

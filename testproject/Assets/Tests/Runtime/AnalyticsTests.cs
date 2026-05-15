@@ -2,7 +2,7 @@
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode;
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
 
@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             NetcodeAnalytics.EnableIntegrationTestAnalytics = true;
-            m_NetcodeAnalytics = Unity.Netcode.Editor.NetworkManagerHelper.Singleton.NetcodeAnalytics;
+            m_NetcodeAnalytics = Unity.Netcode.GameObjects.Editor.NetworkManagerHelper.Singleton.NetcodeAnalytics;
             yield return base.OnSetup();
         }
 

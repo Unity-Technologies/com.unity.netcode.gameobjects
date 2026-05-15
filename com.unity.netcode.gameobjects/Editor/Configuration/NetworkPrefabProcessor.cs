@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor.Configuration
+namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
     /// <summary>
     /// Updates the default <see cref="NetworkPrefabsList"/> instance when prefabs are updated (created, moved, deleted) in the project.

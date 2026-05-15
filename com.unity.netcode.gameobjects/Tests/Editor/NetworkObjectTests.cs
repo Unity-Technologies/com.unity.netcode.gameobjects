@@ -1,10 +1,10 @@
 using System.Text.RegularExpressions;
 using NUnit.Framework;
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     internal class NetworkObjectTests
     {

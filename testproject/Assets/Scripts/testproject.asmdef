@@ -3,7 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
+        "Unity.Netcode.GameObjects.Editor",
         "Unity.Netcode.Components",
         "Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",

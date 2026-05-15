@@ -10,7 +10,7 @@ using UnityEngine;
 using SessionState = Unity.Services.Multiplayer.SessionState;
 
 #if UNITY_EDITOR
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEditor;
 
 /// <summary>

@@ -1,6 +1,6 @@
 {
-    "name": "Unity.Netcode.PackageChecker.Editor",
-    "rootNamespace": "Unity.Netcode.Editor.PackageChecker",
+    "name": "Unity.Netcode.GameObjects.PackageChecker.Editor",
+    "rootNamespace": "Unity.Netcode.GameObjects.Editor.PackageChecker",
     "references": [],
     "includePlatforms": [
         "Editor"

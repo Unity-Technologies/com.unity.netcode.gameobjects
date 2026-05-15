@@ -11,7 +11,7 @@ using UnityEngine;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
-namespace Unity.Netcode.Editor.CodeGen
+namespace Unity.Netcode.GameObjects.Editor.CodeGen
 {
     internal sealed class INetworkMessageILPP : ILPPInterface
     {
