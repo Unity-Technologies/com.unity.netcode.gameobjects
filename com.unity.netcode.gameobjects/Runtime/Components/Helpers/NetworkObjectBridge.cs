@@ -4,7 +4,6 @@ using UnityEditor;
 
 namespace Unity.Netcode
 {
-#if UNIFIED_NETCODE
     /// <summary>
     /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// </summary>
@@ -51,6 +50,5 @@ namespace Unity.Netcode
             NetworkObjectId.Value = networkObjectId;
         }
     }
-#endif
 }
 #endif
