@@ -3,7 +3,6 @@ using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
-using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -35,6 +34,11 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_Prefab;
         private NetworkObject m_Instance;
 
+        protected override bool OnSetVerboseDebug()
+        {
+            return true;
+        }
+
         protected override IEnumerator OnSetup()
         {
             // Creates the hybrid prefab
@@ -43,37 +47,9 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
-        protected override void OnServerAndClientsCreated()
-        {
-
-            // Add the hybrid prefab to the prefabs list for
-            // all NetworkManager instances.
-            // TODO: Emma and I discussed actually not making it
-            // a requirement to have NetworkManager instances.
-            // We can get that PR landed and merged back into the
-            // unified branch so this is no longer needed.
-            // (We can modify CreateHybridPrefab to use whatever list
-            // is used to handle this when using the normal prefab creation
-            // methods).
-            var networkPrefab = new NetworkPrefab()
-            {
-                Prefab = m_Prefab,
-            };
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager.LogLevel = LogLevel.Developer;
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-                // Set the deferred message timeout to be 5 seconds for this test.
-                // (To see if the messages for the instances ever get processed.)
-                // Enable this to debug deferred
-                //networkManager.NetworkConfig.SpawnTimeout = 5;
-            }
-        }
-
         [UnityTest]
         public IEnumerator BasicMovementTest()
         {
-            m_EnableVerboseDebug = true;
             var authority = GetAuthorityNetworkManager();
             m_Instance = SpawnObject(m_Prefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
 
