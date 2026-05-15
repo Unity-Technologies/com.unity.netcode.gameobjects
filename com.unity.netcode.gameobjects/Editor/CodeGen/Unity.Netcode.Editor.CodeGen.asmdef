@@ -1,5 +1,5 @@
 {
-    "name": "Unity.Netcode.GameObjects.Editor.CodeGen",
+    "name": "Unity.Netcode.GameObjects.CodeGen.Editor",
     "rootNamespace": "Unity.Netcode.GameObjects.Editor.CodeGen",
     "references": [
         "Unity.Netcode.Runtime",
