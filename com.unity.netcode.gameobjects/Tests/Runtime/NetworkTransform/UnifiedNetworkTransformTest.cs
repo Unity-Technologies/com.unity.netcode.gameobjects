@@ -47,7 +47,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             // Creates the hybrid prefab
-            m_Prefab = CreateHybridPrefab("HybridPrefab", true);
+            m_Prefab = CreateNetworkObjectPrefab("HybridPrefab");
             m_Prefab.AddComponent<DoNothingNetworkTransform>();
             return base.OnSetup();
         }

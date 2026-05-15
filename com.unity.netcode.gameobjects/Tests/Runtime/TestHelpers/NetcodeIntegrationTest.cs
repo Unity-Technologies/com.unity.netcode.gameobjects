@@ -2296,7 +2296,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             if (m_AllPrefabsAsHybrid)
             {
-                return CreateHybridPrefab(baseName);
+                return CreateHybridPrefab(baseName, true);
             }
 #endif
             var prefabCreateAssertError = $"You can only invoke this method during {nameof(OnServerAndClientsCreated)} " +
@@ -2450,6 +2450,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
+#if UNIFIED_NETCODE
+                // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
+                // assigning this.
+                if (networkObjectToSpawn.HasGhost)
+                {
+                    NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+                }
+#endif
                 networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
                 if (spawnAuthority == m_ServerNetworkManager)
                 {
@@ -2507,14 +2515,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
         {
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
-#if UNIFIED_NETCODE
-            // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
-            // assigning this.
-            if (prefabNetworkObject.HasGhost)
-            {
-                NetCode.Netcode.Instance.m_ActiveWorld = owner.NetcodeWorld;
-            }
-#endif
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
             SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);
