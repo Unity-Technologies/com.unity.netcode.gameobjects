@@ -7,11 +7,7 @@ using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
 #if UNITY_EDITOR
 using UnityEditor;
-#if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
-#else
-using UnityEditor.Experimental.SceneManagement;
-#endif
 #endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -2665,7 +2661,7 @@ namespace Unity.Netcode
                 childBehaviour.InternalOnNetworkSpawn();
             }
 
-            // After initialization, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
+            // After internally spawning, we can then invoke OnNetworkSpawn on each child NetworkBehaviour.
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {
                 if (!childBehaviour.gameObject.activeInHierarchy)
@@ -2740,6 +2736,7 @@ namespace Unity.Netcode
         }
 
         internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours;
+
         internal bool InitializeChildNetworkBehaviours()
         {
             ChildNetworkBehaviours = new Dictionary<ushort, NetworkBehaviour>();
@@ -2770,9 +2767,7 @@ namespace Unity.Netcode
                     networkTransform.IsNested = networkTransform.gameObject != gameObject;
                     NetworkTransforms.Add(networkTransform);
                 }
-
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-
                 var rigidbodyBase = behaviour as NetworkRigidbodyBase;
                 if (rigidbodyBase != null)
                 {
@@ -2914,18 +2909,18 @@ namespace Unity.Netcode
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
 
-            private const ushort k_IsPlayerObject = 0x001;
-            private const ushort k_HasParent = 0x002;
-            private const ushort k_IsSceneObject = 0x004;
-            private const ushort k_HasTransform = 0x008;
-            private const ushort k_IsLatestParentSet = 0x010;
-            private const ushort k_WorldPositionStays = 0x020;
-            private const ushort k_DestroyWithScene = 0x040;
-            private const ushort k_DontDestroyWithOwner = 0x080;
-            private const ushort k_HasOwnershipFlags = 0x100;
-            private const ushort k_SyncObservers = 0x200;
-            private const ushort k_SpawnWithObservers = 0x400;
-            private const ushort k_HasInstantiationData = 0x800;
+            private const ushort k_IsPlayerObject = 0x0001;
+            private const ushort k_HasParent = 0x0002;
+            private const ushort k_IsSceneObject = 0x0004;
+            private const ushort k_HasTransform = 0x0008;
+            private const ushort k_IsLatestParentSet = 0x0010;
+            private const ushort k_WorldPositionStays = 0x0020;
+            private const ushort k_DestroyWithScene = 0x0040;
+            private const ushort k_DontDestroyWithOwner = 0x0080;
+            private const ushort k_HasOwnershipFlags = 0x0100;
+            private const ushort k_SyncObservers = 0x0200;
+            private const ushort k_SpawnWithObservers = 0x0400;
+            private const ushort k_HasInstantiationData = 0x0800;
 
             public bool IsPlayerObject;
             public bool HasParent;

@@ -326,14 +326,8 @@ namespace Unity.Netcode.GameObjects.Editor
         /// </summary>
         /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
         /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
-        public static Transform GetRootParentTransform(Transform transform)
-        {
-            if (transform.parent == null || transform.parent == transform)
-            {
-                return transform;
-            }
-            return GetRootParentTransform(transform.parent);
-        }
+        [Obsolete("Use transform.root instead", true)]
+        public static Transform GetRootParentTransform(Transform transform) => transform.root;
 
         /// <summary>
         /// Used to determine if a GameObject has one or more NetworkBehaviours but
