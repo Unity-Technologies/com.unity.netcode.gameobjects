@@ -13,6 +13,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
+  - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
+  - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
+  - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
+  - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
 
 ### Deprecated
 

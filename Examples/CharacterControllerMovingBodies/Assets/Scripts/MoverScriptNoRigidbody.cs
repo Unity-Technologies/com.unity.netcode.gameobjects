@@ -2,7 +2,7 @@ using UnityEngine;
 using Unity.Netcode.Components;
 using Unity.Netcode;
 #if UNITY_EDITOR
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEditor;
 
 /// <summary>

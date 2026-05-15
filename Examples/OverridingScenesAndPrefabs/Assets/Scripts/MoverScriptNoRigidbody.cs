@@ -7,7 +7,7 @@ using Debug = UnityEngine.Debug;
 
 #region MoverScriptNoRigidbody Custom Editor
 #if UNITY_EDITOR
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using UnityEditor;
 
 /// <summary>

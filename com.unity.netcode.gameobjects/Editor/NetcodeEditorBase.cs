@@ -2,7 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// The base Netcode Editor helper class to display derived <see cref="MonoBehaviour"/> based components <br />

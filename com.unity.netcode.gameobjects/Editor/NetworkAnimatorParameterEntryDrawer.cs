@@ -4,7 +4,7 @@ using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     [CustomPropertyDrawer(typeof(NetworkAnimator.AnimatorParametersListContainer))]
     internal class NetworkAnimatorParameterEntryDrawer : PropertyDrawer

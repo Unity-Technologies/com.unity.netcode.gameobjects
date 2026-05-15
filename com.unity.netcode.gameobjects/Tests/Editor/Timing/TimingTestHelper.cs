@@ -60,4 +60,3 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
     }
 }
-

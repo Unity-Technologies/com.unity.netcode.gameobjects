@@ -2,7 +2,7 @@
 using System;
 using UnityEngine.Analytics;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     internal class AnalyticsHandler<T> : IAnalytic where T : IAnalytic.IData
     {
