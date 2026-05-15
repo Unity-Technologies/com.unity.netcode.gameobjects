@@ -657,6 +657,23 @@ namespace Unity.Netcode.Transports.UTP
             reliableSequencedPipelineStages = new(reliableSequenced, Allocator.Temp);
         }
 
+        /// <inheritdoc cref="GetDefaultPipelineConfigurations(out NativeArray{NetworkPipelineStageId}, out NativeArray{NetworkPipelineStageId}, out NativeArray{NetworkPipelineStageId})"/>
+        /// <param name="driver">Driver for which the pipeline configurations are being retrieved.</param>
+        public void GetDefaultPipelineConfigurations(
+            ref NetworkDriver driver,
+            out NativeArray<NetworkPipelineStageId> unreliableFragmentedPipelineStages,
+            out NativeArray<NetworkPipelineStageId> unreliableSequencedFragmentedPipelineStages,
+            out NativeArray<NetworkPipelineStageId> reliableSequencedPipelineStages)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
+            GetDefaultPipelineConfigurations(
+                out unreliableFragmentedPipelineStages,
+                out unreliableSequencedFragmentedPipelineStages,
+                out reliableSequencedPipelineStages);
+        }
+
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
         {
             switch (delivery)
@@ -1860,11 +1877,8 @@ namespace Unity.Netcode.Transports.UTP
 #endif
             }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-            driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-#endif
-
             GetDefaultPipelineConfigurations(
+                ref driver,
                 out var unreliableFragmentedPipelineStages,
                 out var unreliableSequencedFragmentedPipelineStages,
                 out var reliableSequencedPipelineStages);

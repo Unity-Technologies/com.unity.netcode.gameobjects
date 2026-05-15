@@ -1,5 +1,3 @@
-#if MULTIPLAYER_TOOLS
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 using AOT;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
@@ -70,5 +68,3 @@ namespace Unity.Netcode.Transports.UTP
         }
     }
 }
-#endif
-#endif
