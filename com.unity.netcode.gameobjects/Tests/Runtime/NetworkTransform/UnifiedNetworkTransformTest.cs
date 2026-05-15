@@ -27,12 +27,17 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    [TestFixture(HostOrServer.UnifiedHost)]
     internal class UnifiedNetworkTransformTest : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 2;
 
         private GameObject m_Prefab;
         private NetworkObject m_Instance;
+
+        public UnifiedNetworkTransformTest(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+        }
 
         protected override bool OnSetVerboseDebug()
         {
