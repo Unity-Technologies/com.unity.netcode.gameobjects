@@ -45,20 +45,11 @@ namespace TestProject.ManualTests
             }
         }
 
-        private Transform GetRootParentTransform(Transform transform)
-        {
-            if (transform.parent != null)
-            {
-                return GetRootParentTransform(transform.parent);
-            }
-            return transform;
-        }
-
         protected override void OnNetworkPostSpawn()
         {
             if (CanCommitToTransform)
             {
-                m_RootParentTransform = GetRootParentTransform(transform);
+                m_RootParentTransform = transform.root;
                 if (RandomizeScale)
                 {
                     transform.localScale = transform.localScale * Random.Range(0.5f, 1.5f);

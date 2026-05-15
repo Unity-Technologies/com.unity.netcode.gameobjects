@@ -352,7 +352,7 @@ namespace Unity.Netcode.GameObjects.Editor
             }
 
             // Now get the root parent transform to the current GameObject (or itself)
-            var rootTransform = GetRootParentTransform(gameObject.transform);
+            var rootTransform = gameObject.transform.root;
             if (!rootTransform.TryGetComponent<NetworkManager>(out var networkManager))
             {
                 networkManager = rootTransform.GetComponentInChildren<NetworkManager>();
