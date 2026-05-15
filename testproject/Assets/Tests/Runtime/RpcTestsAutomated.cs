@@ -6,7 +6,6 @@ using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
