@@ -15,8 +15,10 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
     [TestFixture(HostOrServer.UnifiedHost)]
     [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkListTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;
