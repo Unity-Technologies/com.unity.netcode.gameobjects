@@ -8,7 +8,7 @@
     "PVP-130-2": {
       "errors": [
         "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor.CodeGen",
-        "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor.PackageChecker",
+        "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.PackageChecker.Editor",
         "Editor/Unity.Netcode.Editor.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor",
         "Tests/Editor/Unity.Netcode.Editor.Tests.asmdef: assembly name does not match filename: Unity.Netcode.GameObjects.Editor.Tests"
       ]
