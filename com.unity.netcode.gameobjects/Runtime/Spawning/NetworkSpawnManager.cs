@@ -1368,6 +1368,9 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
+            // If this is a hybrid prefab, the spawn authority is responsible for assigning the network object id to the network object bridge so that it
+            // can be used to link the N4E ghost to the NetworkObject. This is needed because in the hybrid prefab case, the ghost can be spawned before
+            // the NetworkObject is fully spawned.
             if (networkObject.HasGhost)
             {
                 networkObject.NetworkObjectBridge.SetNetworkObjectId(networkObject.NetworkObjectId);
@@ -2100,7 +2103,7 @@ namespace Unity.Netcode
                 RemovePlayerObject(networkObject, destroyGameObject);
             }
 #if UNIFIED_NETCODE
-            // Let unified netcode handle destroying
+            // Unified netcode handles destroying the instance of the object on the non-authority side when the object has a ghost representation.
             if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
             {
                 // exit early

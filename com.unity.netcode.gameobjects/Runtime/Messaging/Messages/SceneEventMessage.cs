@@ -21,6 +21,10 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 #if UNIFIED_NETCODE
+            // Defer this message if the OnGhostSpawned trigger is still being processed. This is because the scene event message can be sent
+            // as part of the ghost spawning process and we want to make sure that all ghost spawning related messages are processed before we
+            // process this one. This is to avoid any potential issues with the order of message processing and to ensure that all ghost
+            // related messages are processed before we process this one.
             if (networkManager.DeferredMessageManager.HasAnyOfTrigger(IDeferredNetworkMessageManager.TriggerType
                     .OnGhostSpawned))
             {

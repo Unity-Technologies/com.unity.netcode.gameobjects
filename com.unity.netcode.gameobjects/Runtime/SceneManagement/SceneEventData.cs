@@ -1108,7 +1108,6 @@ namespace Unity.Netcode
                     builder.AppendLine($"[Read][Synchronize Objects][WPos: {InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
                 }
 #if UNIFIED_NETCODE
-                // TODO-UNIFIED: This is a temporary POC fix to handle hybrid spawning where the Ghost instance might not yet exist.
                 var spawnManager = m_NetworkManager.SpawnManager;
 #endif
 
@@ -1119,7 +1118,10 @@ namespace Unity.Netcode
                     serializedObject.Deserialize(InternalBuffer);
 
 #if UNIFIED_NETCODE
-                    // TODO-UNIFIED: This is a temporary POC fix to handle synchronizing hybrid spawned objects where the Ghost instance might not yet exist.
+                    // This handles the case where a NetworkObject is serialized with a ghost component but the ghost isn't actually included in
+                    // the spawn message and won't be spawned by the client until later in the N4E synchronization process. In this case, we need
+                    // to defer the deserialization of the NetworkObject until the ghost is spawned and we have an instance to deserialize this 
+                    // information during synchronization.
                     if (serializedObject.HasGhost)
                     {
                         if (!networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(serializedObject.NetworkObjectId))
@@ -1442,12 +1444,18 @@ namespace Unity.Netcode
     }
 
 #if UNIFIED_NETCODE
+    /// <summary>
+    /// Used to store pending ghost spawns that are waiting for their associated (N4E) ghost to be spawned before they can be fully deserialized and
+    /// spawned during the scene synchronization process. This is necessary because in unified mode we allow for NetworkObjects with ghost components
+    /// to be synchronized during the scene synchronization process but we can't guarantee the order of messages that the client receives so we
+    /// need to defer the deserialization of any NetworkObject that has a ghost component until we have received the message that the ghost has
+    /// been spawned and we have an instance to deserialize this information into.
+    /// </summary>
     internal struct PendingGhostSpawnEntry
     {
         public float RegistrationTime;
         public FastBufferReader Buffer;
         public NetworkObject.SerializedObject SerializedObject;
-
     }
 #endif
 }
