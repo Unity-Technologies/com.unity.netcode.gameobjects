@@ -322,6 +322,14 @@ namespace Unity.Netcode.GameObjects.Editor
         }
 
         /// <summary>
+        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// </summary>
+        /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
+        /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
+        [Obsolete("Use transform.root instead", true)]
+        public static Transform GetRootParentTransform(Transform transform) => transform.root;
+
+        /// <summary>
         /// Used to determine if a GameObject has one or more NetworkBehaviours but
         /// does not already have a NetworkObject component.  If not it will notify
         /// the user that NetworkBehaviours require a NetworkObject.
