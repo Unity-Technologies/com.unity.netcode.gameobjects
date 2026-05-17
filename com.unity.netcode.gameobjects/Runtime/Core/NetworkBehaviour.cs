@@ -1,8 +1,10 @@
 #pragma warning disable IDE0005
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Unity.Collections;
+#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+using System.Runtime.CompilerServices;
+#endif
 using UnityEngine;
 #pragma warning restore IDE0005
 

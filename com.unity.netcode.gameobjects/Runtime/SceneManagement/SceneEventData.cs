@@ -1120,9 +1120,9 @@ namespace Unity.Netcode
                     }
                     var spawnedNetworkObject = NetworkObject.Deserialize(serializedObject, InternalBuffer, networkManager);
 
-                    var noStop = InternalBuffer.Position;
                     if (EnableSerializationLogs)
                     {
+                        var noStop = InternalBuffer.Position;
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
                         LogArray(InternalBuffer.ToArray(), noStart, noStop, builder);
                     }

@@ -1010,10 +1010,10 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
 #else
-            var isParented = transform.root != transform;
+            var isParented = transform.parent != null;
             if (isParented)
             {
-                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+                Log.Error(new Context(LogLevel.Error, GenerateNestedNetworkManagerMessage(transform)));
             }
 #endif
             return isParented;
@@ -1029,7 +1029,17 @@ namespace Unity.Netcode
         /// </summary>
         private void OnTransformParentChanged()
         {
+#if UNITY_EDITOR
+            // During editor playmode, we log the message as a dialog box
+            // and that script sets the parent back to root/null.
             NetworkManagerCheckForParent();
+#else
+            if (NetworkManagerCheckForParent())
+            {
+                // During runtime, we log the message and set our parent back to root/null.
+                transform.parent = null;
+            }
+#endif
         }
 
         /// <summary>
