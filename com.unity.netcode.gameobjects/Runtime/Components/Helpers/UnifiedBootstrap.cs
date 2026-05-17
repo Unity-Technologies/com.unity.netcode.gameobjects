@@ -7,9 +7,9 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// TODO-UNIFIED: Would need to be reviewed for alternate ways of handling this.
-    /// Creates the hosted world and provides a means to configuring
-    /// the 2nd port for unified netcode connection.
+    /// TODO-UNIFIED: Needs furthery review and proper error messaging using the new logging context.
+    /// Handles the bootstrap process for both client and server in unified mode. This is used to create the world and set it on the
+    /// NetworkManager during initialization.
     /// </summary>
     internal class UnifiedBootstrap : ClientServerBootstrap
     {
