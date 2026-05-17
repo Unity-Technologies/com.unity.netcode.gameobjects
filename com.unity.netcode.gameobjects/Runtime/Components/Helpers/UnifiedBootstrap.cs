@@ -64,15 +64,16 @@ namespace Unity.Netcode
                 }
 
                 networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
+#if UNIFIED_NGO_REGISTERS_PREFABS
                 if (networkManager.NetworkConfig.Prefabs.HasPendingGhostPrefabs)
                 {
                     if (networkManager.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Registering hybrid prefabs...");
                     }
-
                     networkManager.NetworkConfig.Prefabs.RegisterGhostPrefabs(networkManager);
                 }
+#endif
             }
             else
             {

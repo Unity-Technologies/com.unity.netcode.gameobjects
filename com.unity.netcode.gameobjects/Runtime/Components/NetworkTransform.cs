@@ -3628,8 +3628,6 @@ namespace Unity.Netcode.Components
             }
 
             CachedTransform = transform;
-
-
         }
 
         private NetworkObject m_CachedNetworkObject;
@@ -3648,6 +3646,9 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
 #if UNIFIED_NETCODE
+            // TODO-UNIFIED:
+            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
+            // it will be using N4E's built in interpolation and extrapolation features.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3747,8 +3748,10 @@ namespace Unity.Netcode.Components
         /// <param name="isOwnershipChange"></param>
         internal virtual void InternalInitialization(bool isOwnershipChange = false)
         {
-
 #if UNIFIED_NETCODE
+            // TODO-UNIFIED:
+            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
+            // it will be using N4E's built in interpolation and extrapolation features.
             if (NetworkObject.HasGhost)
             {
                 return;

@@ -47,7 +47,7 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
         [NonSerialized]
         internal Dictionary<uint, NetworkPrefab> PrefabTable = new Dictionary<uint, NetworkPrefab>();
 #endif
@@ -62,7 +62,7 @@ namespace Unity.Netcode
                 // Don't add this to m_RuntimeAddedPrefabs
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
                 m_Prefabs.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                 if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                 {
                     PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
@@ -74,7 +74,7 @@ namespace Unity.Netcode
         private void RemoveTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
         {
             m_Prefabs.Remove(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
             PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
 #endif
         }
@@ -109,7 +109,7 @@ namespace Unity.Netcode
         {
             m_Prefabs.Clear();
             NetworkPrefabsLists.RemoveAll(x => x == null);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
             PrefabTable.Clear();
 #endif
             foreach (var list in NetworkPrefabsLists)
@@ -144,7 +144,7 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                     if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                     {
                         PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
@@ -154,7 +154,7 @@ namespace Unity.Netcode
                 else
                 {
                     removeList?.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                     if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                     {
                         PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
@@ -168,7 +168,7 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                     if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                     {
                         PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
@@ -178,7 +178,7 @@ namespace Unity.Netcode
                 else
                 {
                     removeList?.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                     if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                     {
                         PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
@@ -216,7 +216,7 @@ namespace Unity.Netcode
             {
                 m_Prefabs.Add(networkPrefab);
                 m_RuntimeAddedPrefabs.Add(networkPrefab);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
                 if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
                 {
                     PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
@@ -249,7 +249,7 @@ namespace Unity.Netcode
             m_RuntimeAddedPrefabs.Remove(prefab);
             OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
-#if UNIFIED_NETCODE
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
             if (PrefabTable.ContainsKey(prefab.SourcePrefabGlobalObjectIdHash))
             {
                 PrefabTable.Remove(prefab.SourcePrefabGlobalObjectIdHash);
@@ -331,14 +331,15 @@ namespace Unity.Netcode
         }
 
 #if UNIFIED_NETCODE
+        internal bool HasGhostPrefabs { get; private set; }
+
+#if UNIFIED_NGO_REGISTERS_PREFABS
         /// <summary>
         /// TODO: Either keep or remove prior to freeze.
         /// Leaving this here in case we have to control when things get registered.
         /// </summary>
         internal bool HasPendingGhostPrefabs { get; private set; }
-        internal bool HasGhostPrefabs { get; private set; }
         private List<NetworkPrefab> m_PendingGhostRegistration = new List<NetworkPrefab>();
-
         /// <summary>
         /// UNIFIED-POC<br />
         /// Hybrid NetworkObject-Ghost Prefab Registration<br />
@@ -375,6 +376,7 @@ namespace Unity.Netcode
             HasPendingGhostPrefabs = m_PendingGhostRegistration.Count > 0;
         }
 #endif
+#endif
 
 
         /// <summary>
@@ -398,9 +400,12 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkPrefab.HasGhost)
             {
-                //HasPendingGhostPrefabs = true;
                 HasGhostPrefabs = true;
-                //m_PendingGhostRegistration.Add(networkPrefab);
+
+#if UNIFIED_NGO_REGISTERS_PREFABS
+                HasPendingGhostPrefabs = true;
+                m_PendingGhostRegistration.Add(networkPrefab);
+#endif
             }
 #endif
 

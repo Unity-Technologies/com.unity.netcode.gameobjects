@@ -9,6 +9,11 @@ using Unity.NetCode;
 using Unity.Netcode.Components;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
+// TODO-UNIFIED: When:
+// - N4E is a dependency of Netcode for GameObjects.
+// - TestProject has been updated to include N4E.
+// - TestProject and Runtime tests have been updated to use UnifiedHost.
+// Remove the conditional compilation and just use the namespace.
 #if UNIFIED_NETCODE && OUT_OF_BAND_RPC
 using Unity.Netcode.Unified;
 #endif
@@ -63,7 +68,7 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG || UNITY_EDITOR
         private static List<Type> s_SerializedType = new List<Type>();
         // This is used to control the serialized type not optimized messaging for integration test purposes
         internal static bool DisableNotOptimizedSerializedType;
@@ -1261,7 +1266,7 @@ namespace Unity.Netcode
 
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG || UNITY_EDITOR
                 if (NetworkConfig.NetworkProfilingMetrics)
                 {
                     MessageManager.Hook(new ProfilingHooks());
@@ -1379,6 +1384,10 @@ namespace Unity.Netcode
             DefaultWorldInitialization.Initialize("Default World", false);
         }
 
+        /// <summary>
+        /// Checks to make sure the NetcodeConfig is configured correctly for hybrid mode. Hybrid mode requires a single world to be used for the NetcodeConfig.
+        /// </summary>
+        /// <returns>True if the configuration is correct; otherwise, false.</returns>
         private bool UnifiedIsConfiguredCorrectly()
         {
             if (NetCodeConfig.Global == null)

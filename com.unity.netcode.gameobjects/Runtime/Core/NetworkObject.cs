@@ -2686,7 +2686,6 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkPreSpawn()
         {
-
             var networkManager = NetworkManager;
             InitializeChildNetworkBehaviours();
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
@@ -2794,6 +2793,13 @@ namespace Unity.Netcode
 
         internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours;
 
+        /// <summary>
+        /// TODO-UNIFIED:
+        /// We should pre-calculate the index id's in the editor and save out two lists:
+        /// - All <see cref="NetworkBehaviour"/> derived components in a pre-determined order.
+        /// - All of the identifiers aligned with the above list
+        /// Then construct the dictionar during awake.
+        /// </summary>
         internal bool InitializeChildNetworkBehaviours()
         {
             ChildNetworkBehaviours = new Dictionary<ushort, NetworkBehaviour>();
@@ -2838,13 +2844,22 @@ namespace Unity.Netcode
             // This allows a user to not have to make direct adjustments until trying out their NGO prefab
             // as a hybrid spawned prefab (optional to completely remove, will eventually become obsolete and
             // automatically removed later).
-            if (HasGhost)
+            if (HasGhost && !NetworkManager.DistributedAuthorityMode)
             {
-
                 if (NetworkRigidbodies != null)
                 {
                     for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
                     {
+                        // TODO-UNIFIED: This needs to be updated to make it "opt-in".
+                        // Only clients remove the rigidbody for performance purposes when running a hybrid spawn client-server topology.
+                        if (!NetworkManager.IsServer)
+                        {
+                            var rigidBody = NetworkRigidbodies[i].gameObject.GetComponent<Rigidbody>();
+                            if (rigidBody != null)
+                            {
+                                Destroy(rigidBody);
+                            }
+                        }
                         ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
                         Destroy(NetworkRigidbodies[i]);
                     }

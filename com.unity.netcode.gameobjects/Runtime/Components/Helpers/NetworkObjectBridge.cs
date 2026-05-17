@@ -6,13 +6,12 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
+    /// This is a component that is added to the root of all N4E-spawned hybrid prefab instances. It is used to link
+    /// <see cref="NetworkObject.SerializedObject"/> the N4E-spawned hybrid prefab instances to the incoming <see cref="CreateObjectMessage"/>
+    /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
-    /// <remarks>
-    /// If used, we most likely would make this internal
-    /// </remarks>
     public partial class NetworkObjectBridge : GhostBehaviour
     {
-
 #if UNITY_EDITOR
         [UnityEngine.HideInInspector]
         [UnityEngine.SerializeField]
@@ -37,7 +36,6 @@ namespace Unity.Netcode
             }
         }
 #endif
-
 
         /// <summary>
         /// This is used to link <see cref="NetworkObject.SerializedObject"/> data to
