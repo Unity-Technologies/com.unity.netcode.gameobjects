@@ -1120,7 +1120,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
                     // This handles the case where a NetworkObject is serialized with a ghost component but the ghost isn't actually included in
                     // the spawn message and won't be spawned by the client until later in the N4E synchronization process. In this case, we need
-                    // to defer the deserialization of the NetworkObject until the ghost is spawned and we have an instance to deserialize this 
+                    // to defer the deserialization of the NetworkObject until the ghost is spawned and we have an instance to deserialize this
                     // information during synchronization.
                     if (serializedObject.HasGhost)
                     {
