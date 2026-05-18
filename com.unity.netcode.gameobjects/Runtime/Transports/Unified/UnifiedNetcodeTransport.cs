@@ -129,7 +129,7 @@ namespace Unity.Netcode.Unified
             state.RequireForUpdate<RpcCollection>();
             state.RequireForUpdate<NetworkId>();
         }
-        
+
         public UnifiedNetcodeTransport Transport;
         public NetworkManager NetworkManager;
 
@@ -139,7 +139,7 @@ namespace Unity.Netcode.Unified
         {
             DisconnectQueue.Add(connection);
         }
-        
+
         public void SendRpc(TransportRpc rpc, Entity connectionEntity)
         {
             var rpcQueue = SystemAPI.GetSingleton<RpcCollection>().GetRpcQueue<TransportRpc, TransportRpc>();
@@ -151,7 +151,7 @@ namespace Unity.Netcode.Unified
         protected override void OnUpdate()
         {
             NetworkManager.MessageManager.ProcessSendQueues();
-            
+
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
             foreach(var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
             {
@@ -218,7 +218,7 @@ namespace Unity.Netcode.Unified
             {
                 connectionInfo.ReceiveQueue.PushReader(reader);
             }
-            
+
             var message = connectionInfo.ReceiveQueue.PopMessage();
             while (message.Count != 0)
             {
@@ -245,7 +245,7 @@ namespace Unity.Netcode.Unified
 
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
                 rpc.Value.Buffer.Length = amount;
-                
+
                 var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
                 updateSystem.SendRpc(rpc, connectionInfo.Connection.ConnectionEntity);
 
