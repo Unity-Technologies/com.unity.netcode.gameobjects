@@ -24,6 +24,18 @@ namespace Unity.Netcode.Components
         [HideInInspector]
         [SerializeField]
         internal bool NetworkTransformExpanded;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            CurrentTick = 0;
+            TrackStateUpdateId = false;
+            AssignDefaultInterpolationType = false;
+            DefaultInterpolationType = default;
+            s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+            InterpolationBufferTickOffset = 0;
+            s_TickSynchPosition = 0;
+        }
 #endif
 
         internal enum Axis { X, Y, Z }
@@ -4767,21 +4779,6 @@ namespace Unity.Netcode.Components
                 }
             }
         }
-        private static int s_TickSynchPosition;
-
-#if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad()
-        {
-            CurrentTick = 0;
-            TrackStateUpdateId = false;
-            AssignDefaultInterpolationType = false;
-            DefaultInterpolationType = default;
-            s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
-            InterpolationBufferTickOffset = 0;
-            s_TickSynchPosition = 0;
-        }
-#endif
 
         private int m_NextTickSync;
 
