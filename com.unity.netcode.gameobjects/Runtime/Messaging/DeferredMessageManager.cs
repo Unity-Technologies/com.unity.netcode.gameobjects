@@ -1,8 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-#if UNITY_EDITOR
-using UnityEngine;
-#endif
 
 namespace Unity.Netcode
 {
@@ -100,7 +97,7 @@ namespace Unity.Netcode
         /// </summary>
         internal static bool IncludeMessageType = true;
 #if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad() => IncludeMessageType = true;
 #endif
 

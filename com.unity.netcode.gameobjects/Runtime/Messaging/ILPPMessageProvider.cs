@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
-#endif
 
 namespace Unity.Netcode
 {
@@ -55,7 +51,7 @@ namespace Unity.Netcode
         // Enable this for integration tests that need no message types defined
         internal static bool IntegrationTestNoMessages;
 #if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad() => IntegrationTestNoMessages = false;
 #endif
 
@@ -146,15 +142,15 @@ namespace Unity.Netcode
         }
 
 #if UNITY_EDITOR
-        [InitializeOnLoadMethod]
+        [UnityEditor.InitializeOnLoadMethod]
         public static void NotifyOnPlayStateChange()
         {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        public static void OnPlayModeStateChanged(PlayModeStateChange change)
+        public static void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
         {
-            if (change == PlayModeStateChange.ExitingPlayMode)
+            if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
                 // Clear out the network message types, because ILPP-generated RuntimeInitializeOnLoad code will
                 // run again and add more messages to it.

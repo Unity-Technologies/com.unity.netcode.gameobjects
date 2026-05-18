@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-#if UNITY_6000_6_OR_NEWER
-using Unity.Scripting.LifecycleManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -262,7 +259,7 @@ namespace Unity.Netcode
         // We don't want to do allocations all the time and we know each one needs a maximum of three lists,
         // so we're going to keep static lists that we can reuse in these methods.
 #if UNITY_6000_6_OR_NEWER
-        [AutoStaticsCleanup]
+        [Scripting.LifecycleManagement.AutoStaticsCleanup]
 #endif
         private static partial class ListCache<T>
         {

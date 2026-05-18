@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEngine;
-#endif
 
 namespace Unity.Netcode
 {
@@ -18,7 +15,7 @@ namespace Unity.Netcode
 
         private static Dictionary<Type, CreateObjectDelegate> s_Delegates = new Dictionary<Type, CreateObjectDelegate>();
 #if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad() => s_Delegates = new Dictionary<Type, CreateObjectDelegate>();
 #endif
 

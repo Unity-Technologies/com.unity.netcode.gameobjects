@@ -20,7 +20,7 @@ namespace Unity.Netcode
     /// </summary>
     public static class NetworkVariableSerializationTypedInitializers
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
 #if UNITY_EDITOR
         [InitializeOnLoadMethod]
 #endif

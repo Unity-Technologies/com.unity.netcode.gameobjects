@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -166,7 +165,7 @@ namespace Unity.Netcode
         /// we must distinguish which scene we are talking about when the server tells the client to unload a scene.
         /// The server will always communicate its local relative scene's handle and the client will determine its
         /// local relative handle from the table being built.
-        /// Look for <see cref="NetworkSceneManager.m_ServerSceneHandleToClientSceneHandle"/> usage to see where
+        /// Look for <see cref="NetworkSceneManager.ServerSceneHandleToClientSceneHandle"/> usage to see where
         /// entries are being added to or removed from the table
         /// </summary>
         /// <param name="sceneHash"></param>
@@ -317,12 +316,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal static bool LogSerializationOrder;
-#if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad() => LogSerializationOrder = false;
-#endif
-
         internal void AddSpawnedNetworkObjects()
         {
             m_NetworkObjectsSync.Clear();
@@ -358,7 +351,7 @@ namespace Unity.Netcode
 
             // This is useful to know what NetworkObjects a client is going to be synchronized with
             // as well as the order in which they will be deserialized
-            if (LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
+            if (NetworkLog.Config.LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var messageBuilder = new StringBuilder(0xFFFF);
                 messageBuilder.AppendLine("[Server-Side Client-Synchronization] NetworkObject serialization order:");
@@ -451,8 +444,6 @@ namespace Unity.Netcode
             return 0;
         }
 
-        internal bool EnableSerializationLogs = false;
-
         private void LogArray(byte[] data, int start = 0, int stop = 0, StringBuilder builder = null)
         {
             var usingExternalBuilder = builder != null;
@@ -475,7 +466,7 @@ namespace Unity.Netcode
 
             if (!usingExternalBuilder)
             {
-                Debug.Log(builder.ToString());
+                UnityEngine.Debug.Log(builder.ToString());
             }
         }
 
@@ -534,7 +525,7 @@ namespace Unity.Netcode
 
                         WriteSceneSynchronizationData(writer);
 
-                        if (EnableSerializationLogs)
+                        if (NetworkLog.Config.EnableSerializationLogs)
                         {
                             LogArray(writer.ToArray(), 0, writer.Length);
                         }
@@ -584,7 +575,7 @@ namespace Unity.Netcode
         internal void WriteSceneSynchronizationData(FastBufferWriter writer)
         {
             var builder = (StringBuilder)null;
-            if (EnableSerializationLogs)
+            if (NetworkLog.Config.EnableSerializationLogs)
             {
                 builder = new StringBuilder();
                 builder.AppendLine($"[Write][Synchronize-Start][WPos: {writer.Position}] Begin:");
@@ -599,7 +590,7 @@ namespace Unity.Netcode
             {
                 writer.WriteValueSafe(m_InternalBufferSize);
                 CopyInternalBuffer(ref writer);
-                if (EnableSerializationLogs)
+                if (NetworkLog.Config.EnableSerializationLogs)
                 {
                     LogArray(writer.ToArray(), positionStart);
                 }
@@ -614,7 +605,7 @@ namespace Unity.Netcode
 
             // Write the number of NetworkObjects we are serializing
             writer.WriteValueSafe(m_NetworkObjectsSync.Count);
-            if (EnableSerializationLogs)
+            if (NetworkLog.Config.EnableSerializationLogs)
             {
                 builder.AppendLine($"[Synchronize Objects][positionStart: {positionStart}][WPos: {writer.Position}][NO-Count: {m_NetworkObjectsSync.Count}] Begin:");
             }
@@ -631,7 +622,7 @@ namespace Unity.Netcode
                 serializedObject.Serialize(writer);
                 var noStop = writer.Position;
                 totalBytes += noStop - noStart;
-                if (EnableSerializationLogs)
+                if (NetworkLog.Config.EnableSerializationLogs)
                 {
                     var offStart = noStart - (positionStart + sizeof(int));
                     var offStop = noStop - (positionStart + sizeof(int));
@@ -639,9 +630,9 @@ namespace Unity.Netcode
                     LogArray(writer.ToArray(), noStart, noStop, builder);
                 }
             }
-            if (EnableSerializationLogs)
+            if (NetworkLog.Config.EnableSerializationLogs)
             {
-                Debug.Log(builder.ToString());
+                UnityEngine.Debug.Log(builder.ToString());
             }
 
             // Write the number of despawned in-scene placed NetworkObjects
@@ -663,7 +654,7 @@ namespace Unity.Netcode
             // Write the total size written to the stream by NetworkObjects being serialized
             writer.WriteValueSafe(bytesWritten);
             writer.Seek(positionEnd);
-            if (EnableSerializationLogs)
+            if (NetworkLog.Config.EnableSerializationLogs)
             {
                 LogArray(writer.ToArray(), positionStart);
             }
@@ -783,7 +774,7 @@ namespace Unity.Netcode
                 case SceneEventType.Synchronize:
                     {
                         reader.ReadValueSafe(out ActiveSceneHash);
-                        if (EnableSerializationLogs)
+                        if (NetworkLog.Config.EnableSerializationLogs)
                         {
                             LogArray(reader.ToArray(), 0, reader.Length);
                         }
@@ -853,7 +844,7 @@ namespace Unity.Netcode
                 m_HasInternalBuffer = true;
                 // We use Allocator.Persistent since scene synchronization will most likely take longer than 4 frames
                 InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
-                if (EnableSerializationLogs)
+                if (NetworkLog.Config.EnableSerializationLogs)
                 {
                     LogArray(InternalBuffer.ToArray());
                 }
@@ -1047,12 +1038,12 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
+                            UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
                         }
                     }
                     else
                     {
-                        Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
+                        UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
                     }
                 }
                 else // Use the cached NetworkObjects if they exist
@@ -1096,7 +1087,7 @@ namespace Unity.Netcode
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
             var builder = (StringBuilder)null;
-            if (EnableSerializationLogs)
+            if (NetworkLog.Config.EnableSerializationLogs)
             {
                 builder = new StringBuilder();
             }
@@ -1105,7 +1096,7 @@ namespace Unity.Netcode
             {
                 // Process all spawned NetworkObjects for this network session
                 InternalBuffer.ReadValueSafe(out int newObjectsCount);
-                if (EnableSerializationLogs)
+                if (NetworkLog.Config.EnableSerializationLogs)
                 {
                     builder.AppendLine($"[Read][Synchronize Objects][WPos: {InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
                 }
@@ -1124,12 +1115,12 @@ namespace Unity.Netcode
                     var spawnedNetworkObject = NetworkObject.Deserialize(serializedObject, InternalBuffer, networkManager);
 
                     var noStop = InternalBuffer.Position;
-                    if (EnableSerializationLogs)
+                    if (NetworkLog.Config.EnableSerializationLogs)
                     {
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
                         LogArray(InternalBuffer.ToArray(), noStart, noStop, builder);
                     }
-                    // If we failed to deserialize the NetowrkObject then don't add null to the list
+                    // If we failed to deserialize the NetworkObject then don't add null to the list
                     if (spawnedNetworkObject != null)
                     {
                         if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
@@ -1138,9 +1129,9 @@ namespace Unity.Netcode
                         }
                     }
                 }
-                if (EnableSerializationLogs)
+                if (NetworkLog.Config.EnableSerializationLogs)
                 {
-                    Debug.Log(builder.ToString());
+                    UnityEngine.Debug.Log(builder.ToString());
                 }
 
                 // Notify that all in-scene placed NetworkObjects have been spawned
@@ -1158,8 +1149,11 @@ namespace Unity.Netcode
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
-                Debug.Log(builder.ToString());
+                UnityEngine.Debug.LogException(ex);
+                if (NetworkLog.Config.EnableSerializationLogs)
+                {
+                    UnityEngine.Debug.Log(builder.ToString());
+                }
             }
             finally
             {

@@ -13,33 +13,16 @@ namespace Unity.Netcode
         /// <summary>
         /// Command-line options singleton
         /// </summary>
-        public static CommandLineOptions Instance
-        {
-            get
-            {
-                if (s_Instance == null)
-                {
-                    s_Instance = new CommandLineOptions();
-                }
-                return s_Instance;
-            }
-            private set
-            {
-                s_Instance = value;
-            }
-        }
-        private static CommandLineOptions s_Instance;
+        public static CommandLineOptions Instance { get; private set; }
 
         // Contains the current application instance domain's command line arguments
         private static List<string> s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
+
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad()
         {
             Instance = new CommandLineOptions();
-            s_Instance = new CommandLineOptions();
-            // Get all the command line arguments to be parsed later and/or modified
-            // prior to being parsed (for testing purposes).
             s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
         }
 #endif

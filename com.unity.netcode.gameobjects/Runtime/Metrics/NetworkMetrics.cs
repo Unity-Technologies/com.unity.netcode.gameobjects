@@ -1,9 +1,6 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEngine;
-#endif
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
@@ -14,20 +11,8 @@ namespace Unity.Netcode
     internal class NetworkMetrics : INetworkMetrics
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
-        private static Dictionary<uint, string> s_SceneEventTypeNames;
+        private readonly static Dictionary<uint, string> s_SceneEventTypeNames;
         private static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
-#if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad()
-        {
-            s_SceneEventTypeNames = new Dictionary<uint, string>();
-            foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
-            {
-                s_SceneEventTypeNames[(uint)type] = type.ToString();
-            }
-            s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
-        }
-#endif
 
         static NetworkMetrics()
         {
@@ -40,12 +25,7 @@ namespace Unity.Netcode
 
         private static string GetSceneEventTypeName(uint typeCode)
         {
-            if (!s_SceneEventTypeNames.TryGetValue(typeCode, out string name))
-            {
-                name = "Unknown";
-            }
-
-            return name;
+            return s_SceneEventTypeNames.GetValueOrDefault(typeCode, "Unknown");
         }
 
         private readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)

@@ -1,7 +1,3 @@
-#if UNITY_6000_6_OR_NEWER
-using Unity.Scripting.LifecycleManagement;
-#endif
-
 namespace Unity.Netcode
 {
     /// <summary>
@@ -12,7 +8,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">The type of value being serialized</typeparam>
 #if UNITY_6000_6_OR_NEWER
-    [AutoStaticsCleanup]
+    [Scripting.LifecycleManagement.AutoStaticsCleanup]
 #endif
     public partial class UserNetworkVariableSerialization<T>
     {

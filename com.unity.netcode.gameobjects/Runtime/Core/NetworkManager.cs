@@ -21,6 +21,20 @@ namespace Unity.Netcode
     [HelpURL(HelpUrls.NetworkManager)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            Singleton = null;
+            OnInstantiated = null;
+            OnDestroying = null;
+            OnSingletonReady = null;
+            OnNetworkManagerReset = null;
+            IsDistributedAuthority = false;
+            s_SerializedType = new List<Type>();
+            DisableNotOptimizedSerializedType = false;
+        }
+#endif
         /// <summary>
         /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance has been instantiated.
         /// </summary>
@@ -30,7 +44,6 @@ namespace Unity.Netcode
         /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance is being destroyed.
         /// </summary>
         public static event Action<NetworkManager> OnDestroying;
-
 
 #if UNITY_EDITOR
         // Inspector view expand/collapse settings for this derived child class
@@ -1796,20 +1809,11 @@ namespace Unity.Netcode
         internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
 
         internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
-        //We already are in an #if UNITY_ENGINE def
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad()
-        {
-            Singleton = null;
-            OnInstantiated = null;
-            OnDestroying = null;
-            OnSingletonReady = null;
-            OnNetworkManagerReset = null;
-            IsDistributedAuthority = false;
-            s_SerializedType = new List<Type>();
-            DisableNotOptimizedSerializedType = false;
-        }
 
+
+        /// <summary>
+        /// This is called by the Unity Editor reset button. See "OnNetworkManagerReset" from "NetworkManagerHelper.cs" file.
+        /// </summary>
         private void Reset()
         {
             OnNetworkManagerReset?.Invoke(this);

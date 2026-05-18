@@ -292,6 +292,7 @@ namespace Unity.Netcode
         private static void Initialize()
         {
 #if UNITY_EDITOR
+            // Reset statics
             s_UpdateSystemSets = new Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>>();
             s_UpdateSystemArrays = new Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]>();
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))

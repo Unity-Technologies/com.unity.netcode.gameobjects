@@ -1,7 +1,4 @@
 using System;
-#if UNITY_6000_6_OR_NEWER
-using Unity.Scripting.LifecycleManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -13,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
 #if UNITY_6000_6_OR_NEWER
-    [AutoStaticsCleanup]
+    [Scripting.LifecycleManagement.AutoStaticsCleanup]
 #endif
     [Serializable]
     public static partial class NetworkVariableSerialization<T>

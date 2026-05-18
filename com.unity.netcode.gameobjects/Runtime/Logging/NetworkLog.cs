@@ -6,13 +6,21 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Log configuration containing :
+    /// - <see cref="LogNetworkManagerRole"/> used in LogContextNetworkManager.cs
+    /// - <see cref="LogSerializationOrder"/> used in SceneEventData.cs
+    /// - <see cref="EnableSerializationLogs"/> used in SceneEventData.cs
+    /// </summary>
     internal struct LogConfiguration
     {
         internal bool LogNetworkManagerRole;
+        internal bool LogSerializationOrder;
+        internal bool EnableSerializationLogs;
     }
 
     /// <summary>
-    /// Helper class for logging
+    /// Helper class for logging.
     /// </summary>
     public static class NetworkLog
     {
@@ -58,7 +66,7 @@ namespace Unity.Netcode
         internal static void LogWarning(Context context) => s_Log.Warning(context);
 
         /// <summary>
-        /// Locally logs a error log with Netcode prefixing.
+        /// Locally logs an error log with Netcode prefixing.
         /// </summary>
         /// <param name="message">The message to log</param>
         [HideInCallstack]

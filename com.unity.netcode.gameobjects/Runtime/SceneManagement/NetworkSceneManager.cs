@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 
 namespace Unity.Netcode
@@ -1579,9 +1581,8 @@ namespace Unity.Netcode
         internal class SceneUnloadEventHandler
         {
             private static Dictionary<NetworkManager, List<SceneUnloadEventHandler>> s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
-#if UNITY_EDITOR
+            [Conditional("UNITY_EDITOR")]
             internal static void ResetInstances() => s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
-#endif
 
             internal static void RegisterScene(NetworkSceneManager networkSceneManager, Scene scene, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
             {
