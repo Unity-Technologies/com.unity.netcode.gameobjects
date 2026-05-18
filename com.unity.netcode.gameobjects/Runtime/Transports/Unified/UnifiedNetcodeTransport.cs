@@ -143,6 +143,11 @@ namespace Unity.Netcode.Unified
         public void SendRpc(TransportRpc rpc, Entity connectionEntity)
         {
             var rpcQueue = SystemAPI.GetSingleton<RpcCollection>().GetRpcQueue<TransportRpc, TransportRpc>();
+            if (!EntityManager.HasComponent<NetworkStreamConnection>(connectionEntity))
+            {
+                // Disconnected, can't send.
+                return;
+            }
             var ghostInstance = GetComponentLookup<GhostInstance>();
             var rpcDataStreamBuffer = EntityManager.GetBuffer<OutgoingOutOfBandRpcDataStreamBuffer>(connectionEntity);
             rpcQueue.Schedule(rpcDataStreamBuffer, ghostInstance, rpc);
@@ -263,27 +268,27 @@ namespace Unity.Netcode.Unified
 
         private void OnClientConnectedToServer(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
-            m_Connections[connection.NetworkId.Value] = new ConnectionInfo
+            m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
                 ReceiveQueue = null,
                 SendQueue = new BatchedSendQueue(BatchedSendQueue.MaximumMaximumCapacity),
                 Connection = connection
             };
-            m_ServerClientId = connection.NetworkId.Value;
-            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            m_ServerClientId = connectionEvent.Id.Value;
+            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
         private void OnServerNewClientConnection(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
-            m_Connections[connection.NetworkId.Value] = new ConnectionInfo
+            m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
                 ReceiveQueue = null,
                 SendQueue = new BatchedSendQueue(BatchedSendQueue.MaximumMaximumCapacity),
                 Connection = connection
             }; ;
-            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
@@ -359,12 +364,12 @@ namespace Unity.Netcode.Unified
                 GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
                 GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
             );
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
         private void OnServerClientDisconnected(Connection connection, NetCodeConnectionEvent connectionEvent)
         {
-            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
         private void OnClientConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
