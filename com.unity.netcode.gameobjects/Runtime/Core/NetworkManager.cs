@@ -478,13 +478,12 @@ namespace Unity.Netcode
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 #if UNIFIED_NETCODE
                         if (!NetworkConfig.Prefabs.HasGhostPrefabs)
-                        {
 #endif
+                        {
+
                             // Process outbound messages
                             MessageManager.ProcessSendQueues();
-#if UNIFIED_NETCODE
                         }
-#endif
 
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
