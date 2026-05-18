@@ -476,9 +476,15 @@ namespace Unity.Netcode
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
-
-                        // Process outbound messages
-                        MessageManager.ProcessSendQueues();
+#if UNIFIED_NETCODE
+                        if (!NetworkConfig.Prefabs.HasGhostPrefabs)
+                        {
+#endif
+                            // Process outbound messages
+                            MessageManager.ProcessSendQueues();
+#if UNIFIED_NETCODE
+                        }
+#endif
 
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
@@ -1359,7 +1365,6 @@ namespace Unity.Netcode
         /// The world instance assigned to this NetworkManager instance.
         /// </summary>
         public NetcodeWorld NetcodeWorld { get; internal set; }
-
         internal void InitializeNetcodeWorld()
         {
             if (NetcodeWorld != null)

@@ -43,37 +43,41 @@ namespace Unity.Netcode.Unified
         }
     }
 
+    internal struct TransportRpcData : IBufferElementData
+    {
+        public FixedBytes1280 Buffer;
+    }
+
     [BurstCompile]
     internal struct TransportRpc : IOutOfBandRpcCommand, IRpcCommandSerializer<TransportRpc>
     {
-        public FixedBytes1280 Buffer;
-        public ulong Order;
+        public TransportRpcData Value;
 
         public unsafe void Serialize(ref DataStreamWriter writer, in RpcSerializerState state, in TransportRpc data)
         {
-            writer.WriteULong(data.Order);
-            writer.WriteInt(data.Buffer.Length);
-            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Buffer), data.Buffer.Length);
+            writer.WriteInt(data.Value.Buffer.Length);
+            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Value.Buffer), data.Value.Buffer.Length);
             writer.WriteBytes(span);
         }
 
         public unsafe void Deserialize(ref DataStreamReader reader, in RpcDeserializerState state, ref TransportRpc data)
         {
-            data.Order = reader.ReadULong();
             var length = reader.ReadInt();
-            data.Buffer = new FixedBytes1280
+            data.Value.Buffer = new FixedBytes1280
             {
                 Length = length
             };
 
-            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Buffer), length);
+            var span = new Span<byte>(FixedBytes1280.GetUnsafePtr(data.Value.Buffer), length);
             reader.ReadBytes(span);
         }
 
         [BurstCompile(DisableDirectCall = true)]
         private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
         {
-            RpcExecutor.ExecuteCreateRequestComponent<TransportRpc, TransportRpc>(ref parameters);
+            var element = new TransportRpc();
+            element.Deserialize(ref parameters.Reader, parameters.DeserializerState, ref element);
+            parameters.CommandBuffer.AppendToBuffer(parameters.JobIndex, parameters.Connection, element.Value);
         }
 
         private static readonly PortableFunctionPointer<RpcExecutor.ExecuteDelegate> k_InvokeExecuteFunctionPointer = new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
@@ -115,9 +119,19 @@ namespace Unity.Netcode.Unified
         }
     }
 
+    [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(RpcSystem))]
     internal partial class UnifiedNetcodeUpdateSystem : SystemBase
     {
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<RpcCollection>();
+            state.RequireForUpdate<NetworkId>();
+        }
+        
         public UnifiedNetcodeTransport Transport;
+        public NetworkManager NetworkManager;
 
         public List<Connection> DisconnectQueue = new List<Connection>();
 
@@ -125,23 +139,37 @@ namespace Unity.Netcode.Unified
         {
             DisconnectQueue.Add(connection);
         }
+        
+        public void SendRpc(TransportRpc rpc, Entity connectionEntity)
+        {
+            var rpcQueue = SystemAPI.GetSingleton<RpcCollection>().GetRpcQueue<TransportRpc, TransportRpc>();
+            var ghostInstance = GetComponentLookup<GhostInstance>();
+            var rpcDataStreamBuffer = EntityManager.GetBuffer<OutgoingOutOfBandRpcDataStreamBuffer>(connectionEntity);
+            rpcQueue.Schedule(rpcDataStreamBuffer, ghostInstance, rpc);
+        }
 
         protected override void OnUpdate()
         {
+            NetworkManager.MessageManager.ProcessSendQueues();
+            
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (request, rpc, entity) in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<TransportRpc>>().WithEntityAccess())
+            foreach(var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
             {
-                var connectionId = SystemAPI.GetComponent<NetworkId>(request.ValueRO.SourceConnection).Value;
-
-                var buffer = rpc.ValueRO.Buffer;
-                try
+                var connectionId = networkId.ValueRO.Value;
+                DynamicBuffer<TransportRpcData> rpcs = EntityManager.GetBuffer<TransportRpcData>(entity);
+                foreach (var rpc in rpcs)
                 {
-                    Transport.DispatchMessage(connectionId, buffer, rpc.ValueRO.Order);
+                    var buffer = rpc.Buffer;
+                    try
+                    {
+                        Transport.DispatchMessage(connectionId, buffer);
+                    }
+                    catch(Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
-                finally
-                {
-                    commandBuffer.DestroyEntity(entity);
-                }
+                rpcs.Clear();
             }
 
             foreach (var connection in DisconnectQueue)
@@ -171,33 +199,14 @@ namespace Unity.Netcode.Unified
             public BatchedSendQueue SendQueue;
             public BatchedReceiveQueue ReceiveQueue;
             public Connection Connection;
-            public ulong LastSent;
-            public ulong LastReceived;
             public Dictionary<ulong, FixedBytes1280> DeferredMessages;
         }
 
         private Dictionary<int, ConnectionInfo> m_Connections;
 
-        internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer, ulong order)
+        internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer)
         {
             var connectionInfo = m_Connections[connectionId];
-
-            if (order <= connectionInfo.LastReceived)
-            {
-                Debug.LogWarning("Received duplicate message, ignoring.");
-                return;
-            }
-
-            if (order != connectionInfo.LastReceived + 1)
-            {
-                if (connectionInfo.DeferredMessages == null)
-                {
-                    connectionInfo.DeferredMessages = new Dictionary<ulong, FixedBytes1280>();
-                }
-
-                connectionInfo.DeferredMessages[order] = buffer;
-                return;
-            }
 
             using var arr = FixedBytes1280.ToNativeArray(buffer);
             var reader = new DataStreamReader(arr);
@@ -209,20 +218,7 @@ namespace Unity.Netcode.Unified
             {
                 connectionInfo.ReceiveQueue.PushReader(reader);
             }
-
-            connectionInfo.LastReceived = order;
-            if (connectionInfo.DeferredMessages != null)
-            {
-                var next = order + 1;
-                while (connectionInfo.DeferredMessages.Remove(next, out var nextBuffer))
-                {
-                    reader = new DataStreamReader(FixedBytes1280.ToNativeArray(nextBuffer));
-                    connectionInfo.ReceiveQueue.PushReader(reader);
-                    connectionInfo.LastReceived = next;
-                    ++next;
-                }
-            }
-
+            
             var message = connectionInfo.ReceiveQueue.PopMessage();
             while (message.Count != 0)
             {
@@ -243,20 +239,15 @@ namespace Unity.Netcode.Unified
 
             while (!connectionInfo.SendQueue.IsEmpty)
             {
-                var rpc = new TransportRpc
-                {
-                    Buffer = new FixedBytes1280(),
-                };
+                var rpc = new TransportRpc();
 
-                var writer = new DataStreamWriter(FixedBytes1280.GetUnsafePtr(rpc.Buffer), k_MaxPacketSize);
+                var writer = new DataStreamWriter(FixedBytes1280.GetUnsafePtr(rpc.Value.Buffer), k_MaxPacketSize);
 
                 var amount = connectionInfo.SendQueue.FillWriterWithBytes(ref writer, k_MaxPacketSize);
-                rpc.Buffer.Length = amount;
-                rpc.Order = ++connectionInfo.LastSent;
-
-                var req = m_NetworkManager.NetcodeWorld.EntityManager.CreateEntity(ComponentType.ReadWrite<SendRpcCommandRequest>(), ComponentType.ReadWrite<TransportRpc>());
-                m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, new SendRpcCommandRequest{TargetConnection = connectionInfo.Connection.ConnectionEntity});
-                m_NetworkManager.NetcodeWorld.EntityManager.SetComponentData(req, rpc);
+                rpc.Value.Buffer.Length = amount;
+                
+                var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+                updateSystem.SendRpc(rpc, connectionInfo.Connection.ConnectionEntity);
 
                 connectionInfo.SendQueue.Consume(amount);
             }
@@ -280,6 +271,8 @@ namespace Unity.Netcode.Unified
             };
             m_ServerClientId = connection.NetworkId.Value;
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
         private void OnServerNewClientConnection(Connection connection, NetCodeConnectionEvent connectionEvent)
@@ -291,6 +284,8 @@ namespace Unity.Netcode.Unified
                 Connection = connection
             }; ;
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connection.NetworkId.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
+            updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
         private const string k_InvalidRpcMessage = "An invalid RPC was received";
@@ -403,6 +398,7 @@ namespace Unity.Netcode.Unified
             m_NetworkManager.NetcodeWorld.OnConnectionEvent += OnClientConnectionEvent;
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
+            updateSystem.NetworkManager = m_NetworkManager;
             return true;
         }
 
@@ -416,6 +412,7 @@ namespace Unity.Netcode.Unified
             m_NetworkManager.NetcodeWorld.OnConnectionEvent += OnServerConnectionEvent;
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.Transport = this;
+            updateSystem.NetworkManager = m_NetworkManager;
             return true;
         }
 
