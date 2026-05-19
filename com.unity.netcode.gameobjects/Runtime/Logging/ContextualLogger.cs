@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -125,6 +126,19 @@ namespace Unity.Netcode.Logging
         {
             Debug.unityLogger.LogException(exception, m_Object);
         }
+        [HideInCallstack]
+        public void Exception(Exception exception, Context context)
+        {
+            // Don't act if the LogLevel is higher than the level of this log
+            if (m_ManagerContext.LogLevel > context.Level)
+            {
+                return;
+            }
+
+            var message = BuildLog(context);
+            Debug.unityLogger.LogException(new Exception(message, exception), context.RelevantObjectOverride ?? m_Object);
+        }
+
 
         [HideInCallstack]
         private void Log(LogType logType, Context context)

@@ -7,7 +7,7 @@ namespace Unity.Netcode
         private readonly StringBuilder m_Builder = new();
         private const string k_OpenBracket = "[";
         private const string k_CloseBracket = "]";
-        private const string k_Separator = ":";
+        private const string k_Separator = ": ";
 
         public void Reset()
         {
@@ -31,6 +31,7 @@ namespace Unity.Netcode
         }
 
         public void Append(string value) => m_Builder.Append(value);
+        public void AppendLine(string value) => m_Builder.AppendLine(value);
 
         public string Build() => m_Builder.ToString();
     }
