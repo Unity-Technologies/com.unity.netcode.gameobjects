@@ -207,6 +207,7 @@ namespace Unity.Netcode.Logging
 
             public void Dispose()
             {
+                Debug.Log($"Disposing disposable value: {m_ToClear}");
                 m_Logger.RemoveInfo(m_ToClear);
             }
         }

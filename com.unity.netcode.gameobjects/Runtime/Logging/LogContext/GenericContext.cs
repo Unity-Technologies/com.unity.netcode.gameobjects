@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Unity.Netcode.Logging
 {
@@ -40,6 +41,12 @@ namespace Unity.Netcode.Logging
 
         public void StoreInfo(object key, object value)
         {
+            if (m_Info.TryGetValue(key, out var currentValue))
+            {
+                Debug.Log($"Adding info: {key}={value}. Existing value: {currentValue}");
+                m_Info[key] = value;
+                return;
+            }
             m_Info.Add(key, value);
         }
 
