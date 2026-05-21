@@ -1939,7 +1939,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
         /// </summary>
         /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
-        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForConditionOrTimeOutWithTimeTravel(Func<StringBuilder, bool> checkForCondition, int maxTries = 60)
         {
@@ -2030,7 +2030,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
-        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(ulong networkObjectId, int maxTries = 60)
         {
@@ -2054,7 +2054,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
-        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(NetworkObject networkObject, int maxTries = 60)
         {
@@ -2066,7 +2066,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
-        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(GameObject gameObject, int maxTries = 60)
         {
@@ -2078,7 +2078,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
-        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(List<NetworkObject> networkObjects, int maxTries = 60)
         {
