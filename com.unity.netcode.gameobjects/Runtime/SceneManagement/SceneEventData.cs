@@ -1070,7 +1070,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
+                    UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
                 }
             }
         }
