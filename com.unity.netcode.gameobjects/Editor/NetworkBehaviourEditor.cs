@@ -322,7 +322,8 @@ namespace Unity.Netcode.Editor
         }
 
         /// <summary>
-        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// Obsolete method to find root parent of a <see cref="Transform"/>.
+        /// Use <see cref="Transform.root"/> instead.
         /// </summary>
         /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
         /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
