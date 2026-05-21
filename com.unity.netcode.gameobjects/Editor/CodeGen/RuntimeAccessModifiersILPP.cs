@@ -47,6 +47,9 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     switch (typeDefinition.Name)
                     {
+                        case nameof(NetworkManager):
+                            ProcessNetworkManager(typeDefinition, compiledAssembly.Defines);
+                            break;
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
@@ -85,6 +88,46 @@ namespace Unity.Netcode.Editor.CodeGen
             assemblyDefinition.Write(pe, writerParameters);
 
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
+        }
+
+        // TODO: Deprecate...
+        // This is changing accessibility for values that are no longer used, but since our validator runs
+        // after ILPP and sees those values as public, they cannot be removed until a major version change.
+        private void ProcessNetworkManager(TypeDefinition typeDefinition, string[] assemblyDefines)
+        {
+            foreach (var fieldDefinition in typeDefinition.Fields)
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_func_table))
+#pragma warning restore CS0618 // Type or member is obsolete
+                {
+                    fieldDefinition.IsPublic = true;
+                }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
+#pragma warning restore CS0618 // Type or member is obsolete
+                {
+                    fieldDefinition.IsPublic = true;
+                }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
+#pragma warning restore CS0618 // Type or member is obsolete
+                {
+                    fieldDefinition.IsPublic = true;
+                }
+            }
+
+            foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (nestedTypeDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
+#pragma warning restore CS0618 // Type or member is obsolete
+                {
+                    nestedTypeDefinition.IsNestedPublic = true;
+                }
+            }
         }
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
