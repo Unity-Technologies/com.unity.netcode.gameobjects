@@ -5,7 +5,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class FastEnterPlayModeTests
+
+    internal class FastEnterPlayModeTests
     {
         [UnityTest]
         public IEnumerator NetworkManagerSingletonResetsOnPlayModeEnter(
