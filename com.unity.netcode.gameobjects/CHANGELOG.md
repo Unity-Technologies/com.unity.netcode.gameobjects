@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor. (#3980)
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
 
 ### Changed
 
