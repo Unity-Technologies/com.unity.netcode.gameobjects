@@ -396,7 +396,7 @@ namespace Unity.Netcode.RuntimeTests
         }
         public void AssertVectorsAreEquivalent(Vector3 a, Vector3 b)
         {
-                Assert.AreEqual(a.x, b.x, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
+            Assert.AreEqual(a.x, b.x, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
             Assert.AreEqual(a.y, b.y, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
             Assert.AreEqual(a.z, b.z, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
         }
