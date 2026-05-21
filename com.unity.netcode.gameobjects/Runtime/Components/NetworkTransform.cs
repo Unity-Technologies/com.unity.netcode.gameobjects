@@ -4780,6 +4780,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private static int s_TickSynchPosition;
         private int m_NextTickSync;
 
         internal void RegisterForTickSynchronization()
