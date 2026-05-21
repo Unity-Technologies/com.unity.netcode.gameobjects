@@ -161,8 +161,18 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-            transform.position = newPosition;
+
+            if (InLocalSpace)
+            {
+                transform.localPosition = newPosition;
+            }
+            else
+            {
+                transform.position = newPosition;
+            }
+
             m_AnticipatedTransform.Position = newPosition;
+
             if (CanCommitToTransform)
             {
                 m_AuthoritativeTransform.Position = newPosition;
@@ -187,7 +197,15 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-            transform.rotation = newRotation;
+
+            if (InLocalSpace)
+            {
+                transform.localRotation = newRotation;
+            }
+            else
+            {
+                transform.rotation = newRotation;
+            }
             m_AnticipatedTransform.Rotation = newRotation;
             if (CanCommitToTransform)
             {
@@ -240,7 +258,14 @@ namespace Unity.Netcode.Components
                 return;
             }
             var transform_ = transform;
-            transform_.SetPositionAndRotation(newState.Position, newState.Rotation);
+            if (InLocalSpace)
+            {
+                transform_.SetLocalPositionAndRotation(newState.Position, newState.Rotation);
+            }
+            else
+            {
+                transform_.SetPositionAndRotation(newState.Position, newState.Rotation);
+            }
             transform_.localScale = newState.Scale;
             m_AnticipatedTransform = newState;
             if (CanCommitToTransform)
@@ -277,7 +302,17 @@ namespace Unity.Netcode.Components
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
                 if (!CanCommitToTransform)
                 {
-                    transform_.SetPositionAndRotation(m_AnticipatedTransform.Position, m_AnticipatedTransform.Rotation);
+                    if (InLocalSpace)
+                    {
+                        transform_.SetLocalPositionAndRotation(m_AnticipatedTransform.Position,
+                            m_AnticipatedTransform.Rotation);
+                    }
+                    else
+                    {
+                        transform_.SetPositionAndRotation(m_AnticipatedTransform.Position,
+                            m_AnticipatedTransform.Rotation);
+                    }
+
                     transform_.localScale = m_AnticipatedTransform.Scale;
                 }
             }
@@ -320,12 +355,25 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    Transform.m_AuthoritativeTransform = new TransformState
+                    if (Transform.InLocalSpace)
                     {
-                        Position = transform_.position,
-                        Rotation = transform_.rotation,
-                        Scale = transform_.localScale
-                    };
+                        Transform.m_AuthoritativeTransform = new TransformState
+                        {
+                            Position = transform_.localPosition,
+                            Rotation = transform_.localRotation,
+                            Scale = transform_.localScale
+                        };
+                    }
+                    else
+                    {
+                        Transform.m_AuthoritativeTransform = new TransformState
+                        {
+                            Position = transform_.position,
+                            Rotation = transform_.rotation,
+                            Scale = transform_.localScale
+                        };
+                    }
+
                     if (Transform.m_CurrentSmoothTime >= Transform.m_SmoothDuration)
                     {
                         // If we've had a call to Smooth() we'll continue interpolating.
@@ -334,7 +382,17 @@ namespace Unity.Netcode.Components
                         Transform.m_AnticipatedTransform = Transform.m_AuthoritativeTransform;
                     }
 
-                    transform_.SetPositionAndRotation(Transform.m_AnticipatedTransform.Position, Transform.m_AnticipatedTransform.Rotation);
+                    if (Transform.InLocalSpace)
+                    {
+                        transform_.SetLocalPositionAndRotation(Transform.m_AnticipatedTransform.Position,
+                            Transform.m_AnticipatedTransform.Rotation);
+                    }
+                    else
+                    {
+                        transform_.SetPositionAndRotation(Transform.m_AnticipatedTransform.Position,
+                            Transform.m_AnticipatedTransform.Rotation);
+                    }
+
                     transform_.localScale = Transform.m_AnticipatedTransform.Scale;
                 }
             }
@@ -344,7 +402,17 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    transform_.SetPositionAndRotation(Transform.m_AuthoritativeTransform.Position, Transform.m_AuthoritativeTransform.Rotation);
+                    if (Transform.InLocalSpace)
+                    {
+                        transform_.SetLocalPositionAndRotation(Transform.m_AuthoritativeTransform.Position,
+                            Transform.m_AuthoritativeTransform.Rotation);
+                    }
+                    else
+                    {
+                        transform_.SetPositionAndRotation(Transform.m_AuthoritativeTransform.Position,
+                            Transform.m_AuthoritativeTransform.Rotation);
+                    }
+
                     transform_.localScale = Transform.m_AuthoritativeTransform.Scale;
                 }
             }
@@ -367,12 +435,25 @@ namespace Unity.Netcode.Components
         private void ResetAnticipatedState()
         {
             var transform_ = transform;
-            m_AuthoritativeTransform = new TransformState
+            if (InLocalSpace)
             {
-                Position = transform_.position,
-                Rotation = transform_.rotation,
-                Scale = transform_.localScale
-            };
+                m_AuthoritativeTransform = new TransformState
+                {
+                    Position = transform_.localPosition,
+                    Rotation = transform_.localRotation,
+                    Scale = transform_.localScale
+                };
+            }
+            else
+            {
+                m_AuthoritativeTransform = new TransformState
+                {
+                    Position = transform_.position,
+                    Rotation = transform_.rotation,
+                    Scale = transform_.localScale
+                };
+            }
+
             m_AnticipatedTransform = m_AuthoritativeTransform;
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
@@ -439,7 +520,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_OutstandingAuthorityChange = true;
-            ApplyAuthoritativeState();
+            //ApplyAuthoritativeState();
             ResetAnticipatedState();
 
             m_AnticipatedObject = new AnticipatedObject { Transform = this };
@@ -491,7 +572,15 @@ namespace Unity.Netcode.Components
             {
                 m_AnticipatedTransform = to;
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
-                transform_.SetPositionAndRotation(to.Position, to.Rotation);
+                if (InLocalSpace)
+                {
+                    transform_.SetLocalPositionAndRotation(to.Position, to.Rotation);
+                }
+                else
+                {
+                    transform_.SetPositionAndRotation(to.Position, to.Rotation);
+                }
+
                 transform_.localScale = to.Scale;
                 m_SmoothDuration = 0;
                 m_CurrentSmoothTime = 0;
@@ -502,7 +591,15 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                transform_.SetPositionAndRotation(from.Position, from.Rotation);
+                if (InLocalSpace)
+                {
+                    transform_.SetLocalPositionAndRotation(from.Position, from.Rotation);
+                }
+                else
+                {
+                    transform_.SetPositionAndRotation(from.Position, from.Rotation);
+                }
+
                 transform_.localScale = from.Scale;
             }
 
@@ -543,14 +640,30 @@ namespace Unity.Netcode.Components
             var previousAnticipatedTransform = m_AnticipatedTransform;
 
             // Update authority state to catch any possible interpolation data
-            m_AuthoritativeTransform.Position = transform_.position;
-            m_AuthoritativeTransform.Rotation = transform_.rotation;
-            m_AuthoritativeTransform.Scale = transform_.localScale;
+            if (InLocalSpace)
+            {
+                m_AuthoritativeTransform.Position = transform_.localPosition;
+                m_AuthoritativeTransform.Rotation = transform_.localRotation;
+                m_AuthoritativeTransform.Scale = transform_.localScale;
+            }
+            else
+            {
+                m_AuthoritativeTransform.Position = transform_.position;
+                m_AuthoritativeTransform.Rotation = transform_.rotation;
+                m_AuthoritativeTransform.Scale = transform_.localScale;
+            }
 
             if (!m_OutstandingAuthorityChange)
             {
                 // Keep the anticipated value unchanged, we have no updates from the server at all.
-                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
+                if (InLocalSpace)
+                {
+                    transform_.SetLocalPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
+                }
+                else
+                {
+                    transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
+                }
                 transform_.localScale = previousAnticipatedTransform.Scale;
                 return;
             }
@@ -558,7 +671,17 @@ namespace Unity.Netcode.Components
             if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipaionCounter > m_LastAuthorityUpdateCounter)
             {
                 // Keep the anticipated value unchanged because it is more recent than the authoritative one.
-                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
+                if (InLocalSpace)
+                {
+                    transform_.SetLocalPositionAndRotation(previousAnticipatedTransform.Position,
+                        previousAnticipatedTransform.Rotation);
+                }
+                else
+                {
+                    transform_.SetPositionAndRotation(previousAnticipatedTransform.Position,
+                        previousAnticipatedTransform.Rotation);
+                }
+
                 transform_.localScale = previousAnticipatedTransform.Scale;
                 return;
             }

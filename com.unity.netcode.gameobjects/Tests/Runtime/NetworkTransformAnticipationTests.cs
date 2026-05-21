@@ -1,11 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools.Utils;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -15,6 +19,12 @@ namespace Unity.Netcode.RuntimeTests
         public void MoveRpc(Vector3 newPosition)
         {
             transform.position = newPosition;
+        }
+        
+        [Rpc(SendTo.Server)]
+        public void LocalMoveRpc(Vector3 newPosition)
+        {
+            transform.localPosition = newPosition;
         }
 
         [Rpc(SendTo.Server)]
@@ -27,6 +37,12 @@ namespace Unity.Netcode.RuntimeTests
         public void RotateRpc(Quaternion newRotation)
         {
             transform.rotation = newRotation;
+        }
+
+        [Rpc(SendTo.Server)]
+        public void LocalRotateRpc(Quaternion newRotation)
+        {
+            transform.localRotation = newRotation;
         }
 
         public bool ShouldSmooth = false;
@@ -59,10 +75,20 @@ namespace Unity.Netcode.RuntimeTests
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
 
+        private GameObject m_TestPrefab;
+
         protected override void OnPlayerPrefabGameObjectCreated()
         {
             m_PlayerPrefab.AddComponent<AnticipatedNetworkTransform>();
             m_PlayerPrefab.AddComponent<NetworkTransformAnticipationComponent>();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestPrefab = CreateNetworkObjectPrefab("child object");
+            var transform = m_TestPrefab.AddComponent<AnticipatedNetworkTransform>();
+            transform.InLocalSpace = true;
+            m_TestPrefab.AddComponent<NetworkTransformAnticipationComponent>();
         }
 
         protected override void OnTimeTravelServerAndClientsConnected()
@@ -80,6 +106,14 @@ namespace Unity.Netcode.RuntimeTests
             otherClientComponent.transform.position = Vector3.zero;
             otherClientComponent.transform.localScale = Vector3.one;
             otherClientComponent.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+            
+            
+            var childObject = SpawnObject(m_TestPrefab, m_ServerNetworkManager);
+            childObject.transform.parent = serverComponent.transform;
+            childObject.transform.localPosition = Vector3.zero;
+            childObject.transform.localScale = Vector3.one;
+            childObject.transform.localRotation = Quaternion.LookRotation(Vector3.forward);
+            WaitForSpawnedOnAllOrTimeOutWithTimeTravel(childObject.GetComponent<NetworkObject>());
         }
 
         public AnticipatedNetworkTransform GetTestComponent()
@@ -115,15 +149,35 @@ namespace Unity.Netcode.RuntimeTests
             return null;
         }
 
+        public AnticipatedNetworkTransform GetChildComponent(AnticipatedNetworkTransform parent)
+        {
+            foreach (var tr in parent.GetComponentsInChildren<AnticipatedNetworkTransform>())
+            {
+                if (tr == parent)
+                {
+                    continue;
+                }
+
+                return tr;
+            }
+
+            return null;
+        }
+
         [Test]
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();
+            var childComponent = GetChildComponent(testComponent);
             var quaternionComparer = new QuaternionEqualityComparer(0.000001f);
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
+            
+            childComponent.AnticipateMove(new Vector3(0, 1, 2));
+            childComponent.AnticipateScale(new Vector3(1, 2, 3));
+            childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.transform.position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.transform.localScale);
@@ -132,40 +186,72 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AnticipatedState.Position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Scale);
             Assert.That(testComponent.AnticipatedState.Rotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
+            
+            
+            Assert.AreEqual(new Vector3(0, 1, 2), childComponent.transform.localPosition);
+            Assert.AreEqual(new Vector3(1, 2, 3), childComponent.transform.localScale);
+            Assert.That(childComponent.transform.localRotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
+
+            Assert.AreEqual(new Vector3(0, 1, 2), childComponent.AnticipatedState.Position);
+            Assert.AreEqual(new Vector3(1, 2, 3), childComponent.AnticipatedState.Scale);
+            Assert.That(childComponent.AnticipatedState.Rotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
         }
 
         [Test]
         public void WhenAnticipating_AuthoritativeValueDoesNotChange()
         {
             var testComponent = GetTestComponent();
+            var childComponent = GetChildComponent(testComponent);
 
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
+            
+            var childStartPosition = childComponent.transform.localPosition;
+            var childStartScale = childComponent.transform.localScale;
+            var childStartRotation = childComponent.transform.localRotation;
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
+            
+            childComponent.AnticipateMove(new Vector3(0, 1, 2));
+            childComponent.AnticipateScale(new Vector3(1, 2, 3));
+            childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
             Assert.AreEqual(startPosition, testComponent.AuthoritativeState.Position);
             Assert.AreEqual(startScale, testComponent.AuthoritativeState.Scale);
             Assert.AreEqual(startRotation, testComponent.AuthoritativeState.Rotation);
+            
+            Assert.AreEqual(childStartPosition, childComponent.AuthoritativeState.Position);
+            Assert.AreEqual(childStartScale, childComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(childStartRotation, childComponent.AuthoritativeState.Rotation);
         }
 
         [Test]
         public void WhenAnticipating_ServerDoesNotChange()
         {
             var testComponent = GetTestComponent();
+            var childComponent = GetChildComponent(testComponent);
 
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
+            
+            var childStartPosition = childComponent.transform.localPosition;
+            var childStartScale = childComponent.transform.localScale;
+            var childStartRotation = childComponent.transform.localRotation;
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
+            childComponent.AnticipateMove(new Vector3(0, 1, 2));
+            childComponent.AnticipateScale(new Vector3(1, 2, 3));
+            childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
+            
             var serverComponent = GetServerComponent();
+            var serverChild = GetChildComponent(serverComponent);
 
             Assert.AreEqual(startPosition, serverComponent.AuthoritativeState.Position);
             Assert.AreEqual(startScale, serverComponent.AuthoritativeState.Scale);
@@ -173,6 +259,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startPosition, serverComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, serverComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, serverComponent.AnticipatedState.Rotation);
+
+            Assert.AreEqual(childStartPosition, serverChild.AuthoritativeState.Position);
+            Assert.AreEqual(childStartScale, serverChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(childStartRotation, serverChild.AuthoritativeState.Rotation);
+            Assert.AreEqual(childStartPosition, serverChild.AnticipatedState.Position);
+            Assert.AreEqual(childStartScale, serverChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(childStartRotation, serverChild.AnticipatedState.Rotation);
 
             TimeTravel(2, 120);
 
@@ -182,22 +275,35 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startPosition, serverComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, serverComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, serverComponent.AnticipatedState.Rotation);
+
+            Assert.AreEqual(childStartPosition, serverChild.AuthoritativeState.Position);
+            Assert.AreEqual(childStartScale, serverChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(childStartRotation, serverChild.AuthoritativeState.Rotation);
+            Assert.AreEqual(childStartPosition, serverChild.AnticipatedState.Position);
+            Assert.AreEqual(childStartScale, serverChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(childStartRotation, serverChild.AnticipatedState.Rotation);
         }
 
         [Test]
         public void WhenAnticipating_OtherClientDoesNotChange()
         {
             var testComponent = GetTestComponent();
+            var childComponent = GetChildComponent(testComponent);
 
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
+            
+            var childStartPosition = childComponent.transform.localPosition;
+            var childStartScale = childComponent.transform.localScale;
+            var childStartRotation = childComponent.transform.localRotation;
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
             var otherClientComponent = GetOtherClientComponent();
+            var otherClientChild = GetChildComponent(otherClientComponent);
 
             Assert.AreEqual(startPosition, otherClientComponent.AuthoritativeState.Position);
             Assert.AreEqual(startScale, otherClientComponent.AuthoritativeState.Scale);
@@ -205,6 +311,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startPosition, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, otherClientComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, otherClientComponent.AnticipatedState.Rotation);
+
+            Assert.AreEqual(childStartPosition, otherClientChild.AuthoritativeState.Position);
+            Assert.AreEqual(childStartScale, otherClientChild.AuthoritativeState.Scale);
+            Assert.AreEqual(childStartRotation, otherClientChild.AuthoritativeState.Rotation);
+            Assert.AreEqual(childStartPosition, otherClientChild.AnticipatedState.Position);
+            Assert.AreEqual(childStartScale, otherClientChild.AnticipatedState.Scale);
+            Assert.AreEqual(childStartRotation, otherClientChild.AnticipatedState.Rotation);
 
             TimeTravel(2, 120);
 
@@ -214,24 +327,45 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startPosition, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, otherClientComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, otherClientComponent.AnticipatedState.Rotation);
+
+            Assert.AreEqual(childStartPosition, otherClientChild.AuthoritativeState.Position);
+            Assert.AreEqual(childStartScale, otherClientChild.AuthoritativeState.Scale);
+            Assert.AreEqual(childStartRotation, otherClientChild.AuthoritativeState.Rotation);
+            Assert.AreEqual(childStartPosition, otherClientChild.AnticipatedState.Position);
+            Assert.AreEqual(childStartScale, otherClientChild.AnticipatedState.Scale);
+            Assert.AreEqual(childStartRotation, otherClientChild.AnticipatedState.Rotation);
         }
 
         [Test]
         public void WhenServerChangesSnapValue_ValuesAreUpdated()
         {
             var testComponent = GetTestComponent();
+            var testChild = GetChildComponent(testComponent);
             var serverComponent = GetServerComponent();
+            var serverChild = GetChildComponent(serverComponent);
             serverComponent.Interpolate = false;
+            serverChild.Interpolate = false;
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
+            
+            testChild.AnticipateMove(new Vector3(0, 1, 2));
+            testChild.AnticipateScale(new Vector3(1, 2, 3));
+            testChild.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
             var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
             rpcComponent.MoveRpc(new Vector3(2, 3, 4));
+            var childRpcComponent = testChild.GetComponent<NetworkTransformAnticipationComponent>();
+            childRpcComponent.LocalMoveRpc(new Vector3(2, 3, 4));
 
-            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
+            WaitForMessagesReceivedWithTimeTravel(new List<Type>
+            {
+                typeof(RpcMessage),
+                typeof(RpcMessage),
+            }, new List<NetworkManager> { m_ServerNetworkManager });
             var otherClientComponent = GetOtherClientComponent();
+            var otherClientChild = GetChildComponent(otherClientComponent);
 
             WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthoritativeState.Position == serverComponent.transform.position && otherClientComponent.AuthoritativeState.Position == serverComponent.transform.position);
 
@@ -242,6 +376,16 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.transform.position);
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AuthoritativeState.Position);
+            
+            Assert.AreEqual(serverChild.transform.localPosition, testChild.transform.localPosition);
+            Assert.AreNotEqual(serverChild.transform.localPosition, testChild.transform.position);
+            Assert.AreEqual(serverChild.transform.localPosition, testChild.AnticipatedState.Position);
+            Assert.AreEqual(serverChild.transform.localPosition, testChild.AuthoritativeState.Position);
+
+            Assert.AreEqual(serverChild.transform.localPosition, otherClientChild.transform.localPosition);
+            Assert.AreNotEqual(serverChild.transform.localPosition, otherClientChild.transform.position);
+            Assert.AreEqual(serverChild.transform.localPosition, otherClientChild.AnticipatedState.Position);
+            Assert.AreEqual(serverChild.transform.localPosition, otherClientChild.AuthoritativeState.Position);
         }
 
         public void AssertQuaternionsAreEquivalent(Quaternion a, Quaternion b)
@@ -254,7 +398,7 @@ namespace Unity.Netcode.RuntimeTests
         }
         public void AssertVectorsAreEquivalent(Vector3 a, Vector3 b)
         {
-            Assert.AreEqual(a.x, b.x, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
+                Assert.AreEqual(a.x, b.x, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
             Assert.AreEqual(a.y, b.y, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
             Assert.AreEqual(a.z, b.z, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
         }
@@ -264,15 +408,23 @@ namespace Unity.Netcode.RuntimeTests
         {
             var testComponent = GetTestComponent();
             var otherClientComponent = GetOtherClientComponent();
+            var testChild = GetChildComponent(testComponent);
+            var otherChild = GetChildComponent(otherClientComponent);
 
             testComponent.StaleDataHandling = StaleDataHandling.Ignore;
             otherClientComponent.StaleDataHandling = StaleDataHandling.Ignore;
+            testChild.StaleDataHandling = StaleDataHandling.Ignore;
+            otherChild.StaleDataHandling = StaleDataHandling.Ignore;
 
             var serverComponent = GetServerComponent();
+            var serverChild = GetChildComponent(serverComponent);
             serverComponent.Interpolate = false;
+            serverChild.Interpolate = false;
 
             testComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
             otherClientComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
+            testChild.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
+            otherChild.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
 
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
@@ -287,14 +439,24 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateMove(anticipePosition);
             testComponent.AnticipateScale(anticipeScale);
             testComponent.AnticipateRotate(anticipeRotation);
+            testChild.AnticipateMove(anticipePosition);
+            testChild.AnticipateScale(anticipeScale);
+            testChild.AnticipateRotate(anticipeRotation);
 
             var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
             rpcComponent.MoveRpc(serverSetPosition);
             rpcComponent.RotateRpc(serverSetRotation);
             rpcComponent.ScaleRpc(serverSetScale);
+            var childRpcComponent = testChild.GetComponent<NetworkTransformAnticipationComponent>();
+            childRpcComponent.LocalMoveRpc(serverSetPosition);
+            childRpcComponent.LocalRotateRpc(serverSetRotation);
+            childRpcComponent.ScaleRpc(serverSetScale);
 
             WaitForMessagesReceivedWithTimeTravel(new List<Type>
             {
+                typeof(RpcMessage),
+                typeof(RpcMessage),
+                typeof(RpcMessage),
                 typeof(RpcMessage),
                 typeof(RpcMessage),
                 typeof(RpcMessage),
@@ -327,6 +489,30 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
             AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
 
+            AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testChild.transform.localPosition);
+            AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testChild.transform.localScale);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testChild.transform.localRotation);
+
+            AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testChild.AnticipatedState.Position);
+            AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testChild.AnticipatedState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, testChild.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, testChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testChild.AuthoritativeState.Rotation);
+
+            AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherChild.transform.localPosition);
+            AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherChild.transform.localScale);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherChild.transform.localRotation);
+
+            AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherChild.AnticipatedState.Position);
+            AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherChild.AnticipatedState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, otherChild.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, otherChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherChild.AuthoritativeState.Rotation);
+
             for (var i = 1; i < 60; ++i)
             {
                 TimeTravel(1f / 60f, 1);
@@ -355,6 +541,30 @@ namespace Unity.Netcode.RuntimeTests
                 AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
                 AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
                 AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
+
+                AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testChild.transform.localPosition);
+                AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testChild.transform.localScale);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testChild.transform.localRotation);
+
+                AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testChild.AnticipatedState.Position);
+                AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testChild.AnticipatedState.Scale);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testChild.AnticipatedState.Rotation);
+
+                AssertVectorsAreEquivalent(serverSetPosition, testChild.AuthoritativeState.Position);
+                AssertVectorsAreEquivalent(serverSetScale, testChild.AuthoritativeState.Scale);
+                AssertQuaternionsAreEquivalent(serverSetRotation, testChild.AuthoritativeState.Rotation);
+
+                AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherChild.transform.localPosition);
+                AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherChild.transform.localScale);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherChild.transform.localRotation);
+
+                AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherChild.AnticipatedState.Position);
+                AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherChild.AnticipatedState.Scale);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherChild.AnticipatedState.Rotation);
+
+                AssertVectorsAreEquivalent(serverSetPosition, otherChild.AuthoritativeState.Position);
+                AssertVectorsAreEquivalent(serverSetScale, otherChild.AuthoritativeState.Scale);
+                AssertQuaternionsAreEquivalent(serverSetRotation, otherChild.AuthoritativeState.Rotation);
             }
             TimeTravel(1f / 60f, 1);
 
@@ -381,6 +591,30 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
             AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
             AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, testChild.transform.localPosition);
+            AssertVectorsAreEquivalent(serverSetScale, testChild.transform.localScale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testChild.transform.localRotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, testChild.AnticipatedState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, testChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testChild.AnticipatedState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, testChild.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, testChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testChild.AuthoritativeState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, otherChild.transform.localPosition);
+            AssertVectorsAreEquivalent(serverSetScale, otherChild.transform.localScale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherChild.transform.localRotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, otherChild.AnticipatedState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, otherChild.AnticipatedState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherChild.AnticipatedState.Rotation);
+
+            AssertVectorsAreEquivalent(serverSetPosition, otherChild.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, otherChild.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherChild.AuthoritativeState.Rotation);
         }
 
         [Test]
