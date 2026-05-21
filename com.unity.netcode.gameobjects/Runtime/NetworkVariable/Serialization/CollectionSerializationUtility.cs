@@ -265,7 +265,11 @@ namespace Unity.Netcode
         {
             private static List<T> s_AddedList = new List<T>();
             private static List<T> s_RemovedList = new List<T>();
-            private static List<T> s_ChangedList = new List<T>();
+ private static class ListCache<T>
+{
+private static readonly List<T> s_AddedList = new List<T>();
+private static readonly List<T> s_RemovedList = new List<T>();
+private static readonly List<T> s_ChangedList = new List<T>();
 
             public static List<T> GetAddedList()
             {
