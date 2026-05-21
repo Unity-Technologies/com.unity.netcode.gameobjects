@@ -1940,7 +1940,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
         /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
-        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForConditionOrTimeOutWithTimeTravel(Func<StringBuilder, bool> checkForCondition, int maxTries = 60)
         {
             WaitForConditionOrTimeOutWithTimeTravel(() =>
@@ -2031,7 +2030,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
         /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
-        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(ulong networkObjectId, int maxTries = 60)
         {
             bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
@@ -2055,7 +2053,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
         /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
-        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(NetworkObject networkObject, int maxTries = 60)
         {
             var networkObjectId = networkObject.NetworkObjectId;
@@ -2067,7 +2064,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
         /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
-        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(GameObject gameObject, int maxTries = 60)
         {
             var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
@@ -2079,7 +2075,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
         /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
-        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(List<NetworkObject> networkObjects, int maxTries = 60)
         {
             bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
