@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed AnticipatedNetworkTransform not respecting the InLocalSpace flag (#3995)
 
 ### Security
 
