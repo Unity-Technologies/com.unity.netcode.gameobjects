@@ -133,7 +133,6 @@ namespace Unity.Netcode
         private List<NetworkObject> m_NetworkObjectsSync = new List<NetworkObject>();
 
         private List<NetworkObject> m_DespawnedInSceneObjectsSync = new List<NetworkObject>();
-        private Dictionary<int, List<uint>> m_DespawnedInSceneObjects = new Dictionary<int, List<uint>>();
 
         /// <summary>
         /// Server Side Re-Synchronization:
@@ -1005,7 +1004,6 @@ namespace Unity.Netcode
         private void DeserializeDespawnedInScenePlacedNetworkObjects()
         {
             // Process all de-spawned in-scene NetworkObjects for this network session
-            m_DespawnedInSceneObjects.Clear();
             InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
             var sceneCache = new Dictionary<NetworkSceneHandle, Dictionary<uint, NetworkObject>>();
 

@@ -18,14 +18,14 @@ namespace Unity.Netcode
         // Contains the current application instance domain's command line arguments
         private static List<string> s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
 
-#if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad()
+        private static void InitializeOnLoad()
         {
             Instance = new CommandLineOptions();
+#if UNITY_EDITOR
             s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
-        }
 #endif
+        }
 
         /// <summary>
         /// Returns the value of an argument or null if the argument is not present

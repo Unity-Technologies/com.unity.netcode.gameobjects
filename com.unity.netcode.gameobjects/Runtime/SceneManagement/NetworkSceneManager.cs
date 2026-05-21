@@ -1581,8 +1581,9 @@ namespace Unity.Netcode
         internal class SceneUnloadEventHandler
         {
             private static Dictionary<NetworkManager, List<SceneUnloadEventHandler>> s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
-            [Conditional("UNITY_EDITOR")]
+#if UNITY_EDITOR
             internal static void ResetInstances() => s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+#endif
 
             internal static void RegisterScene(NetworkSceneManager networkSceneManager, Scene scene, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
             {

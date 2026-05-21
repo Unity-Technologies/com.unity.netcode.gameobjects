@@ -109,7 +109,7 @@ namespace Unity.Netcode.Components
         {
             m_ResultsArray = new NativeArray<JobResultStruct>(16, Allocator.Persistent);
             Physics.ContactEvent += Physics_ContactEvent;
-            if (Instance != null || Instance != this)
+            if (Instance != null && Instance != this)
             {
                 NetworkLog.LogError($"[Invalid][Multiple Instances] Found more than one instance of {nameof(RigidbodyContactEventManager)}: {name} and {Instance.name}");
                 NetworkLog.LogError($"[Disable][Additional Instance] Disabling {name} instance!");
