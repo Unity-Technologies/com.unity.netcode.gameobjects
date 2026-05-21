@@ -258,33 +258,26 @@ namespace Unity.Netcode
         // For HashSet and Dictionary, we need to have some local space to hold lists we need to serialize.
         // We don't want to do allocations all the time and we know each one needs a maximum of three lists,
         // so we're going to keep static lists that we can reuse in these methods.
-#if UNITY_6000_6_OR_NEWER
-        [Scripting.LifecycleManagement.AutoStaticsCleanup]
-#endif
-        private static partial class ListCache<T>
+        private static class ListCache<T>
         {
-            private static List<T> s_AddedList = new List<T>();
-            private static List<T> s_RemovedList = new List<T>();
- private static class ListCache<T>
-{
-private static readonly List<T> s_AddedList = new List<T>();
-private static readonly List<T> s_RemovedList = new List<T>();
-private static readonly List<T> s_ChangedList = new List<T>();
+            private static readonly List<T> k_AddedList = new List<T>();
+            private static readonly List<T> k_RemovedList = new List<T>();
+            private static readonly List<T> k_ChangedList = new List<T>();
 
             public static List<T> GetAddedList()
             {
-                s_AddedList.Clear();
-                return s_AddedList;
+                k_AddedList.Clear();
+                return k_AddedList;
             }
             public static List<T> GetRemovedList()
             {
-                s_RemovedList.Clear();
-                return s_RemovedList;
+                k_RemovedList.Clear();
+                return k_RemovedList;
             }
             public static List<T> GetChangedList()
             {
-                s_ChangedList.Clear();
-                return s_ChangedList;
+                k_ChangedList.Clear();
+                return k_ChangedList;
             }
         }
 
