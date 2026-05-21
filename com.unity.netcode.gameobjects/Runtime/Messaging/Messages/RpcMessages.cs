@@ -54,7 +54,7 @@ namespace Unity.Netcode
             }
 
             var type = networkBehaviour.GetType();
-            if (!NetworkBehaviour.__rpc_func_table.TryGetValue(type, out var rpcsForBehaviour) || !NetworkBehaviour.__rpc_permission_table.TryGetValue(type, out var permissionsTable) )
+            if (!NetworkBehaviour.__rpc_func_table.TryGetValue(type, out var rpcsForBehaviour) || !NetworkBehaviour.__rpc_permission_table.TryGetValue(type, out var permissionsTable))
             {
                 networkManager.Log.Error(new Context(LogLevel.Normal, $"Rpc table doesn't have RPCs registered for this {nameof(NetworkBehaviour)}. Dropping RPC message").AddNetworkObject(networkObject).AddInfo(nameof(NetworkBehaviour.NetworkBehaviourId), networkBehaviour.NetworkBehaviourId).AddInfo(nameof(NetworkBehaviour), type));
                 return;
@@ -275,7 +275,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.Log.ErrorServer(new Context(LogLevel.Error,$"Received {nameof(ForwardServerRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
+                networkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Received {nameof(ForwardServerRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
             }
             ServerRpcMessage.ReadBuffer.Dispose();
             ServerRpcMessage.WriteBuffer.Dispose();
@@ -351,7 +351,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.Log.ErrorServer(new Context(LogLevel.Error,$"Received {nameof(ForwardClientRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
+                networkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Received {nameof(ForwardClientRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
             }
             ClientRpcMessage.WriteBuffer.Dispose();
             ClientRpcMessage.ReadBuffer.Dispose();

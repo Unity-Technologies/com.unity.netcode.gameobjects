@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using Unity.Collections;
 
 namespace Unity.Netcode.Logging
 {
     internal delegate string LogCollectionBuilder<in TItem>(TItem item);
-    internal readonly struct CollectionContext<TItem>: ILogContext
+    internal readonly struct CollectionContext<TItem> : ILogContext
     {
         private readonly LogCollectionBuilder<TItem> m_Delegate;
         private readonly IEnumerable<TItem> m_Collection;

@@ -1,6 +1,6 @@
 namespace Unity.Netcode.Logging
 {
-    public readonly struct LogContextNetworkBehaviour: ILogContext
+    public readonly struct LogContextNetworkBehaviour : ILogContext
     {
         private readonly NetworkBehaviour m_NetworkBehaviour;
 
