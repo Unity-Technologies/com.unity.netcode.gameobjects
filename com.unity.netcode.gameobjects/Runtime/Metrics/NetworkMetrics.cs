@@ -11,21 +11,26 @@ namespace Unity.Netcode
     internal class NetworkMetrics : INetworkMetrics
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
-        private readonly static Dictionary<uint, string> s_SceneEventTypeNames;
-        private static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+        private static readonly Dictionary<uint, string> k_SceneEventTypeNames;
+        private static ProfilerMarker s_FrameDispatch;
+#if UNITY_EDITOR
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+#endif
 
         static NetworkMetrics()
         {
-            s_SceneEventTypeNames = new Dictionary<uint, string>();
+            k_SceneEventTypeNames = new Dictionary<uint, string>();
             foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
             {
-                s_SceneEventTypeNames[(uint)type] = type.ToString();
+                k_SceneEventTypeNames[(uint)type] = type.ToString();
             }
+            s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
         }
 
         private static string GetSceneEventTypeName(uint typeCode)
         {
-            return s_SceneEventTypeNames.GetValueOrDefault(typeCode, "Unknown");
+            return k_SceneEventTypeNames.GetValueOrDefault(typeCode, "Unknown");
         }
 
         private readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)

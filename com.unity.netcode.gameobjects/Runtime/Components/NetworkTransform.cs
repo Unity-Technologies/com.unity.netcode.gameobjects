@@ -2102,7 +2102,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
-            CachedTransform = transformToUse;
+            m_CachedTransform = transformToUse;
             m_CachedNetworkManager = NetworkManager;
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
             networkState.FlagStates.UseInterpolation = Interpolate;

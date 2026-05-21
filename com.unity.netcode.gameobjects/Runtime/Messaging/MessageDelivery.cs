@@ -59,9 +59,13 @@ internal static class MessageDelivery
         MessageDeliveryType<ConnectionApprovedMessage>.Initialize();
         MessageDeliveryType<CreateObjectMessage>.Initialize();
         MessageDeliveryType<DestroyObjectMessage>.Initialize();
+        MessageDeliveryType<DisconnectReasonMessage>.Initialize();
+        MessageDeliveryType<NamedMessage>.Initialize();
+        MessageDeliveryType<UnnamedMessage>.Initialize();
         MessageDeliveryType<NetworkTransformMessage>.Initialize();
         MessageDeliveryType<NetworkVariableDeltaMessage>.Initialize();
         MessageDeliveryType<ParentSyncMessage>.Initialize();
+        MessageDeliveryType<ProxyMessage>.Initialize();
         // RpcMessage.cs
         {
             MessageDeliveryType<RpcMessage>.Initialize();

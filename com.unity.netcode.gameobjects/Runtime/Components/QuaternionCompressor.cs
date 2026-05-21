@@ -42,13 +42,6 @@ namespace Unity.Netcode
         private const ushort k_True = 1;
         private const ushort k_False = 0;
 
-        // Used to store the absolute value of the 4 quaternion elements
-        private static Quaternion s_QuatAbsValues = Quaternion.identity;
-#if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad() => s_QuatAbsValues = Quaternion.identity;
-#endif
-
         /// <summary>
         /// Compresses a Quaternion into an unsigned integer
         /// </summary>
@@ -58,38 +51,31 @@ namespace Unity.Netcode
         public static uint CompressQuaternion(ref Quaternion quaternion)
         {
             // Store off the absolute value for each Quaternion element
-            s_QuatAbsValues[0] = Mathf.Abs(quaternion[0]);
-            s_QuatAbsValues[1] = Mathf.Abs(quaternion[1]);
-            s_QuatAbsValues[2] = Mathf.Abs(quaternion[2]);
-            s_QuatAbsValues[3] = Mathf.Abs(quaternion[3]);
+            var quatAbsValue0 = Mathf.Abs(quaternion[0]);
+            var quatAbsValue1 = Mathf.Abs(quaternion[1]);
+            var quatAbsValue2 = Mathf.Abs(quaternion[2]);
+            var quatAbsValue3 = Mathf.Abs(quaternion[3]);
 
             // Get the largest element value of the quaternion to know what the remaining "Smallest Three" values are
-            var quatMax = Mathf.Max(s_QuatAbsValues[0], s_QuatAbsValues[1], s_QuatAbsValues[2], s_QuatAbsValues[3]);
+            var quatMax = Mathf.Max(quatAbsValue0, quatAbsValue1, quatAbsValue2, quatAbsValue3);
 
             // Find the index of the largest element so we can skip that element while compressing and decompressing
-            var indexToSkip = (ushort)(s_QuatAbsValues[0] == quatMax ? 0 : s_QuatAbsValues[1] == quatMax ? 1 : s_QuatAbsValues[2] == quatMax ? 2 : 3);
+            var indexToSkip = (ushort)(quatAbsValue0 == quatMax ? 0 : quatAbsValue1 == quatMax ? 1 : quatAbsValue2 == quatMax ? 2 : 3);
 
             // Get the sign of the largest element which is all that is needed when calculating the sum of squares of a normalized quaternion.
-
             var quatMaxSign = (quaternion[indexToSkip] < 0 ? k_True : k_False);
 
             // Start with the index to skip which will be shifted to the highest two bits
             var compressed = (uint)indexToSkip;
 
-            // Step 1: Start with the first element
-            var currentIndex = 0;
-
             // Step 2: If we are on the index to skip preserve the current compressed value, otherwise proceed to step 3 and 4
             // Step 3: Get the sign of the element we are processing. If it is the not the same as the largest value's sign bit then we set the bit
             // Step 4: Get the compressed and encoded value by multiplying the absolute value of the current element by k_CompressionEcodingMask and round that result up
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((quaternion[currentIndex] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_QuatAbsValues[currentIndex]) : compressed;
-            currentIndex++;
+            compressed = 0 != indexToSkip ? (compressed << 10) | (uint)((quaternion[0] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * quatAbsValue0) : compressed;
             // Repeat the last 3 steps for the remaining elements
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((quaternion[currentIndex] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_QuatAbsValues[currentIndex]) : compressed;
-            currentIndex++;
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((quaternion[currentIndex] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_QuatAbsValues[currentIndex]) : compressed;
-            currentIndex++;
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((quaternion[currentIndex] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_QuatAbsValues[currentIndex]) : compressed;
+            compressed = 1 != indexToSkip ? (compressed << 10) | (uint)((quaternion[1] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * quatAbsValue1) : compressed;
+            compressed = 2 != indexToSkip ? (compressed << 10) | (uint)((quaternion[2] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * quatAbsValue2) : compressed;
+            compressed = 3 != indexToSkip ? (compressed << 10) | (uint)((quaternion[3] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * quatAbsValue3) : compressed;
 
             // Return the compress quaternion
             return compressed;

@@ -1812,7 +1812,7 @@ namespace Unity.Netcode
 
 
         /// <summary>
-        /// This is called by the Unity Editor reset button. See "OnNetworkManagerReset" from "NetworkManagerHelper.cs" file.
+        /// This is called by the Unity Editor reset button. See <see cref="OnNetworkManagerReset"/> which is handled in "NetworkManagerHelper.cs".
         /// </summary>
         private void Reset()
         {
