@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             transform.position = newPosition;
         }
-        
+
         [Rpc(SendTo.Server)]
         public void LocalMoveRpc(Vector3 newPosition)
         {
@@ -106,8 +106,7 @@ namespace Unity.Netcode.RuntimeTests
             otherClientComponent.transform.position = Vector3.zero;
             otherClientComponent.transform.localScale = Vector3.one;
             otherClientComponent.transform.rotation = Quaternion.LookRotation(Vector3.forward);
-            
-            
+
             var childObject = SpawnObject(m_TestPrefab, m_ServerNetworkManager);
             childObject.transform.parent = serverComponent.transform;
             childObject.transform.localPosition = Vector3.zero;
@@ -174,7 +173,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
-            
+
             childComponent.AnticipateMove(new Vector3(0, 1, 2));
             childComponent.AnticipateScale(new Vector3(1, 2, 3));
             childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
@@ -186,8 +185,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AnticipatedState.Position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Scale);
             Assert.That(testComponent.AnticipatedState.Rotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
-            
-            
+
             Assert.AreEqual(new Vector3(0, 1, 2), childComponent.transform.localPosition);
             Assert.AreEqual(new Vector3(1, 2, 3), childComponent.transform.localScale);
             Assert.That(childComponent.transform.localRotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
@@ -206,7 +204,7 @@ namespace Unity.Netcode.RuntimeTests
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
-            
+
             var childStartPosition = childComponent.transform.localPosition;
             var childStartScale = childComponent.transform.localScale;
             var childStartRotation = childComponent.transform.localRotation;
@@ -214,7 +212,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
-            
+
             childComponent.AnticipateMove(new Vector3(0, 1, 2));
             childComponent.AnticipateScale(new Vector3(1, 2, 3));
             childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
@@ -222,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startPosition, testComponent.AuthoritativeState.Position);
             Assert.AreEqual(startScale, testComponent.AuthoritativeState.Scale);
             Assert.AreEqual(startRotation, testComponent.AuthoritativeState.Rotation);
-            
+
             Assert.AreEqual(childStartPosition, childComponent.AuthoritativeState.Position);
             Assert.AreEqual(childStartScale, childComponent.AuthoritativeState.Scale);
             Assert.AreEqual(childStartRotation, childComponent.AuthoritativeState.Rotation);
@@ -237,7 +235,7 @@ namespace Unity.Netcode.RuntimeTests
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
-            
+
             var childStartPosition = childComponent.transform.localPosition;
             var childStartScale = childComponent.transform.localScale;
             var childStartRotation = childComponent.transform.localRotation;
@@ -249,7 +247,7 @@ namespace Unity.Netcode.RuntimeTests
             childComponent.AnticipateMove(new Vector3(0, 1, 2));
             childComponent.AnticipateScale(new Vector3(1, 2, 3));
             childComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
-            
+
             var serverComponent = GetServerComponent();
             var serverChild = GetChildComponent(serverComponent);
 
@@ -293,7 +291,7 @@ namespace Unity.Netcode.RuntimeTests
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
             var startRotation = testComponent.transform.rotation;
-            
+
             var childStartPosition = childComponent.transform.localPosition;
             var childStartScale = childComponent.transform.localScale;
             var childStartRotation = childComponent.transform.localRotation;
@@ -349,7 +347,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
-            
+
             testChild.AnticipateMove(new Vector3(0, 1, 2));
             testChild.AnticipateScale(new Vector3(1, 2, 3));
             testChild.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
@@ -376,7 +374,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.transform.position);
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AuthoritativeState.Position);
-            
+
             Assert.AreEqual(serverChild.transform.localPosition, testChild.transform.localPosition);
             Assert.AreNotEqual(serverChild.transform.localPosition, testChild.transform.position);
             Assert.AreEqual(serverChild.transform.localPosition, testChild.AnticipatedState.Position);
