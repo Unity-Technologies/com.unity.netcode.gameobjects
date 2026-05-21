@@ -18,7 +18,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos13:
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
-  - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
+  - command: unity-downloader-cli -u 2022.3 -c editor --path .Editor --fast
     timeout: 20
     retries: 3
   - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects com.unity.netcode.gameobjects.tests" --unity .Editor
@@ -88,7 +88,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu1804:
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
-  - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
+  - command: unity-downloader-cli -u 2022.3 -c editor --path .Editor --fast
     timeout: 20
     retries: 3
   - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects com.unity.netcode.gameobjects.tests" --unity .Editor
@@ -158,7 +158,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_win10:
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
-  - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
+  - command: unity-downloader-cli -u 2022.3 -c editor --path .Editor --fast
     timeout: 20
     retries: 3
   - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects com.unity.netcode.gameobjects.tests" --unity .Editor
