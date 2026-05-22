@@ -8,11 +8,11 @@
 all_api_validation_jobs:
   name: All API Validation Jobs
   dependencies:
-  - path: .yamato/wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_2022_3_-_win10
+  - path: .yamato/wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_6000_0_-_win10
 
-# upm-ci validation tests for API Validation - netcode.gameobjects - 2022.3 - win10 (2022.3 - Windows).
-api_validation_-_netcode_gameobjects_-_2022_3_-_win10:
-  name: API Validation - netcode.gameobjects - 2022.3 - win10
+# upm-ci validation tests for API Validation - netcode.gameobjects - 6000.0 - win10 (6000.0 - Windows).
+api_validation_-_netcode_gameobjects_-_6000_0_-_win10:
+  name: API Validation - netcode.gameobjects - 6000.0 - win10
   agent:
     image: package-ci/win10:v4
     type: Unity::VM
@@ -25,7 +25,7 @@ api_validation_-_netcode_gameobjects_-_2022_3_-_win10:
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
+  - command: unity-downloader-cli -u 6000.0/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/PackageJsonCondersor.py

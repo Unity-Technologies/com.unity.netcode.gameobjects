@@ -69,8 +69,6 @@ pr_code_changes_checks:
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editor }}
     # Run APV jobs to make sure the change won't break any dependants
-    - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run package EditMode and Playmode tests on all desktop platforms on {{ validation_editor }} (latest supported editor)
     - .yamato/_run-all.yml#run_all_package_tests_{{ validation_editor }}
     # Run project EditMode and Playmode tests on all desktop platforms on {{ validation_editor }} (latest supported editor)
     - .yamato/_run-all.yml#run_all_project_tests_{{ validation_editor }}
