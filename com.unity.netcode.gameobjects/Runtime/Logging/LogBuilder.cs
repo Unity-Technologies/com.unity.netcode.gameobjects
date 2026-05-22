@@ -7,7 +7,7 @@ namespace Unity.Netcode
         private readonly StringBuilder m_Builder = new();
         private const string k_OpenBracket = "[";
         private const string k_CloseBracket = "]";
-        private const string k_Separator = ": ";
+        private const string k_Separator = ":";
 
         public void Reset()
         {

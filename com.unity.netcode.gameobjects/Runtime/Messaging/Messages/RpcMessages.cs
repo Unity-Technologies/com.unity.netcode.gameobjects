@@ -36,7 +36,6 @@ namespace Unity.Netcode
         public static void Handle(ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload, ref __RpcParams rpcParams)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            using var logContext = networkManager.Log.AddDisposableInfo("SenderClientId", context.SenderId);
 
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(metadata.NetworkObjectId, out var networkObject))
             {
@@ -68,7 +67,7 @@ namespace Unity.Netcode
             if ((permission == RpcInvokePermission.Server && rpcParams.SenderId != NetworkManager.ServerClientId) ||
                 (permission == RpcInvokePermission.Owner && rpcParams.SenderId != networkObject.OwnerClientId))
             {
-                networkManager.Log.ErrorServer(new Context(LogLevel.Normal, "Rpc message received from a client permission to perform this operation!. Dropping RPC message").AddNetworkBehaviour(networkBehaviour));
+                networkManager.Log.ErrorServer(new Context(LogLevel.Normal, "Rpc message received from a client without permission to perform this operation!. Dropping RPC message").AddNetworkBehaviour(networkBehaviour));
                 return;
             }
 

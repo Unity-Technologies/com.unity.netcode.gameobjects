@@ -139,7 +139,16 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator RpcInvokePermissionReceivingTests()
         {
-            var firstClient = GetNonAuthorityNetworkManager(0);
+            NetworkManager firstClient = null;
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (firstClient == null && !networkManager.IsServer && !networkManager.LocalClient.IsSessionOwner)
+                {
+                    firstClient = networkManager;
+                }
+
+                networkManager.LogLevel = LogLevel.Error;
+            }
 
             var spawnedObject = SpawnObject(m_Prefab, firstClient).GetComponent<NetworkObject>();
 
