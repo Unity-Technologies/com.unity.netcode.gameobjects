@@ -6,7 +6,7 @@
     "unity": "6000.0",
     "dependencies": {
         "com.unity.nuget.mono-cecil": "1.11.6",
-        "com.unity.transport": "2.7.2"
+        "com.unity.transport": "2.7.3"
     },
     "samples": [
         {
