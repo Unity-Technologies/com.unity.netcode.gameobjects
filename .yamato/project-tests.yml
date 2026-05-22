@@ -37,7 +37,7 @@ test_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor for tests execution
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor for tests execution
     - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library --timeout={{ test_timeout }}
   artifacts:
     logs:
