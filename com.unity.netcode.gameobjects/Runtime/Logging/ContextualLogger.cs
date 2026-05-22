@@ -60,7 +60,7 @@ namespace Unity.Netcode.Logging
         }
 
         /// Used for the NetworkLog
-        internal ContextualLogger(NetworkManager networkManager, bool useCompatibilityMode)
+        internal ContextualLogger(NetworkManager networkManager, bool useCompatibilityMode = false)
         {
             m_UseCompatibilityMode = useCompatibilityMode;
             m_ManagerContext = new LogContextNetworkManager(networkManager);
@@ -207,7 +207,6 @@ namespace Unity.Netcode.Logging
 
             public void Dispose()
             {
-                Debug.Log($"Disposing disposable value: {m_ToClear}");
                 m_Logger.RemoveInfo(m_ToClear);
             }
         }
