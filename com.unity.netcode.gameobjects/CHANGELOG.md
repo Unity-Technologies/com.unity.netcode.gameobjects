@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.12.0] - 2026-05-24
 
 ### Added
 
@@ -19,18 +19,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Deprecated
 
 - Deprecated a number of methods that were no longer valid or being used. (#3987)
-
-### Removed
-
-
-### Fixed
-
-
-### Security
-
-
-### Obsolete
-
 
 ### [2.11.2] - 2026-05-01
 
