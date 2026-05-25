@@ -1235,6 +1235,9 @@ namespace Unity.Netcode
         [Obsolete("Use InScenePlaced instead")]
         public bool? IsSceneObject { get; internal set; }
 
+        /// <summary>
+        /// True if this object is placed in a scene; false otherwise.
+        /// </summary>
         [field: HideInInspector]
         [field: SerializeField]
         public bool InScenePlaced { get; internal set; }
