@@ -1,11 +1,7 @@
-#if NGO_FINDOBJECTS_NOSORTING
-using System;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -16,7 +12,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <remarks>
     /// It is intentional that we do not include the UnityEngine namespace in order to avoid
-    /// over-complicatd define wrapping between versions that do or don't support FindObjectsSortMode.
+    /// over-complicated define wrapping between versions that do or don't support FindObjectsSortMode.
     /// </remarks>
     internal static class FindObjects
     {
@@ -30,7 +26,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T[] ByType<T>(bool includeInactive = false, bool orderByIdentifier = false) where T : Object
         {
-            var inactive = includeInactive ? FindObjectsInactive.Include : FindObjectsInactive.Exclude;
+            var inactive = includeInactive ? UnityEngine.FindObjectsInactive.Include : UnityEngine.FindObjectsInactive.Exclude;
 #if NGO_FINDOBJECTS_NOSORTING
             var results = Object.FindObjectsByType<T>(inactive);
 #if !NGO_FINDOBJECTS_UNORDERED_IDS
@@ -40,7 +36,7 @@ namespace Unity.Netcode
             }
 #endif
 #else
-            var results = Object.FindObjectsByType<T>(inactive, orderByIdentifier ? FindObjectsSortMode.InstanceID : FindObjectsSortMode.None);
+            var results = Object.FindObjectsByType<T>(inactive, orderByIdentifier ? UnityEngine.FindObjectsSortMode.InstanceID : UnityEngine.FindObjectsSortMode.None);
 #endif
             return results;
         }
@@ -52,7 +48,7 @@ namespace Unity.Netcode
         /// <param name="includeInactive">When true, inactive objects will be included.</param>
         /// <typeparam name="T">Type of <see cref="Component"/> to get from the scene</typeparam>
         /// <returns>a generator that yields successive NetworkObjects in the current scene</returns>
-        public static IEnumerable<T> FromSceneByType<T>(Scene scene, bool includeInactive) where T : Component
+        public static IEnumerable<T> FromSceneByType<T>(Scene scene, bool includeInactive) where T : UnityEngine.Component
         {
             return new ObjectsInSceneEnumerator<T>(scene, includeInactive);
         }
@@ -61,9 +57,9 @@ namespace Unity.Netcode
         /// An Enumerator that enumerates over each component of type <see cref="T"/> in the given scene.
         /// </summary>
         /// <typeparam name="T">Type of <see cref="Component"/> to get from the scene</typeparam>
-        private struct ObjectsInSceneEnumerator<T> : IEnumerable<T>, IEnumerator<T> where T : Component
+        private struct ObjectsInSceneEnumerator<T> : IEnumerable<T>, IEnumerator<T> where T : UnityEngine.Component
         {
-            private readonly GameObject[] m_RootObjects;
+            private readonly UnityEngine.GameObject[] m_RootObjects;
             private int m_RootIndex;
             private T[] m_CurrentChildObjects;
             private int m_CurrentChildIndex;
