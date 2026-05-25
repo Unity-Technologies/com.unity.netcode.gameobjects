@@ -1184,7 +1184,11 @@ namespace Unity.Netcode
                 return;
             }
 
-            networkObject.IsSceneObject = false;
+#pragma warning disable CS0618 // Type or member is obsolete
+            // Obsolete with warning means we need the underlying behaviour to keep existing
+            // TODO: remove in the 3.x branch
+            networkObject.SetSceneObjectStatus(false);
+#pragma warning restore CS0618 // Type or member is obsolete
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
         }
