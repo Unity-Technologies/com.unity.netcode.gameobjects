@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Deprecated a number of methods that were no longer valid or being used. (#3987)
 
 ### Removed
 
