@@ -1,10 +1,12 @@
 {
   "disableProjectUpdate": false,
   "dependencies": {
-    "com.unity.ide.rider": "3.0.37",
-    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
+    "com.unity.ide.rider": "3.0.39",
+    "com.unity.multiplayer.center": "1.0.0",
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
+    "com.unity.modules.accessibility": "1.0.0"
   },
-    "testables": [
-        "com.unity.netcode.gameobjects"
-    ]
+  "testables": [
+    "com.unity.netcode.gameobjects"
+  ]
 }

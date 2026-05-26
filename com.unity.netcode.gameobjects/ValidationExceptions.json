@@ -3,7 +3,7 @@
     {
       "ValidationTest": "API Validation",
       "ExceptionMessage": "Breaking changes require a new major version.",
-      "PackageVersion": "1.15.2"
+      "PackageVersion": "1.16.0"
     }
   ],
   "WarningExceptions": []

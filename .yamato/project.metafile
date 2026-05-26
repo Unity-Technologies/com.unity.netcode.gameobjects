@@ -23,7 +23,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.83.0
+      image: package-ci/ubuntu-22.04:v4.85.0
       flavor: b1.small
 
 
@@ -38,13 +38,13 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.83.0
+          image: package-ci/ubuntu-22.04:v4.85.0
           flavor: b1.large
           standalone: StandaloneLinux64
     desktop:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.83.0
+          image: package-ci/ubuntu-22.04:v4.85.0
           flavor: b1.large
           smaller_flavor: b1.medium
           standalone: StandaloneLinux64
@@ -154,14 +154,8 @@ test_platforms:
 # Editors to be used for testing. NGOv1.X official support started from 2021.3 editor
 # TODO: When a new editor will be released it should be added to this list. Correct also if we will stop supporting one of the editors present here
 
-validation_editors:
-    default:
-        - 6000.0
-    all:
-        - 2022.3
-        - 6000.0
-    minimal:
-        - 2022.3
+validation_editor:
+    - 6000.0
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
 

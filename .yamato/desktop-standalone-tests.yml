@@ -31,10 +31,9 @@
 # BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
-  name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
+desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editor }}:
+  name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ validation_editor }}, {{ backend }}]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
@@ -43,7 +42,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     players:
@@ -58,7 +57,6 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
-{% endfor -%}
 
 
 
@@ -66,10 +64,9 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 # RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
-  name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
+desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editor }}:
+  name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ validation_editor }}, {{ backend }}]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
@@ -78,15 +75,14 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
-    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endfor -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

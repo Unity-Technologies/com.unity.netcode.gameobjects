@@ -23,11 +23,10 @@
 
 #--------------------------------------------------------------------------------------
 
-{% for project in projects.default -%}
+{% for project in projects.default -%}      
 {% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.all -%}
-webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
+webgl_build_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
+  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ validation_editor }}, il2cpp]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -36,7 +35,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c webgl -c il2cpp {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloading the editor with additional webgl and il2cpp components
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor -c webgl -c il2cpp {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloading the editor with additional webgl and il2cpp components
 
     # The following step builds the player with defined options such as:
     # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
@@ -50,6 +49,5 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       paths:
         - "artifacts/**/*"
         - "build/players/**/*"
-{% endfor -%}
 {% endfor -%}
 {% endfor -%}

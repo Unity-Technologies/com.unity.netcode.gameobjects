@@ -38,9 +38,8 @@
 # BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_build -%}
-{% for editor in validation_editors.all -%}
-mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp]
+mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
+  name: Build {{ project.name }} - [{{ platform.name }}, {{ validation_editor }}, il2cpp]
   agent:
       type: {{ platform.type }}
       image: {{ platform.image }}
@@ -54,7 +53,7 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
     UNITY_HANDLEUIINTERRUPTIONS: 1
   commands:
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --wait
+    - unity-downloader-cli -u {{ validation_editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --wait
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
     players:
@@ -65,15 +64,13 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
         - "artifacts/**/*"
 {% endfor -%}
 {% endfor -%}
-{% endfor -%}
 
 
 # RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-{% for editor in validation_editors.all -%}
-mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }},  il2cpp]
+mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
+  name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ validation_editor }},  il2cpp]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -83,7 +80,7 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
 
 {% if platform.standalone == "Android" %}
     # Download standalone UnityTestRunner and ADB setup
@@ -108,7 +105,6 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/mobile-standalone-test.yml#mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}
 {% endfor -%}
 {% endfor -%}

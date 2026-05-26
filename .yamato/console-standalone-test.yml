@@ -39,9 +39,8 @@
 # BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
-{% for editor in validation_editors.all -%}
-console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp{% if platform.name == "switch" %}, arm64{% endif %}]
+console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
+  name: Build {{ project.name }} - [{{ platform.name }}, {{ validation_editor }}, il2cpp{% if platform.name == "switch" %}, arm64{% endif %}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -50,7 +49,7 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor -c il2cpp -c {{ platform.name }}
     - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
   variables:
 # PS4 related
@@ -71,16 +70,14 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
         - "artifacts/**/*"
 {% endfor -%}
 {% endfor -%}
-{% endfor -%}
 
 
 
 # RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-{% for editor in validation_editors.all -%}
-console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }}, il2cpp]
+console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}:
+  name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ validation_editor }}, il2cpp]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -89,8 +86,8 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+    - unity-downloader-cli --fast --wait -u {{ validation_editor }} -c Editor -c il2cpp -c {{ platform.name }}
+    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library --timeout=1800
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -106,7 +103,6 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/console-standalone-test.yml#console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
+    - .yamato/console-standalone-test.yml#console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ validation_editor }}
 {% endfor -%}
 {% endfor -%}

@@ -8,13 +8,13 @@
         "Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
-        "Unity.Services.Relay",
+        "Unity.Services.Multiplayer",
         "Unity.Addressables.Editor"
     ],
     "versionDefines": [
         {
-            "name": "com.unity.services.relay",
-            "expression": "0.0.1-preview.3",
+            "name": "com.unity.services.multiplayer",
+            "expression": "1.0.0",
             "define": "ENABLE_RELAY_SERVICE"
         },
         {
