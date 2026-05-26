@@ -35,7 +35,7 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ validation_ed
 {% endif %}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
-    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
+    - upm-ci project test -u {{ validation_editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
     logs:
       paths:
