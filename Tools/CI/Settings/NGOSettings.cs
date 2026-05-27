@@ -24,7 +24,8 @@ public class NGOSettings : AnnotatedSettingsBase
             new PackageOptions()
             {
                 ReleaseOptions = new ReleaseOptions() { IsReleasing = true },
-                ValidationOptions = validationOptions
+                ValidationOptions = validationOptions,
+                MaximumEditorVersion = "6000.5"
             }
         }
     };
