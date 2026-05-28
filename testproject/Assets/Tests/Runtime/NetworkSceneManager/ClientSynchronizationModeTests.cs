@@ -222,7 +222,6 @@ namespace TestProject.RuntimeTests
             // If we didn't preload the scenes, then load the scenes via NetworkSceneManager
             if (m_ServerPreloadState == ServerPreloadStates.NoPreloadOnServer)
             {
-                // m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSide_OnSceneEvent;
                 yield return LoadScenesOnServer();
             }
 

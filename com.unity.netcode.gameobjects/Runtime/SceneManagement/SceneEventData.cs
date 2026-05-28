@@ -446,7 +446,7 @@ namespace Unity.Netcode
             return 0;
         }
 
-        internal bool EnableSerializationLogs = true;
+        internal bool EnableSerializationLogs = false;
 
         private void LogArray(byte[] data, int start = 0, int stop = 0, StringBuilder builder = null)
         {
