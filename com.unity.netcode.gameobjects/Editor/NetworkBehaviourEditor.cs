@@ -322,18 +322,13 @@ namespace Unity.Netcode.Editor
         }
 
         /// <summary>
-        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// Obsolete method to find root parent of a <see cref="Transform"/>.
+        /// Use <see cref="Transform.root"/> instead.
         /// </summary>
         /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
         /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
-        public static Transform GetRootParentTransform(Transform transform)
-        {
-            if (transform.parent == null || transform.parent == transform)
-            {
-                return transform;
-            }
-            return GetRootParentTransform(transform.parent);
-        }
+        [Obsolete("Use transform.root instead")]
+        public static Transform GetRootParentTransform(Transform transform) => transform.root;
 
         /// <summary>
         /// Used to determine if a GameObject has one or more NetworkBehaviours but
@@ -358,7 +353,7 @@ namespace Unity.Netcode.Editor
             }
 
             // Now get the root parent transform to the current GameObject (or itself)
-            var rootTransform = GetRootParentTransform(gameObject.transform);
+            var rootTransform = gameObject.transform.root;
             if (!rootTransform.TryGetComponent<NetworkManager>(out var networkManager))
             {
                 networkManager = rootTransform.GetComponentInChildren<NetworkManager>();

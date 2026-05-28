@@ -13,10 +13,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Improve performance of `NetworkBehaviour`. (#3915)
-- Improve performance of `NetworkTransform`. (#3907)
-- Improve performance of `NetworkRigidbodyBase`. (#3906)
-- Improve performance of `NetworkAnimator`. (#3905)
 
 ### Deprecated
 
@@ -26,13 +22,53 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ### Security
 
 
 ### Obsolete
 
+
+## [2.12.0] - 2026-05-24
+
+### Added
+
+- Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor. (#3980)
+
+### Changed
+
+- `NetworkMetricsPipelineStage` is now defined even when the multiplayer tools package is not installed, removing the need to guard its registration behind a version define when using a custom driver in `UnityTransport`. (#3980)
+
+### Deprecated
+
+- Deprecated a number of methods that were no longer valid or being used. (#3987)
+
+### [2.11.2] - 2026-05-01
+
+### Fixed
+
+- Fixed issue where if the `NetworkManager` player prefab is not assigned an exception is thrown upon starting a host and/or when a client joins. (#3965)
+
+## [2.11.1] - 2026-04-26
+
+### Changed
+
+- Improve handling of destroyed NetworkBehaviours. (#3953)
+- Hardened error handling and recovery during `NetworkObject` spawn. (#3941)
+- Replaced Debug usage by NetcodeLog on `NetworkSpawnManager` and `NetworkObject`. (#3933)
+- Improved performance of `NetworkBehaviour`. (#3915)
+- Improved performance of `NetworkTransform`. (#3907)
+- Improved performance of `NetworkRigidbodyBase`. (#3906)
+- Improved performance of `NetworkAnimator`. (#3905)
+
+### Removed
+
+- Removed un-needed exceptions on `NetworkSpawnManager`. (#3933)
+
+### Fixed
+
+- Fixed issue where either an `AttachableBehaviour` or an `AttachableNode` can throw an exception if they are attached during a scene unload where one of the two persists the scene unload event and the other does not. (#3931)
+- Fixed issue where attempts to use `NetworkLog` when there is no `NetworkManager` instance would result in an exception. (#3917)
 
 ## [2.11.0] - 2026-03-19
 

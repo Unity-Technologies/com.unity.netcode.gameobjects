@@ -808,6 +808,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_NumberOfClients = numberOfClients;
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
+            NetworkLog.ConfigureIntegrationTestLogging(server, m_EnableVerboseDebug);
 
             var managers = clients.ToList();
             if (!m_UseCmbService)
@@ -985,6 +986,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     return false;
                 }
 
+                if (playerObjectRelative.Observers.Count != m_NetworkManagers.Length)
+                {
+                    m_InternalErrorLog.Append($"Client-{networkManager.LocalClientId} has an incorrect number of observers for Object-{playerObjectRelative.NetworkObjectId}!");
+                    return false;
+                }
+
                 // Go ahead and create an entry for this new client
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
@@ -1158,6 +1165,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private void ClientNetworkManagerPostStart(NetworkManager networkManager)
         {
             networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
+
+            // Always make sure we have a player to check.
+            if (!ShouldCheckForSpawnedPlayers())
+            {
+                return;
+            }
             Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
             // Go ahead and create an entry for this new client
@@ -1267,7 +1280,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
-                // DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+                // DANGO-TODO: Remove this when the Rust server connection sequence is fixed and we don't have to pre-start
                 // the session owner.
                 if (m_UseCmbService)
                 {
@@ -1561,6 +1574,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 DeRegisterSceneManagerHandler();
 
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    networkManager?.Shutdown();
+                }
+
                 NetcodeIntegrationTestHelpers.Destroy();
 
                 m_PlayerNetworkObjects.Clear();
@@ -1568,7 +1586,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             catch (Exception e)
             {
-                throw e;
+                Debug.LogException(e);
             }
             finally
             {
@@ -1733,7 +1751,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // This can sometimes be null depending upon order of operations
                 // when dealing with parented NetworkObjects.  If NetworkObjectB
                 // is a child of NetworkObjectA and NetworkObjectA comes before
-                // NetworkObjectB in the list of NeworkObjects found, then when
+                // NetworkObjectB in the list of NetworkObjects found, then when
                 // NetworkObjectA's GameObject is destroyed it will also destroy
                 // NetworkObjectB's GameObject which will destroy NetworkObjectB.
                 // If there is a null entry in the list, this is the most likely
@@ -2638,11 +2656,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(obj, new object[] { });
-                        foreach (var behaviour in obj.ChildNetworkBehaviours)
-                        {
-                            var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                            behaviourMethod?.Invoke(behaviour, new object[] { });
-                        }
+                    }
+                    var networkBehaviours = FindObjects.ByType<NetworkBehaviour>();
+                    foreach (var behaviour in networkBehaviours)
+                    {
+                        var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        behaviourMethod?.Invoke(behaviour, new object[] { });
                     }
                 }
             }

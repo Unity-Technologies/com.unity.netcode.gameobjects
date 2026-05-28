@@ -379,41 +379,21 @@ namespace Unity.Netcode
 
             if (rpcParams.Send.Target == null)
             {
-                switch (defaultTarget)
+                rpcParams.Send.Target = defaultTarget switch
                 {
-                    case SendTo.Everyone:
-                        rpcParams.Send.Target = RpcTarget.Everyone;
-                        break;
-                    case SendTo.Owner:
-                        rpcParams.Send.Target = RpcTarget.Owner;
-                        break;
-                    case SendTo.Server:
-                        rpcParams.Send.Target = RpcTarget.Server;
-                        break;
-                    case SendTo.NotServer:
-                        rpcParams.Send.Target = RpcTarget.NotServer;
-                        break;
-                    case SendTo.NotMe:
-                        rpcParams.Send.Target = RpcTarget.NotMe;
-                        break;
-                    case SendTo.NotOwner:
-                        rpcParams.Send.Target = RpcTarget.NotOwner;
-                        break;
-                    case SendTo.Me:
-                        rpcParams.Send.Target = RpcTarget.Me;
-                        break;
-                    case SendTo.ClientsAndHost:
-                        rpcParams.Send.Target = RpcTarget.ClientsAndHost;
-                        break;
-                    case SendTo.Authority:
-                        rpcParams.Send.Target = RpcTarget.Authority;
-                        break;
-                    case SendTo.NotAuthority:
-                        rpcParams.Send.Target = RpcTarget.NotAuthority;
-                        break;
-                    case SendTo.SpecifiedInParams:
-                        throw new RpcException("This method requires a runtime-specified send target.");
-                }
+                    SendTo.Everyone => RpcTarget.Everyone,
+                    SendTo.Owner => RpcTarget.Owner,
+                    SendTo.Server => RpcTarget.Server,
+                    SendTo.NotServer => RpcTarget.NotServer,
+                    SendTo.NotMe => RpcTarget.NotMe,
+                    SendTo.NotOwner => RpcTarget.NotOwner,
+                    SendTo.Me => RpcTarget.Me,
+                    SendTo.ClientsAndHost => RpcTarget.ClientsAndHost,
+                    SendTo.Authority => RpcTarget.Authority,
+                    SendTo.NotAuthority => RpcTarget.NotAuthority,
+                    SendTo.SpecifiedInParams => throw new RpcException("This method requires a runtime-specified send target."),
+                    _ => throw new RpcException("This method requires a runtime-specified send target."),
+                };
             }
             else if (defaultTarget != SendTo.SpecifiedInParams && !attributeParams.AllowTargetOverride)
             {
@@ -473,15 +453,8 @@ namespace Unity.Netcode
 #pragma warning disable IDE0001
         /// <summary>
         /// Provides access to the various <see cref="SendTo"/> targets at runtime, as well as
-        /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeArray{ulong})"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeList{ulong})"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>, <see cref="Unity.Netcode.RpcTarget.Not(ulong)"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeArray{ulong})"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeList{ulong})"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Not(ulong[])"/>, and
-        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>.
+        /// runtime-bound targets like <see cref="RpcTarget.Single"/>, <see cref="RpcTarget.Group{T}"/>, and
+        /// <see cref="RpcTarget.Not{T}"/>.
         /// </summary>
 #pragma warning restore IDE0001
         public RpcTarget RpcTarget { get; private set; }
@@ -624,11 +597,6 @@ namespace Unity.Netcode
         public ushort NetworkBehaviourId { get; internal set; }
 
         /// <summary>
-        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
-        /// </summary>
-        internal ushort NetworkBehaviourIdCache = 0;
-
-        /// <summary>
         /// Returns the NetworkBehaviour with a given BehaviourId for the current NetworkObject.
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
@@ -642,6 +610,42 @@ namespace Unity.Netcode
         /// Gets the ClientId that owns this NetworkObject.
         /// </summary>
         public ulong OwnerClientId { get; internal set; }
+
+        /// <summary>
+        /// Returns true if the NetworkObject is in the middle of being destroyed.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="SetIsDestroying"/>
+        /// </remarks>
+        internal bool IsDestroying { get; private set; }
+
+        /// <summary>
+        /// This provides us with a way to track when something is in the middle
+        /// of being destroyed or will be destroyed by something like SceneManager.
+        /// </summary>
+        protected internal virtual void OnIsDestroying()
+        {
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="NetworkObject.SetIsDestroying"/>.
+        /// </summary>
+        /// <remarks>
+        /// We want to invoke the virtual method prior to setting the
+        /// IsDestroying flag to be able to distinguish between knowing
+        /// when something will be destroyed (i.e. scene manager unload
+        /// or load in single mode) or is in the middle of being
+        /// destroyed.
+        /// Setting the flag provides a way for other instances or internals
+        /// to determine if this <see cref="NetworkBehaviour"/> instance is
+        /// in the middle of being destroyed.
+        /// </remarks>
+        internal void SetIsDestroying()
+        {
+            // We intentionally invoke this before setting the IsDestroying flag.
+            OnIsDestroying();
+            IsDestroying = true;
+        }
 
         /// <summary>
         /// Updates properties with network session related
@@ -758,7 +762,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Handles pre-spawn related initializations.
         /// Invokes any <see cref="InternalOnNetworkPreSpawn"/> subscriptions.
-        /// Finally invokes <see cref="OnNetworkPreSpawn(ref NetworkManager)"/>.
+        /// Finally invokes <see cref="OnNetworkPreSpawn"/>.
         /// </summary>
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
@@ -1108,14 +1112,14 @@ namespace Unity.Netcode
                 // placed NetworkObject in an already loaded scene that has already been
                 // used within a network session =or= if this is a pooled NetworkObject
                 // that is being repurposed.
-                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                foreach (var variable in NetworkVariableFields)
                 {
                     // If already initialized, then skip
-                    if (NetworkVariableFields[i].HasBeenInitialized)
+                    if (variable.HasBeenInitialized)
                     {
                         continue;
                     }
-                    NetworkVariableFields[i].Initialize(this);
+                    variable.Initialize(this);
                 }
                 // Exit early as we don't need to run through the rest of this initialization
                 // process
@@ -1143,9 +1147,8 @@ namespace Unity.Netcode
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
                     var networkDelivery = MessageDeliveryType<NetworkVariableDeltaMessage>.DefaultDelivery;
-                    if (!firstLevelIndex.ContainsKey(networkDelivery))
+                    if (firstLevelIndex.TryAdd(networkDelivery, secondLevelCounter))
                     {
-                        firstLevelIndex.Add(networkDelivery, secondLevelCounter);
                         m_DeliveryTypesForNetworkVariableGroups.Add(networkDelivery);
                         secondLevelCounter++;
                     }
@@ -1173,9 +1176,8 @@ namespace Unity.Netcode
             {
                 // Mark every variable as no longer dirty. We just spawned the object and whatever the game code did
                 // during OnNetworkSpawn has been sent and needs to be cleared
-                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                foreach (var networkVariable in NetworkVariableFields)
                 {
-                    var networkVariable = NetworkVariableFields[i];
                     if (networkVariable.IsDirty())
                     {
                         if (networkVariable.CanSend())
@@ -1309,9 +1311,8 @@ namespace Unity.Netcode
         private bool CouldHaveDirtyNetworkVariables()
         {
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
-            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            foreach (var networkVariable in NetworkVariableFields)
             {
-                var networkVariable = NetworkVariableFields[i];
                 if (networkVariable.IsDirty())
                 {
                     if (networkVariable.CanSend())
@@ -1337,12 +1338,12 @@ namespace Unity.Netcode
         /// </remarks>
         internal void UpdateNetworkVariableOnOwnershipChanged()
         {
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            foreach (var variable in NetworkVariableFields)
             {
                 // Only invoke OnInitialize on NetworkVariables the owner can write to
-                if (NetworkVariableFields[j].CanClientWrite(OwnerClientId))
+                if (variable.CanClientWrite(OwnerClientId))
                 {
-                    NetworkVariableFields[j].OnInitialize();
+                    variable.OnInitialize();
                 }
             }
         }
@@ -1362,15 +1363,15 @@ namespace Unity.Netcode
         /// </summary>
         internal void MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty()
         {
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            foreach (var variable in NetworkVariableFields)
             {
-                if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
+                if (variable.ReadPerm == NetworkVariableReadPermission.Owner)
                 {
-                    NetworkVariableFields[j].SetDirty(true);
+                    variable.SetDirty(true);
                 }
-                if (NetworkVariableFields[j].WritePerm == NetworkVariableWritePermission.Owner)
+                if (variable.WritePerm == NetworkVariableWritePermission.Owner)
                 {
-                    NetworkVariableFields[j].OnCheckIsDirtyState();
+                    variable.OnCheckIsDirtyState();
                 }
             }
         }

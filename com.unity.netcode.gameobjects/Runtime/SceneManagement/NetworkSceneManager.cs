@@ -657,6 +657,12 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+            if (!NetworkManager.IsConnectedClient)
+            {
+                return true;
+            }
+
             var synchronizeEventDetected = false;
             var loadingEventDetected = false;
             foreach (var entry in SceneEventDataStore)
@@ -1972,6 +1978,7 @@ namespace Unity.Netcode
             sceneEventData.ClientSynchronizationMode = ClientSynchronizationMode;
             sceneEventData.InitializeForSynch();
             sceneEventData.TargetClientId = clientId;
+            sceneEventData.SenderClientId = NetworkManager.LocalClientId;
             sceneEventData.LoadSceneMode = ClientSynchronizationMode;
             var activeScene = SceneManager.GetActiveScene();
             sceneEventData.SceneEventType = SceneEventType.Synchronize;
@@ -2064,13 +2071,16 @@ namespace Unity.Netcode
 
 
             // Notify the local server that the client has been sent the synchronize event
-            OnSceneEvent?.Invoke(new SceneEvent()
+            if (!synchronizingService)
             {
-                SceneEventType = sceneEventData.SceneEventType,
-                ClientId = clientId
-            });
+                OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    SceneEventType = SceneEventType.Synchronize,
+                    ClientId = clientId
+                });
 
-            OnSynchronize?.Invoke(clientId);
+                OnSynchronize?.Invoke(clientId);
+            }
 
             EndSceneEvent(sceneEventData.SceneEventId);
         }
@@ -2093,18 +2103,6 @@ namespace Unity.Netcode
             // Store the sceneHandle and hash
             sceneEventData.NetworkSceneHandle = sceneHandle;
             sceneEventData.ClientSceneHash = sceneHash;
-
-            // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
-            if (sceneHash == sceneEventData.SceneHash)
-            {
-                OnSceneEvent?.Invoke(new SceneEvent()
-                {
-                    SceneEventType = SceneEventType.Synchronize,
-                    ClientId = NetworkManager.LocalClientId,
-                });
-
-                OnSynchronize?.Invoke(NetworkManager.LocalClientId);
-            }
 
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
@@ -2306,6 +2304,19 @@ namespace Unity.Netcode
                     }
                 case SceneEventType.Synchronize:
                     {
+                        if (sceneEventData.IsStartingSynchronization)
+                        {
+                            sceneEventData.IsStartingSynchronization = false;
+
+                            OnSceneEvent?.Invoke(new SceneEvent()
+                            {
+                                SceneEventType = SceneEventType.Synchronize,
+                                ClientId = NetworkManager.LocalClientId,
+                            });
+
+                            OnSynchronize?.Invoke(NetworkManager.LocalClientId);
+                        }
+
                         if (!sceneEventData.IsDoneWithSynchronization())
                         {
                             OnClientBeginSync(sceneEventId);
@@ -2709,7 +2720,11 @@ namespace Unity.Netcode
                 }
                 else if (networkObject.HasAuthority)
                 {
-                    networkObject.Despawn();
+                    networkObject.SetIsDestroying();
+                    var isSceneObject = networkObject.IsSceneObject;
+                    // Only destroy non-scene placed NetworkObjects to avoid warnings about destroying in-scene placed NetworkObjects.
+                    // (MoveObjectsToDontDestroyOnLoad is only invoked during a scene event type of load and the load scene mode is single)
+                    networkObject.Despawn(isSceneObject.HasValue && isSceneObject.Value == false);
                 }
             }
         }
