@@ -869,7 +869,7 @@ namespace Unity.Netcode.Transports.UTP
                 return true;
             }
 #else
-            if (CommandLineOptions.Instance.GetArg(k_OverridePortArg) is string argValue)
+            if (CommandLineOptions.TryGetArg(k_OverridePortArg, out var argValue))
             {
                 port = (ushort)Convert.ChangeType(argValue, typeof(ushort));
                 return true;
@@ -881,7 +881,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ParseCommandLineOptionsAddress(out string ipValue)
         {
-            if (CommandLineOptions.Instance.GetArg(k_OverrideIpAddressArg) is string argValue)
+            if (CommandLineOptions.TryGetArg(k_OverrideIpAddressArg, out var argValue))
             {
                 ipValue = argValue;
                 return true;

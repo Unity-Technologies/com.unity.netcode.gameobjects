@@ -12,11 +12,7 @@ namespace Unity.Netcode
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
         private static readonly Dictionary<uint, string> k_SceneEventTypeNames;
-        private static ProfilerMarker s_FrameDispatch;
-#if UNITY_EDITOR
-        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnLoad() => s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
-#endif
+        private static readonly ProfilerMarker k_FrameDispatch;
 
         static NetworkMetrics()
         {
@@ -25,7 +21,7 @@ namespace Unity.Netcode
             {
                 k_SceneEventTypeNames[(uint)type] = type.ToString();
             }
-            s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+            k_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
         }
 
         private static string GetSceneEventTypeName(uint typeCode)
@@ -511,9 +507,9 @@ namespace Unity.Netcode
 
         public void DispatchFrame()
         {
-            s_FrameDispatch.Begin();
+            k_FrameDispatch.Begin();
             Dispatcher.Dispatch();
-            s_FrameDispatch.End();
+            k_FrameDispatch.End();
             m_NumberOfMetricsThisFrame = 0;
         }
 
