@@ -1725,13 +1725,10 @@ namespace Unity.Netcode
             IsDestroying = true;
         }
 
-        private void OnDisable()
-        {
-            SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
-        }
-
         private void OnDestroy()
         {
+            SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
+
             // Apply the is destroying flag
             SetIsDestroying();
 

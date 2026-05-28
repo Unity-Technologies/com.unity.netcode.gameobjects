@@ -16,15 +16,12 @@ namespace Unity.Netcode
         public static CommandLineOptions Instance { get; private set; }
 
         // Contains the current application instance domain's command line arguments
-        private static List<string> s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
+        private static readonly List<string> k_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void InitializeOnLoad()
         {
             Instance = new CommandLineOptions();
-#if UNITY_EDITOR
-            s_CommandLineArguments = new List<string>(Environment.GetCommandLineArgs());
-#endif
         }
 
         /// <summary>
@@ -34,10 +31,10 @@ namespace Unity.Netcode
         /// <returns><see cref="string"/>Value of the command line argument passed in.</returns>
         public string GetArg(string arg)
         {
-            var argIndex = s_CommandLineArguments.IndexOf(arg);
-            if (argIndex >= 0 && argIndex < s_CommandLineArguments.Count - 1)
+            var argIndex = k_CommandLineArguments.IndexOf(arg);
+            if (argIndex >= 0 && argIndex < k_CommandLineArguments.Count - 1)
             {
-                return s_CommandLineArguments[argIndex + 1];
+                return k_CommandLineArguments[argIndex + 1];
             }
             return null;
         }

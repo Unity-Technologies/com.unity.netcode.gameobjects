@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Unity.Netcode
 {
@@ -142,15 +145,15 @@ namespace Unity.Netcode
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.InitializeOnLoadMethod]
+        [InitializeOnLoadMethod]
         public static void NotifyOnPlayStateChange()
         {
-            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        public static void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
+        public static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
-            if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            if (change == PlayModeStateChange.ExitingPlayMode)
             {
                 // Clear out the network message types, because ILPP-generated RuntimeInitializeOnLoad code will
                 // run again and add more messages to it.

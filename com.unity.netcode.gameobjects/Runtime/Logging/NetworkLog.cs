@@ -10,13 +10,11 @@ namespace Unity.Netcode
     /// Log configuration containing :
     /// - <see cref="LogNetworkManagerRole"/> used in LogContextNetworkManager.cs
     /// - <see cref="LogSerializationOrder"/> used in SceneEventData.cs
-    /// - <see cref="EnableSerializationLogs"/> used in SceneEventData.cs
     /// </summary>
     internal struct LogConfiguration
     {
         internal bool LogNetworkManagerRole;
         internal bool LogSerializationOrder;
-        internal bool EnableSerializationLogs;
     }
 
     /// <summary>
