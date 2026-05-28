@@ -370,6 +370,11 @@ namespace Unity.Netcode
             // Find all active and non-active in-scene placed NetworkObjects
             foreach (var scene in m_NetworkManager.SceneManager.ScenesLoaded.Values)
             {
+                // Ignore invalid scenes
+                if (!scene.IsValid())
+                {
+                    continue;
+                }
                 foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
                 {
                     if (networkObject.InScenePlaced && networkObject.NetworkManagerOwner == m_NetworkManager && !networkObject.IsSpawned)
