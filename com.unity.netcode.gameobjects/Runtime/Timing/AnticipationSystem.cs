@@ -69,7 +69,7 @@ namespace Unity.Netcode
             {
                 foreach (var behaviour in item.OwnerObject.ChildNetworkBehaviours.Values)
                 {
-                    behaviour.Value.OnReanticipate(lastRoundTripTime);
+                    behaviour.OnReanticipate(lastRoundTripTime);
                 }
                 item.ResetAnticipation();
             }
