@@ -368,12 +368,14 @@ namespace Unity.Netcode
         {
             m_DespawnedInSceneObjectsSync.Clear();
             // Find all active and non-active in-scene placed NetworkObjects
-            var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(true, true);
-            foreach (var sobj in inSceneNetworkObjects)
+            foreach (var scene in m_NetworkManager.SceneManager.ScenesLoaded.Values)
             {
-                if (sobj.NetworkManager == m_NetworkManager && sobj.InScenePlaced && !sobj.IsSpawned)
+                foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
                 {
-                    m_DespawnedInSceneObjectsSync.Add(sobj);
+                    if (networkObject.InScenePlaced && networkObject.NetworkManagerOwner == m_NetworkManager && !networkObject.IsSpawned)
+                    {
+                        m_DespawnedInSceneObjectsSync.Add(networkObject);
+                    }
                 }
             }
         }
@@ -444,7 +446,7 @@ namespace Unity.Netcode
             return 0;
         }
 
-        internal bool EnableSerializationLogs = false;
+        internal bool EnableSerializationLogs = true;
 
         private void LogArray(byte[] data, int start = 0, int stop = 0, StringBuilder builder = null)
         {

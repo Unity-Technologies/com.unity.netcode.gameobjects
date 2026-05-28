@@ -2750,12 +2750,21 @@ namespace Unity.Netcode
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value
             // During Client Side Synchronization: We add them on a FIFO basis, for each scene loaded without clearing, and then
             // at the end of scene loading we use this list to soft synchronize all in-scene placed NetworkObjects
-            foreach (var networkObjectInstance in FindObjects.FromSceneByType<NetworkObject>(sceneToFilterBy, false))
+            foreach (var networkObjectInstance in FindObjects.FromSceneByType<NetworkObject>(sceneToFilterBy, true))
             {
+                if (!networkObjectInstance.InScenePlaced)
+                {
+                    continue;
+                }
+
+                if (networkObjectInstance.NetworkManagerOwner == null)
+                {
+                    networkObjectInstance.NetworkManagerOwner = NetworkManager;
+                }
+
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per-scene basis (for additive scenes)
-                if (networkObjectInstance.InScenePlaced && (networkObjectInstance.NetworkManager == NetworkManager ||
-                    networkObjectInstance.NetworkManagerOwner == null))
+                if (networkObjectInstance.NetworkManagerOwner == NetworkManager && networkObjectInstance.isActiveAndEnabled)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
