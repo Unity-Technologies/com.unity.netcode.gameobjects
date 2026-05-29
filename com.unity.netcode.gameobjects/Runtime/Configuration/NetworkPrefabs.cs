@@ -63,10 +63,7 @@ namespace Unity.Netcode
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
                 m_Prefabs.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                {
-                    PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
-                }
+                PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
 #endif
             }
         }
