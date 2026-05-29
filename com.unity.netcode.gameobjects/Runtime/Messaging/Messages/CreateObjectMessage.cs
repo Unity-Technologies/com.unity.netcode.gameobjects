@@ -128,7 +128,7 @@ namespace Unity.Netcode
             //}
 
             // For now, we will defer the create object message until the associated Ghost is spawned
-            if (ObjectInfo.HasGhost && !networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(ObjectInfo.NetworkObjectId))
+            if (ObjectInfo.HasGhost && !networkManager.SpawnManager.GhostSpawnManager.IsGhostPendingSpawn(ObjectInfo.NetworkObjectId))
             {
                 if (networkManager.LogLevel == LogLevel.Developer)
                 {

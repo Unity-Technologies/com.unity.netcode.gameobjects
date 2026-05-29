@@ -198,6 +198,11 @@ namespace Unity.Netcode
             m_GhostsPendingSynchronization.Remove(networkObjectId);
         }
 
+        internal bool IsGhostPendingSpawn(ulong networkObjectId)
+        {
+            return m_GhostsPendingSpawn.ContainsKey(networkObjectId);
+        }
+
         /// <summary>
         /// Used in scene managment synchronization.
         /// Verifies if this <see cref="NetworkObject.SerializedObject"/> should defer its spawn until the associated GhostObject is created.

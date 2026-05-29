@@ -1107,9 +1107,6 @@ namespace Unity.Netcode
                 {
                     builder.AppendLine($"[Read][Synchronize Objects][WPos: {InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
                 }
-#if UNIFIED_NETCODE
-                var spawnManager = m_NetworkManager.SpawnManager;
-#endif
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
