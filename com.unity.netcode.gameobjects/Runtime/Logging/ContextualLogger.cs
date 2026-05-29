@@ -89,7 +89,7 @@ namespace Unity.Netcode.Logging
         [Conditional(k_CompilationCondition)]
         internal void RemoveInfo(string key)
         {
-            m_LoggerContext.ClearInfo(key);
+            m_LoggerContext.RemoveInfo(key);
         }
 
         [HideInCallstack]
