@@ -728,7 +728,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_PlayerPrefab = new GameObject("Player");
             OnPlayerPrefabGameObjectCreated();
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            networkObject.IsSceneObject = false;
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);

@@ -1657,7 +1657,7 @@ namespace Unity.Netcode
             // place (i.e. sending any last state updates or the like).
 
             SpawnManager?.DespawnAndDestroyNetworkObjects();
-            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            SpawnManager?.ServerResetShutdownStateForSceneObjects();
             ////
 
             RpcTarget?.Dispose();

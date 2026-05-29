@@ -2228,7 +2228,7 @@ namespace Unity.Netcode.Components
 
                     // In-scene placed NetworkObjects parented under a GameObject with no
                     // NetworkObject preserve their lossyScale when synchronizing.
-                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
+                    if (parentNetworkObject == null && NetworkObject.InScenePlaced)
                     {
                         hasParentNetworkObject = true;
                     }
