@@ -1309,7 +1309,6 @@ namespace Unity.Netcode
             }
         }
 
-
         /// <summary>
         /// While a client is synchronizing ObjectSceneChanged messages could be received.
         /// This defers any ObjectSceneChanged message processing to occur after the client
@@ -1414,20 +1413,4 @@ namespace Unity.Netcode
             SceneEventId = XXHash.Hash32(Guid.NewGuid().ToString());
         }
     }
-
-#if UNIFIED_NETCODE
-    /// <summary>
-    /// Used to store pending ghost spawns that are waiting for their associated (N4E) ghost to be spawned before they can be fully deserialized and
-    /// spawned during the scene synchronization process. This is necessary because in unified mode we allow for NetworkObjects with ghost components
-    /// to be synchronized during the scene synchronization process but we can't guarantee the order of messages that the client receives so we
-    /// need to defer the deserialization of any NetworkObject that has a ghost component until we have received the message that the ghost has
-    /// been spawned and we have an instance to deserialize this information into.
-    /// </summary>
-    internal struct PendingGhostSpawnEntry
-    {
-        public float RegistrationTime;
-        public FastBufferReader Buffer;
-        public NetworkObject.SerializedObject SerializedObject;
-    }
-#endif
 }

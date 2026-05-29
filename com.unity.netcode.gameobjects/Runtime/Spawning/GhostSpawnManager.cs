@@ -1,12 +1,18 @@
 #if UNIFIED_NETCODE
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Unity.Collections;
 using Unity.Netcode.Logging;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Handles the management of ghost spawns during the synchronization process. This includes tracking pending NetworkObject spawns
+    /// that are waiting for their associated ghost to be spawned before they can be fully deserialized.
+    /// </summary>
     internal class GhostSpawnManager
     {
         private readonly NetworkManager m_NetworkManager;
@@ -139,16 +145,19 @@ namespace Unity.Netcode
                 m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
             }
             var networkObject = NetworkObject.Deserialize(serializedObject, reader, m_NetworkManager);
+
             // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
             //if (serializedObject.IsSceneObject)
             //{
             //    networkObject.InternalInSceneNetworkObjectsSpawned();
             //}
+
+            // If removing, determine if we have any pending ghosts remaining and dispose of this ghost's pending synchronization buffer.
+            // If not removing, then we will keep the buffer around until we do remove it (either via spawn or timeout).
             if (removeUponSpawn)
             {
-                m_GhostsPendingSynchronization.Remove(networkObjectId);
                 m_GhostsArePendingSynchronization = m_GhostsPendingSynchronization.Count > 0;
-                ghostPendingSync.Buffer.Dispose();
+                ghostPendingSync.Dispose();
             }
             return networkObject;
         }
@@ -253,6 +262,25 @@ namespace Unity.Netcode
         {
             m_GhostsPendingSpawn.Clear();
             m_GhostsPendingSynchronization.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Used to store pending ghost spawns that are waiting for their associated (N4E) ghost to be spawned before they can be fully deserialized and
+    /// spawned during the scene synchronization process. This is necessary because in unified mode we allow for NetworkObjects with ghost components
+    /// to be synchronized during the scene synchronization process but we can't guarantee the order of messages that the client receives so we
+    /// need to defer the deserialization of any NetworkObject that has a ghost component until we have received the message that the ghost has
+    /// been spawned and we have an instance to deserialize this information into.
+    /// </summary>
+    internal struct PendingGhostSpawnEntry : IDisposable
+    {
+        public float RegistrationTime;
+        public FastBufferReader Buffer;
+        public NetworkObject.SerializedObject SerializedObject;
+
+        public void Dispose()
+        {
+            Buffer.Dispose();
         }
     }
 }
