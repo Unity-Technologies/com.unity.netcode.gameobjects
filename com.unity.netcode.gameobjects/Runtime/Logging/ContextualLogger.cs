@@ -60,7 +60,7 @@ namespace Unity.Netcode.Logging
         }
 
         /// Used for the NetworkLog
-        internal ContextualLogger(NetworkManager networkManager, bool useCompatibilityMode)
+        internal ContextualLogger(NetworkManager networkManager, bool useCompatibilityMode = false)
         {
             m_UseCompatibilityMode = useCompatibilityMode;
             m_ManagerContext = new LogContextNetworkManager(networkManager);
@@ -89,7 +89,7 @@ namespace Unity.Netcode.Logging
         [Conditional(k_CompilationCondition)]
         internal void RemoveInfo(string key)
         {
-            m_LoggerContext.ClearInfo(key);
+            m_LoggerContext.RemoveInfo(key);
         }
 
         [HideInCallstack]
@@ -125,6 +125,19 @@ namespace Unity.Netcode.Logging
         {
             Debug.unityLogger.LogException(exception, m_Object);
         }
+        [HideInCallstack]
+        public void Exception(Exception exception, Context context)
+        {
+            // Don't act if the LogLevel is higher than the level of this log
+            if (m_ManagerContext.LogLevel > context.Level)
+            {
+                return;
+            }
+
+            var message = BuildLog(context);
+            Debug.unityLogger.LogException(new Exception(message, exception), context.RelevantObjectOverride ?? m_Object);
+        }
+
 
         [HideInCallstack]
         private void Log(LogType logType, Context context)
