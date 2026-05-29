@@ -58,7 +58,7 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                //if (networkManager.LogLevel <= LogLevel.Developer)
+                if (networkManager.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Created world: {LastCreatedWorld.Name} / {LastCreatedWorld.SequenceNumber}");
                 }
