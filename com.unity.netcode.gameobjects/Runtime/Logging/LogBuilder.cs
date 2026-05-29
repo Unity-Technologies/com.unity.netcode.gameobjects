@@ -31,6 +31,7 @@ namespace Unity.Netcode
         }
 
         public void Append(string value) => m_Builder.Append(value);
+        public void AppendLine(string value) => m_Builder.AppendLine(value);
 
         public string Build() => m_Builder.ToString();
     }
