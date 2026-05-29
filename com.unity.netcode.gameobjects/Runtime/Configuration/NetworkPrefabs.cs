@@ -142,20 +142,14 @@ namespace Unity.Netcode
                 {
                     m_Prefabs.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                    if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                    {
-                        PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
-                    }
+                    PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
 #endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                    if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                    {
-                        PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
-                    }
+                    PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
 #endif
                 }
             }
@@ -166,20 +160,14 @@ namespace Unity.Netcode
                 {
                     m_Prefabs.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                    if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                    {
-                        PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
-                    }
+                    PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
 #endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                    if (PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                    {
-                        PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
-                    }
+                    PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
 #endif
                 }
             }
@@ -214,10 +202,7 @@ namespace Unity.Netcode
                 m_Prefabs.Add(networkPrefab);
                 m_RuntimeAddedPrefabs.Add(networkPrefab);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-                if (!PrefabTable.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
-                {
-                    PrefabTable.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
-                }
+                PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
 #endif
                 return true;
             }
@@ -247,10 +232,7 @@ namespace Unity.Netcode
             OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
 #if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
-            if (PrefabTable.ContainsKey(prefab.SourcePrefabGlobalObjectIdHash))
-            {
-                PrefabTable.Remove(prefab.SourcePrefabGlobalObjectIdHash);
-            }
+            PrefabTable.Remove(prefab.SourcePrefabGlobalObjectIdHash);
 #endif
         }
 
@@ -401,7 +383,7 @@ namespace Unity.Netcode
 
 #if UNIFIED_NGO_REGISTERS_PREFABS
                 HasPendingGhostPrefabs = true;
-                m_PendingGhostRegistration.Add(networkPrefab);
+                m_PendingGhostRegistration.TryAdd(networkPrefab);
 #endif
             }
 #endif

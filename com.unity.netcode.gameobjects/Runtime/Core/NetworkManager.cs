@@ -1375,7 +1375,7 @@ namespace Unity.Netcode
             {
                 if (NetCode.Netcode.IsActive)
                 {
-                    NetworkLog.LogInfo($"[{nameof(InitializeNetcodeWorld)}] Netcode is not active but has an instance at this point.");
+                    Log.Info(new Context(LogLevel.Normal, "Netcode is not active but has an instance at this point."));
                 }
                 /// !! Important !!
                 /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
@@ -1396,12 +1396,12 @@ namespace Unity.Netcode
         {
             if (NetCodeConfig.Global == null)
             {
-                Debug.LogError($"[{nameof(NetworkManager)}][Unified] You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!");
+                Log.Error(new Context(LogLevel.Error, "You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
             {
-                Debug.LogError($"[{nameof(NetworkManager)}][Unified] You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!");
+                Log.Error(new Context(LogLevel.Error, "You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             return true;
@@ -1451,18 +1451,12 @@ namespace Unity.Netcode
                 }
                 if (LogLevel <= LogLevel.Developer)
                 {
-                    Debug.Log("Creating world: Default world");
+                    Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 }
                 InitializeNetcodeWorld();
-                return InternalStartServer();
             }
-            else
-            {
-                return InternalStartServer();
-            }
-#else
-            return InternalStartServer();
 #endif
+            return InternalStartServer();
         }
 
         internal bool InternalStartServer()
@@ -1534,21 +1528,11 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                if (LogLevel <= LogLevel.Developer)
-                {
-                    Debug.Log("Creating world: Default world");
-                }
+                Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
-                return InternalStartClient();
             }
-            else
-            {
-                return InternalStartClient();
-            }
-#else
-            return InternalStartClient();
 #endif
-
+            return InternalStartClient();
         }
 
         internal bool InternalStartClient()
@@ -1618,21 +1602,11 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                if (LogLevel <= LogLevel.Developer)
-                {
-                    Debug.Log("Creating world: Default world");
-                }
+                Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
-                return InternalStartHost();
             }
-            else
-            {
-                return InternalStartHost();
-            }
-#else
-            return InternalStartHost();
 #endif
-
+            return InternalStartHost();
         }
 
         internal bool InternalStartHost()
@@ -1859,7 +1833,7 @@ namespace Unity.Netcode
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    Log.Exception(ex);
                 }
             }
 #endif
