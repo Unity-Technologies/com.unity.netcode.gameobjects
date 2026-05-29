@@ -50,6 +50,8 @@ namespace TestProject.RuntimeTests
 
         private Dictionary<ulong, List<Scene>> m_ClientScenesLoaded = new Dictionary<ulong, List<Scene>>();
 
+        private readonly List<NetworkObject> m_ObjectsInScenes = new();
+
 
         public ClientSynchronizationModeTests(ServerPreloadStates serverPreloadStates)
         {
@@ -66,9 +68,9 @@ namespace TestProject.RuntimeTests
         {
             m_TempClientPreLoadedScenes.Clear();
             m_ServerLoadedScenes.Clear();
+            m_ObjectsInScenes.Clear();
             if (m_ServerPreloadState == ServerPreloadStates.PreloadOnServer)
             {
-                SceneManager.sceneLoaded += SceneManager_sceneLoaded;
                 yield return LoadScenesOnServer();
             }
             yield return base.OnSetup();
@@ -78,6 +80,7 @@ namespace TestProject.RuntimeTests
         {
             if (m_ServerPreloadState == ServerPreloadStates.PreloadOnServer)
             {
+                SceneManager.sceneLoaded += SceneManager_sceneLoaded;
                 foreach (var sceneToLoad in m_TestScenes)
                 {
                     SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Additive);
@@ -88,12 +91,16 @@ namespace TestProject.RuntimeTests
             }
             else
             {
+                m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSide_OnSceneEvent;
+
                 foreach (var sceneToLoad in m_TestScenes)
                 {
                     m_ServerNetworkManager.SceneManager.LoadScene(sceneToLoad, LoadSceneMode.Additive);
                     yield return WaitForConditionOrTimeOut(() => SceneLoadedOnServer(sceneToLoad));
                     AssertOnTimeout($"[{m_ServerPreloadState}] Timed out waiting for scene {sceneToLoad} to be loaded!");
                 }
+                m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSide_OnSceneEvent;
+
             }
         }
 
@@ -165,9 +172,21 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        private void TrackObjectsInScene(Scene scene)
+        {
+            foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
+            {
+                if (networkObject.InScenePlaced)
+                {
+                    m_ObjectsInScenes.Add(networkObject);
+                }
+            }
+        }
+
         private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
         {
             m_ServerLoadedScenes.Add(scene);
+            TrackObjectsInScene(scene);
         }
 
 
@@ -203,7 +222,6 @@ namespace TestProject.RuntimeTests
             // If we didn't preload the scenes, then load the scenes via NetworkSceneManager
             if (m_ServerPreloadState == ServerPreloadStates.NoPreloadOnServer)
             {
-                m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSide_OnSceneEvent;
                 yield return LoadScenesOnServer();
             }
 
@@ -215,6 +233,18 @@ namespace TestProject.RuntimeTests
                 SceneManager.SetActiveScene(m_ServerLoadedScenes[2]);
             }
 
+            var authority = GetAuthorityNetworkManager();
+
+            foreach (var networkObject in m_ObjectsInScenes)
+            {
+                Assert.IsTrue(networkObject.IsSpawned, $"[Client-{authority.LocalClientId}] Server object {networkObject.name}, {networkObject.GlobalObjectIdHash} is not spawned!");
+                Assert.AreEqual(networkObject.NetworkManagerOwner, authority, $"[Client-{authority.LocalClientId}] networkObject doesn't belong to the client");
+            }
+
+            var objToDisable = m_ObjectsInScenes[0];
+            objToDisable.Despawn(false);
+
+
             // Late join some clients
             for (int i = 0; i < 1; i++)
             {
@@ -223,6 +253,7 @@ namespace TestProject.RuntimeTests
                 if (clientPreloadStates == ClientPreloadStates.PreloadOnClient)
                 {
                     m_TempClientPreLoadedScenes.Clear();
+                    m_ObjectsInScenes.Clear();
                     SceneManager.sceneLoaded += PreLoadClient_SceneLoaded;
                     foreach (var sceneToLoad in m_TestScenes)
                     {
@@ -232,17 +263,37 @@ namespace TestProject.RuntimeTests
                     SceneManager.sceneLoaded -= PreLoadClient_SceneLoaded;
                     AssertOnTimeout($"[{clientPreloadStates}] Timed out waiting for client-side scenes to be preloaded!");
                 }
-                yield return CreateAndStartNewClient();
+
+                var newClient = CreateNewClient();
+                yield return StartClient(newClient);
                 AssertOnTimeout($"[Client Instance {i + 1}] Timed out waiting for client to start and connect!");
 
                 yield return WaitForConditionOrTimeOut(AllScenesLoadedOnClients);
-                AssertOnTimeout($"[Client-{m_ClientNetworkManagers[i].LocalClientId}] Timed out waiting for all scenes to be synchronized for new client!");
+                AssertOnTimeout($"[Client-{newClient.LocalClientId}] Timed out waiting for all scenes to be synchronized for new client!");
+
+                if (clientPreloadStates == ClientPreloadStates.PreloadOnClient)
+                {
+                    foreach (var networkObject in m_ObjectsInScenes)
+                    {
+                        if (networkObject.GlobalObjectIdHash == objToDisable.GlobalObjectIdHash)
+                        {
+                            Assert.IsFalse(networkObject.IsSpawned);
+                        }
+                        else
+                        {
+                            Assert.IsTrue(networkObject.IsSpawned, $"[Client-{newClient.LocalClientId}] Client side preloaded object {networkObject.name}, {networkObject.GlobalObjectIdHash} is not spawned!");
+                        }
+                        Assert.AreEqual(networkObject.NetworkManagerOwner, newClient, $"[Client-{newClient.LocalClientId}] networkObject doesn't belong to the client");
+                    }
+                }
             }
         }
+
 
         private void PreLoadClient_SceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
         {
             m_TempClientPreLoadedScenes.Add(scene);
+            TrackObjectsInScene(scene);
         }
 
         private void ClientSide_OnSceneEvent(SceneEvent sceneEvent)
@@ -273,6 +324,7 @@ namespace TestProject.RuntimeTests
                 case SceneEventType.LoadComplete:
                     {
                         m_ServerLoadedScenes.Add(sceneEvent.Scene);
+                        TrackObjectsInScene(sceneEvent.Scene);
                         break;
                     }
             }
@@ -283,6 +335,7 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
             m_TempClientPreLoadedScenes.Clear();
             m_ClientScenesLoaded.Clear();
+            m_ObjectsInScenes.Clear();
             return base.OnTearDown();
         }
     }

@@ -318,7 +318,7 @@ namespace TestProject.RuntimeTests
                 var persists = m_Persists == Persists.AttachableNode ? m_TargetInstance.NetworkObjectId : m_SourceInstance.NetworkObjectId;
                 m_DoesNotPersistNetworkObjectIds.Add(doesNotPersist);
                 persistedObjects.Add(networkManager, persists);
-                Debug.Log($"[{networkManager.name}] Spawned attachable and attached it.");
+                VerboseDebug($"[{networkManager.name}] Spawned attachable and attached it.");
             }
 
             // This is the actual validation point where the scene is unloaded and either the attachable or
