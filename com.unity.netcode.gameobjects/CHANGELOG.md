@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
 
 ### Removed
 

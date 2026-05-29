@@ -381,11 +381,11 @@ namespace TestProject.RuntimeTests
             m_ErrorMsg.Clear();
             if (networkManager.SpawnManager.NetworkObjectsToSynchronizeSceneChanges.Count > 0)
             {
-                foreach (var entry in networkManager.SpawnManager.NetworkObjectsToSynchronizeSceneChanges)
+                foreach (var obj in networkManager.SpawnManager.NetworkObjectsToSynchronizeSceneChanges.Values)
                 {
-                    if (entry.Value.IsSceneObject.HasValue && entry.Value.IsSceneObject.Value)
+                    if (obj.InScenePlaced)
                     {
-                        m_ErrorMsg.AppendLine($"{entry.Value.name} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+                        m_ErrorMsg.AppendLine($"{obj.name} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
                     }
                 }
             }

@@ -373,7 +373,6 @@ namespace Unity.Netcode.RuntimeTests
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.IsSpawned = true;
             networkObject.SceneOriginHandle = default;
-            networkObject.IsSceneObject = false;
             // This validates invoking GetSceneOriginHandle will not throw an exception for a dynamically spawned NetworkObject
             // when the scene of origin hasn't been set.
             var sceneOriginHandle = networkObject.GetSceneOriginHandle();
