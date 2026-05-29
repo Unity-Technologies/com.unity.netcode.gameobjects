@@ -33,167 +33,6 @@ namespace Unity.Netcode
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
-#if UNIFIED_NETCODE
-
-        internal readonly Dictionary<ulong, NetworkObject> GhostsPendingSpawn = new Dictionary<ulong, NetworkObject>();
-
-        // TODO: We might want to make this a mock interfacebut temporary solution to validate
-        // the need to assure we are registering with the right NetworkManager instance when testing (everything
-        // will use the singleton during Awake and Start when we need to register).
-        internal delegate void RegisterPendingGhostDelegateHandler(NetworkObject networkObject, ulong networkObjectId);
-
-        internal static RegisterPendingGhostDelegateHandler RegisterPendingGhost;
-
-        internal void RegisterGhostPendingSpawn(NetworkObject networkObject, ulong networkObjectId)
-        {
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkObjectId}.");
-            }
-            if (GhostsPendingSpawn.TryAdd(networkObjectId, networkObject))
-            {
-                // TODO-REVIEW-BELOW: *** This is very likely no longer an issue with the new connection sequence ***
-                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
-                // Edge-Case scenario: During initial client synchronization (i.e. !NetworkManager.IsConnectedClient).
-                //
-                // Description: A client can receive snapshots before finishing the NGO synchronization process.
-                // This is when an edge case scenario can happen where the initial NGO synchronization information
-                // can include new scenes to load. If one of those scenes is configured to load in SingleMode, then
-                // any instantiated ghosts pending synchronization would be instantiated in whatever the currently
-                // active scene was when the client was processing the synchronization data. If the ghosts pending
-                // synchrpnization are in the currently active scene when the new scene is loaded in SingleMode, then
-                // they would be destroyed.
-                //
-                // Current Fix:
-                // If the client is not yet synchronized, then any ghost pending spawn get migrated into the DDOL.
-                //
-                // Further review:
-                // We need to make sure that we are migrating NetworkObjects into their assigned scene (if scene
-                // management is enabled). Currently, we assume all instances were in the DDOL and just migrate
-                // them into the currently active scene upon spawn.
-                if (!NetworkManager.IsConnectedClient && !GhostsPendingSynchronization.ContainsKey(networkObjectId))
-                {
-                    Object.DontDestroyOnLoad(networkObject.gameObject);
-                }
-                else // There is matching spawn data for this pending Ghost, process the pending spawn for this hybrid instance.
-                {
-                    NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, networkObjectId);
-                    if (GhostsPendingSynchronization.ContainsKey(networkObjectId))
-                    {
-                        ProcessGhostPendingSynchronization(networkObjectId);
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError($"[{networkObject.name}-{networkObjectId}] Has already been registered as a pending ghost!");
-            }
-        }
-
-        internal NetworkObject GetGhostNetworkObjectForSpawn(ulong networkObjectId)
-        {
-            if (!GhostsPendingSpawn.ContainsKey(networkObjectId))
-            {
-                Debug.LogError($"[{nameof(GetGhostNetworkObjectForSpawn)}] Attempting to spawn NetworkObject-{networkObjectId} with no instance to spawn!");
-                return null;
-            }
-            var networkObject = GhostsPendingSpawn[networkObjectId];
-
-            GhostsPendingSpawn.Remove(networkObjectId);
-            if (networkObject != null)
-            {
-                // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
-                // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
-                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
-            }
-            return networkObject;
-        }
-
-        internal bool GhostsArePendingSynchronization;
-        internal readonly Dictionary<ulong, PendingGhostSpawnEntry> GhostsPendingSynchronization = new Dictionary<ulong, PendingGhostSpawnEntry>();
-        internal void RegisterGhostPendingSynchronization(PendingGhostSpawnEntry pendingGhostSpawnEntry)
-        {
-            var networkObjectId = pendingGhostSpawnEntry.SerializedObject.NetworkObjectId;
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                Debug.Log($"[{nameof(RegisterGhostPendingSpawn)}] Registering {nameof(NetworkObject)}-{networkObjectId} for pending synchronization.");
-            }
-            GhostsPendingSynchronization.TryAdd(networkObjectId, pendingGhostSpawnEntry);
-            GhostsArePendingSynchronization = true;
-        }
-
-        internal void ProcessGhostPendingSynchronization(ulong networkObjectId, bool removeUponSpawn = true)
-        {
-            var ghostPendingSynch = GhostsPendingSynchronization[networkObjectId];
-            var serializedObject = ghostPendingSynch.SerializedObject;
-            var reader = ghostPendingSynch.Buffer;
-            if (removeUponSpawn)
-            {
-                GhostsPendingSynchronization.Remove(networkObjectId);
-            }
-
-            if (serializedObject.IsSceneObject)
-            {
-                NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
-            }
-            var networkObject = NetworkObject.Deserialize(serializedObject, reader, NetworkManager);
-            // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
-            //if (serializedObject.IsSceneObject)
-            //{
-            //    networkObject.InternalInSceneNetworkObjectsSpawned();
-            //}
-            if (removeUponSpawn)
-            {
-                GhostsPendingSynchronization.Remove(networkObjectId);
-                GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
-                ghostPendingSynch.Buffer.Dispose();
-            }
-        }
-
-
-        private HashSet<ulong> m_GhostSynchronizationPendingRemoval = new HashSet<ulong>();
-
-        internal void ProcessAllGhostsPendingSynchronization()
-        {
-            var spawnTimeout = NetworkManager.NetworkConfig.SpawnTimeout;
-            var logLevel = NetworkManager.LogLevel;
-            if (!GhostsArePendingSynchronization)
-            {
-                return;
-            }
-            foreach (var ghost in GhostsPendingSynchronization)
-            {
-                var networkObjectId = ghost.Value.SerializedObject.NetworkObjectId;
-                if (GhostsPendingSpawn.ContainsKey(networkObjectId))
-                {
-                    // Process it, but don't remove it as we handle that a little later
-                    ProcessGhostPendingSynchronization(ghost.Value.SerializedObject.NetworkObjectId, false);
-                    m_GhostSynchronizationPendingRemoval.Add(networkObjectId);
-                }
-                else
-                if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
-                {
-                    if (logLevel == LogLevel.Developer)
-                    {
-                        Debug.LogWarning($"[{nameof(NetworkSpawnManager)}][{nameof(ProcessAllGhostsPendingSynchronization)}] NetworkObject-{networkObjectId} pending Ghost spawn timed out wiating for the Ghost instance to spawn!");
-                    }
-                    // Timed out entries are removed too
-                    m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
-                }
-            }
-
-            foreach (var networkObjectId in m_GhostSynchronizationPendingRemoval)
-            {
-                var entry = GhostsPendingSynchronization[networkObjectId];
-                GhostsPendingSynchronization.Remove(networkObjectId);
-                entry.Buffer.Dispose();
-            }
-            m_GhostSynchronizationPendingRemoval.Clear();
-            GhostsArePendingSynchronization = GhostsPendingSynchronization.Count > 0;
-        }
-
-#endif
-
         /// <summary>
         /// Use to get all NetworkObjects owned by a client
         /// Ownership to Objects Table Format:
@@ -512,6 +351,10 @@ namespace Unity.Netcode
         /// Gets the NetworkManager associated with this SpawnManager.
         /// </summary>
         public NetworkManager NetworkManager { get; }
+
+#if UNIFIED_NETCODE
+        internal GhostSpawnManager GhostSpawnManager { get; }
+#endif
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private ulong m_NetworkObjectIdCounter;
@@ -1130,44 +973,37 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (serializedObject.HasGhost)
             {
-                // TODO-UNIFIED: Get this working somehow (or if not possible prevent this from happening prior to getting to this point)
-                if (serializedObject.HasInstantiationData)
+                if (!GhostSpawnManager.TryGetGhostNetworkObjectForSpawn(serializedObject, out networkObject))
                 {
-                    Debug.LogError($"[{nameof(NetworkObject)}] Pre-spawn instantiation data does not work in this version!");
-                }
-                networkObject = GetGhostNetworkObjectForSpawn(serializedObject.NetworkObjectId);
-                if (networkObject == null)
-                {
-                    throw new Exception($"Failed to get spawned Ghost object!");
+                    // Don't need to log because the inner function will log
+                    return null;
                 }
             }
             else
 #endif
+            // If scene management is disabled or the NetworkObject was dynamically spawned
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
             {
-                // If scene management is disabled or the NetworkObject was dynamically spawned
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
+                networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
+            }
+            else // Get the in-scene placed NetworkObject
+            {
+                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
+                if (networkObject == null)
                 {
-                    networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
+                    }
+
+                    return null;
                 }
-                else // Get the in-scene placed NetworkObject
+
+                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
+                // NetworkBehaviours will have their OnNetworkSpawn method invoked
+                if (!networkObject.gameObject.activeInHierarchy)
                 {
-                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
-                    if (networkObject == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                        }
-
-                        return null;
-                    }
-
-                    // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
-                    // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                    if (!networkObject.gameObject.activeInHierarchy)
-                    {
-                        networkObject.gameObject.SetActive(true);
-                    }
+                    networkObject.gameObject.SetActive(true);
                 }
             }
             if (networkObject == null)
@@ -1866,6 +1702,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkNetworkObjectAsDestroying(NetworkObject networkObject)
+        {
+            // Always attempt to remove from scene changed updates
+            RemoveNetworkObjectFromSceneChangedUpdates(networkObject);
+#if UNIFIED_NETCODE
+            GhostSpawnManager.MarkNetworkObjectAsDestroying(networkObject.NetworkObjectId);
+#endif
+        }
+
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
@@ -2240,6 +2085,9 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
+#if UNIFIED_NETCODE
+            GhostSpawnManager = new GhostSpawnManager(networkManager);
+#endif
         }
 
         /// <summary>
@@ -2252,10 +2100,6 @@ namespace Unity.Netcode
 
         internal void Shutdown()
         {
-#if UNIFIED_NETCODE
-            GhostsPendingSpawn.Clear();
-            GhostsPendingSynchronization.Clear();
-#endif
             NetworkObjectsToSynchronizeSceneChanges?.Clear();
             CleanUpDisposedObjects?.Clear();
         }

@@ -1777,11 +1777,9 @@ namespace Unity.Netcode
             var spawnManager = NetworkManager.SpawnManager;
 
             // Always attempt to remove from scene changed updates
-            spawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            spawnManager?.MarkNetworkObjectAsDestroying(this);
 
 #if UNIFIED_NETCODE
-            spawnManager?.GhostsPendingSpawn.Remove(NetworkObjectId);
-            spawnManager?.GhostsPendingSynchronization.Remove(NetworkObjectId);
             // N4E controls this on the client, allow this if there is a ghost
             if (IsSpawned && !HasGhost && !networkManager.ShutdownInProgress)
 #else
@@ -3719,44 +3717,29 @@ namespace Unity.Netcode
 
         private void InitGhost()
         {
-            // All instances with Ghosts are automatically registered
-            if (HasGhost && NetworkObjectBridge && !GhostAdapter.IsPrefab())
+            if (!NetworkManager.IsListening)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
+                    Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
                 }
-                if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
-                {
-                    RegisterGhostBridge();
-                }
+                return;
             }
-        }
 
-        internal void RegisterGhostBridge()
-        {
+            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
+            {
+                // Nothing to register
+                return;
+            }
+
+            // All instances with Ghosts are automatically registered
             if (NetworkManager.LogLevel == LogLevel.Developer)
             {
-                Debug.Log($"[{nameof(NetworkObject)}][{nameof(NetworkObjectId)}] NetworkObjectBridge notified instance exists with assigned ID of: {NetworkObjectBridge.NetworkObjectId.Value}");
-                if (!NetworkManager.IsListening)
-                {
-                    Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
-                    return;
-                }
+                Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
             }
-
-            // Set when running through integration tests in order to initially bypass the
-            // normal registration. This is because at this point in the instantiation process,
-            // NetworkObject's NetworkManager is pointing to the singleton which means all instances
-            // (even if intended to be for a specific client) will end up registering with whichever
-            // NetworkManager instance is being pointed to by the singleton.
-            if (NetworkSpawnManager.RegisterPendingGhost != null)
+            if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
             {
-                NetworkSpawnManager.RegisterPendingGhost(this, NetworkObjectBridge.NetworkObjectId.Value);
-            }
-            else if (!NetworkManager.IsServer)
-            {
-                NetworkManager.SpawnManager.RegisterGhostPendingSpawn(this, NetworkObjectBridge.NetworkObjectId.Value);
+                NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(NetworkObjectBridge.NetworkObjectId.Value, this);
             }
         }
 #endif

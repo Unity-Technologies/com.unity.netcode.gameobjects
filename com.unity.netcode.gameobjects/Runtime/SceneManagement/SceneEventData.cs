@@ -1124,33 +1124,8 @@ namespace Unity.Netcode
                     // information during synchronization.
                     if (serializedObject.HasGhost)
                     {
-                        if (!networkManager.SpawnManager.GhostsPendingSpawn.ContainsKey(serializedObject.NetworkObjectId))
+                        if (networkManager.SpawnManager.GhostSpawnManager.ShouldDeferGhostSceneObject(serializedObject, InternalBuffer))
                         {
-                            if (networkManager.LogLevel == LogLevel.Developer)
-                            {
-                                UnityEngine.Debug.Log($"[{nameof(SceneEventData)}][{nameof(SynchronizeSceneNetworkObjects)}] Deferring creation of NetworkObjectId-{serializedObject.NetworkObjectId} to wait for Ghost.");
-                            }
-
-                            var newEntry = new PendingGhostSpawnEntry()
-                            {
-                                RegistrationTime = UnityEngine.Time.realtimeSinceStartup,
-                                SerializedObject = serializedObject,
-                                Buffer = new FastBufferReader(InternalBuffer, Allocator.Persistent, serializedObject.SynchronizationDataSize, InternalBuffer.Position)
-                            };
-
-                            spawnManager.RegisterGhostPendingSynchronization(newEntry);
-                            InternalBuffer.Seek(InternalBuffer.Position + serializedObject.SynchronizationDataSize);
-                            continue;
-                        }
-                        else if (networkManager.SpawnManager.GhostsPendingSpawn[serializedObject.NetworkObjectId] == null)
-                        {
-                            if (networkManager.LogLevel == LogLevel.Developer)
-                            {
-                                UnityEngine.Debug.Log($"[{nameof(SceneEventData)}][{nameof(SynchronizeSceneNetworkObjects)}] Dropping creation of NetworkObjectId-{serializedObject.NetworkObjectId} as it has an entry but no longer exists!");
-                            }
-                            // If it no longer exists, then just remove the entry and skip it.
-                            InternalBuffer.Seek(InternalBuffer.Position + serializedObject.SynchronizationDataSize);
-                            networkManager.SpawnManager.GhostsPendingSpawn.Remove(serializedObject.NetworkObjectId);
                             continue;
                         }
                     }

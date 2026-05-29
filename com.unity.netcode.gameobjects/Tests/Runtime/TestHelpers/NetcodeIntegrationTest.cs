@@ -642,7 +642,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             if (m_AllPrefabsAsHybrid)
             {
-                NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
+                GhostSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
             }
 #endif
             yield return null;
@@ -661,7 +661,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             if (m_AllPrefabsAsHybrid)
             {
-                NetworkSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
+                GhostSpawnManager.RegisterPendingGhost = RegisterPendingGhost;
             }
 #endif
         }
@@ -740,7 +740,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
                 if (networkManager.NetcodeWorld == ghost.World)
                 {
-                    networkManager.SpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
                     return;
                 }
             }
@@ -1678,7 +1678,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_AllPrefabsAsHybrid)
             {
                 m_PendingPrefabs.Clear();
-                NetworkSpawnManager.RegisterPendingGhost = null;
+                GhostSpawnManager.RegisterPendingGhost = null;
                 CleanupPrefabReferences();
             }
 #endif
