@@ -6,15 +6,14 @@ namespace Unity.Netcode
     ///     Support methods for reading/writing NetworkVariables
     ///     Because there are multiple overloads of WriteValue/ReadValue based on different generic constraints,
     ///     but there's no way to achieve the same thing with a class, this sets up various read/write schemes
-    ///     based on which constraints are met by `T` using reflection, which is done at module load time.
+    ///     based on which constraints are met by `T` using reflection, which is done at compile time.
     /// </summary>
     /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
-#if UNITY_6000_6_OR_NEWER
-    [Scripting.LifecycleManagement.AutoStaticsCleanup]
-#endif
     [Serializable]
-    public static partial class NetworkVariableSerialization<T>
+    public static class NetworkVariableSerialization<T>
     {
+        // This is all setup in ILPP (in the file NetworkBehaviorILPP), using the functions in TypedILPPInitializers.
+        // There is no need to reset statics here.
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
         /// <summary>
