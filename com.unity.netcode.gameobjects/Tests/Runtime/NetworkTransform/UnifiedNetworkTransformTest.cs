@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override bool OnSetVerboseDebug()
         {
-            return true;
+            return false;
         }
 
         protected override IEnumerator OnSetup()
