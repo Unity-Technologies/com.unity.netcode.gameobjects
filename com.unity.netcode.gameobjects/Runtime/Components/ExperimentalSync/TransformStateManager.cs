@@ -84,7 +84,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This will be configurable via inspector view
         /// </summary>
-        private int m_Precision = 100;
+        private int m_Precision = 1000;
 
         private bool m_JobRunning;
         private int m_LastTickUpdate;
@@ -227,7 +227,7 @@ namespace Unity.Netcode
 
         private void ShouldSendFullSynch(int tick)
         {
-            m_IsFullSynch = true;// (tick % m_NetworkManager.NetworkConfig.TickRate) == 0;
+            m_IsFullSynch = (tick % m_NetworkManager.NetworkConfig.TickRate) == 0; // Bug in partial sync
         }
 
         internal void OnEarlyUpdate()
@@ -573,6 +573,7 @@ namespace Unity.Netcode
         {
             DisposeNativeStates();
             FastBufferWriter.Dispose();
+            TransformStateSync.EndOfSessionReset();
         }
     }
 }

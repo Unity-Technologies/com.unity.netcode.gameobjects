@@ -120,7 +120,7 @@ namespace Unity.Netcode
                 // If this axis has a delta, then convert the delta value, shift the delta
                 // by 1 bit, and then apply the negative sign bit to the 1st bit position.
                 //if (fullSynch || (!fullSynch && axisDelta > 0))
-                if (fullSynch && axisDelta > 0)
+                if (fullSynch || axisDelta > 0)
                 {
                     //var axis = (((uint)(math.abs(currentAxis * m_Precision))) & 0x7FFFFF);
                     //axis = (axis << 1) | (uint)((currentAxis < 0.0f) ? 0b1 : 0b0);

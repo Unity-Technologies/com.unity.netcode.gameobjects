@@ -26,7 +26,7 @@ namespace Unity.Netcode
         /// maximum identifier value no more than a bit higher than the maximum
         /// number of things one might spawn in a session.
         /// </summary>
-        private class TransformdentifierHandler
+        private class TransformIdentifierHandler
         {
             private struct ReleaseId
             {
@@ -119,7 +119,12 @@ namespace Unity.Netcode
             }
         }
 
-        private static Dictionary<ulong, TransformdentifierHandler> s_TransformIdentifierHandlers = new Dictionary<ulong, TransformdentifierHandler>();
+        internal static void EndOfSessionReset()
+        {
+            s_TransformIdentifierHandlers.Clear();
+        }
+
+        private static Dictionary<ulong, TransformIdentifierHandler> s_TransformIdentifierHandlers = new Dictionary<ulong, TransformIdentifierHandler>();
 
         internal static IdentifierObjectMap GetIdentifierObjectMap(ulong clientId, ushort identifier)
         {
@@ -307,7 +312,7 @@ namespace Unity.Netcode
             // Always create a handler for each client
             if (!s_TransformIdentifierHandlers.ContainsKey(localClientId))
             {
-                s_TransformIdentifierHandlers.Add(localClientId, new TransformdentifierHandler());
+                s_TransformIdentifierHandlers.Add(localClientId, new TransformIdentifierHandler());
             }
 
             // Only the spawn authority assigns the unique identifier
@@ -330,7 +335,7 @@ namespace Unity.Netcode
 
             if (!s_TransformIdentifierHandlers.ContainsKey(motionAuthorityClientId))
             {
-                s_TransformIdentifierHandlers.Add(motionAuthorityClientId, new TransformdentifierHandler());
+                s_TransformIdentifierHandlers.Add(motionAuthorityClientId, new TransformIdentifierHandler());
             }
 
             s_TransformIdentifierHandlers[motionAuthorityClientId].AddIdentifier(motionAuthorityClientId, TransformIdentifier, NetworkObjectId, NetworkBehaviourId);
