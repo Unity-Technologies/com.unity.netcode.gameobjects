@@ -137,7 +137,7 @@ namespace Unity.Netcode
                     GridStateDelta.Rotation.Compress();
                 }
 
-                // Apply the state even if there were no deltas so we 
+                // Apply the state even if there were no deltas so we are always comparing from the previous transform values.
                 GridStatePrevious.ApplyState(GridStateCurrent);
             }
 

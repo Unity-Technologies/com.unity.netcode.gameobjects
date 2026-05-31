@@ -244,7 +244,7 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < 3; i++)
             {
-                if (Axis[i] != 0)
+                if (AxisDelta[i] != 0)
                 {
                     return true;
                 }
