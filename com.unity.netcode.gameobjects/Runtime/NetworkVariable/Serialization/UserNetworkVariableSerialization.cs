@@ -7,7 +7,10 @@ namespace Unity.Netcode
     /// users to tell NetworkVariable about those extension methods (or simply pass in a lambda)
     /// </summary>
     /// <typeparam name="T">The type of value being serialized</typeparam>
-    public class UserNetworkVariableSerialization<T>
+#if UNITY_6000_6_OR_NEWER
+    [Scripting.LifecycleManagement.AutoStaticsCleanup]
+#endif
+    public partial class UserNetworkVariableSerialization<T>
     {
         /// <summary>
         /// The write value delegate handler definition

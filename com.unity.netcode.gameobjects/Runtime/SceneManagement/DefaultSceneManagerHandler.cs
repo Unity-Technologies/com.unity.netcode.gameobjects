@@ -206,7 +206,7 @@ namespace Unity.Netcode
         /// Unloads any scenes that have not been assigned.
         /// </summary>
         /// <param name="networkManager"></param>
-        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        public void UnloadUnassignedScenes(NetworkManager networkManager)
         {
             var sceneManager = networkManager.SceneManager;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
