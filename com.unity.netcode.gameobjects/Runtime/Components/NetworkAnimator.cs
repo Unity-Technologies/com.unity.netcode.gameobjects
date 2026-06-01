@@ -668,6 +668,7 @@ namespace Unity.Netcode.Components
         /// Determines whether the <see cref="NetworkAnimator"/> is <see cref="AuthorityModes.Server"/> or <see cref="AuthorityModes.Owner"/> based on the <see cref="AuthorityMode"/> field.
         /// Optionally, you can still derive from <see cref="NetworkAnimator"/> and override the <see cref="OnIsServerAuthoritative"/> method.
         /// </summary>
+        /// <returns>True if this <see cref="NetworkAnimator"/> is server authoritative, false otherwise</returns>
         public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritative();
@@ -1697,7 +1698,7 @@ namespace Unity.Netcode.Components
         /// to forward a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
-        /// <param name="rpcParams"></param>
+        /// <param name="rpcParams">Defined as it's used to send the RPC to be invoked on this client</param>
         [Rpc(SendTo.NotAuthority, AllowTargetOverride = true, InvokePermission = RpcInvokePermission.Owner)]
         internal void SendAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage, RpcParams rpcParams = default)
         {
@@ -1709,7 +1710,7 @@ namespace Unity.Netcode.Components
         ///  a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
-        /// <param name="rpcParams"> unused</param>
+        /// <param name="rpcParams"> used to send the RPC to be invoked on this client</param>
         [Rpc(SendTo.NotServer, AllowTargetOverride = true)]
         internal void SendClientAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage, RpcParams rpcParams = default)
         {
