@@ -6,7 +6,7 @@ namespace Unity.Netcode
     ///     Support methods for reading/writing NetworkVariables
     ///     Because there are multiple overloads of WriteValue/ReadValue based on different generic constraints,
     ///     but there's no way to achieve the same thing with a class, this sets up various read/write schemes
-    ///     based on which constraints are met by `T` using reflection, which is done at compile time.
+    ///     based on which constraints are met by `T` using reflection, which is done at module load time.
     /// </summary>
     /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
     [Serializable]
