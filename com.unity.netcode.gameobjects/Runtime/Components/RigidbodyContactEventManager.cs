@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 using UnityEngine;
 
@@ -105,14 +106,16 @@ namespace Unity.Netcode.Components
         private readonly Dictionary<int, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<int, ContactEventHandlerInfo>();
 #endif
 
+        private ContextualLogger m_Log;
         private void OnEnable()
         {
+            m_Log = new ContextualLogger(this);
             m_ResultsArray = new NativeArray<JobResultStruct>(16, Allocator.Persistent);
             Physics.ContactEvent += Physics_ContactEvent;
             if (Instance != null && Instance != this)
             {
-                NetworkLog.LogError($"[Invalid][Multiple Instances] Found more than one instance of {nameof(RigidbodyContactEventManager)}: {name} and {Instance.name}");
-                NetworkLog.LogError($"[Disable][Additional Instance] Disabling {name} instance!");
+                m_Log.Error(new Context(LogLevel.Error, $"Found more than one instance of {nameof(RigidbodyContactEventManager)}").AddTag("Invalid").AddTag("Multiple Instances").AddInfo("Instance 1", Instance.name).AddInfo("Instance 2", name));
+                m_Log.Error(new Context(LogLevel.Error, $"Disabling instance: ").AddTag("Disable").AddTag("Additional Instance").AddInfo("Instance", name));
                 gameObject.SetActive(false);
                 return;
             }
