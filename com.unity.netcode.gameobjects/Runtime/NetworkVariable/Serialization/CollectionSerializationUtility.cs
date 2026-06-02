@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
-    internal static class CollectionSerializationUtility
+    internal static partial class CollectionSerializationUtility
     {
         public static void WriteNativeArrayDelta<T>(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) where T : unmanaged
         {
@@ -260,24 +260,24 @@ namespace Unity.Netcode
         // so we're going to keep static lists that we can reuse in these methods.
         private static class ListCache<T>
         {
-            private static List<T> s_AddedList = new List<T>();
-            private static List<T> s_RemovedList = new List<T>();
-            private static List<T> s_ChangedList = new List<T>();
+            private static readonly List<T> k_AddedList = new List<T>();
+            private static readonly List<T> k_RemovedList = new List<T>();
+            private static readonly List<T> k_ChangedList = new List<T>();
 
             public static List<T> GetAddedList()
             {
-                s_AddedList.Clear();
-                return s_AddedList;
+                k_AddedList.Clear();
+                return k_AddedList;
             }
             public static List<T> GetRemovedList()
             {
-                s_RemovedList.Clear();
-                return s_RemovedList;
+                k_RemovedList.Clear();
+                return k_RemovedList;
             }
             public static List<T> GetChangedList()
             {
-                s_ChangedList.Clear();
-                return s_ChangedList;
+                k_ChangedList.Clear();
+                return k_ChangedList;
             }
         }
 

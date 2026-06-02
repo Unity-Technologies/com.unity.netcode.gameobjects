@@ -694,7 +694,6 @@ namespace Unity.Netcode.Components
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
         private float[] m_LayerWeights;
-        private static byte[] s_EmptyArray = new byte[] { };
         private List<int> m_ParametersToUpdate;
         private RpcParams m_RpcParams;
         private IGroupRpcTarget m_TargetGroup;

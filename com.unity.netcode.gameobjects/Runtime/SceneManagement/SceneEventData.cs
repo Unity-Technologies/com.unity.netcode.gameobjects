@@ -164,10 +164,10 @@ namespace Unity.Netcode
         /// we must distinguish which scene we are talking about when the server tells the client to unload a scene.
         /// The server will always communicate its local relative scene's handle and the client will determine its
         /// local relative handle from the table being built.
-        /// Look for <see cref="NetworkSceneManager.m_ServerSceneHandleToClientSceneHandle"/> usage to see where
+        /// Look for <see cref="NetworkSceneManager.ServerSceneHandleToClientSceneHandle"/> usage to see where
         /// entries are being added to or removed from the table
         /// </summary>
-        /// <param name="sceneIndex"></param>
+        /// <param name="sceneHash"></param>
         /// <param name="sceneHandle"></param>
         internal void AddSceneToSynchronize(uint sceneHash, NetworkSceneHandle sceneHandle)
         {
@@ -315,8 +315,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal static bool LogSerializationOrder = false;
-
         internal void AddSpawnedNetworkObjects()
         {
             m_NetworkObjectsSync.Clear();
@@ -352,7 +350,7 @@ namespace Unity.Netcode
 
             // This is useful to know what NetworkObjects a client is going to be synchronized with
             // as well as the order in which they will be deserialized
-            if (LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
+            if (NetworkLog.Config.LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var messageBuilder = new StringBuilder(0xFFFF);
                 messageBuilder.AppendLine("[Server-Side Client-Synchronization] NetworkObject serialization order:");
@@ -1122,7 +1120,7 @@ namespace Unity.Netcode
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
                         LogArray(InternalBuffer.ToArray(), noStart, noStop, builder);
                     }
-                    // If we failed to deserialize the NetowrkObject then don't add null to the list
+                    // If we failed to deserialize the NetworkObject then don't add null to the list
                     if (spawnedNetworkObject != null)
                     {
                         if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
@@ -1152,7 +1150,10 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 UnityEngine.Debug.LogException(ex);
-                UnityEngine.Debug.Log(builder.ToString());
+                if (EnableSerializationLogs)
+                {
+                    UnityEngine.Debug.Log(builder.ToString());
+                }
             }
             finally
             {

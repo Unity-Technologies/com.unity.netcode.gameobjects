@@ -1299,8 +1299,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal static bool LogSentVariableUpdateMessage;
-
         private bool CouldHaveDirtyNetworkVariables()
         {
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
