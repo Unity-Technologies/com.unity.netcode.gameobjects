@@ -24,6 +24,18 @@ namespace Unity.Netcode.Components
         [HideInInspector]
         [SerializeField]
         internal bool NetworkTransformExpanded;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            CurrentTick = 0;
+            TrackStateUpdateId = false;
+            AssignDefaultInterpolationType = false;
+            DefaultInterpolationType = default;
+            s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+            InterpolationBufferTickOffset = 0;
+            s_TickSynchPosition = 0;
+        }
 #endif
 
         internal enum Axis { X, Y, Z }
@@ -1361,7 +1373,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// When set each state update will contain a state identifier
         /// </summary>
-        internal static bool TrackStateUpdateId = false;
+        internal static bool TrackStateUpdateId;
 
         /// <summary>
         /// Enabled by default.
@@ -2062,19 +2074,6 @@ namespace Unity.Netcode.Components
                             childNetworkTransform.OnNetworkTick(true);
                         }
                     }
-
-                    // Synchronize any parented children with the parent's motion
-                    foreach (var child in m_ParentedChildren)
-                    {
-                        // Synchronize any nested NetworkTransforms of the child with the parent's
-                        foreach (var childNetworkTransform in child.NetworkTransforms)
-                        {
-                            if (childNetworkTransform.CanCommitToTransform)
-                            {
-                                childNetworkTransform.OnNetworkTick(true);
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -2221,13 +2220,11 @@ namespace Unity.Netcode.Components
                 // values are applied.
                 var hasParentNetworkObject = false;
 
-                var parentNetworkObject = (NetworkObject)null;
-
                 // If the NetworkObject belonging to this NetworkTransform instance has a parent
                 // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
                 if (NetworkObject.transform.parent != null)
                 {
-                    parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // In-scene placed NetworkObjects parented under a GameObject with no
                     // NetworkObject preserve their lossyScale when synchronizing.
@@ -3363,19 +3360,6 @@ namespace Unity.Netcode.Components
                         childNetworkTransform.OnNetworkTick(true);
                     }
                 }
-
-                // Synchronize any parented children with the parent's motion
-                foreach (var child in m_ParentedChildren)
-                {
-                    // Synchronize any nested NetworkTransforms of the child with the parent's
-                    foreach (var childNetworkTransform in child.NetworkTransforms)
-                    {
-                        if (childNetworkTransform.CanCommitToTransform)
-                        {
-                            childNetworkTransform.OnNetworkTick(true);
-                        }
-                    }
-                }
             }
 
             // Provide notifications when the state has been updated
@@ -3634,8 +3618,6 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            m_ParentedChildren.Clear();
-
             Initialize();
 
             if (CanCommitToTransform && !SwitchTransformSpaceWhenParented)
@@ -3647,7 +3629,6 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
-            m_ParentedChildren.Clear();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var forUpdate = !m_UseRigidbodyForMotion;
 #else
@@ -3861,7 +3842,6 @@ namespace Unity.Netcode.Components
         }
 
         internal bool IsNested;
-        private List<NetworkObject> m_ParentedChildren = new List<NetworkObject>();
 
         private bool m_IsFirstNetworkTransform;
 
@@ -4694,7 +4674,7 @@ namespace Unity.Netcode.Components
         /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
         /// <see cref="NetworkTimeSystem.TickLatency"/>
         /// </remarks>
-        public static int InterpolationBufferTickOffset = 0;
+        public static int InterpolationBufferTickOffset;
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (networkManager.IsListening)
@@ -4799,6 +4779,7 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
         private static int s_TickSynchPosition;
         private int m_NextTickSync;
 

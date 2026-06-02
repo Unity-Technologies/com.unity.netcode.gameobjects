@@ -10,7 +10,7 @@ namespace Unity.Netcode
     public struct NetworkObjectReference : INetworkSerializable, IEquatable<NetworkObjectReference>
     {
         private ulong m_NetworkObjectId;
-        private static ulong s_NullId = ulong.MaxValue;
+        private const ulong k_NullId = ulong.MaxValue;
 
         /// <summary>
         /// The <see cref="NetworkObject.NetworkObjectId"/> of the referenced <see cref="NetworkObject"/>.
@@ -31,7 +31,7 @@ namespace Unity.Netcode
         {
             if (networkObject == null)
             {
-                m_NetworkObjectId = s_NullId;
+                m_NetworkObjectId = k_NullId;
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace Unity.Netcode
         {
             if (gameObject == null)
             {
-                m_NetworkObjectId = s_NullId;
+                m_NetworkObjectId = k_NullId;
                 return;
             }
 
@@ -92,7 +92,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject Resolve(NetworkObjectReference networkObjectRef, NetworkManager networkManager = null)
         {
-            if (networkObjectRef.m_NetworkObjectId == s_NullId)
+            if (networkObjectRef.m_NetworkObjectId == k_NullId)
             {
                 return null;
             }

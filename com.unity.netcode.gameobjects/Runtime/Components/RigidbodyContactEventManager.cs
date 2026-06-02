@@ -21,7 +21,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool ProvideNonRigidBodyContactEvents;
         /// <summary>
-        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will prioritize invoking <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> <br /></br>
+        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will prioritize invoking <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> <br />
         /// if it is the 2nd colliding body in the contact pair being processed. With distributed authority, setting this value to true when a <see cref="NetworkObject"/> is owned by the local client <br />
         /// will assure <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> is only invoked on the authoritative side.
         /// </summary>
@@ -112,7 +112,7 @@ namespace Unity.Netcode.Components
             m_Log = new ContextualLogger(this);
             m_ResultsArray = new NativeArray<JobResultStruct>(16, Allocator.Persistent);
             Physics.ContactEvent += Physics_ContactEvent;
-            if (Instance != null)
+            if (Instance != null && Instance != this)
             {
                 m_Log.Error(new Context(LogLevel.Error, $"Found more than one instance of {nameof(RigidbodyContactEventManager)}").AddTag("Invalid").AddTag("Multiple Instances").AddInfo("Instance 1", Instance.name).AddInfo("Instance 2", name));
                 m_Log.Error(new Context(LogLevel.Error, $"Disabling instance: ").AddTag("Disable").AddTag("Additional Instance").AddInfo("Instance", name));

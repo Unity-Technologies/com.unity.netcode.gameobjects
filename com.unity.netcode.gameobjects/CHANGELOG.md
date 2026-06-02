@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
 
 ### Changed
 

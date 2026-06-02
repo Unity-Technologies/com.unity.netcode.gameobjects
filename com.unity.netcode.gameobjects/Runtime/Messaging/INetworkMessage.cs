@@ -1,4 +1,3 @@
-
 namespace Unity.Netcode
 {
     /// <summary>
@@ -45,8 +44,10 @@ namespace Unity.Netcode
         public int Version { get; }
     }
 
-
-    internal static class MessageDeliveryType<T> where T : INetworkMessage
+#if UNITY_6000_6_OR_NEWER
+    [Scripting.LifecycleManagement.AutoStaticsCleanup]
+#endif
+    internal static partial class MessageDeliveryType<T> where T : INetworkMessage
     {
         internal static NetworkDelivery DefaultDelivery { get; private set; }
         internal static void Initialize()
