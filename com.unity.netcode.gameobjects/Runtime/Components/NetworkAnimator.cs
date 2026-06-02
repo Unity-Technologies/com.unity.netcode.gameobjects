@@ -995,16 +995,14 @@ namespace Unity.Netcode.Components
                         }
                         stateHash = nextState.fullPathHash;
 
-                        // Use the destination state to transition info lookup table to see if this is a transition we can
-                        // synchronize using cross-fading
-                        if (m_DestinationStateToTransitionInfo.ContainsKey(layer))
+                        // Check if this transition can be synchronized using cross-fading
+                        if (m_DestinationStateToTransitionInfo.TryGetValue(layer, out var layerTransitions))
                         {
-                            if (m_DestinationStateToTransitionInfo[layer].ContainsKey(nextState.shortNameHash))
+                            if (layerTransitions.TryGetValue(nextState.shortNameHash, out var transitionInfo))
                             {
-                                var destinationInfo = m_DestinationStateToTransitionInfo[layer][nextState.shortNameHash];
-                                stateHash = destinationInfo.OriginatingState;
+                                stateHash = transitionInfo.OriginatingState;
                                 // Set the destination state to cross-fade to from the originating state
-                                animationState.DestinationStateHash = destinationInfo.DestinationState;
+                                animationState.DestinationStateHash = transitionInfo.DestinationState;
                             }
                         }
                     }
@@ -1095,12 +1093,13 @@ namespace Unity.Netcode.Components
                     stateChangeDetected = true;
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
-                // If we are not transitioned into the "any state" and the animator transition isn't a full path hash (layer to layer) and our pre-built destination state to transition does not contain the
-                // current layer (i.e. transitioning into a state from another layer) =or= we do contain the layer and the layer contains state to transition to is contained within our pre-built destination
-                // state then we can handle this transition as a non-cross fade state transition between layers.
-                // Otherwise, if we don't enter into this then this is a "trigger transition to some state that is now being transitioned back to the Idle state via trigger" or "Dual Triggers" IDLE<-->State.
-                else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer] && (!m_DestinationStateToTransitionInfo.ContainsKey(layer) ||
-                    (m_DestinationStateToTransitionInfo.ContainsKey(layer) && m_DestinationStateToTransitionInfo[layer].ContainsKey(nt.fullPathHash))))
+                // Handle as a non-cross-fade transition when:
+                // - not an "any state" transition and this is a new transition on this layer
+                // - the layer is either absent from the lookup table (cross-layer transition) or its destination state is present
+                // Skipping this block means we are in a "dual trigger" scenario where a trigger transitions
+                // to a state that is immediately transitioned back via another trigger (e.g. IDLE <--> State).
+                else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer] && (!m_DestinationStateToTransitionInfo.TryGetValue(layer, out var layerTransitions) ||
+                    layerTransitions.ContainsKey(nt.fullPathHash)))
                 {
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
@@ -1110,7 +1109,7 @@ namespace Unity.Netcode.Components
                     animState.CrossFade = false;
                     animState.Transition = true;
                     animState.NormalizedTime = tt.normalizedTime;
-                    if (m_DestinationStateToTransitionInfo.ContainsKey(layer) && m_DestinationStateToTransitionInfo[layer].ContainsKey(nt.fullPathHash))
+                    if (layerTransitions != null)
                     {
                         animState.DestinationStateHash = nt.fullPathHash;
                     }
@@ -1454,21 +1453,17 @@ namespace Unity.Netcode.Components
             // If it is a transition, then we are synchronizing transitions in progress when a client late joins
             if (animationState.Transition && !animationState.CrossFade)
             {
-                // We should have all valid entries for any animation state transition update
-                // Verify the AnimationState's assigned Layer exists
-                if (m_DestinationStateToTransitionInfo.ContainsKey(animationState.Layer))
+                // At this point all entries in the lookup table should be valid.
+                // Look up the transition info for this layer and destination state.
+                if (m_DestinationStateToTransitionInfo.TryGetValue(animationState.Layer, out var layerTransitions))
                 {
-                    // Verify the inner-table has the destination AnimationState name hash
-                    if (m_DestinationStateToTransitionInfo[animationState.Layer].ContainsKey(animationState.DestinationStateHash))
+                    if (layerTransitions.TryGetValue(animationState.DestinationStateHash, out var transitionInfo))
                     {
                         // Make sure we are on the originating/starting state we are going to cross-fade into
                         if (currentState.shortNameHash == animationState.StateHash)
                         {
-                            // Get the transition state information
-                            var transitionStateInfo = m_DestinationStateToTransitionInfo[animationState.Layer][animationState.DestinationStateHash];
-
                             // Cross-fade from the current to the destination state for the transitions duration while starting at the server's current normalized time of the transition
-                            m_Animator.CrossFade(transitionStateInfo.DestinationState, transitionStateInfo.TransitionDuration, transitionStateInfo.Layer, 0.0f, animationState.NormalizedTime);
+                            m_Animator.CrossFade(transitionInfo.DestinationState, transitionInfo.TransitionDuration, transitionInfo.Layer, 0.0f, animationState.NormalizedTime);
                         }
                         else if (LocalNetworkManager.LogLevel == LogLevel.Developer)
                         {
