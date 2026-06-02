@@ -522,6 +522,9 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"[TransportApproval][Server] TransportId {transportId} is already connected to this server!");
                     }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportConnect.End();
+#endif
                     return;
                 }
 
@@ -536,6 +539,9 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError("[TransportApproval][Client] Client received a transport connection event after already connecting!");
                     }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportConnect.End();
+#endif
                     return;
                 }
 
