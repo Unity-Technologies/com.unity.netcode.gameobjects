@@ -15,6 +15,10 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     public class AddressablesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;

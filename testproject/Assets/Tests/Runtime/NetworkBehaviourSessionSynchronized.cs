@@ -9,6 +9,9 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     public class NetworkBehaviourSessionSynchronized : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "SessionSynchronize";

@@ -10,6 +10,9 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class NetworkObjectDestroyWithSceneTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "EmptyScene";
@@ -98,7 +101,7 @@ namespace TestProject.RuntimeTests
 
             // Depending on network topology, spawn the object with the appropriate owner.
             var owner = m_DistributedAuthority ? m_NotSessionOwner : m_SessionOwner;
-            m_SpawnedInstance = SpawnObject(m_TestPrefab.gameObject, m_NotSessionOwner, true).GetComponent<NetworkObject>();
+            m_SpawnedInstance = SpawnObject(m_TestPrefab.gameObject, owner, true).GetComponent<NetworkObject>();
 
             var instanceName = m_SpawnedInstance.name;
             yield return WaitForConditionOrTimeOut(() => ObjectSpawnedOnAllNetworkManagers(true));

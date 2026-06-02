@@ -32,6 +32,9 @@ namespace Unity.Netcode.GameObjects.Editor
 
             m_Initialized = true;
             m_NetworkObject = (NetworkObject)target;
+#if UNIFIED_NETCODE
+            m_NetworkObject.UnifiedValidation();
+#endif
         }
 
         /// <inheritdoc/>

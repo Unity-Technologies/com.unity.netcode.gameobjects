@@ -1793,6 +1793,17 @@ namespace Unity.Netcode.Components
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
         }
+
+#if UNIFIED_NETCODE
+        internal void UnregisterRigidbody()
+        {
+            if (m_NetworkRigidbodyInternal)
+            {
+                m_NetworkRigidbodyInternal = null;
+                m_UseRigidbodyForMotion = false;
+            }
+        }
+#endif
 #endif
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
@@ -3634,6 +3645,15 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED:
+            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
+            // it will be using N4E's built in interpolation and extrapolation features.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             m_ParentedChildren.Clear();
 
             Initialize();
@@ -3726,8 +3746,17 @@ namespace Unity.Netcode.Components
         /// The internal initialization method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
-        private void InternalInitialization(bool isOwnershipChange = false)
+        internal virtual void InternalInitialization(bool isOwnershipChange = false)
         {
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED:
+            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
+            // it will be using N4E's built in interpolation and extrapolation features.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             if (!IsSpawned)
             {
                 return;

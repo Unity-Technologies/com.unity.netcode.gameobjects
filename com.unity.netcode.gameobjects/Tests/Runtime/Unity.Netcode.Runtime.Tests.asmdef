@@ -13,7 +13,9 @@
         "Unity.Netcode.TestHelpers.Runtime",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.NetCode",
+        "Unity.Entities"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -47,6 +49,11 @@
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
+        },
+        {
+            "name": "com.unity.netcode",
+            "expression": "1.10.1",
+            "define": "UNIFIED_NETCODE"
         }
     ],
     "noEngineReferences": false

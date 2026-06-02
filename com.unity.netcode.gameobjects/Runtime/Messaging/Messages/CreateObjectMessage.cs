@@ -120,6 +120,25 @@ namespace Unity.Netcode
                 ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
             }
 
+#if UNIFIED_NETCODE
+            // Leaving for debugging purposes
+            //if (networkManager.LogLevel == LogLevel.Developer)
+            //{
+            //    UnityEngine.Debug.Log($"Received {nameof(CreateObjectMessage)} for NetworkObjectId-{ObjectInfo.NetworkObjectId}.");
+            //}
+
+            // For now, we will defer the create object message until the associated Ghost is spawned
+            if (ObjectInfo.HasGhost && !networkManager.SpawnManager.GhostSpawnManager.IsGhostPendingSpawn(ObjectInfo.NetworkObjectId))
+            {
+                if (networkManager.LogLevel == LogLevel.Developer)
+                {
+                    UnityEngine.Debug.Log($"[{nameof(NetworkObject)}-{ObjectInfo.NetworkObjectId}] Deferring {nameof(CreateObjectMessage)} to wait for Ghost.");
+                }
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnGhostSpawned, ObjectInfo.NetworkObjectId, reader, ref context, k_Name);
+                return false;
+            }
+#endif
+
             if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectInfo))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Hash, reader, ref context, k_Name);

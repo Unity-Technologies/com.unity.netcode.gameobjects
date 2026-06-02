@@ -2756,8 +2756,14 @@ namespace Unity.Netcode
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.gameObject.scene.handle;
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
+#if UNIFIED_NETCODE
+                if (!networkObjectInstance.HasGhost && networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
+                    networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
+#else
                 if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
                     networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
+
+#endif
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {

@@ -5,6 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Netcode.Components;
 using Unity.Netcode.Runtime;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -283,6 +287,10 @@ namespace Unity.Netcode
             // Always check for in-scene placed to assure any previous version scene assets with in-scene place NetworkObjects gets updated.
             CheckForInScenePlaced();
 
+#if UNIFIED_NETCODE
+            UnifiedValidation();
+#endif
+
             // If the GlobalObjectIdHash value changed, then mark the asset dirty.
             if (GlobalObjectIdHash != oldValue)
             {
@@ -344,6 +352,39 @@ namespace Unity.Netcode
         }
 #endif // UNITY_EDITOR
 
+#if UNIFIED_NETCODE
+        [HideInInspector]
+        [SerializeField]
+        internal GhostAdapter GhostAdapter;
+
+        [HideInInspector]
+        [SerializeField]
+        internal bool HasGhost;
+
+        [HideInInspector]
+        [SerializeField]
+        internal bool HadBridge;
+#if UNITY_EDITOR
+        internal void UnifiedValidation()
+        {
+            NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
+            GhostAdapter = GetComponent<GhostAdapter>();
+            HasGhost = GhostAdapter != null;
+            if (HasGhost && NetworkObjectBridge == null)
+            {
+                NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+                HadBridge = true;
+                // Transform synchronization is handled by unified netcode
+                SynchronizeTransform = false;
+            }
+            else if (HadBridge && !HasGhost && !NetworkObjectBridge)
+            {
+                HadBridge = false;
+                SynchronizeTransform = true;
+            }
+        }
+#endif
+#endif
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
@@ -1733,10 +1774,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Always attempt to remove from scene changed updates
-            networkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+            var spawnManager = NetworkManager.SpawnManager;
 
+            // Always attempt to remove from scene changed updates
+            spawnManager?.MarkNetworkObjectAsDestroying(this);
+
+#if UNIFIED_NETCODE
+            // N4E controls this on the client, allow this if there is a ghost
+            if (IsSpawned && !HasGhost && !networkManager.ShutdownInProgress)
+#else
             if (IsSpawned && !networkManager.ShutdownInProgress)
+#endif
             {
                 // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
                 // was marked as destroy pending scene event (which means the destroy with scene property was set).
@@ -1764,11 +1812,11 @@ namespace Unity.Netcode
                 }
             }
 
-            if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (spawnManager != null && spawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
-                    networkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                    spawnManager.OnDespawnObject(networkObject, false);
                 }
             }
         }
@@ -2022,6 +2070,12 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+#if UNIFIED_NETCODE
+            if (HasGhost && destroy == false)
+            {
+                throw new NotSupportedException("Despawn without destroy is not supported for hybrid objects.");
+            }
+#endif
             if (!IsSpawned)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
@@ -2737,6 +2791,13 @@ namespace Unity.Netcode
 
         internal Dictionary<ushort, NetworkBehaviour> ChildNetworkBehaviours;
 
+        /// <summary>
+        /// TODO-UNIFIED:
+        /// We should pre-calculate the index id's in the editor and save out two lists:
+        /// - All <see cref="NetworkBehaviour"/> derived components in a pre-determined order.
+        /// - All of the identifiers aligned with the above list
+        /// Then construct the dictionar during awake.
+        /// </summary>
         internal bool InitializeChildNetworkBehaviours()
         {
             ChildNetworkBehaviours = new Dictionary<ushort, NetworkBehaviour>();
@@ -2775,7 +2836,51 @@ namespace Unity.Netcode
                 }
 #endif
             }
+#if UNIFIED_NETCODE
+            // For now, cycle through all known NetworkTransform and NetworkRigidbodyBase derived components
+            // and destroy them all if this is a hybrid prefab instance.
+            // This allows a user to not have to make direct adjustments until trying out their NGO prefab
+            // as a hybrid spawned prefab (optional to completely remove, will eventually become obsolete and
+            // automatically removed later).
+            if (HasGhost && !NetworkManager.DistributedAuthorityMode)
+            {
+                if (NetworkRigidbodies != null)
+                {
+                    for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
+                    {
+                        // TODO-UNIFIED: This needs to be updated to make it "opt-in".
+                        // Only clients remove the rigidbody for performance purposes when running a hybrid spawn client-server topology.
+                        if (!NetworkManager.IsServer)
+                        {
+                            var rigidBody = NetworkRigidbodies[i].gameObject.GetComponent<Rigidbody>();
+                            if (rigidBody != null)
+                            {
+                                Destroy(rigidBody);
+                            }
+                        }
+                        ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
+                        Destroy(NetworkRigidbodies[i]);
+                    }
+                    NetworkRigidbodies.Clear();
+                }
 
+                // When hybrid spawning, the transform is synchronized by the GhostObject.
+                // As a convenience, we remove and destroy all NetworkTransforms.
+                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostAdapter
+                // Possibly use a "Synchronize" property and display only on children of a root parent GhostAdapter.
+                if (NetworkTransforms != null)
+                {
+                    NetworkManager.Log.Warning(new Logging.Context(LogLevel.Developer, $"[]{name} Hybrid spawned objects do not support {nameof(NetworkTransform)} and " +
+                        $"are removed at runtime. If hybrid spawning is intended, then remove it from the network prefab to avoid allocating and de-allocating at runtime."));
+                    for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
+                    {
+                        ChildNetworkBehaviours.Remove(NetworkTransforms[i].NetworkBehaviourId);
+                        Destroy(NetworkTransforms[i]);
+                    }
+                    NetworkTransforms.Clear();
+                }
+            }
+#endif
             return true;
         }
 
@@ -2921,6 +3026,9 @@ namespace Unity.Netcode
             private const ushort k_SyncObservers = 0x0200;
             private const ushort k_SpawnWithObservers = 0x0400;
             private const ushort k_HasInstantiationData = 0x0800;
+#if UNIFIED_NETCODE
+            private const ushort k_HasGhost = 0x1000;
+#endif
 
             public bool IsPlayerObject;
             public bool HasParent;
@@ -2941,6 +3049,9 @@ namespace Unity.Netcode
             public bool SyncObservers;
             public bool SpawnWithObservers;
             public bool HasInstantiationData;
+#if UNIFIED_NETCODE
+            public bool HasGhost;
+#endif
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal ushort GetBitsetRepresentation()
@@ -2990,10 +3101,19 @@ namespace Unity.Netcode
                 {
                     bitset |= k_SpawnWithObservers;
                 }
+
                 if (HasInstantiationData)
                 {
                     bitset |= k_HasInstantiationData;
                 }
+
+#if UNIFIED_NETCODE
+                if (HasGhost)
+                {
+                    bitset |= k_HasGhost;
+                }
+
+#endif
                 return bitset;
             }
 
@@ -3012,6 +3132,9 @@ namespace Unity.Netcode
                 SyncObservers = (bitset & k_SyncObservers) != 0;
                 SpawnWithObservers = (bitset & k_SpawnWithObservers) != 0;
                 HasInstantiationData = (bitset & k_HasInstantiationData) != 0;
+#if UNIFIED_NETCODE
+                HasGhost = (bitset & k_HasGhost) != 0;
+#endif
             }
 
             // When handling the initial synchronization of NetworkObjects,
@@ -3277,7 +3400,10 @@ namespace Unity.Netcode
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId,
-                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
+                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0,
+#if UNIFIED_NETCODE
+                HasGhost = HasGhost,
+#endif
             };
 
             // Handle Parenting
@@ -3547,7 +3673,76 @@ namespace Unity.Netcode
         {
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
+
         }
+
+#if UNIFIED_NETCODE
+
+#if DEBUG_ENABLE_DISABLE
+        private void OnEnable()
+        {
+            Debug.Log("Enabled!");
+        }
+
+        private void OnDisable()
+        {
+            Debug.Log("Disabled!");
+            if (IsSpawned || HasGhost)
+            {
+                if (HasGhost && GhostAdapter.IsPrefab())
+                {
+                    return;
+                }
+                gameObject.SetActive(true);
+            }
+
+            try
+            {
+                throw new Exception("Disabled trap!");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[{name}][{ex.Message}] Callstack:\n{ex.StackTrace}");
+            }
+        }
+#endif
+
+        private void Start()
+        {
+            InitGhost();
+        }
+        [SerializeField]
+        [HideInInspector]
+        internal NetworkObjectBridge NetworkObjectBridge;
+
+        private void InitGhost()
+        {
+            if (!NetworkManager.IsListening)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
+                }
+                return;
+            }
+
+            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
+            {
+                // Nothing to register
+                return;
+            }
+
+            // All instances with Ghosts are automatically registered
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
+            }
+            if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
+            {
+                NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(NetworkObjectBridge.NetworkObjectId.Value, this);
+            }
+        }
+#endif
 
         /// <summary>
         /// Update

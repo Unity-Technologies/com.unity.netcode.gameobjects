@@ -9,7 +9,10 @@ namespace Unity.Netcode.Components
     /// mode of the rigidbody and disabling it on all peers but the authoritative one.
     /// </summary>
     [RequireComponent(typeof(NetworkTransform))]
+    // TODO-UNIFIED: We should not require this for unified and come up with a different way of handling the dependency
+#if !UNIFIED_NETCODE
     [RequireComponent(typeof(Rigidbody2D))]
+#endif
     [AddComponentMenu("Netcode/Network Rigidbody 2D")]
     [HelpURL(HelpUrls.NetworkRigidbody2D)]
     public class NetworkRigidbody2D : NetworkRigidbodyBase

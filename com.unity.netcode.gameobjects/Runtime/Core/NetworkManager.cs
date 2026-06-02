@@ -1,16 +1,30 @@
 using System;
 using System.Collections.Generic;
-using Unity.Collections;
 using System.Linq;
+using Unity.Collections;
+#if UNIFIED_NETCODE
+using Unity.Entities;
+using Unity.NetCode;
+#endif
 using Unity.Netcode.Components;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
+// TODO-UNIFIED: When:
+// - N4E is a dependency of Netcode for GameObjects.
+// - TestProject has been updated to include N4E.
+// - TestProject and Runtime tests have been updated to use UnifiedHost.
+// Remove the conditional compilation and just use the namespace.
+#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+using Unity.Netcode.Unified;
+#endif
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
+
+
 
 namespace Unity.Netcode
 {
@@ -54,7 +68,7 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG || UNITY_EDITOR
         private static List<Type> s_SerializedType = new List<Type>();
         // This is used to control the serialized type not optimized messaging for integration test purposes
         internal static bool DisableNotOptimizedSerializedType;
@@ -462,9 +476,14 @@ namespace Unity.Netcode
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+#if UNIFIED_NETCODE
+                        if (!NetworkConfig.Prefabs.HasGhostPrefabs)
+#endif
+                        {
 
-                        // Process outbound messages
-                        MessageManager.ProcessSendQueues();
+                            // Process outbound messages
+                            MessageManager.ProcessSendQueues();
+                        }
 
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
@@ -1009,6 +1028,8 @@ namespace Unity.Netcode
         {
 #if UNITY_EDITOR
             var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+
+
 #else
             var isParented = transform.parent != null;
             if (isParented)
@@ -1226,6 +1247,23 @@ namespace Unity.Netcode
 
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
+
+#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+            // TODO-FixMe:
+            // We assign transport at this point to preceed the NetworkConnectionManager
+            // being initialized. However, HasGhostPrefabs might not be set at this point
+            // if the prefabs list was set after instantiating the NetworkManager.
+            // Integration tests do this, but user code could do this too.
+            // To-Investigate:
+            // Determine if this really impacts anything having prefabs initialze/register
+            // at this point versus last.
+            NetworkConfig.InitializePrefabs();
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+            }
+#endif
+
             MetricsManager.Initialize(this);
 
             {
@@ -1233,7 +1271,7 @@ namespace Unity.Netcode
 
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG || UNITY_EDITOR
                 if (NetworkConfig.NetworkProfilingMetrics)
                 {
                     MessageManager.Hook(new ProfilingHooks());
@@ -1272,8 +1310,9 @@ namespace Unity.Netcode
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
             BehaviourUpdater.Initialize(this);
-
+#if !UNIFIED_NETCODE
             NetworkConfig.InitializePrefabs();
+#endif
             PrefabHandler.RegisterPlayerPrefab();
 #if UNITY_EDITOR
             BeginNetworkSession();
@@ -1320,6 +1359,55 @@ namespace Unity.Netcode
             return true;
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// The world instance assigned to this NetworkManager instance.
+        /// </summary>
+        public NetcodeWorld NetcodeWorld { get; internal set; }
+        internal void InitializeNetcodeWorld()
+        {
+            if (NetcodeWorld != null)
+            {
+                return;
+            }
+
+            if (this == Singleton)
+            {
+                if (NetCode.Netcode.IsActive)
+                {
+                    Log.Info(new Context(LogLevel.Normal, "Netcode is not active but has an instance at this point."));
+                }
+                /// !! Important !!
+                /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
+                NetCode.Netcode.Reset();
+            }
+
+            /// !! Initialize worlds here !!
+            /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
+            UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
+            DefaultWorldInitialization.Initialize("Default World", false);
+        }
+
+        /// <summary>
+        /// Checks to make sure the NetcodeConfig is configured correctly for hybrid mode. Hybrid mode requires a single world to be used for the NetcodeConfig.
+        /// </summary>
+        /// <returns>True if the configuration is correct; otherwise, false.</returns>
+        private bool UnifiedIsConfiguredCorrectly()
+        {
+            if (NetCodeConfig.Global == null)
+            {
+                Log.Error(new Context(LogLevel.Error, "You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
+                return false;
+            }
+            if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            {
+                Log.Error(new Context(LogLevel.Error, "You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                return false;
+            }
+            return true;
+        }
+#endif
+
         /// <summary>
         /// Starts a server
         /// </summary>
@@ -1351,6 +1439,28 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+                if (LogLevel <= LogLevel.Developer)
+                {
+                    Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
+                }
+                InitializeNetcodeWorld();
+            }
+#endif
+            return InternalStartServer();
+        }
+
+        internal bool InternalStartServer()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1376,7 +1486,6 @@ namespace Unity.Netcode
                 ShutdownInternal();
                 IsListening = false;
             }
-
             return IsListening;
         }
 
@@ -1409,6 +1518,25 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+                Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
+                InitializeNetcodeWorld();
+            }
+#endif
+            return InternalStartClient();
+        }
+
+        internal bool InternalStartClient()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartClient();
@@ -1432,6 +1560,7 @@ namespace Unity.Netcode
 
             return IsListening;
         }
+
 
         /// <summary>
         /// Starts a Host
@@ -1463,6 +1592,25 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (!UnifiedIsConfiguredCorrectly())
+                {
+                    m_ShuttingDown = true;
+                    ShutdownInternal();
+                    return false;
+                }
+                Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
+                InitializeNetcodeWorld();
+            }
+#endif
+            return InternalStartHost();
+        }
+
+        internal bool InternalStartHost()
+        {
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1671,6 +1819,25 @@ namespace Unity.Netcode
             IsListening = false;
             m_ShuttingDown = false;
 
+
+#if UNIFIED_NETCODE
+            // TODO-UNIFIED: Review and align on this being a way to handle knowing if the world should be created.
+            if (NetworkConfig != null && NetworkConfig.Prefabs != null && NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                try
+                {
+                    // Dispose of all worlds
+                    World.DisposeAllWorlds();
+                    // Clear the world assigned from previous session
+                    NetcodeWorld = null;
+                }
+                catch (Exception ex)
+                {
+                    Log.Exception(ex);
+                }
+            }
+#endif
+
             // Generate a local notification that the host client is disconnected
             if (IsHost)
             {
@@ -1698,7 +1865,6 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
-
 
             if (localClient.IsClient)
             {
@@ -1975,5 +2141,12 @@ namespace Unity.Netcode
         }
 #endif
 
+#if UNIFIED_NETCODE
+        // TODO-UNIFIED: We might not need all of this (i.e. UnifiedUpdateConnections might be handled differently in unified)
+        public delegate void OnConnectDelegate(NetcodeConnection connection);
+        public delegate void OnDisconnectDelegate(NetcodeConnection connection);
+        public static OnConnectDelegate OnNetCodeConnect;
+        public static OnDisconnectDelegate OnNetCodeDisconnect;
+#endif
     }
 }

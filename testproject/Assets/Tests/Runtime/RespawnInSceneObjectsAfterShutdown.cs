@@ -8,8 +8,11 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
-    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
+#endif
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";
@@ -23,7 +26,7 @@ namespace TestProject.RuntimeTests
             return false;
         }
 
-        public RespawnInSceneObjectsAfterShutdown(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+        public RespawnInSceneObjectsAfterShutdown(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         protected override void OnOneTimeSetup()
         {

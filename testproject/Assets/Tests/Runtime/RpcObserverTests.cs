@@ -18,6 +18,10 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     public class RpcObserverTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 9;
@@ -155,6 +159,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator DespawnRespawnObserverTest()
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("Hybrid spawning does not support despawn-without-destroy.");
+            }
+#endif
             var nonObservers = new List<ulong>();
             m_ServerRpcObserverObject.ResetTest();
             // Wait for all clients to report they have spawned an instance of our test prefab

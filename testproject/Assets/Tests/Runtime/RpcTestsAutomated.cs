@@ -10,6 +10,10 @@ using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     public class RpcTestsAutomated : NetcodeIntegrationTest
     {
         private bool m_TimedOut;
@@ -21,6 +25,11 @@ namespace TestProject.RuntimeTests
         protected override bool UseCMBService()
         {
             return false;
+        }
+
+        public RpcTestsAutomated(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+
         }
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()

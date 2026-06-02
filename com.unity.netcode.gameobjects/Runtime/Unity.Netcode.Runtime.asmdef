@@ -13,7 +13,9 @@
         "Unity.Networking.Transport",
         "Unity.Collections",
         "Unity.Burst",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.NetCode",
+        "Unity.Entities"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -87,6 +89,16 @@
             "name": "Unity",
             "expression": "6000.5.0a1",
             "define": "SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG"
+        },
+        {
+            "name": "com.unity.netcode",
+            "expression": "1.10.1",
+            "define": "UNIFIED_NETCODE"
+        },
+        {
+            "name": "com.unity.multiplayer.playmode",
+            "expression": "0.1.0",
+            "define": "UNITY_MULTIPLAYER_PLAYMODE"
         },
         {
             "name": "Unity",

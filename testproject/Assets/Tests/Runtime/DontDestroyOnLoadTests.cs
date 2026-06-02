@@ -11,6 +11,9 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     public class DontDestroyOnLoadTests : NetcodeIntegrationTest
     {
         private const int k_ClientsToConnect = 4;

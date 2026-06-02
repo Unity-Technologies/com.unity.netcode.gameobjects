@@ -15,7 +15,8 @@
     },
     "PVP-132-2": {
       "errors": [
-        "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: name of editor assembly should end with '.Editor'"
+        "Editor/CodeGen/Unity.Netcode.Editor.CodeGen.asmdef: name of editor assembly should end with '.Editor'",
+        "Editor/PackageChecker/Unity.Netcode.PackageChecker.Editor.asmdef: name of editor assembly should end with '.Editor'"
       ]
     }
   }

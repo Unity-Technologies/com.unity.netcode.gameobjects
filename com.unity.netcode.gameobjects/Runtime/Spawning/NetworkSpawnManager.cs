@@ -352,6 +352,10 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkManager NetworkManager { get; }
 
+#if UNIFIED_NETCODE
+        internal GhostSpawnManager GhostSpawnManager { get; }
+#endif
+
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private ulong m_NetworkObjectIdCounter;
 
@@ -966,6 +970,17 @@ namespace Unity.Netcode
             var parentNetworkId = serializedObject.HasParent ? serializedObject.ParentObjectId : default;
             var worldPositionStays = (!serializedObject.HasParent) || serializedObject.WorldPositionStays;
 
+#if UNIFIED_NETCODE
+            if (serializedObject.HasGhost)
+            {
+                if (!GhostSpawnManager.TryGetGhostNetworkObjectForSpawn(serializedObject, out networkObject))
+                {
+                    // Don't need to log because the inner function will log
+                    return null;
+                }
+            }
+            else
+#endif
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
             {
@@ -991,7 +1006,6 @@ namespace Unity.Netcode
                     networkObject.gameObject.SetActive(true);
                 }
             }
-
             if (networkObject == null)
             {
                 return null;
@@ -1188,6 +1202,16 @@ namespace Unity.Netcode
                 networkObject.ResetOnDespawn();
                 return false;
             }
+
+#if UNIFIED_NETCODE
+            // If this is a hybrid prefab, the spawn authority is responsible for assigning the network object id to the network object bridge so that it
+            // can be used to link the N4E ghost to the NetworkObject. This is needed because in the hybrid prefab case, the ghost can be spawned before
+            // the NetworkObject is fully spawned.
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.SetNetworkObjectId(networkObject.NetworkObjectId);
+            }
+#endif
 
             // When done spawning invoke post spawn
             networkObject.InvokeBehaviourNetworkPostSpawn();
@@ -1678,6 +1702,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkNetworkObjectAsDestroying(NetworkObject networkObject)
+        {
+            // Always attempt to remove from scene changed updates
+            RemoveNetworkObjectFromSceneChangedUpdates(networkObject);
+#if UNIFIED_NETCODE
+            GhostSpawnManager.MarkNetworkObjectAsDestroying(networkObject.NetworkObjectId);
+#endif
+        }
+
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true);
@@ -1914,7 +1947,14 @@ namespace Unity.Netcode
             {
                 RemovePlayerObject(networkObject, destroyGameObject);
             }
-
+#if UNIFIED_NETCODE
+            // Unified netcode handles destroying the instance of the object on the non-authority side when the object has a ghost representation.
+            if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
+            {
+                // exit early
+                return;
+            }
+#endif
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
@@ -2045,6 +2085,9 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
+#if UNIFIED_NETCODE
+            GhostSpawnManager = new GhostSpawnManager(networkManager);
+#endif
         }
 
         /// <summary>

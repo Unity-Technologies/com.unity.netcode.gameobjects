@@ -47,6 +47,11 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+        [NonSerialized]
+        internal Dictionary<uint, NetworkPrefab> PrefabTable = new Dictionary<uint, NetworkPrefab>();
+#endif
+
         [NonSerialized]
         private List<NetworkPrefab> m_RuntimeAddedPrefabs = new List<NetworkPrefab>();
 
@@ -57,12 +62,18 @@ namespace Unity.Netcode
                 // Don't add this to m_RuntimeAddedPrefabs
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
                 m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+#endif
             }
         }
 
         private void RemoveTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
         {
             m_Prefabs.Remove(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+            PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+#endif
         }
 
         /// <summary>
@@ -95,6 +106,9 @@ namespace Unity.Netcode
         {
             m_Prefabs.Clear();
             NetworkPrefabsLists.RemoveAll(x => x == null);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+            PrefabTable.Clear();
+#endif
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
@@ -127,10 +141,16 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                    PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+#endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                    PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+#endif
                 }
             }
 
@@ -139,10 +159,16 @@ namespace Unity.Netcode
                 if (AddPrefabRegistration(networkPrefab))
                 {
                     m_Prefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                    PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+#endif
                 }
                 else
                 {
                     removeList?.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                    PrefabTable.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+#endif
                 }
             }
 
@@ -175,6 +201,9 @@ namespace Unity.Netcode
             {
                 m_Prefabs.Add(networkPrefab);
                 m_RuntimeAddedPrefabs.Add(networkPrefab);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+                PrefabTable.TryAdd(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+#endif
                 return true;
             }
 
@@ -202,6 +231,9 @@ namespace Unity.Netcode
             m_RuntimeAddedPrefabs.Remove(prefab);
             OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
+#if UNIFIED_NETCODE && UNIFIED_NGO_REGISTERS_PREFABS
+            PrefabTable.Remove(prefab.SourcePrefabGlobalObjectIdHash);
+#endif
         }
 
         /// <summary>
@@ -277,6 +309,55 @@ namespace Unity.Netcode
             return false;
         }
 
+#if UNIFIED_NETCODE
+        internal bool HasGhostPrefabs { get; private set; }
+
+#if UNIFIED_NGO_REGISTERS_PREFABS
+        /// <summary>
+        /// TODO: Either keep or remove prior to freeze.
+        /// Leaving this here in case we have to control when things get registered.
+        /// </summary>
+        internal bool HasPendingGhostPrefabs { get; private set; }
+        private List<NetworkPrefab> m_PendingGhostRegistration = new List<NetworkPrefab>();
+        /// <summary>
+        /// UNIFIED-POC<br />
+        /// Hybrid NetworkObject-Ghost Prefab Registration<br />
+        /// </summary>
+        /// <remarks>
+        /// When <see cref="NetworkObject.HasGhost"/> is true, <see cref="NetworkPrefab"/>s
+        /// will mark themselves as having a ghost during <see cref="NetworkPrefab.Validate(int)"/>.
+        /// After validation, if a network prefab's <see cref="NetworkPrefab.HasGhost"/> value is
+        /// set, then it is added to <see cref="m_PendingGhostRegistration"/>.
+        /// Within <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/> during the <see cref="NetworkUpdateStage.EarlyUpdate"/>,
+        /// if <see cref="HasPendingGhostPrefabs"/> is true then <see cref="RegisterGhostPrefabs(NetworkManager)"/> will be invoked.
+        /// This will repeat until the hosted single world instance is created.
+        /// </remarks>
+        /// <param name="networkManager"></param>
+        internal void RegisterGhostPrefabs(NetworkManager networkManager)
+        {
+            if (!HasPendingGhostPrefabs)
+            {
+                Debug.LogWarning($"Should not be invoking!");
+                return;
+            }
+            var isHost = networkManager.IsHost;
+            for (int i = m_PendingGhostRegistration.Count - 1; i >= 0; i--)
+            {
+                var networkPrefab = m_PendingGhostRegistration[i];
+
+                // Returns false if the single world is not available yet
+                if (NetCode.Netcode.RegisterPrefabSingleWorld(networkPrefab.Prefab, isHost, networkManager.NetcodeWorld))
+                {
+                    Debug.Log($"[{nameof(NetworkPrefabs)}][{nameof(RegisterGhostPrefabs)}] Registered hybrid spawned object: {networkPrefab.Prefab.name}");
+                    m_PendingGhostRegistration.RemoveAt(i);
+                }
+            }
+            HasPendingGhostPrefabs = m_PendingGhostRegistration.Count > 0;
+        }
+#endif
+#endif
+
+
         /// <summary>
         /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
         /// </summary>
@@ -294,6 +375,18 @@ namespace Unity.Netcode
 
             uint source = networkPrefab.SourcePrefabGlobalObjectIdHash;
             uint target = networkPrefab.TargetPrefabGlobalObjectIdHash;
+
+#if UNIFIED_NETCODE
+            if (networkPrefab.HasGhost)
+            {
+                HasGhostPrefabs = true;
+
+#if UNIFIED_NGO_REGISTERS_PREFABS
+                HasPendingGhostPrefabs = true;
+                m_PendingGhostRegistration.TryAdd(networkPrefab);
+#endif
+            }
+#endif
 
             // Make sure the prefab isn't already registered.
             if (NetworkPrefabOverrideLinks.ContainsKey(source))

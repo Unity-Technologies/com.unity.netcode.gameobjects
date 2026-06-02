@@ -9,8 +9,11 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(NetworkTopologyTypes.ClientServer)]
-    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
+#endif
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     internal class NetworkObjectSpawning : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "NetworkObjectSpawnerTest";
@@ -27,7 +30,7 @@ namespace TestProject.RuntimeTests
             return false;
         }
 
-        public NetworkObjectSpawning(NetworkTopologyTypes networkTopology) : base(networkTopology) { }
+        public NetworkObjectSpawning(NetworkTopologyTypes networkTopology, HostOrServer hostOrServer) : base(networkTopology, hostOrServer) { }
 
 
         protected override IEnumerator OnSetup()

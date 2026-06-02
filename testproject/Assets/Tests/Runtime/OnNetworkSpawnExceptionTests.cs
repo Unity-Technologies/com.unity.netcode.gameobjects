@@ -2,11 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.TestTools;
+using Assert = UnityEngine.Assertions.Assert;
 using Random = UnityEngine.Random;
 
 namespace TestProject.RuntimeTests
@@ -82,6 +83,10 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     public class OnNetworkSpawnExceptionTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -99,6 +104,11 @@ namespace TestProject.RuntimeTests
         protected override bool UseCMBService()
         {
             return false;
+        }
+
+        public OnNetworkSpawnExceptionTests(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+
         }
 
         [UnityTest]
@@ -238,7 +248,6 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            m_UseHost = false;
             OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns = 0;
             OnNetworkSpawnThrowsExceptionComponent.NumServerSpawns = 0;
             OnNetworkSpawnNoExceptionComponent.NumClientSpawns = 0;
