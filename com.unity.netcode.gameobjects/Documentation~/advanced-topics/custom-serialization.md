@@ -1,93 +1,68 @@
 # Custom serialization
 
-Netcode uses a default serialization pipeline when using `RPC`s, `NetworkVariable`s, or any other Netcode-related tasks that require serialization. The serialization pipeline looks like this:
+Before reading these docs, ensure you have read the [serialization overview](./serialization/serialization-overview.md)
 
-``
-Custom Types => Built In Types => INetworkSerializable
-``
+Netcode for GameObjects provide support for serializing any unsupported types, and with the API provided, it can even be done with types that you haven't defined yourself, those who are behind a 3rd party wall, such as .NET types. However, the way custom serialization is implemented for RPCs and NetworkVariables is slightly different.
 
-That is, when Netcode first gets hold of a type, it will check for any custom types that the user have registered for serialization, after that it will check if it's a built in type, such as a Vector3, float etc. These are handled by default. If not, it will check if the type inherits `INetworkSerializable`, if it does, it will call it's write methods.
+Let's explore different ways to implement custom serialization for a custom health struct.
 
-By default, any type that satisfies the `unmanaged` generic constraint can be automatically serialized as RPC parameters. This includes all basic types (bool, byte, int, float, enum, etc) as well as any structs that has only these basic types.
+[!code-cs[](../../Tests/Editor/DocumentationCodeSamples/Serialization/SerializationCustomization.cs#HealthStruct)]
 
-With this flow, you can provide support for serializing any unsupported types, and with the API provided, it can even be done with types that you haven't defined yourself, those who are behind a 3rd party wall, such as .NET types. However, the way custom serialization is implemented for RPCs and NetworkVariables is slightly different.
+## FastBufferReader and FastBufferWriter
 
-### Serialize a type in a Remote Procedure Call (RPC)
+[`FastBufferReader` and `FastBufferWriter`](./fastbufferwriter-fastbufferreader.md) are the main serialization tools in Netcode for GameObjects. To register serialization for a custom type, or override an already handled type, you need to create extension methods for `FastBufferReader.ReadValueSafe()` and `FastBufferWriter.WriteValueSafe()`. Because the `FastBufferReader` and `FastBufferWriter` already know how to read and write primitive types you want to use this functionality to serialize your custom type.
+
+[!code-cs[](../../Tests/Editor/DocumentationCodeSamples/Serialization/SerializationCustomization.cs#FastBuffer)]
+
+Additionally, you may also need to add extensions for `FastBufferReader.ReadValue()`, `FastBufferWriter.WriteValue()` if you would like to provide for serialization without [bounds checking](./fastbufferwriter-fastbufferreader.md#bounds-checking)
+
+## BufferSerializer
+
+You can also add custom serialization support to the bi-directional [`BufferSerializer`](./bufferserializer.md). This will make this type readily available within [`INetworkSerializable`](serialization/inetworkserializable.md) types and in the [`NetworkBehaviour.OnSynchronize()` method](../components/core/networkbehaviour-synchronize.md#prespawn-synchronization-with-onsynchronize):
+
+[!code-cs[](../../Tests/Editor/DocumentationCodeSamples/Serialization/SerializationCustomization.cs#BufferSerializer)]
+
+## Remote Procedure Call (RPC)
 
 > [!NOTE]
-> From versioln 1.7.0 Remote Procedure Calls (RPCs) can also use the Network Variable flow, but NetworkVariables can't use the RPC flow. The RPC flow is more efficient when RPCs serialize the type. Unity selects the RPC flow if you implement both the RPC and Network variable flows. When a type is used by both NetworkVariables and RPCs you can use the NetworkVariable flow to lower maintenance requirements.
+> Remote Procedure Calls (RPCs) can also use the Network Variable flow, but NetworkVariables can't use the RPC flow. The RPC flow is more efficient when only RPCs need to serialize the type. When a type is used by both NetworkVariables and RPCs you can implement just the NetworkVariable flow to lower maintenance requirements. Unity will select the RPC flow for RPCs if you have implemented both flows.
 
-To register a custom type, or override an already handled type, you need to create extension methods for `FastBufferReader.ReadValueSafe()` and `FastBufferWriter.WriteValueSafe()`:
+To serialize a custom type, or override an already handled type, you need to create extension methods for `FastBufferReader.ReadValueSafe()` and `FastBufferWriter.WriteValueSafe()` as [outlined above](#fastbufferreader-and-fastbufferwriter).
 
-```csharp
-// Tells the Netcode how to serialize and deserialize Url in the future.
-// The class name doesn't matter here.
-public static class SerializationExtensions
-{
-    public static void ReadValueSafe(this FastBufferReader reader, out Url url)
-    {
-        reader.ReadValueSafe(out string val);
-        url = new Url(val);
-    }
+The code generation for RPCs will automatically pick up and use these functions, as they'll become available via `FastBufferWriter` and `FastBufferReader` directly.
 
-    public static void WriteValueSafe(this FastBufferWriter writer, in Url url)
-    {
-        writer.WriteValueSafe(url.Value);
-    }
-}
-```
+## NetworkVariable
 
-The code generation for RPCs will automatically pick up and use these functions, and they'll become available via `FastBufferWriter` and `FastBufferReader` directly.
+Implementing [`INetworkSerializable`](./serialization/inetworkserializable.md) is the cleanest and most straightforward way to customize the serialization on a type within a [`NetworkVariable`](../basics/networkvariable.md). `UserNetworkVariableSerialization` provides runtime configuration to further override serialization of a type.
 
-You can also optionally use the same method to add support for `BufferSerializer<TReaderWriter>.SerializeValue()`, if you wish, which will make this type readily available within [`INetworkSerializable`](serialization/inetworkserializable.md) types:
+First you will need to create extension methods for `FastBufferReader.ReadValueSafe()` and `FastBufferWriter.WriteValueSafe()` as [outlined above](#fastbufferreader-and-fastbufferwriter).
+
+Secondly, somewhere in your application startup (before any `NetworkVariable`s using the affected types will be serialized), add the following:
 
 ```csharp
-// The class name doesn't matter here.
-public static class SerializationExtensions
-{
-    public static void SerializeValue<TReaderWriter>(this BufferSerializer<TReaderWriter> serializer, ref Url url) where TReaderWriter: IReaderWriter
-    {
-        if (serializer.IsReader)
-        {
-            url = new Url();
-        }
-        serializer.SerializeValue(ref url.Value);
-    }
-}
+UserNetworkVariableSerialization<Health>.WriteValue = SerializationExtensions.WriteValueSafe;
+UserNetworkVariableSerialization<Health>.ReadValue = SerializationExtensions.ReadValueSafe;
+UserNetworkVariableSerialization<Health>.DuplicateValue = (in Health value, ref Health duplicatedValue) => duplicatedValue = value;
 ```
 
-Additionally, you can also add extensions for `FastBufferReader.ReadValue()`, `FastBufferWriter.WriteValue()`, and `BufferSerializer<TReaderWriter>.SerializeValuePreChecked()` to provide more optimal implementations for manual serialization using `FastBufferReader.TryBeginRead()`, `FastBufferWriter.TryBeginWrite()`, and `BufferSerializer<TReaderWriter>.PreCheck()`, respectively. However, none of these will be used for serializing RPCs - only `ReadValueSafe` and `WriteValueSafe` are used.
+`DuplicateValue` should return a complete deep copy of the value that `NetworkVariable<T>` compares to a previous value. It is used to check whether the value has changed. `DuplicateValue` avoids re-serializing it over the network every frame when it hasn't changed.
 
-### For NetworkVariable
+> [!NOTE]
+> `WriteValue`, `ReadValue` and `DuplicateValue` all need to be defined to customize your serialization.
 
-`NetworkVariable` goes through a slightly different pipeline than `RPC`s and relies on a different process for determining how to serialize its types. As a result, making a custom type available to the `RPC` pipeline doesn't automatically make it available to the `NetworkVariable` pipeline, and vice-versa. The same method can be used for both, but currently, `NetworkVariable` requires an additional runtime step to make it aware of the methods.
+> [!NOTE]
+> `WriteValue` and `ReadValue` will not be used if a type implements `INetworkSerializable` or [`INetworkSerializeByMemcpy`](./serialization/inetworkserializebymemcpy.md).
 
-To add custom serialization support in `NetworkVariable`, follow the steps from the "For RPCs" section to write extension methods for `FastBufferReader` and `FastBufferWriter`; then, somewhere in your application startup (before any `NetworkVariable`s using the affected types will be serialized) add the following:
+### Serializing delta updates
 
-```csharp
-UserNetworkVariableSerialization<Url>.WriteValue = SerializationExtensions.WriteValueSafe;
-UserNetworkVariableSerialization<Url>.ReadValue = SerializationExtensions.ReadValueSafe;
-```
+Simply reading and writing a value will provide the minimal amount of `NetworkVariable` functionality. This will synchronize your whole type any time any value within the type value changes. To provide sending delta updates rather than a full updates whenever your type has changed, implement the following functions:
 
-You can also use lambda expressions here:
+- `WriteDelta`
+- `ReadDelta`
 
-```csharp
-UserNetworkVariableSerialization<Url>.WriteValue = (FastBufferWriter writer, in Url url) =>
-{
-    writer.WriteValueSafe(url.Value);
-};
+> [!NOTE]
+> Both `WriteDelta` and `ReadDelta` need to be defined for either to be used.
 
-UserNetworkVariableSerialization<Url>.ReadValue = (FastBufferReader reader, out Url url)
-{
-    reader.ReadValueSafe(out string val);
-    url = new Url(val);
-};
-```
+Here is a full implementation of a custom type with the methods needed for `UserNetworkVariableSerialization`
 
-When you create an extension method in `NetworkVariable<T>` you need to implement the following values:
-
-- `WriteValue`
-- `ReadValue`
-- `DuplicateValue`
-
-`DuplicateValue` returns a complete deep copy of the value that `NetworkVariable<T>` compares to a previous value to check whether or not that values has changed. This avoids reserializing it over the network every frame when it hasn't changed.
+[!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/NetworkVariable/NetworkVariableSerialization.cs#HealthExample)]

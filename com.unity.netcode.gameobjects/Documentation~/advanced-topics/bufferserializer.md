@@ -1,5 +1,7 @@
 # BufferSerializer
 
+It's recommended to read the [serialization overview](./serialization/serialization-overview.md) before reading this documentation.
+
 `BufferSerializer<TReaderWriter>` is the bi-directional serializer primarily used for serializing within [`INetworkSerializable`](serialization/inetworkserializable.md) types. It wraps [`FastBufferWriter` and `FastBufferReader`](fastbufferwriter-fastbufferreader.md) to provide high performance serialization, but has a couple of differences to make it more user-friendly:
 
 - Rather than writing separate methods for serializing and deserializing, `BufferSerializer<TReaderWriter>` allows writing a single method that can handle both operations, which reduces the possibility of a mismatch between the two
@@ -15,3 +17,7 @@ However, when those downsides are unreasonable, `BufferSerializer<TReaderWriter>
 
 - For performance, you can use `PreCheck(int amount)` followed by `SerializeValuePreChecked()` to perform bounds checking for multiple fields at once.
 - For both performance and bandwidth usage, you can obtain the wrapped underlying reader/writer via `serializer.GetFastBufferReader()` when `serializer.IsReader` is `true`, and `serializer.GetFastBufferWriter()` when `serializer.IsWriter` is `true`. These provide micro-performance improvements by removing a level of indirection, and also give you a type you can use with `BytePacker` and `ByteUnpacker`.
+
+## Serializing custom types
+
+`BufferSerializer<TReaderWriter>` can be extended via extension methods to handle serializing custom types. Refer to [customizing `BufferSerializer`](./custom-serialization.md#bufferserializer) for instructions on how to do this.
