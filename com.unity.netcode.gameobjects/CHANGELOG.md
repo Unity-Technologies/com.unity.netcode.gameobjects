@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
 
 ### Deprecated
 
