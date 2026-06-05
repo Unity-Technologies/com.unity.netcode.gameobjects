@@ -1,10 +1,11 @@
-# INetworkSerializable
+# Customize serializable types with INetworkSerializable
 
-It's recommended to read the [serialization overview](./serialization/serialization-overview.md) to better understand this documentation.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before customizing serializable types with `INetworkSerializable`.
 
-You can use the `INetworkSerializable` interface to define custom serializable types. This interface has one function: `NetworkSerialize<T>(BufferSerializer<T> serializer)`. This function is provided a bi-directional [`BufferSerializer`](../bufferserializer.md) that you can use to implement bi-directional custom serialization.
+You can use the `INetworkSerializable` interface to define custom serializable types. This interface has one function: `NetworkSerialize<T>(BufferSerializer<T> serializer)`, which ingests a bi-directional [`BufferSerializer`](../bufferserializer.md) that you can use to implement bi-directional custom serialization.
 
-`INetworkSerializable` can be implemented on both unmanaged types *and* managed types. However, we recommend avoiding serializing managed types where possible to improve your game's performance.
+`INetworkSerializable` can be implemented on both managed and unmanaged types, although serializing managed types isn't recommended because it can reduce your game's performance.
 
 ```csharp
 struct SpawnPoint : INetworkSerializable

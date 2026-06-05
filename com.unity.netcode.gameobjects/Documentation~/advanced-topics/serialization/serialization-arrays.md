@@ -1,6 +1,7 @@
 # Arrays and native containers
 
-It's recommended to read the [serialization overview](./serialization/serialization-overview.md) to better understand this documentation.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before learning how to serialize arrays and native containers.
 
 Netcode for GameObjects has built-in serialization code for arrays of [C# value-type primitives](cprimitives.md), like `int[]`, and [Unity primitive types](unity-primitives.md). Any arrays of types that aren't handled by the built-in serialization code, such as custom types, need to be handled using a container class or structure that implements the [`INetworkSerializable`](inetworkserializable.md) interface.
 

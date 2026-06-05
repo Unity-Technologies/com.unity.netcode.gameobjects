@@ -2,7 +2,8 @@
 
 In addition to the standard [`NetworkVariable`s](networkvariable.md) available in Netcode for GameObjects, you can also create custom `NetworkVariable`s for advanced implementations. The `NetworkVariable` and `NetworkList` classes were created as `NetworkVariableBase` class implementation examples. While the `NetworkVariable<T>` class is considered production ready, you might run into scenarios where you have a more advanced implementation in mind. In this case, you can create your own custom implementation.
 
-It's recommended to read the [serialization overview](./serialization/serialization-overview.md) to understand how Netcode for GameObjects handles serialization.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand how Netcode for GameObjects handles serialization.
 
 To create your own `NetworkVariableBase`-derived container, you should:
 
@@ -74,7 +75,7 @@ You can use `AreEqual` to determine if a value is different from the value that 
 The type you use must be serializable according to the [supported types list](./networkvariable.md#supported-types). Each type needs its own serializer instantiated, so this step tells the codegen which types to create serializers for. Unity's code generator assumes that all `NetworkVariable` types exist as fields inside NetworkBehaviour types. This means that Unity only inspects fields inside NetworkBehaviour types to identify the types to create serializers for.
 
 > [!NOTE]
-> These attributes won't generate delta serialization. If you would like to customize how deltas are sent when a custom value has partially changed, look into [`UserNetworkVariableSerialization`](../advanced-topics/custom-serialization.md#networkvariable).
+> These attributes won't generate delta serialization. If you would like to customize how deltas are sent when a custom value has partially changed, refer to [`UserNetworkVariableSerialization`](../advanced-topics/custom-serialization.md#networkvariable).
 
 ## Custom NetworkVariableBase example
 

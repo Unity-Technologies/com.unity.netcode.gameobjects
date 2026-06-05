@@ -1,6 +1,7 @@
 # FastBufferWriter and FastBufferReader
 
-It's recommended to read the [serialization overview](./serialization/serialization-overview.md) before reading this documentation.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before learning about `FastBufferWriter` and `FastBufferReader`.
 
 The serialization and deserialization is done via `FastBufferWriter` and `FastBufferReader`. These have methods for serializing individual types and methods for serializing packed numbers, but in particular provide a high-performance method called `WriteValue()/ReadValue()` (for Writers and Readers, respectively) that can extremely quickly write an entire unmanaged struct to a buffer.
 

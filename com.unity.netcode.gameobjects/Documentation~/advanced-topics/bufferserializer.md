@@ -1,6 +1,7 @@
 # BufferSerializer
 
-It's recommended to read the [serialization overview](./serialization/serialization-overview.md) before reading this documentation.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before learning how to use `BufferSerializer`.
 
 `BufferSerializer<TReaderWriter>` is the bi-directional serializer primarily used for serializing within [`INetworkSerializable`](serialization/inetworkserializable.md) types. It wraps [`FastBufferWriter` and `FastBufferReader`](fastbufferwriter-fastbufferreader.md) to provide high performance serialization, but has a couple of differences to make it more user-friendly:
 
