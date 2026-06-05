@@ -47,7 +47,7 @@ test_platforms:
           type: Unity::VM
           image: package-ci/ubuntu-22.04:v4.85.0
           flavor: b1.large
-          smaller_flavor: b1.medium
+          smaller_flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: StandaloneLinux64
         - name: win
