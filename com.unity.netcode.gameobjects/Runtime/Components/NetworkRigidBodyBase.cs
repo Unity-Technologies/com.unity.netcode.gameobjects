@@ -890,10 +890,8 @@ namespace Unity.Netcode.Components
                 {
                     // switch it back to the original interpolation and exit early
                     SetInterpolation(m_OriginalInterpolation);
+                    return;
                 }
-
-                // Determine if the rigid body being used is configured for extrapolation.
-                var isRigidbodyExtrapolating = HasInterpolationTypeSet(InterpolationTypes.Extrapolate);
 
                 // If the Rigidbody or Rigidbody2D is currently configured to extrapolate
                 if (HasInterpolationTypeSet(InterpolationTypes.Extrapolate))
