@@ -1,7 +1,7 @@
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using static Unity.Netcode.Components.NetworkTransform;
+
 
 namespace Unity.Netcode.Components
 {
