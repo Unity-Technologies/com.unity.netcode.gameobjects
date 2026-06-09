@@ -96,17 +96,29 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_CurrentConfiguration = configuration;
                 ApplyCurrentTestConfiguration();
+
+                // Host, Server, DAHost/Session-owner are spawn authority
                 yield return RunTestConfiguration();
+
+                // When using distributed authority, swap the session owner with
+                // the non-session owner client as being the spawn authority.
+                if (m_DistributedAuthority)
+                {
+                    yield return RunTestConfiguration(true);
+                }
             }
         }
 
         /// <summary>
         /// Validates the current applied test configuration.
         /// </summary>
-        private IEnumerator RunTestConfiguration()
+        private IEnumerator RunTestConfiguration(bool swapAuthority = false)
         {
-            var authority = GetAuthorityNetworkManager();
-            var nonAuthority = GetNonAuthorityNetworkManager();
+            // The authority is the "spawn authority".
+            // Distributed authority runs this a second time with a non-session owner client being the
+            // spawn authority to validate that scenario works correctly.
+            var authority = !swapAuthority ? GetAuthorityNetworkManager() : GetNonAuthorityNetworkManager();
+            var nonAuthority = !swapAuthority ? GetNonAuthorityNetworkManager() : GetAuthorityNetworkManager();
 
             // Spawn instances of both the 3D and 2D prefabs configured for the current test.
             m_3DAuthorityInstance = SpawnObject(m_RigidbodyPrefab, authority).GetComponent<NetworkObject>();
