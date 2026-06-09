@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
 using System.Runtime.CompilerServices;
 #endif
 using UnityEngine;
