@@ -72,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
         private string m_ConfigHeader;
         private void ApplyCurrentTestConfiguration()
         {
-            // Configure both 3D and 2D versions based on the current test configuration 
+            // Configure both 3D and 2D versions based on the current test configuration
             m_3DNetworkTransform.Interpolate = m_CurrentConfiguration.enableInterpolation;
             m_PrefabRigidbody.interpolation = m_CurrentConfiguration.interpolationType;
             m_PrefabNetworkRigidbody.UseRigidBodyForMotion = m_CurrentConfiguration.useRigidbodyForMotion;
