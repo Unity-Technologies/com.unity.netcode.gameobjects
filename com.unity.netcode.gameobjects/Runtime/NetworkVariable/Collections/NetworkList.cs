@@ -683,14 +683,8 @@ namespace Unity.Netcode
         /// <summary>
         /// This method should not be used. It is left over from a previous interface
         /// </summary>
-        public int LastModifiedTick
-        {
-            get
-            {
-                // todo: implement proper network tick for NetworkList
-                return NetworkTickSystem.NoTick;
-            }
-        }
+        [Obsolete("This property is no longer used and will be removed in a future version.")]
+        public int LastModifiedTick => NetworkTickSystem.NoTick;
 
         /// <summary>
         /// Overridden <see cref="IDisposable"/> implementation.

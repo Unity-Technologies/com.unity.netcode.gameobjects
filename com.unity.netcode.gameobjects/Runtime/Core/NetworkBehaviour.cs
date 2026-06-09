@@ -45,7 +45,7 @@ namespace Unity.Netcode
         internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
         internal static readonly Dictionary<Type, Dictionary<uint, RpcInvokePermission>> __rpc_permission_table = new Dictionary<Type, Dictionary<uint, RpcInvokePermission>>();
 
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, string>> __rpc_name_table = new Dictionary<Type, Dictionary<uint, string>>();
 #endif
@@ -147,7 +147,7 @@ namespace Unity.Netcode
 
             bufferWriter.Dispose();
 
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
             TrackRpcMetricsSend(ref serverRpcMessage, rpcMethodId, rpcWriteSize);
 #endif
         }
@@ -271,7 +271,7 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
             if (!ValidateRpcMessageMetrics(GetType()))
             {
                 return;
@@ -1004,12 +1004,12 @@ namespace Unity.Netcode
             var rpcType = GetType();
             __rpc_func_table[rpcType][hash] = handler;
             __rpc_permission_table[rpcType][hash] = permission;
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
             __rpc_name_table[rpcType][hash] = rpcMethodName;
 #endif
         }
 
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ValidateRpcMessageMetrics(Type type)
         {
@@ -1127,7 +1127,7 @@ namespace Unity.Netcode
             {
                 __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
                 __rpc_permission_table[GetType()] = new Dictionary<uint, RpcInvokePermission>();
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 __rpc_name_table[GetType()] = new Dictionary<uint, string>();
 #endif
                 __initializeRpcs();
@@ -1300,8 +1300,6 @@ namespace Unity.Netcode
                 }
             }
         }
-
-        internal static bool LogSentVariableUpdateMessage;
 
         private bool CouldHaveDirtyNetworkVariables()
         {

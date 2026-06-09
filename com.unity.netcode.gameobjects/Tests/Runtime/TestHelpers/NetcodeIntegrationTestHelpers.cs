@@ -690,9 +690,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 networkObject.GlobalObjectIdHash = ++s_AutoIncrementGlobalObjectIdHashCounter;
             }
 
-            // Prevent object from being snapped up as a scene object
-            networkObject.IsSceneObject = false;
-
             // To avoid issues with integration tests that forget to clean up,
             // this feature only works with NetcodeIntegrationTest derived classes
             if (IsNetcodeIntegrationTestRunning)

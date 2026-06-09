@@ -743,8 +743,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL;NETCODE_EXPERIMENTAL_SINGLE_WORLD_HOST;OUT_OF_BAND_RPC
   additionalCompilerArguments:
-    Standalone:
-    - -warnaserror
+    Standalone: []
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}

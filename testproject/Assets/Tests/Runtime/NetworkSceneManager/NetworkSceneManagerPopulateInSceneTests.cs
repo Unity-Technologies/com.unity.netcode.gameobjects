@@ -40,7 +40,7 @@ namespace TestProject.RuntimeTests
             // the scene is loaded (i.e. IsSceneObject is null)
             var inScenePrefab = CreateNetworkObjectPrefab("NewSceneObject");
             var networkObject = inScenePrefab.GetComponent<NetworkObject>();
-            networkObject.IsSceneObject = null;
+            networkObject.InScenePlaced = true;
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
 
@@ -49,7 +49,7 @@ namespace TestProject.RuntimeTests
             // unloading/reloading any scenes.
             inScenePrefab = CreateNetworkObjectPrefab("SetInSceneObject");
             networkObject = inScenePrefab.GetComponent<NetworkObject>();
-            networkObject.IsSceneObject = true;
+            networkObject.InScenePlaced = true;
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
         }

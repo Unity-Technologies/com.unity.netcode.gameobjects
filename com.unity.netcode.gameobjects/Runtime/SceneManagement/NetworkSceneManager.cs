@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 
 namespace Unity.Netcode
@@ -548,6 +549,15 @@ namespace Unity.Netcode
         /// not destroy temporary scene are moved into the active scene
         /// </summary>
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            DisableReSynchronization = false;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+            SceneUnloadEventHandler.ResetInstances();
+        }
+#endif
 
         /// <summary>
         /// Client and Server:
@@ -590,7 +600,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handle NetworkSeneManager clean up
+        /// Handle NetworkSceneManager clean up
         /// </summary>
         public void Dispose()
         {
@@ -1570,6 +1580,9 @@ namespace Unity.Netcode
         internal class SceneUnloadEventHandler
         {
             private static Dictionary<NetworkManager, List<SceneUnloadEventHandler>> s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+#if UNITY_EDITOR
+            internal static void ResetInstances() => s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+#endif
 
             internal static void RegisterScene(NetworkSceneManager networkSceneManager, Scene scene, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
             {
@@ -2234,7 +2247,7 @@ namespace Unity.Netcode
                 // This is only done for dynamically spawned NetworkObjects
                 // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
                 // then skip it (it will reside in the currently active scene in this scenario on the client-side)
-                if (networkObject.IsSceneObject.Value == false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+                if (!networkObject.InScenePlaced && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
                 {
                     networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
@@ -2709,7 +2722,7 @@ namespace Unity.Netcode
                 if (!networkObject.DestroyWithScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                         // When temporarily migrating to the DDOL, adjust the network and origin scene handles so no messages are generated
@@ -2721,10 +2734,9 @@ namespace Unity.Netcode
                 else if (networkObject.HasAuthority)
                 {
                     networkObject.SetIsDestroying();
-                    var isSceneObject = networkObject.IsSceneObject;
                     // Only destroy non-scene placed NetworkObjects to avoid warnings about destroying in-scene placed NetworkObjects.
                     // (MoveObjectsToDontDestroyOnLoad is only invoked during a scene event type of load and the load scene mode is single)
-                    networkObject.Despawn(isSceneObject.HasValue && isSceneObject.Value == false);
+                    networkObject.Despawn(!networkObject.InScenePlaced);
                 }
             }
         }
@@ -2745,24 +2757,32 @@ namespace Unity.Netcode
             {
                 ScenePlacedObjects.Clear();
             }
-            var networkObjects = FindObjects.ByType<NetworkObject>();
+            var sceneHandle = sceneToFilterBy.handle;
 
             // Just add every NetworkObject found that isn't already in the list
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value
             // During Client Side Synchronization: We add them on a FIFO basis, for each scene loaded without clearing, and then
             // at the end of scene loading we use this list to soft synchronize all in-scene placed NetworkObjects
-            foreach (var networkObjectInstance in networkObjects)
+            foreach (var networkObjectInstance in FindObjects.FromSceneByType<NetworkObject>(sceneToFilterBy, true))
             {
-                var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
-                var sceneHandle = networkObjectInstance.gameObject.scene.handle;
-                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-#if UNIFIED_NETCODE
-                if (!networkObjectInstance.HasGhost && networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
-                    networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
-#else
-                if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
-                    networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
+                if (!networkObjectInstance.InScenePlaced)
+                {
+                    continue;
+                }
 
+                if (networkObjectInstance.NetworkManagerOwner == null)
+                {
+                    networkObjectInstance.NetworkManagerOwner = NetworkManager;
+                }
+
+                var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
+
+                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per-scene basis (for additive scenes)
+#if UNIFIED_NETCODE
+                // TODO: When we solve for GhostAdapter in-scene placed.
+                if (!networkObjectInstance.HasGhost && networkObjectInstance.NetworkManagerOwner == NetworkManager && networkObjectInstance.isActiveAndEnabled)
+#else
+                if (networkObjectInstance.NetworkManagerOwner == NetworkManager && networkObjectInstance.isActiveAndEnabled)
 #endif
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
@@ -2801,7 +2821,7 @@ namespace Unity.Netcode
                 {
                     // only move dynamically spawned network objects, with no parent as child objects will follow,
                     // back into the currently active scene
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         if (NetworkManager.DistributedAuthorityMode)
                         {
@@ -2885,7 +2905,7 @@ namespace Unity.Netcode
             }
 
             // Ignore in-scene placed NetworkObjects
-            if (networkObject.IsSceneObject != false)
+            if (networkObject.InScenePlaced)
             {
                 // Really, this should ever happen but in case it does
                 if (NetworkManager.LogLevel == LogLevel.Developer)
