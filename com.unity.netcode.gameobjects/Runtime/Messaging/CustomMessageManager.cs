@@ -434,7 +434,7 @@ namespace Unity.Netcode
         /// <exception cref="OverflowException">Exception thrown in case validation fails</exception>
         private unsafe void ValidateMessageSize(FastBufferWriter messageStream, NetworkDelivery networkDelivery, bool isNamed)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             var maxNonFragmentedSize = m_NetworkManager.MessageManager.NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>() - sizeof(NetworkBatchHeader);
             if (isNamed)
             {

@@ -70,7 +70,7 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private static List<Type> s_SerializedType = new List<Type>();
         // This is used to control the serialized type not optimized messaging for integration test purposes
         internal static bool DisableNotOptimizedSerializedType;
@@ -1176,7 +1176,7 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             if (!DisableNotOptimizedSerializedType)
             {
                 s_SerializedType.Clear();
@@ -1239,7 +1239,7 @@ namespace Unity.Netcode
 
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
                 if (NetworkConfig.NetworkProfilingMetrics)
                 {
                     MessageManager.Hook(new ProfilingHooks());

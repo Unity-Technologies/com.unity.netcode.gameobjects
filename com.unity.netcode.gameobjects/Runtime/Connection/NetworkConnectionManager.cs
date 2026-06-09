@@ -96,7 +96,7 @@ namespace Unity.Netcode
     /// </summary>
     public sealed class NetworkConnectionManager
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(NetworkMessageManager.HandleIncomingData)}");
@@ -438,7 +438,7 @@ namespace Unity.Netcode
 
         internal void PollAndHandleNetworkEvents()
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportPollMarker.Begin();
 #endif
             NetworkEvent networkEvent;
@@ -453,7 +453,7 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportPollMarker.End();
 #endif
         }
@@ -501,7 +501,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void ConnectEventHandler(ulong transportId)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportConnect.Begin();
 #endif
             // Assumptions:
@@ -522,7 +522,7 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"[TransportApproval][Server] TransportId {transportId} is already connected to this server!");
                     }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
                     s_TransportConnect.End();
 #endif
                     return;
@@ -539,7 +539,7 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError("[TransportApproval][Client] Client received a transport connection event after already connecting!");
                     }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
                     s_TransportConnect.End();
 #endif
                     return;
@@ -577,7 +577,7 @@ namespace Unity.Netcode
                 StartClientApprovalCoroutine(clientId);
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportConnect.End();
 #endif
         }
@@ -587,7 +587,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void DataEventHandler(ulong transportClientId, ref ArraySegment<byte> payload, float receiveTime)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_HandleIncomingData.Begin();
 #endif
             var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
@@ -596,7 +596,7 @@ namespace Unity.Netcode
                 MessageManager.HandleIncomingData(clientId, payload, receiveTime);
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_HandleIncomingData.End();
 #endif
         }
@@ -639,7 +639,7 @@ namespace Unity.Netcode
                 return;
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportDisconnect.Begin();
 #endif
 
@@ -698,7 +698,7 @@ namespace Unity.Netcode
                     NetworkManager.Shutdown(true);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportDisconnect.End();
 #endif
         }
