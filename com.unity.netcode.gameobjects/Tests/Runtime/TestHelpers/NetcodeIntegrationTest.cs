@@ -622,7 +622,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             // Default to not log the serialized type not optimized warning message when testing.
             NetworkManager.DisableNotOptimizedSerializedType = true;
 #endif
