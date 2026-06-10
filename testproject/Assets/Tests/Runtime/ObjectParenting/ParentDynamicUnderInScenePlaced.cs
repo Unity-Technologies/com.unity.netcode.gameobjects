@@ -74,7 +74,7 @@ namespace TestProject.RuntimeTests
         {
             // Always assign m_FailedValidation to avoid possible null reference crashes.
             var serverPlayer = m_FailedValidation = m_ServerNetworkManager.LocalClient.PlayerObject;
-            if (serverPlayer.transform.parent == null || serverPlayer.IsSceneObject.Value == true)
+            if (serverPlayer.transform.parent == null || serverPlayer.InScenePlaced)
             {
                 m_FailedValidation = serverPlayer;
                 return false;
@@ -83,7 +83,7 @@ namespace TestProject.RuntimeTests
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 var lateJoinPlayer = clientNetworkManager.LocalClient.PlayerObject;
-                if (lateJoinPlayer.transform.parent == null || lateJoinPlayer.IsSceneObject.Value == true)
+                if (lateJoinPlayer.transform.parent == null || lateJoinPlayer.InScenePlaced)
                 {
                     m_FailedValidation = lateJoinPlayer;
                     return false;
@@ -93,7 +93,7 @@ namespace TestProject.RuntimeTests
             foreach (var dynamicallySpawned in ParentDynamicUnderInScenePlacedHelper.Instances)
             {
                 var networkObject = dynamicallySpawned.Value;
-                if (networkObject.transform.parent == null || networkObject.IsSceneObject.Value == true)
+                if (networkObject.transform.parent == null || networkObject.InScenePlaced)
                 {
                     m_FailedValidation = networkObject;
                     return false;
@@ -124,7 +124,7 @@ namespace TestProject.RuntimeTests
 
             // Wait for the host-server's player to be parented under the in-scene placed NetworkObject
             yield return WaitForConditionOrTimeOut(TestParentedAndNotInScenePlaced);
-            AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.IsSceneObject.Value}) | Was Parented ({m_FailedValidation.transform.position != null})");
+            AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.InScenePlaced}) | Was Parented ({m_FailedValidation.transform.position != null})");
             m_TargetScenePlacedId = m_ServerNetworkManager.LocalClient.PlayerObject.transform.parent.GetComponent<NetworkObject>().NetworkObjectId;
 
             // Now dynamically spawn a NetworkObject to also test dynamically spawned NetworkObjects being parented
@@ -141,7 +141,7 @@ namespace TestProject.RuntimeTests
                     AssertOnTimeout($"[Client-{i + 1}] Failed to find in-scene placed NetworkObject or failed to parent under it!");
                 }
                 yield return WaitForConditionOrTimeOut(TestParentedAndNotInScenePlaced);
-                AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.IsSceneObject.Value}) | Was Parented ({m_FailedValidation.transform.position != null})");
+                AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.InScenePlaced}) | Was Parented ({m_FailedValidation.transform.position != null})");
             }
         }
 

@@ -155,7 +155,7 @@ namespace TestProject.RuntimeTests
                 for (int i = spawnedObjects.Count - 1; i >= 0; i--)
                 {
                     var spawnedObject = spawnedObjects[i];
-                    if (spawnedObject.IsSceneObject != null && spawnedObject.IsSceneObject.Value)
+                    if (spawnedObject.InScenePlaced)
                     {
                         spawnedObject.Despawn();
                     }

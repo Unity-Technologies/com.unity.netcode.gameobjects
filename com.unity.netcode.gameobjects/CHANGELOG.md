@@ -10,9 +10,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
 
 ### Changed
 
+- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
 - All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
   - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
   - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
@@ -21,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
 
 ### Removed
 
@@ -33,6 +36,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Obsolete
 
+
+## [2.12.0] - 2026-05-24
+
+### Added
+
+- Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor. (#3980)
+
+### Changed
+
+- `NetworkMetricsPipelineStage` is now defined even when the multiplayer tools package is not installed, removing the need to guard its registration behind a version define when using a custom driver in `UnityTransport`. (#3980)
+
+### Deprecated
+
+- Deprecated a number of methods that were no longer valid or being used. (#3987)
 
 ### [2.11.2] - 2026-05-01
 

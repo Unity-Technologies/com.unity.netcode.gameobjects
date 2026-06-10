@@ -1,4 +1,4 @@
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -139,7 +139,16 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator RpcInvokePermissionReceivingTests()
         {
-            var firstClient = GetNonAuthorityNetworkManager(0);
+            NetworkManager firstClient = null;
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (firstClient == null && !networkManager.IsServer && !networkManager.LocalClient.IsSessionOwner)
+                {
+                    firstClient = networkManager;
+                }
+
+                networkManager.LogLevel = LogLevel.Error;
+            }
 
             var spawnedObject = SpawnObject(m_Prefab, firstClient).GetComponent<NetworkObject>();
 

@@ -167,7 +167,7 @@ namespace TestProject.RuntimeTests
 
                     var clientSpawnedObject = s_GlobalNetworkObjects[client.LocalClientId][spawnedObject.NetworkObjectId];
                     // When scene management is disabled, we match against the InScenePlacedSourceGlobalObjectIdHash for in-scene placed NetworkObjects
-                    var spawnedObjectGlobalObjectIdHash = !m_SceneManagementEnabled && spawnedObject.IsSceneObject.Value ? spawnedObject.InScenePlacedSourceGlobalObjectIdHash : spawnedObject.GlobalObjectIdHash;
+                    var spawnedObjectGlobalObjectIdHash = !m_SceneManagementEnabled && spawnedObject.InScenePlaced ? spawnedObject.InScenePlacedSourceGlobalObjectIdHash : spawnedObject.GlobalObjectIdHash;
                     // Validate the GlobalObjectIdHash values match
                     if (clientSpawnedObject.GlobalObjectIdHash != spawnedObjectGlobalObjectIdHash)
                     {

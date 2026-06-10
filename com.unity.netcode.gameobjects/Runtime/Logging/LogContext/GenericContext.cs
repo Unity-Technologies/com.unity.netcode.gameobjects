@@ -5,20 +5,20 @@ namespace Unity.Netcode.Logging
 {
     internal readonly struct GenericContext : ILogContext, IDisposable
     {
-        private readonly List<string> m_Contexts;
+        private readonly List<string> m_Tags;
         private readonly Dictionary<object, object> m_Info;
 
-        private GenericContext(List<string> contexts, Dictionary<object, object> info)
+        private GenericContext(List<string> tags, Dictionary<object, object> info)
         {
-            m_Contexts = contexts;
+            m_Tags = tags;
             m_Info = info;
         }
 
         public void AppendTo(LogBuilder builder)
         {
-            if (m_Contexts != null)
+            if (m_Tags != null)
             {
-                foreach (var ctx in m_Contexts)
+                foreach (var ctx in m_Tags)
                 {
                     builder.AppendTag(ctx);
                 }
@@ -33,9 +33,9 @@ namespace Unity.Netcode.Logging
             }
         }
 
-        public void StoreTag(string msg)
+        public void StoreTag(string tag)
         {
-            m_Contexts.Add(msg);
+            m_Tags.Add(tag);
         }
 
         public void StoreInfo(object key, object value)
@@ -43,9 +43,14 @@ namespace Unity.Netcode.Logging
             m_Info.Add(key, value);
         }
 
-        public void ClearInfo(object key)
+        public void RemoveInfo(object key)
         {
             m_Info?.Remove(key);
+        }
+
+        public void RemoveTag(string tag)
+        {
+            m_Tags?.Remove(tag);
         }
 
         public void Dispose()
@@ -76,7 +81,7 @@ namespace Unity.Netcode.Logging
 
             internal static void Free(GenericContext ctx)
             {
-                ctx.m_Contexts.Clear();
+                ctx.m_Tags.Clear();
                 ctx.m_Info.Clear();
                 k_Preallocated.Enqueue(ctx);
             }

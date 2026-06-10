@@ -622,7 +622,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             // Default to not log the serialized type not optimized warning message when testing.
             NetworkManager.DisableNotOptimizedSerializedType = true;
 #endif
@@ -771,7 +771,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_PlayerPrefab = new GameObject("Player");
             OnPlayerPrefabGameObjectCreated();
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            networkObject.IsSceneObject = false;
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -2609,8 +2608,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
         {
-            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
-
             // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
             m_NetworkTopologyType = networkTopologyType;
 

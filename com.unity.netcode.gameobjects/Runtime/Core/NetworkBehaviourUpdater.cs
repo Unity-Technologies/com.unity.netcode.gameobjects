@@ -27,7 +27,7 @@ namespace Unity.Netcode
         /// </summary>
         private HashSet<NetworkObject> m_PendingDirtyNetworkObjects = new HashSet<NetworkObject>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
@@ -190,7 +190,7 @@ namespace Unity.Netcode
         /// <param name="forceSend"> Refer to the <see cref="ProcessDirtyObject(NetworkObject, bool)"/> definition.</param>
         internal void NetworkBehaviourUpdate(bool forceSend = false)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             m_NetworkBehaviourUpdate.Begin();
 #endif
             try
@@ -214,7 +214,7 @@ namespace Unity.Netcode
             }
             finally
             {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
                 m_NetworkBehaviourUpdate.End();
 #endif
             }

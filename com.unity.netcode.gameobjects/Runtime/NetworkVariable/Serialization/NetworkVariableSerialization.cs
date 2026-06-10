@@ -12,6 +12,8 @@ namespace Unity.Netcode
     [Serializable]
     public static class NetworkVariableSerialization<T>
     {
+        // This is all setup in ILPP (in the file NetworkBehaviorILPP), using the functions in TypedILPPInitializers.
+        // There is no need to reset statics here.
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
         /// <summary>

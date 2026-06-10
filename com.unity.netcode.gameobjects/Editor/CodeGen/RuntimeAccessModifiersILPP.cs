@@ -97,17 +97,23 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
+#pragma warning disable CS0618 // Type or member is obsolete
                 if (fieldDefinition.Name == nameof(NetworkManager.__rpc_func_table))
+#pragma warning restore CS0618 // Type or member is obsolete
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                 if (fieldDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
+#pragma warning restore CS0618 // Type or member is obsolete
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                 if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
+#pragma warning restore CS0618 // Type or member is obsolete
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -115,7 +121,9 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
             foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
             {
+#pragma warning disable CS0618 // Type or member is obsolete
                 if (nestedTypeDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
+#pragma warning restore CS0618 // Type or member is obsolete
                 {
                     nestedTypeDefinition.IsNestedPublic = true;
                 }
@@ -151,7 +159,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 {
                     fieldDefinition.IsFamilyOrAssembly = true;
                 }
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
                 if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_name_table))
                 {
                     fieldDefinition.IsFamilyOrAssembly = true;
