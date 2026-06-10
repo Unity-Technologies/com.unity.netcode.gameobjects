@@ -1574,7 +1574,7 @@ namespace Unity.Netcode
                 if (networkObject.InScenePlaced && networkObject.DestroyWithScene
                     && networkObject.gameObject.scene != NetworkManager.SceneManager.DontDestroyOnLoadScene)
                 {
-                    if (networkObject.IsSpawned && networkObject.HasAuthority)
+                    if (networkObject.IsSpawned && networkObject.InternalHasAuthority())
                     {
                         networkObject.Despawn(false);
                     }
@@ -1729,7 +1729,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void OnDespawnNonAuthorityObject([NotNull] NetworkObject networkObject, bool destroyGameObject)
         {
-            if (networkObject.HasAuthority)
+            if (networkObject.InternalHasAuthority())
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
@@ -1806,7 +1806,7 @@ namespace Unity.Netcode
                     }
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
-                    spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;
+                    spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.InternalHasAuthority();
 
                     // Try to remove the parent using the cached WorldPositionStays value
                     // Note: WorldPositionStays will still default to true if this was an
@@ -1834,7 +1834,7 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkDespawn();
 
             // Whether we are in distributedAuthority mode and have authority on this object
-            var hasDAAuthority = distributedAuthority && (networkObject.HasAuthority || (NetworkManager.DAHost && authorityOverride));
+            var hasDAAuthority = distributedAuthority && (networkObject.InternalHasAuthority() || (NetworkManager.DAHost && authorityOverride));
 
             // Don't send messages if shutting down
             // Otherwise send messages if we are the authority (either the server, or the DA mode authority of this object).

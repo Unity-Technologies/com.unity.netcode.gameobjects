@@ -2713,7 +2713,7 @@ namespace Unity.Netcode
                 }
 
                 // Check to determine if we need to allow destroying a non-authority instance
-                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.HasAuthority)
+                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.InternalHasAuthority())
                 {
                     networkObject.DestroyPendingSceneEvent = true;
                 }
@@ -2731,7 +2731,7 @@ namespace Unity.Netcode
                         networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
                     }
                 }
-                else if (networkObject.HasAuthority)
+                else if (networkObject.InternalHasAuthority())
                 {
                     networkObject.SetIsDestroying();
                     // Only destroy non-scene placed NetworkObjects to avoid warnings about destroying in-scene placed NetworkObjects.
@@ -2889,7 +2889,7 @@ namespace Unity.Netcode
         internal void NotifyNetworkObjectSceneChanged(NetworkObject networkObject)
         {
             // Really, this should never happen but in case it does
-            if (!networkObject.HasAuthority)
+            if (!networkObject.InternalHasAuthority())
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {

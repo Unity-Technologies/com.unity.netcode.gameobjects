@@ -402,7 +402,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}] This method is only available in distributed authority mode.");
                 }
-
                 return;
             }
 
@@ -412,11 +411,10 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}] Cannot defer despawn while not spawned.");
                 }
-
                 return;
             }
 
-            if (!HasAuthority)
+            if (!InternalHasAuthority())
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Error)
                 {
@@ -628,12 +626,11 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Attempted Lock While not spawned]");
                 }
-
                 return false;
             }
 
             // If we don't have authority exit early
-            if (!HasAuthority)
+            if (!InternalHasAuthority())
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
@@ -671,7 +668,6 @@ namespace Unity.Netcode
             {
                 SendOwnershipStatusUpdate();
             }
-
             return true;
         }
 
@@ -797,7 +793,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Invalid Operation] Cannot request ownership of an NetworkObject before it is spawned.");
                 }
-
                 return OwnershipRequestStatus.InvalidOperation;
             }
             // Exit early the local client is already the owner
@@ -909,7 +904,7 @@ namespace Unity.Netcode
 
                 // This action is always authorized as long as the client still has authority.
                 // We need to pass in that this is a request approval ownership change.
-                NetworkManagerOwner.SpawnManager.ChangeOwnership(this, clientRequestingOwnership, HasAuthority, true);
+                NetworkManagerOwner.SpawnManager.ChangeOwnership(this, clientRequestingOwnership, InternalHasAuthority(), true);
             }
             else
             {
@@ -1158,7 +1153,7 @@ namespace Unity.Netcode
         public bool HasAuthority => InternalHasAuthority();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool InternalHasAuthority()
+        internal bool InternalHasAuthority()
         {
             if (!IsSpawned)
             {
@@ -1509,7 +1504,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasAuthority)
+            if (!InternalHasAuthority())
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
@@ -1604,7 +1599,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasAuthority)
+            if (!InternalHasAuthority())
             {
                 if (NetworkManagerOwner.DistributedAuthorityMode)
                 {
@@ -1763,7 +1758,7 @@ namespace Unity.Netcode
             {
                 // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
                 // was marked as destroy pending scene event (which means the destroy with scene property was set).
-                var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
+                var isAuthorityDestroy = InternalHasAuthority() || NetworkManager.DAHost || DestroyPendingSceneEvent;
 
                 // If the NetworkObject's GameObject is still valid and the scene is still valid and loaded, then we are still valid
                 var isStillValid = gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded;
@@ -2102,7 +2097,7 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            NetworkManagerOwner.SpawnManager.ChangeOwnership(this, newOwnerClientId, HasAuthority);
+            NetworkManagerOwner.SpawnManager.ChangeOwnership(this, newOwnerClientId, InternalHasAuthority());
         }
 
         /// <summary>
@@ -2337,7 +2332,7 @@ namespace Unity.Netcode
 
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
-            var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
+            var isAuthority = InternalHasAuthority() || (AllowOwnerToParent && IsOwner);
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
@@ -2412,7 +2407,7 @@ namespace Unity.Netcode
 
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
-            var isParentingAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
+            var isParentingAuthority = InternalHasAuthority() || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
             // If we are spawned and don't have authority; reset the parent back to the cached parent and exit
             if (!isParentingAuthority)
             {
@@ -3407,7 +3402,6 @@ namespace Unity.Netcode
                 {
                     Destroy(networkObject.gameObject);
                 }
-
                 return null;
             }
 
@@ -3529,7 +3523,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            var isAuthority = HasAuthority;
+            var isAuthority = InternalHasAuthority();
             SceneOriginHandle = scene.handle;
 
             // non-authority needs to update the NetworkSceneHandle
