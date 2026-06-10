@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine;
 
 namespace Unity.Netcode.EditorTests.Documentation.Serialization
 {
@@ -27,7 +26,7 @@ namespace Unity.Netcode.EditorTests.Documentation.Serialization
         {
             reader.ReadValueSafe(out uint max);
             reader.ReadValueSafe(out int current);
-            health = new Health{ MaxHealth = max, CurrentHealth = current };
+            health = new Health { MaxHealth = max, CurrentHealth = current };
         }
     }
     #endregion
@@ -36,7 +35,7 @@ namespace Unity.Netcode.EditorTests.Documentation.Serialization
     // The class name doesn't matter here.
     public static class BufferSerializerExtensions
     {
-        public static void SerializeValue<TReaderWriter>(this BufferSerializer<TReaderWriter> serializer, ref Health health) where TReaderWriter: IReaderWriter
+        public static void SerializeValue<TReaderWriter>(this BufferSerializer<TReaderWriter> serializer, ref Health health) where TReaderWriter : IReaderWriter
         {
             // Because the BufferSerializer already knows how to read and write the primitive types
             // We can use the existing BufferSerializer serialization.

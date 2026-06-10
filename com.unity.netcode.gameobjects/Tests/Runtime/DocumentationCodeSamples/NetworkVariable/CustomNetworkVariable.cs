@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
-using Unity.Netcode;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 namespace DocumentationCodeSamples
 {
     #region TestMyCustomNetworkVariable
-    /// Using MyCustomNetworkVariable within a NetworkBehaviour
+    // Using MyCustomNetworkVariable within a NetworkBehaviour
     internal class TestMyCustomNetworkVariable : NetworkBehaviour
     {
         public MyCustomNetworkVariable CustomNetworkVariable = new MyCustomNetworkVariable();
@@ -22,9 +22,11 @@ namespace DocumentationCodeSamples
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    var someData = new SomeData();
-                    someData.SomeFloatData = (float)i;
-                    someData.SomeIntData = i;
+                    var someData = new SomeData
+                    {
+                        SomeFloatData = i,
+                        SomeIntData = i
+                    };
                     someData.SomeListOfValues.Add((ulong)i + 1000000);
                     someData.SomeListOfValues.Add((ulong)i + 2000000);
                     someData.SomeListOfValues.Add((ulong)i + 3000000);
@@ -38,11 +40,11 @@ namespace DocumentationCodeSamples
         }
     }
 
-    /// Bare minimum example of NetworkVariableBase derived class
+    // Bare minimum example of NetworkVariableBase derived class
     [Serializable]
     public class MyCustomNetworkVariable : NetworkVariableBase
     {
-        /// Managed list of class instances
+        // Managed list of class instances
         public List<SomeData> SomeDataToSynchronize = new List<SomeData>();
 
         /// <summary>
@@ -72,7 +74,7 @@ namespace DocumentationCodeSamples
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            var itemsToUpdate = (int)0;
+            var itemsToUpdate = 0;
             reader.ReadValueSafe(out itemsToUpdate);
             SomeDataToSynchronize.Clear();
             for (int i = 0; i < itemsToUpdate; i++)
@@ -80,7 +82,7 @@ namespace DocumentationCodeSamples
                 var newEntry = new SomeData();
                 reader.ReadValueSafe(out newEntry.SomeIntData);
                 reader.ReadValueSafe(out newEntry.SomeFloatData);
-                var itemsCount = (int)0;
+                var itemsCount = 0;
                 var tempValue = (ulong)0;
                 reader.ReadValueSafe(out itemsCount);
                 newEntry.SomeListOfValues.Clear();
@@ -107,12 +109,12 @@ namespace DocumentationCodeSamples
         }
     }
 
-    /// Bare minimum example of generic NetworkVariableBase derived class
+    // Bare minimum example of generic NetworkVariableBase derived class
     [Serializable]
     [GenerateSerializationForGenericParameter(0)]
     public class MyCustomGenericNetworkVariable<T> : NetworkVariableBase
     {
-        /// Managed list of class instances
+        // Managed list of class instances
         public List<T> SomeDataToSynchronize = new List<T>();
 
         /// <summary>
@@ -138,7 +140,7 @@ namespace DocumentationCodeSamples
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            var itemsToUpdate = (int)0;
+            var itemsToUpdate = 0;
             reader.ReadValueSafe(out itemsToUpdate);
             SomeDataToSynchronize.Clear();
             for (int i = 0; i < itemsToUpdate; i++)
@@ -163,8 +165,8 @@ namespace DocumentationCodeSamples
         }
     }
 
-    /// Example managed class used as the item type in the
-    /// MyCustomNetworkVariable.SomeDataToSynchronize list
+    // Example managed class used as the item type in the
+    // MyCustomNetworkVariable.SomeDataToSynchronize list
     [Serializable]
     public class SomeData
     {
@@ -208,7 +210,7 @@ namespace DocumentationCodeSamples
                 var testBehaviour = localObject.GetComponent<TestMyCustomNetworkVariable>();
                 Assert.NotNull(testBehaviour);
                 Assert.AreEqual(authorityBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, testBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
-                // Assert.AreEqual(authorityBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, testBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
+                Assert.AreEqual(authorityBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize, testBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize.Count, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
             }
         }
     }
