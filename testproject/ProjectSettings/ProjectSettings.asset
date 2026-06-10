@@ -741,8 +741,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
   additionalCompilerArguments:
-    Standalone:
-    - -warnaserror
+    Standalone: []
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}

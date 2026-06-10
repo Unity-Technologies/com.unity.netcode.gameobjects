@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.Logging;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -162,19 +163,17 @@ namespace Unity.Netcode.Editor
 
                 if (!EditorApplication.isPlaying && !editorTest)
                 {
-                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", NetworkManagerAndNetworkObjectNotAllowedMessage(), "OK");
+                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", k_NetworkManagerAndNetworkObjectNotAllowedMessage, "OK");
                 }
                 else
                 {
-                    Debug.LogError(NetworkManagerAndNetworkObjectNotAllowedMessage());
+                    networkManager.Log.Error(new Context(LogLevel.Error, k_NetworkManagerAndNetworkObjectNotAllowedMessage));
                 }
             }
         }
 
-        public string NetworkManagerAndNetworkObjectNotAllowedMessage()
-        {
-            return $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it or any children under it.";
-        }
+        private static readonly string k_NetworkManagerAndNetworkObjectNotAllowedMessage = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it or any children under it.";
+        public string NetworkManagerAndNetworkObjectNotAllowedMessage() => k_NetworkManagerAndNetworkObjectNotAllowedMessage;
 
         /// <summary>
         /// Handles notifying the user, via display dialog window, that they have nested a NetworkManager.
@@ -215,7 +214,7 @@ namespace Unity.Netcode.Editor
                 }
                 else
                 {
-                    Debug.LogError(message);
+                    networkManager.Log.Error(new Context(LogLevel.Error, message));
                 }
 
                 if (!s_LastKnownNetworkManagerParents.ContainsKey(networkManager) && isParented)

@@ -206,7 +206,7 @@ namespace Unity.Netcode
         /// Unloads any scenes that have not been assigned.
         /// </summary>
         /// <param name="networkManager"></param>
-        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        public void UnloadUnassignedScenes(NetworkManager networkManager)
         {
             var sceneManager = networkManager.SceneManager;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
@@ -311,17 +311,26 @@ namespace Unity.Netcode
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
                 }
                 else if (networkObject.HasAuthority)
                 {
+                    // We know this instance is going to be destroyed (when it receives the destroy object message).
+                    // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                    // preparation of being destroyed by the SceneManager.
+                    networkObject.SetIsDestroying();
+                    // This sends a de-spawn message prior to the scene event.
                     networkObject.Despawn();
                 }
                 else // We are a client, migrate the object into the DDOL temporarily until it receives the destroy command from the server
                 {
+                    // We know this instance is going to be destroyed (when it receives the destroy object message).
+                    // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in
+                    // preparation of being destroyed by the SceneManager.
+                    networkObject.SetIsDestroying();
                     UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
             }

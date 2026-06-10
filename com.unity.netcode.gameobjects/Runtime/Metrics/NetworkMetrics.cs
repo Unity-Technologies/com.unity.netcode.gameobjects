@@ -11,26 +11,22 @@ namespace Unity.Netcode
     internal class NetworkMetrics : INetworkMetrics
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
-        private static Dictionary<uint, string> s_SceneEventTypeNames;
-        private static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+        private static readonly Dictionary<uint, string> k_SceneEventTypeNames;
+        private static readonly ProfilerMarker k_FrameDispatch;
 
         static NetworkMetrics()
         {
-            s_SceneEventTypeNames = new Dictionary<uint, string>();
+            k_SceneEventTypeNames = new Dictionary<uint, string>();
             foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
             {
-                s_SceneEventTypeNames[(uint)type] = type.ToString();
+                k_SceneEventTypeNames[(uint)type] = type.ToString();
             }
+            k_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
         }
 
         private static string GetSceneEventTypeName(uint typeCode)
         {
-            if (!s_SceneEventTypeNames.TryGetValue(typeCode, out string name))
-            {
-                name = "Unknown";
-            }
-
-            return name;
+            return k_SceneEventTypeNames.GetValueOrDefault(typeCode, "Unknown");
         }
 
         private readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)
@@ -511,9 +507,9 @@ namespace Unity.Netcode
 
         public void DispatchFrame()
         {
-            s_FrameDispatch.Begin();
+            k_FrameDispatch.Begin();
             Dispatcher.Dispatch();
-            s_FrameDispatch.End();
+            k_FrameDispatch.End();
             m_NumberOfMetricsThisFrame = 0;
         }
 

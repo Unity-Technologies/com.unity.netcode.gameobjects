@@ -23,7 +23,7 @@ After injection, the player loops follows these stages. The player loop executes
 
 In all `NetworkUpdateStages`, it iterates over an array and calls the `NetworkUpdate` method over `INetworkUpdateSystem` interface, and the pattern is repeated.
 
-<Mermaid chart={`
+```mermaid
     graph LR;
     A(Initialization)
     B(EarlyUpdate)
@@ -33,7 +33,7 @@ In all `NetworkUpdateStages`, it iterates over an array and calls the `NetworkUp
     F(PreLateUpdate)
     G(PostLateUpdate)
     A --> B --> C --> D --> E --> F --> G
-`}/>
+```
 
 | Stage | Method |
 | -- | -- |

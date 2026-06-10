@@ -14,6 +14,10 @@ namespace Unity.Netcode
         internal delegate object CreateObjectDelegate(NetworkManager networkManager);
 
         private static Dictionary<Type, CreateObjectDelegate> s_Delegates = new Dictionary<Type, CreateObjectDelegate>();
+#if UNITY_EDITOR
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => s_Delegates = new Dictionary<Type, CreateObjectDelegate>();
+#endif
 
         /// <summary>
         /// Instantiates an instance of a given interface

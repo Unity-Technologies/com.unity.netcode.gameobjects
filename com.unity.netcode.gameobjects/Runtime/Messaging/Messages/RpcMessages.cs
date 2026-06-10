@@ -1,6 +1,6 @@
 using System;
 using Unity.Collections;
-using UnityEngine;
+using Unity.Netcode.Logging;
 
 namespace Unity.Netcode
 {
@@ -16,80 +16,79 @@ namespace Unity.Netcode
 
         public static unsafe bool Deserialize(ref FastBufferReader reader, ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload, string messageType)
         {
-            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkObjectId);
-            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkBehaviourId);
-            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkRpcMethodId);
-
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(metadata.NetworkObjectId))
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkObjectId);
+
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(metadata.NetworkObjectId, out var networkObject))
             {
+                networkManager.Log.Info(new Context(LogLevel.Developer, $"Received RPC message for {nameof(NetworkObject)} that doesn't exist yet. Deferring the message.").AddInfo("SenderClientId", context.SenderId).AddInfo(nameof(NetworkObject.NetworkObjectId), metadata.NetworkObjectId).AddInfo(nameof(RpcMetadata.NetworkRpcMethodId), metadata.NetworkRpcMethodId));
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, metadata.NetworkObjectId, reader, ref context, messageType);
                 return false;
             }
 
-            var networkObject = networkManager.SpawnManager.SpawnedObjects[metadata.NetworkObjectId];
-            var networkBehaviour = networkManager.SpawnManager.SpawnedObjects[metadata.NetworkObjectId].GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
-            if (networkBehaviour == null)
-            {
-                return false;
-            }
-
-            if (!NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()].ContainsKey(metadata.NetworkRpcMethodId))
-            {
-                return false;
-            }
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkBehaviourId);
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkRpcMethodId);
 
             payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
-            networkBehaviour.TrackRpcMetricsReceive(ref metadata, ref context, reader.Length);
-#endif
             return true;
         }
 
         public static void Handle(ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload, ref __RpcParams rpcParams)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
+
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(metadata.NetworkObjectId, out var networkObject))
             {
                 // If the NetworkObject no longer exists then just log a warning when developer mode logging is enabled and exit.
                 // This can happen if NetworkObject is despawned and a client sends an RPC before receiving the despawn message.
-                if (networkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogWarning($"[{metadata.NetworkObjectId}, {metadata.NetworkBehaviourId}, {metadata.NetworkRpcMethodId}] An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
-                }
-
+                networkManager.Log.Warning(new Context(LogLevel.Developer, $"Received RPC message for {nameof(NetworkObject)} that doesn't exist yet. Deferring the message.").AddInfo(nameof(NetworkObject.NetworkObjectId), metadata.NetworkObjectId).AddInfo(nameof(RpcMetadata.NetworkRpcMethodId), metadata.NetworkRpcMethodId));
                 return;
             }
 
             var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
+            if (networkBehaviour == null)
+            {
+                networkManager.Log.Error(new Context(LogLevel.Normal, $"Received RPC message for {nameof(NetworkBehaviour)} that doesn't exist. Dropping RPC message").AddNetworkObject(networkObject).AddInfo(nameof(NetworkBehaviour.NetworkBehaviourId), networkBehaviour.NetworkBehaviourId));
+                return;
+            }
+
+            var type = networkBehaviour.GetType();
+            if (!NetworkBehaviour.__rpc_func_table.TryGetValue(type, out var rpcsForBehaviour) || !NetworkBehaviour.__rpc_permission_table.TryGetValue(type, out var permissionsTable))
+            {
+                networkManager.Log.Error(new Context(LogLevel.Normal, $"Rpc table doesn't have RPCs registered for this {nameof(NetworkBehaviour)}. Dropping RPC message").AddNetworkObject(networkObject).AddInfo(nameof(NetworkBehaviour.NetworkBehaviourId), networkBehaviour.NetworkBehaviourId).AddInfo(nameof(NetworkBehaviour), type));
+                return;
+            }
+            if (!rpcsForBehaviour.TryGetValue(metadata.NetworkRpcMethodId, out var receiveHandler) || !permissionsTable.TryGetValue(metadata.NetworkRpcMethodId, out var permission))
+            {
+                networkManager.Log.Error(new Context(LogLevel.Normal, "Received RPC message for RPC receiver that doesn't exist. Dropping RPC message").AddNetworkBehaviour(networkBehaviour).AddInfo(nameof(RpcMetadata.NetworkRpcMethodId), metadata.NetworkRpcMethodId));
+                return;
+            }
+
+            if ((permission == RpcInvokePermission.Server && rpcParams.SenderId != NetworkManager.ServerClientId) ||
+                (permission == RpcInvokePermission.Owner && rpcParams.SenderId != networkObject.OwnerClientId))
+            {
+                networkManager.Log.ErrorServer(new Context(LogLevel.Normal, "Rpc message received from a client without permission to perform this operation!. Dropping RPC message").AddNetworkBehaviour(networkBehaviour));
+                return;
+            }
+
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+            networkBehaviour.TrackRpcMetricsReceive(ref metadata, ref context, payload.Length);
+#endif
+
             try
             {
-                var permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId];
-
-                if ((permission == RpcInvokePermission.Server && rpcParams.SenderId != NetworkManager.ServerClientId) ||
-                    (permission == RpcInvokePermission.Owner && rpcParams.SenderId != networkObject.OwnerClientId))
-                {
-                    if (networkManager.LogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogErrorServer($"Rpc message received from client-{rpcParams.SenderId} who does not have permission to perform this operation!");
-                    }
-                    return;
-                }
-
-                NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
+                receiveHandler(networkBehaviour, payload, rpcParams);
             }
             catch (Exception ex)
             {
-                Debug.LogException(new Exception($"Unhandled RPC exception!", ex));
-                if (networkManager.LogLevel <= LogLevel.Developer)
+                networkManager.Log.Exception(ex, new Context(LogLevel.Error, "Unhandled RPC exception!").AddNetworkBehaviour(networkBehaviour));
+
+                var methodId = metadata.NetworkRpcMethodId;
+                networkManager.Log.Info(new Context(LogLevel.Developer, "RPC Table Contents").AddCollection(rpcsForBehaviour, entry =>
                 {
-                    Debug.Log($"RPC Table Contents");
-                    foreach (var entry in NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()])
-                    {
-                        var permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId];
-                        Debug.Log($"{entry.Key} | {entry.Value.Method.Name} | {permission}");
-                    }
-                }
+                    var invokePermission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][methodId];
+                    return $"{entry.Key} | {entry.Value.Method.Name} | {invokePermission}";
+                }));
             }
         }
     }
@@ -270,12 +269,12 @@ namespace Unity.Netcode
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    networkManager.Log.Exception(ex);
                 }
             }
             else
             {
-                NetworkLog.LogErrorServer($"Received {nameof(ForwardServerRpcMessage)} on client-{networkManager.LocalClientId}! Only DAHost may forward RPC messages!");
+                networkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Received {nameof(ForwardServerRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
             }
             ServerRpcMessage.ReadBuffer.Dispose();
             ServerRpcMessage.WriteBuffer.Dispose();
@@ -351,7 +350,7 @@ namespace Unity.Netcode
             }
             else
             {
-                NetworkLog.LogErrorServer($"Received {nameof(ForwardClientRpcMessage)} on client-{networkManager.LocalClientId}! Only DAHost may forward RPC messages!");
+                networkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Received {nameof(ForwardClientRpcMessage)} when not the DAHost! Only DAHost may forward RPC messages!").AddInfo("SenderClientId", context.SenderId));
             }
             ClientRpcMessage.WriteBuffer.Dispose();
             ClientRpcMessage.ReadBuffer.Dispose();

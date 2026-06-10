@@ -34,7 +34,6 @@ namespace Unity.Netcode
             else
             {
                 var reader = serializer.GetFastBufferReader();
-                // DANGO-TODO Rust needs to be updated to either handle this ulong or to remove the scene store.
 #if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
                 reader.ReadValueSafe(out ulong rawData);
                 m_Handle = SceneHandle.FromRawData(rawData);
@@ -86,6 +85,11 @@ namespace Unity.Netcode
 #else
         public int GetRawData() => m_Handle;
 #endif
+
+        public override string ToString()
+        {
+            return m_Handle.ToString();
+        }
 
         #region Implicit conversions
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE

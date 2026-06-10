@@ -24,7 +24,7 @@ namespace Unity.Netcode
             }
             var proxyMessage = new ProxyMessage { Delivery = delivery, TargetClientIds = TargetClientIds.AsArray(), WrappedMessage = message };
             var size = behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
-#if MULTIPLAYER_TOOLS && (DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
+#if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
             foreach (var clientId in TargetClientIds)
             {
                 behaviour.TrackRpcMetricsSend(clientId, ref message, size);

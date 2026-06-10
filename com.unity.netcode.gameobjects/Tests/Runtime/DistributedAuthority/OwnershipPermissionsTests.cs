@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -444,8 +445,7 @@ namespace Unity.Netcode.RuntimeTests
             // ChangeOwnership should fail
             authorityInstance.ChangeOwnership(otherClient.LocalClientId);
             var senderId = authority.LocalClientId;
-            var receiverId = otherClient.LocalClientId;
-            LogAssert.Expect(LogType.Warning, $"[Session-Owner Sender={senderId}] [Invalid Owner] Cannot send Ownership change as client-{receiverId} cannot see {authorityInstance.name}! Use NetworkShow first.");
+            LogAssert.Expect(LogType.Warning, new Regex("Cannot send Ownership change as client cannot see NetworkObject"));
             Assert.True(authorityInstance.IsOwner, $"[Ownership Check] Client-{senderId} should still own this object!");
 
             // Now re-add the client to the Observers list and try to change ownership

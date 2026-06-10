@@ -24,6 +24,18 @@ namespace Unity.Netcode.Components
         [HideInInspector]
         [SerializeField]
         internal bool NetworkTransformExpanded;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            CurrentTick = 0;
+            TrackStateUpdateId = false;
+            AssignDefaultInterpolationType = false;
+            DefaultInterpolationType = default;
+            s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+            InterpolationBufferTickOffset = 0;
+            s_TickSynchPosition = 0;
+        }
 #endif
 
         internal enum Axis { X, Y, Z }
@@ -1361,7 +1373,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// When set each state update will contain a state identifier
         /// </summary>
-        internal static bool TrackStateUpdateId = false;
+        internal static bool TrackStateUpdateId;
 
         /// <summary>
         /// Enabled by default.
@@ -1621,7 +1633,7 @@ namespace Unity.Netcode.Components
         public bool CanCommitToTransform { get; protected set; }
 
         /// <summary>
-        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
@@ -2062,19 +2074,6 @@ namespace Unity.Netcode.Components
                             childNetworkTransform.OnNetworkTick(true);
                         }
                     }
-
-                    // Synchronize any parented children with the parent's motion
-                    foreach (var child in m_ParentedChildren)
-                    {
-                        // Synchronize any nested NetworkTransforms of the child with the parent's
-                        foreach (var childNetworkTransform in child.NetworkTransforms)
-                        {
-                            if (childNetworkTransform.CanCommitToTransform)
-                            {
-                                childNetworkTransform.OnNetworkTick(true);
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -2136,9 +2135,8 @@ namespace Unity.Netcode.Components
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
             if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
             {
-                // TODO-CACHE: m_CachedNetworkManager.NetworkConfig.TickRate value
                 // Increment to the next frame synch tick position for this instance
-                m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
+                m_NextTickSync += m_CachedTickRate;
                 // If we are teleporting, we do not need to send a frame synch for this tick slot
                 // as a "frame synch" really is effectively just a teleport.
                 isAxisSync = !flagStates.IsTeleportingNextFrame;
@@ -2222,17 +2220,15 @@ namespace Unity.Netcode.Components
                 // values are applied.
                 var hasParentNetworkObject = false;
 
-                var parentNetworkObject = (NetworkObject)null;
-
                 // If the NetworkObject belonging to this NetworkTransform instance has a parent
                 // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
                 if (NetworkObject.transform.parent != null)
                 {
-                    parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // In-scene placed NetworkObjects parented under a GameObject with no
                     // NetworkObject preserve their lossyScale when synchronizing.
-                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
+                    if (parentNetworkObject == null && NetworkObject.InScenePlaced)
                     {
                         hasParentNetworkObject = true;
                     }
@@ -2606,7 +2602,7 @@ namespace Unity.Netcode.Components
             }
             else // If we are no longer authority, unsubscribe to the tick event
             {
-                DeregisterForTickUpdate(this);
+                DeregisterForTickUpdate();
             }
         }
         #endregion
@@ -3364,19 +3360,6 @@ namespace Unity.Netcode.Components
                         childNetworkTransform.OnNetworkTick(true);
                     }
                 }
-
-                // Synchronize any parented children with the parent's motion
-                foreach (var child in m_ParentedChildren)
-                {
-                    // Synchronize any nested NetworkTransforms of the child with the parent's
-                    foreach (var childNetworkTransform in child.NetworkTransforms)
-                    {
-                        if (childNetworkTransform.CanCommitToTransform)
-                        {
-                            childNetworkTransform.OnNetworkTick(true);
-                        }
-                    }
-                }
             }
 
             // Provide notifications when the state has been updated
@@ -3537,7 +3520,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// For dynamically spawned NetworkObjects, when the non-authority instance's client is already connected and
-        /// the SynchronizeState is still pending synchronization then we want to finalize the synchornization at this time.
+        /// the SynchronizeState is still pending synchronization then we want to finalize the synchronization at this time.
         /// </summary>
         protected internal override void InternalOnNetworkPostSpawn()
         {
@@ -3550,7 +3533,7 @@ namespace Unity.Netcode.Components
             // Then we want to:
             // - Force the "IsSynchronizing" flag so the NetworkTransform has its state updated properly and runs through the initialization again.
             // - Make sure the SynchronizingState is updated to the instantiated prefab's default flags/settings.
-            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && !IsOwner && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
+            if (m_CachedNetworkManager.IsServer && !m_CachedNetworkManager.DistributedAuthorityMode && !IsOwner && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
             {
                 // Handle the first/root NetworkTransform slightly differently to have a sequenced synchronization of like authority nested NetworkTransform components
                 if (m_IsFirstNetworkTransform)
@@ -3578,7 +3561,7 @@ namespace Unity.Netcode.Components
             }
 
             // Standard non-authority synchronization is handled here
-            if (!CanCommitToTransform && NetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
+            if (!CanCommitToTransform && m_CachedNetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
             {
                 NonAuthorityFinalizeSynchronization();
             }
@@ -3620,9 +3603,14 @@ namespace Unity.Netcode.Components
             CachedTransform = transform;
         }
 
+        private NetworkObject m_CachedNetworkObject;
+        private int m_CachedTickRate;
+
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             m_CachedNetworkManager = networkManager;
+            m_CachedNetworkObject = NetworkObject;
+            m_CachedTickRate = (int)networkManager.NetworkConfig.TickRate;
             CachedTransform = transform;
             base.InternalOnNetworkPreSpawn(ref networkManager);
         }
@@ -3630,20 +3618,17 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            m_ParentedChildren.Clear();
-            m_CachedNetworkManager = NetworkManager;
-
             Initialize();
 
             if (CanCommitToTransform && !SwitchTransformSpaceWhenParented)
             {
                 SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
             }
+            base.OnNetworkSpawn();
         }
 
         private void CleanUpOnDestroyOrDespawn()
         {
-            m_ParentedChildren.Clear();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var forUpdate = !m_UseRigidbodyForMotion;
 #else
@@ -3651,10 +3636,10 @@ namespace Unity.Netcode.Components
 #endif
             if (m_CachedNetworkObject != null)
             {
-                NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+                m_CachedNetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
 
-            DeregisterForTickUpdate(this);
+            DeregisterForTickUpdate();
             CanCommitToTransform = false;
         }
 
@@ -3697,7 +3682,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            var serverTime = NetworkManager.ServerTime.Time;
+            var serverTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
@@ -3717,9 +3702,9 @@ namespace Unity.Netcode.Components
 
             m_ScaleInterpolator.ResetTo(transform.parent, transform.localScale, serverTime);
         }
-        private NetworkObject m_CachedNetworkObject;
+
         /// <summary>
-        /// The internal initialzation method to allow for internal API adjustments
+        /// The internal initialization method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
         private void InternalInitialization(bool isOwnershipChange = false)
@@ -3728,10 +3713,9 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-            m_CachedNetworkObject = NetworkObject;
 
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
-            m_IsFirstNetworkTransform = NetworkObject.NetworkTransforms[0] == this;
+            m_IsFirstNetworkTransform = m_CachedNetworkObject.NetworkTransforms[0] == this;
 
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
@@ -3755,9 +3739,9 @@ namespace Unity.Netcode.Components
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
 
-            if (NetworkManager.DistributedAuthorityMode)
+            if (m_CachedNetworkManager.DistributedAuthorityMode)
             {
-                RegisterNetworkManagerForTickUpdate(NetworkManager);
+                RegisterNetworkManagerForTickUpdate(m_CachedNetworkManager);
             }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -3793,7 +3777,7 @@ namespace Unity.Netcode.Components
                 m_InternalCurrentPosition = currentPosition;
                 m_LastStateTargetPosition = currentPosition;
 
-                RegisterForTickUpdate(this);
+                RegisterForTickUpdate();
 
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
@@ -3813,7 +3797,7 @@ namespace Unity.Netcode.Components
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
                 m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
-                DeregisterForTickUpdate(this);
+                DeregisterForTickUpdate();
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_InternalCurrentPosition = currentPosition;
                 m_LastStateTargetPosition = currentPosition;
@@ -3858,7 +3842,6 @@ namespace Unity.Netcode.Components
         }
 
         internal bool IsNested;
-        private List<NetworkObject> m_ParentedChildren = new List<NetworkObject>();
 
         private bool m_IsFirstNetworkTransform;
 
@@ -3941,7 +3924,7 @@ namespace Unity.Netcode.Components
                 if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
                 {
                     m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
-                    m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                    m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, m_CachedNetworkManager.ServerTime.Time);
                     if (InLocalSpace)
                     {
                         transform.localPosition = m_InternalCurrentPosition;
@@ -3973,7 +3956,7 @@ namespace Unity.Netcode.Components
                 {
                     m_InternalCurrentRotation = GetSpaceRelativeRotation();
                     m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
-                    m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                    m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, m_CachedNetworkManager.ServerTime.Time);
                     if (InLocalSpace)
                     {
                         transform.localRotation = m_InternalCurrentRotation;
@@ -4596,7 +4579,7 @@ namespace Unity.Netcode.Components
             {
                 // TODO: Investigate where this state should be applied or just discarded.
                 // For now, discard the state if we assumed ownership.
-                // Debug.Log($"[Client-{NetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
+                // Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
                 return;
             }
             // Store the previous/old state
@@ -4653,17 +4636,17 @@ namespace Unity.Netcode.Components
                     {
                         continue;
                     }
-                    if (!NetworkObject.Observers.Contains(clientId))
+                    if (!m_CachedNetworkObject.Observers.Contains(clientId))
                     {
                         continue;
                     }
-                    NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
+                    m_CachedNetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
                 }
             }
             else
             {
                 // Clients (owner authoritative) send messages to the server-host
-                NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
+                m_CachedNetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
             m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OutboundMessage.BytesWritten;
         }
@@ -4691,7 +4674,7 @@ namespace Unity.Netcode.Components
         /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
         /// <see cref="NetworkTimeSystem.TickLatency"/>
         /// </remarks>
-        public static int InterpolationBufferTickOffset = 0;
+        public static int InterpolationBufferTickOffset;
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (networkManager.IsListening)
@@ -4796,13 +4779,14 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
         private static int s_TickSynchPosition;
         private int m_NextTickSync;
 
         internal void RegisterForTickSynchronization()
         {
             s_TickSynchPosition++;
-            m_NextTickSync = NetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
+            m_NextTickSync = m_CachedNetworkManager.ServerTime.Tick + (s_TickSynchPosition % m_CachedTickRate);
         }
 
         private static void RegisterNetworkManagerForTickUpdate(NetworkManager networkManager)
@@ -4818,36 +4802,34 @@ namespace Unity.Netcode.Components
         /// If a NetworkTransformTickRegistration has not yet been registered for the NetworkManager
         /// instance, then create an entry.
         /// </summary>
-        /// <param name="networkTransform"></param>
-        private static void RegisterForTickUpdate(NetworkTransform networkTransform)
+        private void RegisterForTickUpdate()
         {
 
-            if (!networkTransform.NetworkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            if (!m_CachedNetworkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(m_CachedNetworkManager))
             {
-                s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
+                s_NetworkTickRegistration.Add(m_CachedNetworkManager, new NetworkTransformTickRegistration(m_CachedNetworkManager));
             }
 
-            networkTransform.RegisterForTickSynchronization();
-            s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Add(networkTransform);
+            RegisterForTickSynchronization();
+            s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Add(this);
         }
 
         /// <summary>
         /// If a NetworkTransformTickRegistration exists for the NetworkManager instance, then this will
         /// remove the NetworkTransform instance from the single tick update entry point.
         /// </summary>
-        /// <param name="networkTransform"></param>
-        private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
+        private void DeregisterForTickUpdate()
         {
-            if (networkTransform.NetworkManager == null)
+            if (m_CachedNetworkManager == null)
             {
                 return;
             }
-            if (s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            if (s_NetworkTickRegistration.ContainsKey(m_CachedNetworkManager))
             {
-                s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Remove(networkTransform);
-                if (!networkTransform.NetworkManager.DistributedAuthorityMode && s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Count == 0)
+                s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Remove(this);
+                if (!m_CachedNetworkManager.DistributedAuthorityMode && s_NetworkTickRegistration[m_CachedNetworkManager].NetworkTransforms.Count == 0)
                 {
-                    var registrationEntry = s_NetworkTickRegistration[networkTransform.NetworkManager];
+                    var registrationEntry = s_NetworkTickRegistration[m_CachedNetworkManager];
                     registrationEntry.Remove();
                 }
             }

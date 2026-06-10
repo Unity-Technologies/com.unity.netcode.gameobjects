@@ -96,7 +96,7 @@ namespace Unity.Netcode
     /// </summary>
     public sealed class NetworkConnectionManager
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(NetworkMessageManager.HandleIncomingData)}");
@@ -438,7 +438,7 @@ namespace Unity.Netcode
 
         internal void PollAndHandleNetworkEvents()
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportPollMarker.Begin();
 #endif
             NetworkEvent networkEvent;
@@ -453,7 +453,7 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportPollMarker.End();
 #endif
         }
@@ -501,7 +501,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void ConnectEventHandler(ulong transportId)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportConnect.Begin();
 #endif
             // Assumptions:
@@ -522,6 +522,9 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError($"[TransportApproval][Server] TransportId {transportId} is already connected to this server!");
                     }
+#if DEBUG
+                    s_TransportConnect.End();
+#endif
                     return;
                 }
 
@@ -536,6 +539,9 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogError("[TransportApproval][Client] Client received a transport connection event after already connecting!");
                     }
+#if DEBUG
+                    s_TransportConnect.End();
+#endif
                     return;
                 }
 
@@ -571,7 +577,7 @@ namespace Unity.Netcode
                 StartClientApprovalCoroutine(clientId);
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportConnect.End();
 #endif
         }
@@ -581,7 +587,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void DataEventHandler(ulong transportClientId, ref ArraySegment<byte> payload, float receiveTime)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_HandleIncomingData.Begin();
 #endif
             var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
@@ -590,7 +596,7 @@ namespace Unity.Netcode
                 MessageManager.HandleIncomingData(clientId, payload, receiveTime);
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_HandleIncomingData.End();
 #endif
         }
@@ -633,7 +639,7 @@ namespace Unity.Netcode
                 return;
             }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportDisconnect.Begin();
 #endif
 
@@ -692,7 +698,7 @@ namespace Unity.Netcode
                     NetworkManager.Shutdown(true);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             s_TransportDisconnect.End();
 #endif
         }
@@ -947,6 +953,37 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// The checks to find the right GlobalObjectIdHash value
+        /// are complex enough to deserve a method that includes
+        /// an easy to follow logical flow.
+        /// This also makes it a quick check to determine if there
+        /// even is a player prefab to spawn (it is valid to not
+        /// have any player spawned upon connection).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private (bool IsValid, uint GlobalObjectIdHash) GetPlayerPrefabHash(uint? playerPrefabHash)
+        {
+            if (playerPrefabHash != null && playerPrefabHash.HasValue)
+            {
+                return (true, playerPrefabHash.Value);
+            }
+            else
+            if (NetworkManager.NetworkConfig.PlayerPrefab != null)
+            {
+                var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (networkObject != null)
+                {
+                    return (true, networkObject.GlobalObjectIdHash);
+                }
+                else
+                {
+                    NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
+                }
+            }
+            return (false, 0);
+        }
+
+        /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
         /// <remarks>
@@ -972,27 +1009,39 @@ namespace Unity.Netcode
             }
 
             // Server-side spawning (only if there is a prefab hash or player prefab provided)
-            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && (playerPrefabHash.HasValue || NetworkManager.NetworkConfig.PlayerPrefab != null))
+            var idHashToSpawn = GetPlayerPrefabHash(playerPrefabHash);
+            if (!NetworkManager.DistributedAuthorityMode && createPlayerObject && idHashToSpawn.IsValid)
             {
-                var playerObject = playerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(playerPrefabHash.Value, ownerClientId, playerPosition, playerRotation)
-                : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
+                var playerObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(idHashToSpawn.GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
 
                 if (playerObject == null)
                 {
-                    Debug.LogError($"[{nameof(NetworkObject)}] Player prefab is null! Cannot spawn player object!");
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"[{nameof(NetworkObject)}] Player prefab is null! Cannot spawn player object!");
+                    }
                 }
                 else
                 {
                     // Spawn the player NetworkObject locally
-                    NetworkManager.SpawnManager.AuthorityLocalSpawn(
+                    if (NetworkManager.SpawnManager.AuthorityLocalSpawn(
                         playerObject,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
                         sceneObject: false,
                         playerObject: true,
                         ownerClientId,
-                        destroyWithScene: false);
+                        destroyWithScene: false))
+                    {
+                        client.AssignPlayerObject(ref playerObject);
+                    }
+                    else
+                    {
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"[{nameof(NetworkObject)}] Player prefab failed to spawn!");
+                        }
+                    }
 
-                    client.AssignPlayerObject(ref playerObject);
                 }
             }
 
@@ -1113,18 +1162,41 @@ namespace Unity.Netcode
         /// </summary>
         internal void CreateAndSpawnPlayer(ulong ownerId)
         {
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
+            var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
+            if (playerPrefab == null)
             {
-                var playerPrefab = NetworkManager.FetchLocalPlayerPrefabToSpawn();
-                if (playerPrefab != null)
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
-                    var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
-                    networkObject.IsSceneObject = false;
-                    networkObject.NetworkManagerOwner = NetworkManager;
-                    networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
+                    NetworkLog.LogWarning("Could not fetch a local player to spawn. Ensure PlayerPrefab is set in NetcodeConfig.");
                 }
+                return;
             }
+            var prefabObject = playerPrefab.GetComponent<NetworkObject>();
+            if (prefabObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("Failed to fetch valid player prefab. Ensure PlayerPrefab that is set in NetcodeConfig contains a NetworkObject component.");
+                }
+                return;
+            }
+            var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(prefabObject.GlobalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
+            if (networkObject == null)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("Failed to spawn player prefab!");
+                }
+                return;
+            }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            // Obsolete with warning means we need the underlying behaviour to keep existing
+            // TODO: remove in the 3.x branch
+            networkObject.SetSceneObjectStatus(false);
+#pragma warning restore CS0618 // Type or member is obsolete
+            networkObject.NetworkManagerOwner = NetworkManager;
+            networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
         }
 
         /// <summary>
@@ -1312,7 +1384,14 @@ namespace Unity.Netcode
                     }
                     else if (!NetworkManager.ShutdownInProgress)
                     {
-                        playerObject.RemoveOwnership();
+                        if (NetworkManager.DistributedAuthorityMode)
+                        {
+                            NetworkManager.SpawnManager.ChangeOwnership(playerObject, NetworkManager.LocalClientId, true);
+                        }
+                        else
+                        {
+                            playerObject.RemoveOwnership();
+                        }
                     }
                 }
 
