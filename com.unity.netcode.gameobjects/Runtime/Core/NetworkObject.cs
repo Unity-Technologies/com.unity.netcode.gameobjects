@@ -861,7 +861,7 @@ namespace Unity.Netcode
         public OnOwnershipRequestedDelegateHandler OnOwnershipRequested;
 
         /// <summary>
-        /// Invoked by ChangeOwnershipMessage
+        /// Invoked by <see cref="ChangeOwnershipMessage"/>
         /// </summary>
         /// <param name="clientRequestingOwnership">the client requesting ownership</param>
         internal void OwnershipRequest(ulong clientRequestingOwnership)
@@ -1155,11 +1155,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool InternalHasAuthority()
         {
-            if (!IsSpawned)
-            {
-                return false;
-            }
-            return NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
+            var networkManager = NetworkManager;
+            return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;
         }
 
         /// <summary>
