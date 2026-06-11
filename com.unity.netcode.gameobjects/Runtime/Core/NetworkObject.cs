@@ -1153,7 +1153,7 @@ namespace Unity.Netcode
         public bool HasAuthority => InternalHasAuthority();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool InternalHasAuthority()
+        private bool InternalHasAuthority()
         {
             var networkManager = NetworkManager;
             return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;

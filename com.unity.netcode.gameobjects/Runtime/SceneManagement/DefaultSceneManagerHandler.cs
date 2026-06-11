@@ -302,7 +302,7 @@ namespace Unity.Netcode
                 }
 
                 // Check to determine if we need to allow destroying a non-authority instance
-                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.InternalHasAuthority())
+                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.HasAuthority)
                 {
                     networkObject.DestroyPendingSceneEvent = true;
                 }
@@ -316,7 +316,7 @@ namespace Unity.Netcode
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
                 }
-                else if (networkObject.InternalHasAuthority())
+                else if (networkObject.HasAuthority)
                 {
                     // We know this instance is going to be destroyed (when it receives the destroy object message).
                     // We have to invoke this prior to invoking despawn in order to know that we are de-spawning in

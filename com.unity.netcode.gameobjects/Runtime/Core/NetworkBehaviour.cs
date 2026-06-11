@@ -670,7 +670,7 @@ namespace Unity.Netcode
                 IsClient = m_NetworkManager.IsListening && m_NetworkManager.IsClient;
                 IsServer = m_NetworkManager.IsListening && m_NetworkManager.IsServer;
                 IsSessionOwner = m_NetworkManager.IsListening && m_NetworkManager.LocalClient.IsSessionOwner;
-                HasAuthority = m_NetworkObject.InternalHasAuthority();
+                HasAuthority = m_NetworkObject.HasAuthority;
                 ServerIsHost = m_NetworkManager.IsListening && m_NetworkManager.ServerIsHost;
             }
         }
