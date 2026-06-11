@@ -849,7 +849,7 @@ namespace Unity.Netcode
                     }
 
                     queueItem.Writer.Seek(0);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
