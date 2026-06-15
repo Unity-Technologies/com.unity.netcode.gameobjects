@@ -2368,8 +2368,19 @@ namespace Unity.Netcode
         private void OnTransformParentChanged()
         {
             var networkManager = NetworkManager;
-            if (!AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
+            if (networkManager != null && networkManager.ShutdownInProgress)
             {
+                return;
+            }
+
+            if (!AutoObjectParentSync)
+            {
+                // If this setting is off, we shouldn't be tracking parenting changes
+                // Ensure any tracking we do have is cleared.
+                if (m_CachedParent != null)
+                {
+                    SetCachedParent(null);
+                }
                 return;
             }
 
@@ -2388,7 +2399,6 @@ namespace Unity.Netcode
 
             if (!IsSpawned)
             {
-                AuthorityAppliedParenting = false;
                 // and we are removing the parent, then go ahead and allow parenting to occur
                 if (transform.parent == null)
                 {
@@ -2398,6 +2408,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
+                    AuthorityAppliedParenting = false;
                     transform.parent = m_CachedParent;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
