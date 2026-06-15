@@ -3,7 +3,7 @@
 Netcode for GameObjects uses a default serialization pipeline when using [`RPC`](../../rpc-landing.md)'s, [`NetworkVariable`](../../networkvariables-landing.md)s, or any other Netcode-related tasks that require serialization. The serialization pipeline looks like this:
 
 ``
-Custom Types => Built In Types => INetworkSerializable
+Custom types => Built-in types => INetworkSerializable
 ``
 
 When Netcode for GameObjects first receives a type, it checks for any custom types that you have registered for serialization, then it checks if it's a built-in type, such as a Vector3 or a float. These are handled by default. Otherwise, it checks if the type inherits [`INetworkSerializable`](inetworkserializable.md), and if it does, it calls its write methods.
