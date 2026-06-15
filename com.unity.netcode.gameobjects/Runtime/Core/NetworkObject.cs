@@ -2651,9 +2651,8 @@ namespace Unity.Netcode
             }
         }
 
-        internal void InvokeBehaviourNetworkPreSpawn()
+        internal void InvokeBehaviourNetworkPreSpawn(ref NetworkManager networkManager)
         {
-            var networkManager = NetworkManager;
             InitializeChildNetworkBehaviours();
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
             {

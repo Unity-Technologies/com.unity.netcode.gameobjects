@@ -380,9 +380,9 @@ namespace Unity.Netcode.RuntimeTests
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
 
-            // We need to preSpawn the behaviours to set the internal data for the synchronize methods
+            // We need to preSpawn the behaviors to set the internal data for the synchronize methods
             prefabNetworkObject.NetworkManagerOwner = m_Client;
-            prefabNetworkObject.InvokeBehaviourNetworkPreSpawn();
+            prefabNetworkObject.InvokeBehaviourNetworkPreSpawn(ref prefabNetworkObject.NetworkManagerOwner);
 
             m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<NetworkSceneHandle, NetworkObject>()
             {

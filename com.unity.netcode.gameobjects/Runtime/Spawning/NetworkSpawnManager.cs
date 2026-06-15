@@ -1135,7 +1135,7 @@ namespace Unity.Netcode
 
             // Invoke NetworkBehaviour.OnPreSpawn methods
             networkObject.NetworkManagerOwner = NetworkManager;
-            networkObject.InvokeBehaviourNetworkPreSpawn();
+            networkObject.InvokeBehaviourNetworkPreSpawn(ref networkObject.NetworkManagerOwner);
 
             // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
             // For now, this is the best place I could find to add all connected clients as observers for newly
@@ -1245,7 +1245,7 @@ namespace Unity.Netcode
             networkObject.OwnerClientId = serializedObject.OwnerClientId;
 
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
-            networkObject.InvokeBehaviourNetworkPreSpawn();
+            networkObject.InvokeBehaviourNetworkPreSpawn(ref networkObject.NetworkManagerOwner);
 
             // Process the remaining synchronization data from the buffer
             try
