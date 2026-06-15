@@ -395,14 +395,13 @@ namespace Unity.Netcode
         /// <param name="destroy">Defaults to true, determines whether the <see cref="NetworkObject"/> will be destroyed.</param>
         public void DeferDespawn(int tickOffset, bool destroy = true)
         {
-            // Ensure we log the DAMode message first as locking ownership is not allowed if not DA so the DA message is the most relevant.
+            // The DAMode message is logged first, as ownership locking isn’t allowed when not in DAMode, making it the most relevant message.
             if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
                     NetworkLog.LogErrorServer($"[{name}] This method is only available in distributed authority mode.");
                 }
-
                 return;
             }
 
@@ -412,7 +411,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}] Cannot defer despawn while not spawned.");
                 }
-
                 return;
             }
 
@@ -612,7 +610,7 @@ namespace Unity.Netcode
         /// <returns>true or false depending upon lock operation's success</returns>
         public bool SetOwnershipLock(bool lockOwnership = true)
         {
-            // Ensure we log the DAMode message first as locking ownership is not allowed if not DA so the DA message is the most relevant.
+            // The DAMode message is logged first, as ownership locking isn’t allowed when not in DAMode, making it the most relevant message.
             if (!NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
@@ -628,7 +626,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Attempted Lock While not spawned]");
                 }
-
                 return false;
             }
 
@@ -671,7 +668,6 @@ namespace Unity.Netcode
             {
                 SendOwnershipStatusUpdate();
             }
-
             return true;
         }
 
@@ -797,7 +793,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogErrorServer($"[{name}][Invalid Operation] Cannot request ownership of an NetworkObject before it is spawned.");
                 }
-
                 return OwnershipRequestStatus.InvalidOperation;
             }
             // Exit early the local client is already the owner
@@ -866,7 +861,7 @@ namespace Unity.Netcode
         public OnOwnershipRequestedDelegateHandler OnOwnershipRequested;
 
         /// <summary>
-        /// Invoked by ChangeOwnershipMessage
+        /// Invoked by <see cref="ChangeOwnershipMessage"/>
         /// </summary>
         /// <param name="clientRequestingOwnership">the client requesting ownership</param>
         internal void OwnershipRequest(ulong clientRequestingOwnership)
@@ -3403,7 +3398,6 @@ namespace Unity.Netcode
                 {
                     Destroy(networkObject.gameObject);
                 }
-
                 return null;
             }
 
@@ -3560,7 +3554,7 @@ namespace Unity.Netcode
             OnMigratedToNewScene?.Invoke();
 
             // Only the authority side will notify clients of non-parented NetworkObject scene changes
-            if (isAuthority && notify && !transform.parent)
+            if (isAuthority && notify && transform.parent == null)
             {
                 NetworkManagerOwner.SceneManager.NotifyNetworkObjectSceneChanged(this);
             }
