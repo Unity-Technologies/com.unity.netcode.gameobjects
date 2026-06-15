@@ -41,9 +41,9 @@ namespace Unity.Netcode
         /// <returns>True if the value should be synchronized, false otherwise</returns>
         public override bool ExceedsDirtinessThreshold()
         {
-            if (CheckExceedsDirtinessThreshold != null && m_HasPreviousValue)
+            if (CheckExceedsDirtinessThreshold != null && m_HasRemoteValue)
             {
-                return CheckExceedsDirtinessThreshold(m_PreviousValue, m_InternalValue);
+                return CheckExceedsDirtinessThreshold(m_LastRemoteValue, m_InternalValue);
             }
 
             return true;
@@ -56,9 +56,9 @@ namespace Unity.Netcode
         {
             base.OnInitialize();
 
-            m_HasPreviousValue = true;
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+            m_HasRemoteValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastRemoteValue);
         }
 
         /// <summary>
@@ -73,14 +73,14 @@ namespace Unity.Netcode
             : base(readPerm, writePerm)
         {
             m_InternalValue = value;
-            m_LastInternalValue = default;
+            m_LastSetValue = default;
             // Since we start with IsDirty = true, this doesn't need to be duplicated
             // right away. It won't get read until after ResetDirty() is called, and
             // the duplicate will be made there. Avoiding calling
             // NetworkVariableSerialization<T>.Duplicate() is important because calling
             // it in the constructor might not give users enough time to set the
             // DuplicateValue callback if they're using UserNetworkVariableSerialization
-            m_PreviousValue = default;
+            m_LastRemoteValue = default;
         }
 
         /// <summary>
@@ -92,8 +92,8 @@ namespace Unity.Netcode
             if (m_NetworkBehaviour == null || m_NetworkObject == null || !m_NetworkObject.IsSpawned)
             {
                 m_InternalValue = value;
-                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
-                m_PreviousValue = default;
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
+                m_LastRemoteValue = default;
             }
         }
 
@@ -115,23 +115,23 @@ namespace Unity.Netcode
         /// lowest risk approach to resolving the issue where a client with no write permissions could make changes to a collection locally
         /// which can cause a myriad of issues.
         /// </remarks>
-        private protected T m_LastInternalValue;
+        private protected T m_LastSetValue;
 
         /// <summary>
-        /// The most recent value that was synchronized over the network.
+        /// The most recent value that was synchronized over the network, either from or to remote hosts.
         /// Synchronized over the network at the end of the frame in which the <see cref="NetworkVariable{T}"/> was marked dirty.
         /// </summary>
         /// <remarks>
         /// Only contains the value synchronized over the network at the end of the last frame.
-        /// All in-between changes on the authority are tracked by <see cref="m_LastInternalValue"/>.
+        /// All in-between changes on the authority are tracked by <see cref="m_LastSetValue"/>.
         /// </remarks>
-        private protected T m_PreviousValue;
+        private protected T m_LastRemoteValue;
 
         /// <summary>
         /// Whether this network variable has had changes synchronized over the network.
-        /// Indicates whether <see cref="m_PreviousValue"/> is populated and valid.
+        /// Indicates whether <see cref="m_LastRemoteValue"/> is populated and valid.
         /// </summary>
-        private bool m_HasPreviousValue;
+        private bool m_HasRemoteValue;
         private bool m_IsDisposed;
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Unity.Netcode
                 {
                     T previousValue = m_InternalValue;
                     m_InternalValue = value;
-                    NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
+                    NetworkVariableSerialization<T>.Duplicate(value, ref m_LastSetValue);
                     SetDirty(true);
                     m_IsDisposed = false;
                     OnValueChanged?.Invoke(previousValue, m_InternalValue);
@@ -172,7 +172,7 @@ namespace Unity.Netcode
         /// The default behavior is to exit early if the <see cref="NetworkVariable{T}"/> is already dirty.
         /// </summary>
         /// <remarks>
-        /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changees to the collection items.<br />
+        /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changes to the collection items.<br />
         /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set forceCheck param to true. <br />
         /// </remarks>
         /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
@@ -185,21 +185,21 @@ namespace Unity.Netcode
             if (CannotWrite())
             {
                 // If modifications are detected, then revert back to the last known current value
-                if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_LastInternalValue))
+                if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_LastSetValue))
                 {
-                    NetworkVariableSerialization<T>.Duplicate(m_LastInternalValue, ref m_InternalValue);
+                    NetworkVariableSerialization<T>.Duplicate(m_LastSetValue, ref m_InternalValue);
                 }
                 return false;
             }
 
             // Compare the last internal value with the current value if not dirty or forcing a check.
-            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_LastInternalValue, ref m_InternalValue))
+            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_LastSetValue, ref m_InternalValue))
             {
                 SetDirty(true);
-                OnValueChanged?.Invoke(m_LastInternalValue, m_InternalValue);
+                OnValueChanged?.Invoke(m_LastSetValue, m_InternalValue);
                 m_IsDisposed = false;
                 isDirty = true;
-                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
             }
             return isDirty;
         }
@@ -228,24 +228,27 @@ namespace Unity.Netcode
             // Dispose the internal value
             if (m_InternalValue is IDisposable internalValueDisposable)
             {
+                Debug.Log($"[Client-{m_NetworkManager?.LocalClientId}] disposing internal value");
                 internalValueDisposable.Dispose();
             }
             m_InternalValue = default;
 
             // Dispose the internal original value
-            if (m_LastInternalValue is IDisposable internalOriginalValueDisposable)
+            if (m_LastSetValue is IDisposable internalOriginalValueDisposable)
             {
+                Debug.Log($"[Client-{m_NetworkManager?.LocalClientId}] disposing last set value");
                 internalOriginalValueDisposable.Dispose();
             }
-            m_LastInternalValue = default;
+            m_LastSetValue = default;
 
             // Dispose the previous value if there is one
-            if (m_HasPreviousValue && m_PreviousValue is IDisposable previousValueDisposable)
+            if (m_HasRemoteValue && m_LastRemoteValue is IDisposable previousValueDisposable)
             {
-                m_HasPreviousValue = false;
+                Debug.Log($"[Client-{m_NetworkManager?.LocalClientId}] disposing previous value");
                 previousValueDisposable.Dispose();
             }
-            m_PreviousValue = default;
+            m_HasRemoteValue = false;
+            m_LastRemoteValue = default;
 
             base.Dispose();
         }
@@ -266,9 +269,9 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (!NetworkUpdaterCheck && CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_LastInternalValue))
+            if (!NetworkUpdaterCheck && CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_LastSetValue))
             {
-                NetworkVariableSerialization<T>.Duplicate(m_LastInternalValue, ref m_InternalValue);
+                NetworkVariableSerialization<T>.Duplicate(m_LastSetValue, ref m_InternalValue);
                 return true;
             }
             // For most cases we can use the dirty flag.
@@ -282,7 +285,7 @@ namespace Unity.Netcode
                 return true;
             }
 
-            var dirty = !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue);
+            var dirty = !NetworkVariableSerialization<T>.AreEqual(ref m_LastRemoteValue, ref m_InternalValue);
             // Cache the dirty value so we don't perform this again if we already know we're dirty
             // Unfortunately we can't cache the NOT dirty state, because that might change
             // in between to checks... but the DIRTY state won't change until ResetDirty()
@@ -297,15 +300,15 @@ namespace Unity.Netcode
         public override void ResetDirty()
         {
             // Resetting the dirty value declares that the current value is not dirty
-            // Therefore, we set the m_PreviousValue field to a duplicate of the current
+            // Therefore, we set the m_LastRemoteValue field to a duplicate of the current
             // field, so that our next dirty check is made against the current "not dirty"
             // value.
             if (IsDirty())
             {
-                m_HasPreviousValue = true;
-                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+                m_HasRemoteValue = true;
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastRemoteValue);
                 // Once updated, assure the original current value is updated for future comparison purposes
-                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
             }
             base.ResetDirty();
         }
@@ -316,7 +319,7 @@ namespace Unity.Netcode
         /// <param name="writer">The stream to write the value to</param>
         public override void WriteDelta(FastBufferWriter writer)
         {
-            NetworkVariableSerialization<T>.WriteDelta(writer, ref m_InternalValue, ref m_PreviousValue);
+            NetworkVariableSerialization<T>.WriteDelta(writer, ref m_InternalValue, ref m_LastRemoteValue);
         }
 
         /// <summary>
@@ -328,9 +331,9 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_LastInternalValue, ref m_InternalValue))
+            if (CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_LastSetValue, ref m_InternalValue))
             {
-                NetworkVariableSerialization<T>.Duplicate(m_LastInternalValue, ref m_InternalValue);
+                NetworkVariableSerialization<T>.Duplicate(m_LastSetValue, ref m_InternalValue);
             }
 
             NetworkVariableSerialization<T>.ReadDelta(reader, ref m_InternalValue);
@@ -345,7 +348,7 @@ namespace Unity.Netcode
                 SetDirty(true);
             }
 
-            OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+            OnValueChanged?.Invoke(m_LastRemoteValue, m_InternalValue);
         }
 
         /// <summary>
@@ -359,10 +362,10 @@ namespace Unity.Netcode
         {
             // In order to get managed collections to properly have a previous and current value, we have to
             // duplicate the collection at this point before making any modifications to the current.
-            m_HasPreviousValue = true;
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+            m_HasRemoteValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastRemoteValue);
             // Once updated, assure the original current value is updated for future comparison purposes
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
         }
 
         /// <inheritdoc />
@@ -370,9 +373,9 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_LastInternalValue, ref m_InternalValue))
+            if (CannotWrite() && !NetworkVariableSerialization<T>.AreEqual(ref m_LastSetValue, ref m_InternalValue))
             {
-                NetworkVariableSerialization<T>.Duplicate(m_LastInternalValue, ref m_InternalValue);
+                NetworkVariableSerialization<T>.Duplicate(m_LastSetValue, ref m_InternalValue);
             }
 
             NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
@@ -380,11 +383,11 @@ namespace Unity.Netcode
             // duplicate the collection at this point before making any modifications to the current.
             // We duplicate the final value after the read (for ReadField ONLY) so the previous value is at par
             // with the current value (since this is only invoked when initially synchronizing).
-            m_HasPreviousValue = true;
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+            m_HasRemoteValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastRemoteValue);
 
             // Once updated, assure the original current value is updated for future comparison purposes
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastSetValue);
         }
 
         /// <inheritdoc />
@@ -398,9 +401,9 @@ namespace Unity.Netcode
             // If we have a pending update, then synchronize the client with the previously known
             // value since the updated version will be sent on the next tick or next time it is
             // set to be updated
-            if (base.IsDirty() && m_HasPreviousValue)
+            if (base.IsDirty() && m_HasRemoteValue)
             {
-                NetworkVariableSerialization<T>.Write(writer, ref m_PreviousValue);
+                NetworkVariableSerialization<T>.Write(writer, ref m_LastRemoteValue);
             }
             else
             {

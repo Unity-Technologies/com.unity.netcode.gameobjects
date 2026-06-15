@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,6 +15,7 @@ using UnityEditor.Experimental.SceneManagement;
 #endif
 #endif
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
 
@@ -871,6 +873,7 @@ namespace Unity.Netcode
         /// <param name="clientRequestingOwnership">the client requesting ownership</param>
         internal void OwnershipRequest(ulong clientRequestingOwnership)
         {
+            NetAssert.Asserts(IsSpawned, "");
             var response = OwnershipRequestResponseStatus.Approved;
 
             // Do a last check to make sure this NetworkObject can be requested
@@ -1155,14 +1158,40 @@ namespace Unity.Netcode
         /// <remarks>
         /// When in client-server mode, authority should is not considered the same as ownership.
         /// </remarks>
-        public bool HasAuthority => InternalHasAuthority();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool InternalHasAuthority()
+        public bool HasAuthority
         {
-            var networkManager = NetworkManager;
-            return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;
+            get
+            {
+                NetAssert.Assert(IsSpawned, "HasAuthority is not valid to use while not spawned");
+                return m_HasAuthority;
+            }
         }
+
+        private static class NetAssert
+        {
+            [Conditional("DEBUG")]
+            public static  void Assert(bool condition, string message)
+            {
+                UnityEngine.Assertions.Assert.IsTrue(condition, message);
+            }
+
+            [Conditional("NETCODE_INTERNAL_CHECKS")]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static void Asserts(bool condition, string message)
+            {
+                UnityEngine.Assertions.Assert.IsTrue(condition, message);
+            }
+        }
+
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // private bool InternalHasAuthority()
+        // {
+        //     var networkManager = NetworkManager;
+        //     return networkManager.DistributedAuthorityMode ? OwnerClientId == networkManager.LocalClientId : networkManager.IsServer;
+        // }
+
+
+        private bool m_HasAuthority;
 
         /// <summary>
         /// The NetworkManager that owns this NetworkObject.
@@ -2273,7 +2302,7 @@ namespace Unity.Netcode
             var networkObject = parent.GetComponent<NetworkObject>();
 
             // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
-            return networkObject == null ? false : TrySetParent(networkObject, worldPositionStays);
+            return networkObject ?? TrySetParent(networkObject, worldPositionStays);
         }
 
         /// <summary>
@@ -2647,6 +2676,7 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkPreSpawn()
         {
+            NetAssert.Asserts(NetworkManagerOwner != null, "Should be set by here");
             var networkManager = NetworkManager;
             InitializeChildNetworkBehaviours();
             foreach (var childBehaviour in ChildNetworkBehaviours.Values)
