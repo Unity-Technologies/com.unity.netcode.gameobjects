@@ -40,11 +40,15 @@ namespace DocumentationCodeSamples
         }
     }
 
-    // Bare minimum example of NetworkVariableBase derived class
+    /// <summary>
+    /// Bare minimum example of NetworkVariableBase derived class
+    /// </summary>
     [Serializable]
     public class MyCustomNetworkVariable : NetworkVariableBase
     {
-        // Managed list of class instances
+        /// <summary>
+        /// Managed list of class instances
+        /// </summary>
         public List<SomeData> SomeDataToSynchronize = new List<SomeData>();
 
         /// <summary>
@@ -96,25 +100,37 @@ namespace DocumentationCodeSamples
             }
         }
 
+        /// <summary>
+        /// Used to write partial updates rather than synchronizing the full state on every change.
+        /// </summary>
+        /// <param name="writer">The stream to write the state to</param>
+        public override void WriteDelta(FastBufferWriter writer)
+        {
+            // Not implemented for this example, instead we can write the field
+            WriteField(writer);
+        }
+
+        /// <summary>
+        /// Used to read partial updates rather than synchronizing the full state on every change.
+        /// </summary>
+        /// <inheritdoc/>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             // Not implemented for this example, instead we can read the field
             ReadField(reader);
         }
 
-        public override void WriteDelta(FastBufferWriter writer)
-        {
-            // Not implemented for this example, instead we can write the field
-            WriteField(writer);
-        }
     }
 
-    // Bare minimum example of generic NetworkVariableBase derived class
+    /// <summary>
+    /// Bare minimum example of generic NetworkVariableBase derived class
+    /// </summary>
+    /// <typeparam name="T">Generic type marker</typeparam>
     [Serializable]
     [GenerateSerializationForGenericParameter(0)]
     public class MyCustomGenericNetworkVariable<T> : NetworkVariableBase
     {
-        // Managed list of class instances
+        /// <summary>Managed list of class instances</summary>
         public List<T> SomeDataToSynchronize = new List<T>();
 
         /// <summary>
@@ -152,21 +168,30 @@ namespace DocumentationCodeSamples
             }
         }
 
-        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
-        {
-            // Not implemented for this example, instead we can read the field
-            ReadField(reader);
-        }
-
+        /// <summary>
+        /// Used to write partial updates rather than synchronizing the full state on every change.
+        /// </summary>
+        /// <param name="writer">The stream to write the state to</param>
         public override void WriteDelta(FastBufferWriter writer)
         {
             // Not implemented for this example, instead we can write the field
             WriteField(writer);
         }
+
+        /// <summary>
+        /// Used to read partial updates rather than synchronizing the full state on every change.
+        /// </summary>
+        /// <inheritdoc/>
+        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
+        {
+            // Not implemented for this example, instead we can read the field
+            ReadField(reader);
+        }
     }
 
-    // Example managed class used as the item type in the
-    // MyCustomNetworkVariable.SomeDataToSynchronize list
+    /// <summary>
+    /// Example managed class used as the item type in <see cref="MyCustomNetworkVariable.SomeDataToSynchronize"/>
+    /// </summary>
     [Serializable]
     public class SomeData
     {

@@ -1,27 +1,48 @@
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Netcode;
 
-namespace Unity.Netcode.EditorTests.Documentation.Serialization
+namespace DocumentationCodeSamples
 {
     #region HealthStruct
+    /// <summary>Container for storing health data for a player or item.</summary>
     public struct Health
     {
+        /// <summary>
+        /// The maximum health that this player or item can have.
+        /// This is unlikely to change often.
+        /// </summary>
         public uint MaxHealth;
+
+        /// <summary>
+        /// The current level of health that this player or item has.
+        /// This is likely to change regularly.
+        /// </summary>
         public int CurrentHealth;
     }
     #endregion
 
     #region FastBuffer
-    // Tells the Netcode how to serialize and deserialize our custom type.
+    /// <summary>Tells the Netcode how to serialize and deserialize our custom type.</summary>
     // The class name doesn't matter here.
     public static class FastBufferExtensions
     {
+        /// <summary>
+        /// Extension method to override the serialization for a custom type.
+        /// </summary>
+        /// <param name="writer">Buffer to write values into.</param>
+        /// <param name="health">The type to customize or override.</param>
         public static void WriteValueSafe(this FastBufferWriter writer, in Health health)
         {
             writer.WriteValueSafe(health.MaxHealth);
             writer.WriteValueSafe(health.CurrentHealth);
         }
 
+        /// <summary>
+        /// Extension method to override the de-serialization for a custom type.
+        /// </summary>
+        /// <param name="reader">Buffer to read values from.</param>
+        /// <param name="health">The type to customize or override.</param>
         public static void ReadValueSafe(this FastBufferReader reader, out Health health)
         {
             reader.ReadValueSafe(out uint max);
@@ -32,9 +53,16 @@ namespace Unity.Netcode.EditorTests.Documentation.Serialization
     #endregion
 
     #region BufferSerializer
+    /// <summary>Tells the <see cref="BufferSerializer{TReaderWriter}"/> how to serialize and deserialize our custom type.</summary>
     // The class name doesn't matter here.
     public static class BufferSerializerExtensions
     {
+        /// <summary>
+        /// Extension method to override bi-directional serialization for a custom type.
+        /// </summary>
+        /// <param name="serializer">Bi-directional serial</param>
+        /// <param name="health">The type to customize or override.</param>
+        /// <typeparam name="TReaderWriter">Boilerplate syntax to enable the bi-directional serialization.</typeparam>
         public static void SerializeValue<TReaderWriter>(this BufferSerializer<TReaderWriter> serializer, ref Health health) where TReaderWriter : IReaderWriter
         {
             // Because the BufferSerializer already knows how to read and write the primitive types
