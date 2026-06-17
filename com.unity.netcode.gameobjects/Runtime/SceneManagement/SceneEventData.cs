@@ -130,16 +130,16 @@ namespace Unity.Netcode
         /// was synchronizing (if so server will send another message back to the client informing the client of NetworkObjects to remove)
         /// spawned during an initial synchronization.
         /// </summary>
-        private readonly List<NetworkObject> m_NetworkObjectsSync;
+        private readonly List<NetworkObject> m_NetworkObjectsSync = new List<NetworkObject>();
 
-        private readonly List<NetworkObject> m_DespawnedInSceneObjectsSync;
+        private readonly List<NetworkObject> m_DespawnedInSceneObjectsSync = new List<NetworkObject>();
 
         /// <summary>
         /// Server Side Re-Synchronization:
         /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
         /// the server will compile a list and send back an Event_ReSync message to the client.
         /// </summary>
-        private readonly List<ulong> m_NetworkObjectsToBeRemoved;
+        private readonly List<ulong> m_NetworkObjectsToBeRemoved = new List<ulong>();
 
         private bool m_HasInternalBuffer;
         private FastBufferReader m_InternalBuffer;
