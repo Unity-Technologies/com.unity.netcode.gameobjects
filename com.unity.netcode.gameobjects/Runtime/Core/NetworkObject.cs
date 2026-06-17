@@ -2001,7 +2001,6 @@ namespace Unity.Netcode
         public void Spawn(bool destroyWithScene = false)
         {
             var clientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
-            m_HasAuthority = NetworkManager.DistributedAuthorityMode ? OwnerClientId == NetworkManager.LocalClientId : NetworkManager.IsServer;
             SpawnInternal(destroyWithScene, clientId, false);
         }
 
@@ -2051,6 +2050,72 @@ namespace Unity.Netcode
                 behavior.MarkVariablesDirty(false);
             }
             NetworkManagerOwner.SpawnManager.DespawnObject(this, destroy);
+        }
+
+        internal void SetupOnSpawn(ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            // Obsolete with warning means we need the underlying behaviour to keep existing
+            // TODO: remove in the 3.x branch
+            SetSceneObjectStatus(sceneObject);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
+            // Note: Always check SceneOriginHandle directly at this specific location.
+            if (InScenePlaced && SceneOriginHandle.IsEmpty())
+            {
+                SceneOrigin = gameObject.scene;
+            }
+
+            NetworkObjectId = networkId;
+
+            DestroyWithScene = sceneObject || destroyWithScene;
+
+            IsPlayerObject = playerObject;
+
+            OwnerClientId = ownerClientId;
+
+            // When spawned, previous owner is always the first assigned owner
+            PreviousOwnerId = ownerClientId;
+
+            // If this is the player and the client is the owner, then lock ownership by default
+            if (NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.LocalClientId == ownerClientId && playerObject)
+            {
+                AddOwnershipExtended(OwnershipStatusExtended.Locked);
+            }
+
+            m_HasAuthority = NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
+            IsSpawned = true;
+
+            // If we are not running in DA mode, this is the server, and the NetworkObject has SpawnWithObservers set,
+            // then add all connected clients as observers
+            if (!NetworkManagerOwner.DistributedAuthorityMode && NetworkManagerOwner.IsServer && SpawnWithObservers)
+            {
+                // If running as a server only, then make sure to always add the server's client identifier
+                if (!NetworkManagerOwner.IsHost)
+                {
+                    AddObserver(NetworkManagerOwner.LocalClientId);
+                }
+
+                // Add client observers
+                for (int i = 0; i < NetworkManagerOwner.ConnectedClientsIds.Count; i++)
+                {
+                    // If CheckObjectVisibility has a callback, then allow that method determine who the observers are.
+                    if (CheckObjectVisibility != null && !CheckObjectVisibility(NetworkManagerOwner.ConnectedClientsIds[i]))
+                    {
+                        continue;
+                    }
+                    AddObserver(NetworkManagerOwner.ConnectedClientsIds[i]);
+                }
+            }
+
+            // If we are an in-scene placed NetworkObject and our InScenePlacedSourceGlobalObjectIdHash is set
+            // then assign this to the PrefabGlobalObjectIdHash
+            if (InScenePlaced && InScenePlacedSourceGlobalObjectIdHash != 0)
+            {
+                PrefabGlobalObjectIdHash = InScenePlacedSourceGlobalObjectIdHash;
+            }
+
         }
 
         internal void ResetOnDespawn()
@@ -2118,7 +2183,10 @@ namespace Unity.Netcode
             var isPreviousOwner = originalOwnerClientId == NetworkManagerOwner.LocalClientId;
             var isNewOwner = newOwnerClientId == NetworkManagerOwner.LocalClientId;
 
-            m_HasAuthority = distributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
+            if (distributedAuthorityMode)
+            {
+                m_HasAuthority = isNewOwner;
+            }
 
             if (distributedAuthorityMode || isPreviousOwner)
             {
