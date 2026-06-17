@@ -391,12 +391,12 @@ namespace Unity.Netcode
         /// <param name="networkObject"></param>
         internal void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
         {
-            if (!m_SceneNetworkObjects.ContainsKey(sceneIndex))
+            if (!m_SceneNetworkObjects.TryGetValue(sceneIndex, out var sceneNetworkObject))
             {
-                m_SceneNetworkObjects.Add(sceneIndex, new List<NetworkObject>());
+                sceneNetworkObject = new List<NetworkObject>();
+                m_SceneNetworkObjects.Add(sceneIndex, sceneNetworkObject);
             }
-
-            m_SceneNetworkObjects[sceneIndex].Add(networkObject);
+            sceneNetworkObject.Add(networkObject);
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace Unity.Netcode
         /// </summary>
         private void WriteSceneSynchronizationData(FastBufferWriter writer)
         {
-            var builder = (StringBuilder)null;
+            StringBuilder builder = null;
             if (EnableSerializationLogs)
             {
                 builder = new StringBuilder();
@@ -669,7 +669,7 @@ namespace Unity.Netcode
         /// </summary>
         private void SerializeScenePlacedObjects(FastBufferWriter writer)
         {
-            var numberOfObjects = (ushort)0;
+            ushort numberOfObjects = 0;
             var headPosition = writer.Position;
 
             // Write our count placeholder (must not be packed!)
@@ -695,10 +695,10 @@ namespace Unity.Netcode
             SortObjectsToSync();
 
             // Serialize the sorted objects to sync.
-            foreach (var objectToSycn in m_NetworkObjectsSync)
+            foreach (var objectToSync in m_NetworkObjectsSync)
             {
                 // Serialize the NetworkObject
-                var serializedObject = objectToSycn.Serialize(TargetClientId, distributedAuthority);
+                var serializedObject = objectToSync.Serialize(TargetClientId, distributedAuthority);
                 serializedObject.Serialize(writer);
                 numberOfObjects++;
             }
@@ -957,7 +957,7 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal bool ClientNeedsReSynchronization()
         {
-            return (m_NetworkObjectsToBeRemoved.Count > 0);
+            return m_NetworkObjectsToBeRemoved.Count > 0;
         }
 
         /// <summary>
@@ -1054,15 +1054,10 @@ namespace Unity.Netcode
                     // Since this is a NetworkObject that was never spawned, we just need to send a notification
                     // out that it was despawned so users can make adjustments
                     despawnedObject.InvokeBehaviourNetworkDespawn();
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
-                    {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
-                    }
 
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(despawnedObject.GetSceneOriginHandle()))
-                    {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(despawnedObject.GetSceneOriginHandle(), despawnedObject);
-                    }
+                    m_NetworkManager.SceneManager.ScenePlacedObjects.TryAdd(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
+
+                    m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].TryAdd(despawnedObject.GetSceneOriginHandle(), despawnedObject);
                 }
                 else
                 {
@@ -1080,7 +1075,7 @@ namespace Unity.Netcode
         /// <param name="networkManager"></param>
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
-            var builder = (StringBuilder)null;
+            StringBuilder builder = null;
             if (EnableSerializationLogs)
             {
                 builder = new StringBuilder();
@@ -1221,7 +1216,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(sceneManager.ObjectsMigratedIntoNewScene.Count);
             foreach (var sceneHandleObjects in sceneManager.ObjectsMigratedIntoNewScene)
             {
-                if (!sceneManager.ObjectsMigratedIntoNewScene[sceneHandleObjects.Key].ContainsKey(ownerId))
+                if (!sceneHandleObjects.Value.ContainsKey(ownerId))
                 {
                     throw new Exception($"Trying to send object scene migration for Client-{ownerId} but the client has no entries to send!");
                 }
@@ -1258,10 +1253,7 @@ namespace Unity.Netcode
                     sceneManager.ObjectsMigratedIntoNewScene.Add(sceneHandle, migratedObjects);
                 }
 
-                if (!migratedObjects.ContainsKey(ownerID))
-                {
-                    migratedObjects.Add(ownerID, new List<NetworkObject>());
-                }
+                migratedObjects.TryAdd(ownerID, new List<NetworkObject>());
 
                 reader.ReadValueSafe(out int objectCount);
                 for (int j = 0; j < objectCount; j++)
@@ -1298,7 +1290,6 @@ namespace Unity.Netcode
                 ObjectsMigratedTable = new Dictionary<NetworkSceneHandle, List<ulong>>(),
             };
 
-
             reader.ReadValueSafe(out int numberOfScenes);
             for (int i = 0; i < numberOfScenes; i++)
             {
@@ -1332,10 +1323,9 @@ namespace Unity.Netcode
                         migratedObjects = new Dictionary<ulong, List<NetworkObject>>();
                         sceneManager.ObjectsMigratedIntoNewScene.Add(keyEntry.Key, migratedObjects);
                     }
-                    if (!migratedObjects.ContainsKey(objectsMovedEvent.OwnerId))
-                    {
-                        migratedObjects.Add(objectsMovedEvent.OwnerId, new List<NetworkObject>());
-                    }
+
+                    migratedObjects.TryAdd(objectsMovedEvent.OwnerId, new List<NetworkObject>());
+                    var objectList = migratedObjects[objectsMovedEvent.OwnerId];
 
                     foreach (var objectId in keyEntry.Value)
                     {
@@ -1345,9 +1335,9 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        if (!migratedObjects[objectsMovedEvent.OwnerId].Contains(networkObject))
+                        if (!objectList.Contains(networkObject))
                         {
-                            migratedObjects[objectsMovedEvent.OwnerId].Add(networkObject);
+                            objectList.Add(networkObject);
                         }
                     }
                 }
