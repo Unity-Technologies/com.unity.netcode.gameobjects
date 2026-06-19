@@ -9,17 +9,31 @@ namespace Unity.Netcode
     /// </summary>
     [Serializable]
     [BurstCompile]
-    internal struct Vector3UInt : IEquatable<Vector3UInt>
+    public struct Vector3UInt : IEquatable<Vector3UInt>
     {
         public uint X;
         public uint Y;
         public uint Z;
 
-        public Vector3UInt(uint x, uint y, uint z)
+        private float m_InvPrecision;
+        private uint m_Precision;
+
+        public Vector3UInt(uint x, uint y, uint z, uint precision = 1000)
         {
+            m_InvPrecision = 1.0f / precision;
+            m_Precision = precision;
             X = x;
             Y = y;
             Z = z;
+        }
+
+        public Vector3UInt(Vector3 vector3, uint precision = 1000)
+        {
+            m_InvPrecision = 1.0f / precision;
+            m_Precision = precision;
+            X = (uint)Math.Abs(vector3.x * m_Precision);
+            Y = (uint)Math.Abs(vector3.y * m_Precision);
+            Z = (uint)Math.Abs(vector3.z * m_Precision);
         }
 
         // Common static properties
@@ -88,7 +102,7 @@ namespace Unity.Netcode
         }
 
         // Conversion to Vector3 (float)
-        public Vector3 ToVector3() => new Vector3(X, Y, Z);
+        public Vector3 ToVector3() => new Vector3(X * m_InvPrecision, Y * m_InvPrecision, Z * m_InvPrecision);
 
         public override string ToString() => $"({X}, {Y}, {Z})";
     }
