@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+- RPC messages now log any time they are not processed. (#3994)
 
 ### Changed
 
