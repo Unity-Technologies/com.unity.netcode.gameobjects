@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.13.0] - 2026-06-21
 
 ### Added
 
@@ -19,18 +19,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Deprecated
 
 - Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
-
-### Removed
-
-
-### Fixed
-
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.12.0] - 2026-05-24
 
