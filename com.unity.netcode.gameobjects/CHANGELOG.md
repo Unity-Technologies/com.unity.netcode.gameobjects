@@ -10,15 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
 
 ### Changed
 
-- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
 
 ### Deprecated
 
-- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
 
 ### Removed
 
@@ -31,6 +28,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Obsolete
 
+
+## [2.13.0] - 2026-06-21
+
+### Added
+
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+
+### Changed
+
+- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
+
+### Deprecated
+
+- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
 
 ## [2.12.0] - 2026-05-24
 
