@@ -92,7 +92,7 @@ namespace Unity.Netcode
             var currentPos = current.m_Position;
             var negativeMask = (byte)(1 << 3);
 
-            var adjustPrecision = !fullSynch && math.abs(currentPos.magnitude) <= 0.75f;
+            var adjustPrecision = false;//!fullSynch && math.abs(m_Delta.magnitude) <= 0.75f;
             // If the delta is relatively small, then increase precision by 1 decimal place
             var precisionAdjusted = adjustPrecision ? m_Precision * 10f : m_Precision;
             var precisionAdjustMask = adjustPrecision ? (byte)(1 << 6) : (byte)0;

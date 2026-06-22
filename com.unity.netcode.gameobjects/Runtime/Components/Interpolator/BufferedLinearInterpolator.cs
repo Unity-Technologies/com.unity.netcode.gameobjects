@@ -225,7 +225,11 @@ namespace Unity.Netcode
             }
         }
 
+#if RELIABLE_SEQUENCED_DELTA_COMPRESSION
+        public bool LerpSmoothEnabled;
+#else
         internal bool LerpSmoothEnabled;
+#endif
 
         /// <summary>
         /// Determines how much smoothing will be applied to the 2nd lerp when using the <see cref="Update(float, double, double)"/> (i.e. lerping and not smooth dampening).
@@ -345,7 +349,7 @@ namespace Unity.Netcode
             }
         }
 
-        #region Smooth Dampening and Lerp Ahead Interpolation Handling
+#region Smooth Dampening and Lerp Ahead Interpolation Handling
         /// <summary>
         /// TryConsumeFromBuffer: Smooth Dampening and Lerp Ahead Version
         /// </summary>
@@ -452,7 +456,11 @@ namespace Unity.Netcode
         /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
         /// <param name="lerp">Determines whether to use smooth dampening or lerp interpolation type.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
+#if RELIABLE_SEQUENCED_DELTA_COMPRESSION
+        public T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool lerp)
+#else
         internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool lerp)
+#endif
         {
             TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime);
             // Only begin interpolation when there is a start and end point
@@ -504,7 +512,7 @@ namespace Unity.Netcode
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
         }
-        #endregion
+#endregion
 
         #region Lerp Interpolation
         /// <summary>
