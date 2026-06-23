@@ -1137,47 +1137,12 @@ namespace Unity.Netcode
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
-            // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
-            // For now, this is the best place I could find to add all connected clients as observers for newly
-            // instantiated and spawned NetworkObjects on the authoritative side.
-            if (NetworkManager.DistributedAuthorityMode)
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && sceneObject)
             {
-                if (NetworkManager.NetworkConfig.EnableSceneManagement && sceneObject)
-                {
-                    networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
-                    networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
-                }
-
-                // Always add the owner/authority even if SpawnWithObservers is false
-                // (authority should not take into consideration networkObject.CheckObjectVisibility when SpawnWithObservers is false)
-                if (!networkObject.SpawnWithObservers)
-                {
-                    networkObject.AddObserver(ownerClientId);
-                }
-                else
-                {
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        // If SpawnWithObservers is enabled, then authority does take networkObject.CheckObjectVisibility into consideration
-                        if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility.Invoke(clientId))
-                        {
-                            continue;
-                        }
-                        networkObject.AddObserver(clientId);
-                    }
-
-                    // Sanity check to make sure the owner is always included
-                    // Intentionally checking as opposed to just assigning in order to generate notification.
-                    if (!networkObject.Observers.Contains(ownerClientId))
-                    {
-                        if (NetworkManager.LogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogError($"Client-{ownerClientId} is the owner of {networkObject.name} but is not an observer! Adding owner, but there is a bug in observer synchronization!");
-                        }
-                        networkObject.AddObserver(ownerClientId);
-                    }
-                }
+                networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
+                networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
             }
+
 
             if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene))
             {
@@ -1321,7 +1286,13 @@ namespace Unity.Netcode
                 return false;
             }
 
-            networkObject.SetupOnSpawn(networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+#pragma warning disable CS0618 // Type or member is obsolete
+            // Obsolete with warning means we need the underlying behaviour to keep existing
+            // TODO: remove in the 3.x branch
+            networkObject.SetSceneObjectStatus(sceneObject);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
@@ -1330,14 +1301,8 @@ namespace Unity.Netcode
             NetworkObject.CheckOrphanChildren();
 
             AddNetworkObjectToSceneChangedUpdates(networkObject);
-
+            UpdateOwnershipTable(networkObject, ownerClientId);
             networkObject.InvokeBehaviourNetworkSpawn();
-
-            // Only dynamically spawned NetworkObjects are allowed
-            if (!sceneObject)
-            {
-                networkObject.SubscribeToActiveSceneForSynch();
-            }
 
             if (networkObject.IsPlayerObject)
             {
