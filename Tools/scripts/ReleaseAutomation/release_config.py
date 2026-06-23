@@ -90,57 +90,30 @@ class ReleaseConfig:
 
         self.yamato_build_automation_configs = [
             {
-                "job_name": "Build Sample for Windows with minimal supported editor (2022.3), burst ON, IL2CPP",
+                "job_name": "Build Sample for Windows with supported editor (6000.0), burst ON, IL2CPP",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "on" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "win64" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "2022.3" } # Minimal supported editor
+                    { "key": "UNITY_VERSION", "value": "6000.0" }
                 ]
             },
             {
-                "job_name": "Build Sample for Windows with latest functional editor (6000.3), burst ON, IL2CPP",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "on" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "win64" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
-                ]
-            },
-            {
-                "job_name": "Build Sample for MacOS with minimal supported editor (2022.3), burst OFF, Mono",
+                "job_name": "Build Sample for MacOS with supported editor (6000.0), burst OFF, Mono",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "off" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "mac" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "mono" },
-                    { "key": "UNITY_VERSION", "value": "2022.3" } # Minimal supported editor
+                    { "key": "UNITY_VERSION", "value": "6000.0" }
                 ]
             },
             {
-                "job_name": "Build Sample for MacOS with latest functional editor (6000.3), burst OFF, Mono",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "off" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "mac" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "mono" },
-                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
-                ]
-            },
-            {
-                "job_name": "Build Sample for Android with minimal supported editor (2022.3), burst ON, IL2CPP",
+                "job_name": "Build Sample for Android with supported editor (6000.0), burst ON, IL2CPP",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "on" },
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "android" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "2022.3" } # Minimal supported editor
-                ]
-            },
-            {
-                "job_name": "Build Sample for Android with latest functional editor (6000.3), burst ON, IL2CPP",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "on" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "android" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "6000.3" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
+                    { "key": "UNITY_VERSION", "value": "6000.0" }
                 ]
             }
         ]
