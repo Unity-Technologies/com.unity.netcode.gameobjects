@@ -1443,10 +1443,7 @@ namespace Unity.Netcode
         /// </summary>
         internal Scene SceneOrigin
         {
-            get
-            {
-                return m_SceneOrigin;
-            }
+            get => m_SceneOrigin;
 
             set
             {
@@ -1466,13 +1463,8 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkSceneHandle GetSceneOriginHandle()
         {
-            if (SceneOriginHandle.IsEmpty() && IsSpawned && InScenePlaced)
-            {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
-                }
-            }
+            NetworkLog.InternalAssert(!(IsSpawned && InScenePlaced && SceneOriginHandle.IsEmpty()), $"Spawned in scene placed NetworkObject {name} should always have a valid SceneOriginHandle");
+
             return !SceneOriginHandle.IsEmpty() ? SceneOriginHandle : gameObject.scene.handle;
         }
 
@@ -2057,7 +2049,6 @@ namespace Unity.Netcode
             NetworkObjectId = networkId;
             IsPlayerObject = isPlayerObject;
             OwnerClientId = ownerClientId;
-            m_IsOwner = ownerClientId == NetworkManagerOwner.LocalClientId;
             // When spawned, previous owner is always the first assigned owner
             PreviousOwnerId = ownerClientId;
             m_HasAuthority = NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;

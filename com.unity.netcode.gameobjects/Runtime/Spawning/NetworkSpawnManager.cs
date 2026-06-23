@@ -1461,8 +1461,7 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
-                sobj.IsSpawned = false;
-                sobj.DestroyWithScene = false;
+                sobj.ResetOnDespawn();
             }
         }
 

@@ -160,14 +160,9 @@ namespace Unity.Netcode
             return true;
         }
 
+        [HideInCallstack]
         [Conditional("NETCODE_INTERNAL")]
         internal static void InternalAssert(bool condition, string message)
-        {
-            Assert.IsTrue(condition, message);
-        }
-
-        [Conditional("NETCODE_CHECK_OWNERSHIP")]
-        internal static void OtherAssert(bool condition, string message)
         {
             Assert.IsTrue(condition, message);
         }
