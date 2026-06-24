@@ -1152,10 +1152,10 @@ namespace Unity.Netcode
                     }
                 }
                 else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                {
-                    writer.WriteValueSafe(0);
-                }
+                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    {
+                        writer.WriteValueSafe(0);
+                    }
             }
         }
 
@@ -1183,10 +1183,10 @@ namespace Unity.Netcode
                     readStartPos = reader.Position;
                 }
                 else // If the client cannot read this field, then skip it
-                if (!field.CanClientRead(clientId))
-                {
-                    continue;
-                }
+                    if (!field.CanClientRead(clientId))
+                    {
+                        continue;
+                    }
 
                 field.ReadField(reader);
 

@@ -343,11 +343,11 @@ namespace TestProject.ManualTests
                 StartSpawningBoxes();
             }
             else //Handle case where spawning coroutine is running but we set our spawn rate to zero
-            if (SpawnsPerSecond == 0 && m_IsSpawningObjects)
-            {
-                m_IsSpawningObjects = false;
-                InternalStopCoroutine();
-            }
+                if (SpawnsPerSecond == 0 && m_IsSpawningObjects)
+                {
+                    m_IsSpawningObjects = false;
+                    InternalStopCoroutine();
+                }
 
         }
 

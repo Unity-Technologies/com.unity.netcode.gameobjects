@@ -1179,31 +1179,31 @@ namespace Unity.Netcode
                     Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
                 }
                 else // Otherwise, if we are removing a parent then go ahead and allow parenting to occur
-                if (transform.parent == null)
-                {
-                    m_LatestParent = null;
-                    m_CachedParent = null;
-                    InvokeBehaviourOnNetworkObjectParentChanged(null);
-                }
+                    if (transform.parent == null)
+                    {
+                        m_LatestParent = null;
+                        m_CachedParent = null;
+                        InvokeBehaviourOnNetworkObjectParentChanged(null);
+                    }
                 return;
             }
             else // Otherwise, on the serer side if this instance is not spawned...
-            if (!IsSpawned)
-            {
-                // ,,,and we are removing the parent, then go ahead and allow parenting to occur
-                if (transform.parent == null)
+                if (!IsSpawned)
                 {
-                    m_LatestParent = null;
-                    m_CachedParent = null;
-                    InvokeBehaviourOnNetworkObjectParentChanged(null);
+                    // ,,,and we are removing the parent, then go ahead and allow parenting to occur
+                    if (transform.parent == null)
+                    {
+                        m_LatestParent = null;
+                        m_CachedParent = null;
+                        InvokeBehaviourOnNetworkObjectParentChanged(null);
+                    }
+                    else
+                    {
+                        transform.parent = m_CachedParent;
+                        Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
+                    }
+                    return;
                 }
-                else
-                {
-                    transform.parent = m_CachedParent;
-                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
-                }
-                return;
-            }
             var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
@@ -1317,25 +1317,25 @@ namespace Unity.Netcode
                     return true;
                 }
                 else // If the parent still isn't spawned add this to the orphaned children and return false
-                if (!parentNetworkObject.IsSpawned)
-                {
-                    OrphanChildren.Add(this);
-                    return false;
-                }
-                else
-                {
-                    // If we made it this far, go ahead and set the network parenting values
-                    // with the WorldPoisitonSays value set to false
-                    // Note: Since in-scene placed NetworkObjects are parented in the scene
-                    // the default "assumption" is that children are parenting local space
-                    // relative.
-                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
+                    if (!parentNetworkObject.IsSpawned)
+                    {
+                        OrphanChildren.Add(this);
+                        return false;
+                    }
+                    else
+                    {
+                        // If we made it this far, go ahead and set the network parenting values
+                        // with the WorldPoisitonSays value set to false
+                        // Note: Since in-scene placed NetworkObjects are parented in the scene
+                        // the default "assumption" is that children are parenting local space
+                        // relative.
+                        SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
 
-                    // Set the cached parent
-                    m_CachedParent = parentNetworkObject.transform;
+                        // Set the cached parent
+                        m_CachedParent = parentNetworkObject.transform;
 
-                    return true;
-                }
+                        return true;
+                    }
             }
 
             // If we are removing the parent or our latest parent is not set, then remove the parent
@@ -2076,16 +2076,16 @@ namespace Unity.Netcode
                 NetworkSceneHandle = SceneOriginHandle;
             }
             else // Otherwise, the client did not find the client to server scene handle
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
-                // into, but that scenario seemed very edge case and under most instances a user should be notified that this
-                // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
-                // the server-side too.
-                NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{gameObject.name}] Server - " +
-                    $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
-                    $"has no associated server side (network) scene handle!");
-            }
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
+                    // into, but that scenario seemed very edge case and under most instances a user should be notified that this
+                    // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
+                    // the server-side too.
+                    NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{gameObject.name}] Server - " +
+                        $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
+                        $"has no associated server side (network) scene handle!");
+                }
             OnMigratedToNewScene?.Invoke();
 
             // Only the server side will notify clients of non-parented NetworkObject scene changes

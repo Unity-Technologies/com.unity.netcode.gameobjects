@@ -21,7 +21,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             var size =
 #endif
-                behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
+            behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             if (NetworkBehaviour.__rpc_name_table[behaviour.GetType()].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))

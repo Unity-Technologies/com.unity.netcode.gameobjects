@@ -454,10 +454,10 @@ namespace TestProject.RuntimeTests
                     }
                 }
                 else
-                if (animatorTestHelper.Value.GetLayerWeight(layer) != targetWeight)
-                {
-                    return false;
-                }
+                    if (animatorTestHelper.Value.GetLayerWeight(layer) != targetWeight)
+                    {
+                        return false;
+                    }
             }
             return true;
         }

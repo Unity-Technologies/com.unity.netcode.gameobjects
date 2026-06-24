@@ -1093,24 +1093,24 @@ namespace Unity.Netcode.Components
                     }
                 }
                 else // Note: Triggers are treated like boolean values
-                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
-                {
-                    var valueBool = m_Animator.GetBool(hash);
-                    fixed (void* value = cacheValue.Value)
+                    if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                     {
-                        UnsafeUtility.WriteArrayElement(value, 0, valueBool);
-                        BytePacker.WriteValuePacked(writer, valueBool);
+                        var valueBool = m_Animator.GetBool(hash);
+                        fixed (void* value = cacheValue.Value)
+                        {
+                            UnsafeUtility.WriteArrayElement(value, 0, valueBool);
+                            BytePacker.WriteValuePacked(writer, valueBool);
+                        }
                     }
-                }
-                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
-                {
-                    var valueFloat = m_Animator.GetFloat(hash);
-                    fixed (void* value = cacheValue.Value)
+                    else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                     {
-                        UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
-                        BytePacker.WriteValuePacked(writer, valueFloat);
+                        var valueFloat = m_Animator.GetFloat(hash);
+                        fixed (void* value = cacheValue.Value)
+                        {
+                            UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
+                            BytePacker.WriteValuePacked(writer, valueFloat);
+                        }
                     }
-                }
             }
         }
 
