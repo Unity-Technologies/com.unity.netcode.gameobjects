@@ -190,10 +190,10 @@ namespace Unity.Netcode
                             NetworkLog.LogErrorServer($"[{nameof(CreateObjectMessage)}][Duplicate-Broadcast] Detected duplicated object creation for {serializedObject.NetworkObjectId}!");
                         }
                         else // Trap to make sure the owner is not receiving any messages it sent
-                        if (networkManager.CMBServiceConnection && networkManager.LocalClientId == networkObject.OwnerClientId)
-                        {
-                            NetworkLog.LogWarning($"[{nameof(CreateObjectMessage)}][Client-{networkManager.LocalClientId}][Duplicate-CreateObjectMessage][Client Is Owner] Detected duplicated object creation for {networkObject.name}-{serializedObject.NetworkObjectId}!");
-                        }
+                            if (networkManager.CMBServiceConnection && networkManager.LocalClientId == networkObject.OwnerClientId)
+                            {
+                                NetworkLog.LogWarning($"[{nameof(CreateObjectMessage)}][Client-{networkManager.LocalClientId}][Duplicate-CreateObjectMessage][Client Is Owner] Detected duplicated object creation for {networkObject.name}-{serializedObject.NetworkObjectId}!");
+                            }
                     }
                     else
                     {
