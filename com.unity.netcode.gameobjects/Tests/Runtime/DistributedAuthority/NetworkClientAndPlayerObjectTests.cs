@@ -247,11 +247,11 @@ namespace Unity.Netcode.RuntimeTests
                     success = false;
                 }
                 else
-                if (!client.SpawnManager.PlayerObjects.Contains(client.LocalClient.PlayerObject))
-                {
-                    m_ErrorLogLevel1.AppendLine($"[Client-{client.LocalClientId}] Local {nameof(NetworkSpawnManager.PlayerObjects)} does not contain {client.LocalClient.PlayerObject.name}!");
-                    success = false;
-                }
+                    if (!client.SpawnManager.PlayerObjects.Contains(client.LocalClient.PlayerObject))
+                    {
+                        m_ErrorLogLevel1.AppendLine($"[Client-{client.LocalClientId}] Local {nameof(NetworkSpawnManager.PlayerObjects)} does not contain {client.LocalClient.PlayerObject.name}!");
+                        success = false;
+                    }
             }
 
             return success;

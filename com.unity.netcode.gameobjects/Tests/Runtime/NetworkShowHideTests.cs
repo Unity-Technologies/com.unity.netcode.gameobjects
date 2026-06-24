@@ -489,10 +489,10 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
                 else
-                if (client.SpawnManager.SpawnedObjects[m_NetSpawnedObject1.NetworkObjectId].IsNetworkVisibleTo(m_ClientWithoutVisibility))
-                {
-                    m_ErrorLog.AppendLine($"Local instance of {m_NetSpawnedObject1.name} on Client-{client.LocalClientId} thinks Client-{m_ClientWithoutVisibility} still has visibility!");
-                }
+                    if (client.SpawnManager.SpawnedObjects[m_NetSpawnedObject1.NetworkObjectId].IsNetworkVisibleTo(m_ClientWithoutVisibility))
+                    {
+                        m_ErrorLog.AppendLine($"Local instance of {m_NetSpawnedObject1.name} on Client-{client.LocalClientId} thinks Client-{m_ClientWithoutVisibility} still has visibility!");
+                    }
             }
             return m_ErrorLog.Length == 0;
         }
