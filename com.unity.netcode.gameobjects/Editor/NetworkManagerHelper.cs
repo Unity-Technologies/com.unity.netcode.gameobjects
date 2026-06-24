@@ -196,10 +196,10 @@ namespace Unity.Netcode.Editor
                     return isParented;
                 }
                 else // If we are no longer a child, then we can remove ourself from this list
-                if (transform.root == gameObject.transform)
-                {
-                    s_LastKnownNetworkManagerParents.Remove(networkManager);
-                }
+                    if (transform.root == gameObject.transform)
+                    {
+                        s_LastKnownNetworkManagerParents.Remove(networkManager);
+                    }
             }
             if (!EditorApplication.isUpdating && isParented)
             {
