@@ -2026,23 +2026,23 @@ namespace Unity.Netcode.Components
                 }
             }
             else // Just apply the full local scale when synchronizing
-            if (SynchronizeScale)
-            {
-                if (!UseHalfFloatPrecision)
+                if (SynchronizeScale)
                 {
-                    networkState.ScaleX = transform.localScale.x;
-                    networkState.ScaleY = transform.localScale.y;
-                    networkState.ScaleZ = transform.localScale.z;
+                    if (!UseHalfFloatPrecision)
+                    {
+                        networkState.ScaleX = transform.localScale.x;
+                        networkState.ScaleY = transform.localScale.y;
+                        networkState.ScaleZ = transform.localScale.z;
+                    }
+                    else
+                    {
+                        networkState.Scale = transform.localScale;
+                    }
+                    networkState.HasScaleX = true;
+                    networkState.HasScaleY = true;
+                    networkState.HasScaleZ = true;
+                    isScaleDirty = true;
                 }
-                else
-                {
-                    networkState.Scale = transform.localScale;
-                }
-                networkState.HasScaleX = true;
-                networkState.HasScaleY = true;
-                networkState.HasScaleZ = true;
-                isScaleDirty = true;
-            }
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
             if (isDirty)
@@ -2768,10 +2768,10 @@ namespace Unity.Netcode.Components
                 m_TargetPosition = GetSpaceRelativePosition();
             }
             else // If we are no longer authority, unsubscribe to the tick event
-            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
-            {
-                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
-            }
+                if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+                {
+                    NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+                }
         }
 
         /// <inheritdoc/>

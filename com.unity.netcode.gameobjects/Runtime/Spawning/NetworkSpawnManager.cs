@@ -1024,10 +1024,10 @@ namespace Unity.Netcode
                             OnDespawnObject(networkObjects[i], shouldDestroy);
                         }
                         else // Otherwise, if we are not spawned and we should destroy...then destroy.
-                        if (shouldDestroy)
-                        {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                        }
+                            if (shouldDestroy)
+                            {
+                                UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                            }
                     }
                 }
             }
