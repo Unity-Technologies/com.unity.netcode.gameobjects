@@ -3,7 +3,7 @@
   "dependencies": {
     "com.unity.ide.rider": "3.0.40",
     "com.unity.multiplayer.center": "1.0.0",
-    "com.unity.multiplayer.tools": "2.2.8",
+    "com.unity.multiplayer.tools": "2.2.9",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.test-framework": "1.6.0",
     "com.unity.test-framework.performance": "3.4.2",
