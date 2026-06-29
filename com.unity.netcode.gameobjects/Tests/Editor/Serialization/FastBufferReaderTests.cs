@@ -933,7 +933,7 @@ namespace Unity.Netcode.EditorTests
         /// into restricted memory and causes the editor to crash.
         /// </summary>
         [Test]
-        public void ReadingStringAfterStringLengthHasAlreadyBeenRead()
+        public void ReadingStringAfterStringLengthHasAlreadyBeenRead([Values] bool isSafeRead)
         {
             // This was an issue uncovered in UUM-145752 that resulted
             // in the below text to result in a length that when using
@@ -954,9 +954,19 @@ namespace Unity.Netcode.EditorTests
             // the string reader reads the some of the bytes for the actual text as the length.
             reader.ReadByteSafe(out byte count);
             Assert.True(count == valueToTest.Length, $"Count ({count}) is not the expected size of {valueToTest.Length}!");
+            if (isSafeRead)
+            {
+                // This should throw an overflow exception but should not crash the editor.
+                Assert.Throws<OverflowException>(() => reader.ReadValueSafe(out string valueRead));
+            }
+            else
+            {
+                // Assume user does a pre-calculation of the size to be read:
+                Assert.IsTrue(reader.TryBeginRead(count), "Reader denied read permission");
 
-            // This should throw an overflow exception but should not crash the editor.
-            Assert.Throws<OverflowException>(() => reader.ReadValueSafe(out string valueRead));
+                // This should throw an overflow exception but should not crash the editor.
+                Assert.Throws<OverflowException>(() => reader.ReadValue(out string valueRead));
+            }
         }
 
         [TestCase(1, 0)]
