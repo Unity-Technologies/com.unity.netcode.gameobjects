@@ -572,6 +572,11 @@ namespace Unity.Netcode
         public unsafe void ReadValue(out string s, bool oneByteChars = false)
         {
             ReadLength(out int length);
+            var readSize = oneByteChars ? length : length * sizeof(char);
+            if (int.MaxValue < (uint)readSize)
+            {
+                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
+            }
             s = "".PadRight(length);
             int target = s.Length;
             fixed (char* native = s)
@@ -616,6 +621,12 @@ namespace Unity.Netcode
             }
 
             ReadLength(out int length);
+
+            var readSize = oneByteChars ? length : length * sizeof(char);
+            if (int.MaxValue < (uint)readSize)
+            {
+                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
+            }
 
             if (!TryBeginReadInternal(length * (oneByteChars ? 1 : sizeof(char))))
             {
