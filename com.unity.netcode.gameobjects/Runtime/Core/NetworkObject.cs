@@ -1222,7 +1222,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
-        public bool IsSpawned { get; private set; }
+        public bool IsSpawned { get; internal set; }
 
         /// <summary>
         /// Gets if the object is a SceneObject.
