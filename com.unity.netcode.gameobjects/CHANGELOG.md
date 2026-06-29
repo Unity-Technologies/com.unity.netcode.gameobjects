@@ -21,7 +21,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Fixed
-
+- Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
+- Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
 
 ### Security
 
@@ -34,6 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+- RPC messages now log any time they are not processed. (#3994)
 
 ### Changed
 
