@@ -10,7 +10,32 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+- Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
+- Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
+
+### Security
+
+
+### Obsolete
+
+
+## [2.13.0] - 2026-06-21
+
+### Added
+
 - Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+- RPC messages now log any time they are not processed. (#3994)
 
 ### Changed
 
@@ -19,18 +44,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Deprecated
 
 - Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
-
-### Removed
-
-
-### Fixed
-
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.12.0] - 2026-05-24
 

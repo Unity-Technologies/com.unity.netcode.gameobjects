@@ -419,12 +419,12 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
                 else
-                if (!first && !second)
-                {
-                    // If both are disabled, then make the
-                    // last one enabled.
-                    return true;
-                }
+                    if (!first && !second)
+                    {
+                        // If both are disabled, then make the
+                        // last one enabled.
+                        return true;
+                    }
             }
             return Random.Range(start, 100) >= 50 ? false : true;
         }
