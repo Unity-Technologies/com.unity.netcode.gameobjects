@@ -577,7 +577,7 @@ namespace Unity.Netcode
             {
                 throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
             }
-            s = "".PadRight(length);
+            s = "".PadRight(readSize);
             int target = s.Length;
             fixed (char* native = s)
             {
@@ -628,7 +628,7 @@ namespace Unity.Netcode
                 throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
             }
 
-            if (!TryBeginReadInternal(length * (oneByteChars ? 1 : sizeof(char))))
+            if (!TryBeginReadInternal(readSize))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
