@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Unity.Netcode
 {
@@ -563,20 +564,20 @@ namespace Unity.Netcode
             value.NetworkSerialize(bufferSerializer);
         }
 
-        /// <summary>
-        /// Reads a string
-        /// NOTE: ALLOCATES
-        /// </summary>
-        /// <param name="s">Stores the read string</param>
-        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
-        public unsafe void ReadValue(out string s, bool oneByteChars = false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int CheckIfValidStringLength(int length, bool oneByteChars)
         {
-            ReadLength(out int length);
             var readSize = oneByteChars ? length : length * sizeof(char);
             if (int.MaxValue < (uint)readSize)
             {
                 throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
             }
+            return readSize;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadString(out string s, int length, bool oneByteChars)
+        {
             s = "".PadRight(length);
             int target = s.Length;
             fixed (char* native = s)
@@ -594,6 +595,23 @@ namespace Unity.Netcode
                     ReadBytes((byte*)native, target * sizeof(char));
                 }
             }
+        }
+
+        /// <summary>
+        /// Reads a string
+        /// NOTE: ALLOCATES
+        /// </summary>
+        /// <param name="s">Stores the read string</param>
+        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
+        public unsafe void ReadValue(out string s, bool oneByteChars = false)
+        {
+            ReadLength(out int length);
+
+            // Validate the string length
+            CheckIfValidStringLength(length, oneByteChars);
+
+            // Read the string
+            ReadString(out s, length, oneByteChars);
         }
 
         /// <summary>
@@ -620,35 +638,18 @@ namespace Unity.Netcode
                 throw new OverflowException("Reading past the end of the buffer");
             }
 
+
             ReadLength(out int length);
 
-            var readSize = oneByteChars ? length : length * sizeof(char);
-            if (int.MaxValue < (uint)readSize)
-            {
-                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
-            }
-
-            if (!TryBeginReadInternal(readSize))
+            // Validate string length and if it is valid begin reading based on the returned
+            // byte count
+            if (!TryBeginReadInternal(CheckIfValidStringLength(length, oneByteChars)))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            s = "".PadRight(length);
-            int target = s.Length;
-            fixed (char* native = s)
-            {
-                if (oneByteChars)
-                {
-                    for (int i = 0; i < target; ++i)
-                    {
-                        ReadByte(out byte b);
-                        native[i] = (char)b;
-                    }
-                }
-                else
-                {
-                    ReadBytes((byte*)native, target * sizeof(char));
-                }
-            }
+
+            // Read the string
+            ReadString(out s, length, oneByteChars);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
