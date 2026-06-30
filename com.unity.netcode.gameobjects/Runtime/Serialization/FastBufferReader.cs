@@ -615,10 +615,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Reads a string without bounds checking.
-        /// NOTE: This mehtod ALLOCATES memory.
+        /// NOTE: This method ALLOCATES memory.
         /// </summary>
         /// <remarks>
-        /// This is the un-safe string read which requires invoking <see cref="TryBeginRead(int)"/> prior to invoking.<br />
+        /// This is the un-safe string read which requires invoking <see cref="TryBeginRead(int)"/> prior to invoking this method.<br />
         /// Using one byte characters only allows ASCII characters.
         /// </remarks>
         /// <param name="s">Stores the read string</param>
@@ -636,10 +636,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Reads a string after it performs bounds checking automatically.
-        /// NOTE: This mehtod ALLOCATES memory.
+        /// NOTE: This method ALLOCATES memory.
         /// </summary>
         /// <remarks>
-        /// This is the safe string read which invokes <see cref = "TryBeginReadInternal(int)"/> prior to invoking. <br />
+        /// This is the safe string read which invokes <see cref = "TryBeginReadInternal(int)"/> prior to reading the string.<br />
         /// Using one byte characters only allows ASCII characters.
         /// </remarks>
         /// <param name="s">The string re the read string</param>
