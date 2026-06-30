@@ -739,7 +739,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+    Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_INTERNAL
   additionalCompilerArguments:
     Standalone: []
   platformArchitecture: {}
