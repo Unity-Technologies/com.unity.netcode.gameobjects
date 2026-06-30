@@ -18,6 +18,7 @@
     * [Connection approval](basics/connection-approval.md)
     * [Max players](basics/maxnumberplayers.md)
   * [Transports](advanced-topics/transports.md)
+  * [Single player sessions](advanced-topics/singleplayer.md)
   * [Unity Relay](relay/relay.md)
   * [Command-line arguments](command-line-arguments.md)
 * [Network components](network-components.md)
