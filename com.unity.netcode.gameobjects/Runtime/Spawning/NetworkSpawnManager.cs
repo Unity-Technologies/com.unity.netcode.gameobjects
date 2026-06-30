@@ -939,6 +939,14 @@ namespace Unity.Netcode
         /// <returns>the instance of the <see cref="NetworkObject"/></returns>
         internal NetworkObject InstantiateNetworkPrefab([NotNull] GameObject networkPrefab, uint prefabGlobalObjectIdHash, Vector3? position, Quaternion? rotation)
         {
+#if UNIFIED_NETCODE
+            // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
+            // assigning this.
+            if (networkPrefab.GetComponent<NetworkObject>().HasGhost)
+            {
+                NetCode.Netcode.Instance.m_ActiveWorld = NetworkManager.NetcodeWorld;
+            }
+#endif
             var gameObject = Object.Instantiate(networkPrefab);
             var networkObject = gameObject.GetComponent<NetworkObject>();
             if (networkObject == null)
