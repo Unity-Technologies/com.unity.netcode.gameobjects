@@ -580,7 +580,7 @@ namespace Unity.Netcode
             var readSize = oneByteChars ? length : length * sizeof(char);
             if (int.MaxValue < (uint)readSize)
             {
-                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from reading the same serialized value more than once causing the position to be improperly offset.");
+                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from an error in the serialization. Ensure deserialization exactly matches what was serialized!");
             }
             return readSize;
         }
