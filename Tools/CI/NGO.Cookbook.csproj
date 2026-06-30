@@ -10,7 +10,7 @@
     <ItemGroup>
         <PackageReference Include="RecipeEngine" Version="9.1.0" />
         <PackageReference Include="RecipeEngine.Api" Version="14.1.0" />
-        <PackageReference Include="RecipeEngine.Api.Extensions" Version="8.1.1" />
+        <PackageReference Include="RecipeEngine.Api.Extensions" Version="8.2.0" />
         <PackageReference Include="RecipeEngine.Modules.Api" Version="6.1.0" />
         <PackageReference Include="RecipeEngine.Modules.Wrench" Version="3.2.0" />
     </ItemGroup>
