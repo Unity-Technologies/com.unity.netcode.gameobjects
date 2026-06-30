@@ -654,13 +654,7 @@ namespace Unity.Netcode
             }
 #endif
 
-            if (!TryBeginReadInternal(SizeOfLengthField()))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-
-
-            ReadLength(out int length);
+            ReadLengthSafe(out int length);
 
             // Validate the string's byte count based on the character count and if it is valid begin reading based on the returned
             // byte count.
@@ -672,9 +666,6 @@ namespace Unity.Netcode
             // Read the string
             ReadString(out s, length, oneByteChars);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int SizeOfLengthField() => sizeof(uint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ReadLengthSafe(out uint length) => ReadUnmanagedSafe(out length);
