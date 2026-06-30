@@ -646,14 +646,6 @@ namespace Unity.Netcode
         /// <param name="oneByteChars">If false(default) 2 byte characters and if true 1 byte characters.</param>
         public unsafe void ReadValueSafe(out string s, bool oneByteChars = false)
         {
-#if DEBUG
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-
             ReadLengthSafe(out int length);
 
             // Validate the string's byte count based on the character count and if it is valid begin reading based on the returned
