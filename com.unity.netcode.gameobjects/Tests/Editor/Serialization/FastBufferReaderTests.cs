@@ -944,7 +944,7 @@ namespace Unity.Netcode.EditorTests
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
 
-            using var writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
+            using var writer = new FastBufferWriter(serializedValueSize, Allocator.Temp);
             writer.WriteValueSafe(valueToTest);
 
             using var reader = new FastBufferReader(writer, Allocator.Temp);
