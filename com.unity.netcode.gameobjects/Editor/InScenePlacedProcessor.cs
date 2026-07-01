@@ -21,6 +21,11 @@ namespace Unity.Netcode.Editor
         {
             foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
             {
+                // Exclude any already spawned objects found since this 
+                if (networkObject.IsSpawned)
+                {
+                    continue;
+                }
                 networkObject.InScenePlaced = true;
             }
         }
