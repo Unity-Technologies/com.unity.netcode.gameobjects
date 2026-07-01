@@ -1952,6 +1952,21 @@ namespace Unity.Netcode
         /// </summary>
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddSceneToClientSynchronization(ref SceneEventData sceneEventData, ref Scene scene)
+        {
+            // If we are just a normal client and in distributed authority mode, then always use the known server scene handle
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
+            {
+                sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), ClientSceneHandleToServerSceneHandle[scene.handle]);
+            }
+            else
+            {
+                sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
+            }
+        }
+
         /// <summary>
         /// Server Side:
         /// This is used for players that have just had their connection approved and will assure they are synchronized
@@ -2002,9 +2017,40 @@ namespace Unity.Netcode
 
             // Organize how (and when) we serialize our NetworkObjects
             var hasSynchronizedActive = false;
+
+            // It is possible a user might not want to synchronize the active scene, so we will check to see if it is valid before adding it to the synchronization list.
+            // !! Important !!
+            // The active scene MUST always be the first scene in the synchronization list.
+            if (ValidateSceneBeforeLoading(activeScene.buildIndex, activeScene.name, sceneEventData.LoadSceneMode))
+            {
+                sceneEventData.SceneHash = SceneHashFromNameOrPath(activeScene.path);
+                if (sceneEventData.SceneHash == sceneEventData.ActiveSceneHash)
+                {
+                    hasSynchronizedActive = true;
+                }
+
+                // If we are just a normal client, then always use the server scene handle
+                if (NetworkManager.DistributedAuthorityMode)
+                {
+                    sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                    sceneEventData.SceneHandle = ClientSceneHandleToServerSceneHandle[activeScene.handle];
+                }
+                else
+                {
+                    sceneEventData.SceneHandle = activeScene.handle;
+                }
+                AddSceneToClientSynchronization(ref sceneEventData, ref activeScene);
+            }
+
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
+                // Skip adding the active scene at this point as we are just adding all other additively loaded scenes to the synchronization list.
+                // Skip adding the dont destroy on load scene as that is never synchronized.                
+                if ((scene.handle == activeScene.handle) || (scene == DontDestroyOnLoadScene))
+                {
+                    continue;
+                }
 
                 // NetworkSceneManager does not synchronize scenes that are not loaded by NetworkSceneManager
                 // unless the scene in question is the currently active scene.
@@ -2013,50 +2059,11 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                if (scene == DontDestroyOnLoadScene)
+                if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive))
                 {
                     continue;
                 }
-
-                // This would depend upon whether we are additive or not
-                // If we are the base scene, then we set the root scene index;
-                if (activeScene == scene)
-                {
-                    if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, sceneEventData.LoadSceneMode))
-                    {
-                        continue;
-                    }
-                    sceneEventData.SceneHash = SceneHashFromNameOrPath(scene.path);
-                    if (sceneEventData.SceneHash == sceneEventData.ActiveSceneHash)
-                    {
-                        hasSynchronizedActive = true;
-                    }
-
-                    // If we are just a normal client, then always use the server scene handle
-                    if (NetworkManager.DistributedAuthorityMode)
-                    {
-                        sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                        sceneEventData.SceneHandle = ClientSceneHandleToServerSceneHandle[scene.handle];
-                    }
-                    else
-                    {
-                        sceneEventData.SceneHandle = scene.handle;
-                    }
-                }
-                else if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive))
-                {
-                    continue;
-                }
-
-                // If we are just a normal client and in distributed authority mode, then always use the known server scene handle
-                if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
-                {
-                    sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), ClientSceneHandleToServerSceneHandle[scene.handle]);
-                }
-                else
-                {
-                    sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
-                }
+                AddSceneToClientSynchronization(ref sceneEventData, ref scene);
             }
 
             if (!hasSynchronizedActive && NetworkManager.CMBServiceConnection && synchronizingService)
@@ -2109,9 +2116,12 @@ namespace Unity.Netcode
             var sceneHash = sceneEventData.GetNextSceneSynchronizationHash();
             var sceneHandle = sceneEventData.GetNextSceneSynchronizationHandle();
             var sceneName = SceneNameFromHash(sceneHash);
+            var activeSceneName = SceneNameFromHash(sceneEventData.ActiveSceneHash);
             var activeScene = SceneManager.GetActiveScene();
 
-            var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
+            var activeSceneLoaded = activeSceneName == activeScene.name;
+
+            var loadSceneMode = sceneHash == sceneEventData.SceneHash && !activeSceneLoaded ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Store the sceneHandle and hash
             sceneEventData.NetworkSceneHandle = sceneHandle;
