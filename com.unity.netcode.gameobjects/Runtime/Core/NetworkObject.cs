@@ -3479,7 +3479,8 @@ namespace Unity.Netcode
             {
                 if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"[{networkObject.name}][Deserialize][{nameof(NetworkBehaviour)}Synchronization][Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
+                    var networkObjectName = networkObject != null ? networkObject.name : "null";
+                    NetworkLog.LogWarning($"[{networkObjectName}][Deserialize][{nameof(NetworkBehaviour)}Synchronization][Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
                 }
                 reader.Seek(endOfSynchronizationData);
             }
