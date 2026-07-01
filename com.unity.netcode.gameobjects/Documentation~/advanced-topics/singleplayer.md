@@ -25,15 +25,6 @@ using Unity.Netcode.Transports.UTP;
 /// </summary>
 public class ExtendedNetworkManager : NetworkManager
 {
-    private UnityTransport m_UnityTransport;
-    private SinglePlayerTransport m_SinglePlayerTransport;
-
-    public bool StartSinglePlayer()
-    {
-        NetworkConfig.NetworkTransport = m_SinglePlayerTransport;
-        return StartHost();
-    }
-
     public enum StartType
     {
         SinglePlayer,
@@ -41,6 +32,9 @@ public class ExtendedNetworkManager : NetworkManager
         Host,
         Server
     }
+
+    private UnityTransport m_UnityTransport;
+    private SinglePlayerTransport m_SinglePlayerTransport;
 
     private void Awake()
     {
