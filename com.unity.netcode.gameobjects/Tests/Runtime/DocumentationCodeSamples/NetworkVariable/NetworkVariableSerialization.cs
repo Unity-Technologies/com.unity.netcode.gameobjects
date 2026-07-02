@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Text;
 using Unity.Netcode;
@@ -11,13 +10,13 @@ namespace DocumentationCodeSamples
 {
     internal static class FastBufferExtensions
     {
-        public static void WriteValueSafe(this FastBufferWriter writer, in TestSerializationDocs.Health health)
+        internal static void WriteValueSafe(this FastBufferWriter writer, in TestSerializationDocs.Health health)
         {
             writer.WriteValueSafe(health.MaxHealth);
             writer.WriteValueSafe(health.CurrentHealth);
         }
 
-        public static void ReadValueSafe(this FastBufferReader reader, out TestSerializationDocs.Health health)
+        internal static void ReadValueSafe(this FastBufferReader reader, out TestSerializationDocs.Health health)
         {
             reader.ReadValueSafe(out uint max);
             reader.ReadValueSafe(out int current);

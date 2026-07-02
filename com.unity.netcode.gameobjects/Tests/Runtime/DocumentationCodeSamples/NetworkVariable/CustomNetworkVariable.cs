@@ -49,7 +49,7 @@ namespace DocumentationCodeSamples
         /// <summary>
         /// Managed list of class instances
         /// </summary>
-        public List<SomeData> SomeDataToSynchronize = new List<SomeData>();
+        internal List<SomeData> SomeDataToSynchronize = new List<SomeData>();
 
         /// <summary>
         /// Writes the complete state of the variable to the writer
@@ -189,11 +189,8 @@ namespace DocumentationCodeSamples
         }
     }
 
-    /// <summary>
-    /// Example managed class used as the item type in <see cref="MyCustomNetworkVariable.SomeDataToSynchronize"/>
-    /// </summary>
     [Serializable]
-    public class SomeData
+    internal class SomeData
     {
         public int SomeIntData = default;
         public float SomeFloatData = default;
