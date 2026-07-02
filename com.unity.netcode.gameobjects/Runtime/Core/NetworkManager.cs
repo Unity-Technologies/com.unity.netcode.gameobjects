@@ -1092,7 +1092,10 @@ namespace Unity.Netcode
         /// </summary>
         public void SetSingleton()
         {
-            Singleton = this;
+            if (!Singleton || !Singleton.IsServer)
+            {
+                Singleton = this;
+            }
 
             OnSingletonReady?.Invoke();
         }
@@ -1401,7 +1404,14 @@ namespace Unity.Netcode
             /// !! Initialize worlds here !!
             /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
-            DefaultWorldInitialization.Initialize("Default World", false);
+            if (UnifiedBootstrap.Instance != null)
+            {
+                UnifiedBootstrap.Instance.Initialize("Default World");
+            }
+            else
+            {
+                DefaultWorldInitialization.Initialize("Default World", false);
+            }
         }
 
         /// <summary>

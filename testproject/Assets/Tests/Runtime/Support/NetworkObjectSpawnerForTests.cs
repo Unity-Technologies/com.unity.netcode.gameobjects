@@ -78,14 +78,6 @@ namespace TestProject.RuntimeTests
 
         private void Spawn(ulong ownerId)
         {
-#if UNIFIED_NETCODE
-            // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
-            // assigning this.
-            if (ObjectToSpawn.GetComponent<NetworkObject>().HasGhost)
-            {
-                Netcode.Instance.m_ActiveWorld = NetworkManager.NetcodeWorld;
-            }
-#endif
             var instance = Instantiate(ObjectToSpawn);
             var networkObject = instance.GetComponent<NetworkObject>();
             networkObject.SpawnWithOwnership(ownerId);
