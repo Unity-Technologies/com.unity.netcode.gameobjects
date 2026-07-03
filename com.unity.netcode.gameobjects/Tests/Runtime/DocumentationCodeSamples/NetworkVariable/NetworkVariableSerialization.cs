@@ -93,21 +93,21 @@ namespace DocumentationCodeSamples
                 switch (changeType)
                 {
                     case ChangeType.CurrentHealth:
-                    {
-                        reader.ReadValueSafe(out value.CurrentHealth);
-                        break;
-                    }
+                        {
+                            reader.ReadValueSafe(out value.CurrentHealth);
+                            break;
+                        }
                     case ChangeType.MaxHealth:
-                    {
-                        reader.ReadValueSafe(out value.MaxHealth);
-                        break;
-                    }
+                        {
+                            reader.ReadValueSafe(out value.MaxHealth);
+                            break;
+                        }
                     case ChangeType.All:
-                    {
-                        reader.ReadValueSafe(out value.MaxHealth);
-                        reader.ReadValueSafe(out value.CurrentHealth);
-                        break;
-                    }
+                        {
+                            reader.ReadValueSafe(out value.MaxHealth);
+                            reader.ReadValueSafe(out value.CurrentHealth);
+                            break;
+                        }
                 }
             }
         }
