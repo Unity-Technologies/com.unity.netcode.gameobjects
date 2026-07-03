@@ -3278,7 +3278,6 @@ namespace Unity.Netcode
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
-                readSize += FastBufferWriter.GetWriteSize<int>();
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
@@ -3297,7 +3296,7 @@ namespace Unity.Netcode
 
                 // Read the size of the remaining synchronization data
                 // This data will be read in AddSceneObject()
-                reader.ReadValue(out SynchronizationDataSize);
+                reader.ReadValueSafe(out SynchronizationDataSize);
             }
         }
 
