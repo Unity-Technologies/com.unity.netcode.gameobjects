@@ -27,14 +27,13 @@ namespace DocumentationCodeSamples
     internal class CustomSerializationDocsTests : NetcodeIntegrationTest
     {
         #region HealthExample
-
         public struct Health
         {
             public uint MaxHealth;
             public int CurrentHealth;
 
             // Register our custom serialization on load
-            [RuntimeInitializeOnLoadMethod]
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
             public static void RegisterHealthSerialization()
             {
                 // You can reuse the FastBufferWriter and FastBufferReader extension methods we wrote above
@@ -53,7 +52,7 @@ namespace DocumentationCodeSamples
             // This lets us save bandwidth when only one value has changed.
             // In the case of Health, we expect CurrentHealth to change much more often than MaxHealth
             // Implementing WriteDelta saves us bandwidth on not sending the MaxHealth every time CurrentHealth changes.
-            internal enum ChangeType : byte
+            private enum ChangeType : byte
             {
                 MaxHealth,
                 CurrentHealth,
@@ -110,7 +109,6 @@ namespace DocumentationCodeSamples
                 }
             }
         }
-
         #endregion
 
         internal class TestHealthBehaviour : NetworkBehaviour

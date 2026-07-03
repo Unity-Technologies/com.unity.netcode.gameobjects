@@ -231,8 +231,8 @@ namespace DocumentationCodeSamples
                 Assert.True(networkManager.SpawnManager.SpawnedObjects.TryGetValue(authorityObject.NetworkObjectId, out var localObject));
                 var testBehaviour = localObject.GetComponent<TestMyCustomNetworkVariable>();
                 Assert.NotNull(testBehaviour);
-                Assert.AreEqual(authorityBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, testBehaviour.CustomNetworkVariable.SomeDataToSynchronize.Count, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
-                Assert.AreEqual(authorityBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize, testBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize.Count, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
+                Assert.AreEqual(authorityBehaviour.CustomNetworkVariable.SomeDataToSynchronize, testBehaviour.CustomNetworkVariable.SomeDataToSynchronize, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
+                Assert.AreEqual(authorityBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize, testBehaviour.CustomGenericNetworkVariable.SomeDataToSynchronize, $"[Client-{networkManager.LocalClientId}] Incorrect length found for {nameof(MyCustomNetworkVariable)}");
             }
         }
     }
