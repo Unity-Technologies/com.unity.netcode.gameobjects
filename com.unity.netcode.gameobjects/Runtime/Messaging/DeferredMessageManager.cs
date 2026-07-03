@@ -96,6 +96,10 @@ namespace Unity.Netcode
         /// Used for testing purposes
         /// </summary>
         internal static bool IncludeMessageType = true;
+#if UNITY_EDITOR
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad() => IncludeMessageType = true;
+#endif
 
         private string GetWarningMessage(IDeferredNetworkMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo, float spawnTimeout)
         {

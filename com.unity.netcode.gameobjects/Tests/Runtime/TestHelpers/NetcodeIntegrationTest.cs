@@ -2405,8 +2405,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
         {
-            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
-
             // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
             m_NetworkTopologyType = networkTopologyType;
 

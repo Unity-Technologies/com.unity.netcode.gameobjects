@@ -1,7 +1,7 @@
 // NetSim Implementation compilation boilerplate
 // All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
-#if UNITY_EDITOR || (DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE)
+#if UNITY_EDITOR || (DEBUG && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEBUG && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE)
 #define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 #endif
 
@@ -68,7 +68,7 @@ namespace Unity.Netcode.Transports.UTP
         // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
         private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 64 * 60) / 1000; // bytes per millisecond
 
-        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, WebSocketPath = "/", ServerListenAddress = string.Empty };
+        private static readonly ConnectionAddressData k_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, WebSocketPath = "/", ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
         /// <summary>
@@ -308,7 +308,7 @@ namespace Unity.Netcode.Transports.UTP
         /// This is where you can change IP Address, Port, or server's listen address.
         /// <see cref="ConnectionAddressData"/>
         /// </summary>
-        public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
+        public ConnectionAddressData ConnectionData = k_DefaultConnectionAddressData;
 
         /// <summary>
         /// Parameters for the Network Simulator
@@ -369,6 +369,19 @@ namespace Unity.Netcode.Transports.UTP
 #endif
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            s_DriverConstructor = null;
+#if UNITY_6000_2_OR_NEWER
+            OnDriverInitialized = null;
+            OnDisposingDriver = null;
+#endif
+            TransportInitialized = null;
+            TransportDisposed = null;
+        }
+#endif
 
         /// <summary>
         /// Provides access to the <see cref="NetworkDriver"/> for this instance.
@@ -856,7 +869,7 @@ namespace Unity.Netcode.Transports.UTP
                 return true;
             }
 #else
-            if (CommandLineOptions.Instance.GetArg(k_OverridePortArg) is string argValue)
+            if (CommandLineOptions.TryGetArg(k_OverridePortArg, out var argValue))
             {
                 port = (ushort)Convert.ChangeType(argValue, typeof(ushort));
                 return true;
@@ -868,7 +881,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ParseCommandLineOptionsAddress(out string ipValue)
         {
-            if (CommandLineOptions.Instance.GetArg(k_OverrideIpAddressArg) is string argValue)
+            if (CommandLineOptions.TryGetArg(k_OverrideIpAddressArg, out var argValue))
             {
                 ipValue = argValue;
                 return true;
