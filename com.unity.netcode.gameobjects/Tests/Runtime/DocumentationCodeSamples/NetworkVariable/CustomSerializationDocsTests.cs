@@ -2,7 +2,6 @@ using System.Collections;
 using System.Text;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -10,22 +9,22 @@ namespace DocumentationCodeSamples
 {
     internal static class FastBufferExtensions
     {
-        internal static void WriteValueSafe(this FastBufferWriter writer, in TestSerializationDocs.Health health)
+        internal static void WriteValueSafe(this FastBufferWriter writer, in CustomSerializationDocsTests.Health health)
         {
             writer.WriteValueSafe(health.MaxHealth);
             writer.WriteValueSafe(health.CurrentHealth);
         }
 
-        internal static void ReadValueSafe(this FastBufferReader reader, out TestSerializationDocs.Health health)
+        internal static void ReadValueSafe(this FastBufferReader reader, out CustomSerializationDocsTests.Health health)
         {
             reader.ReadValueSafe(out uint max);
             reader.ReadValueSafe(out int current);
-            health = new TestSerializationDocs.Health { MaxHealth = max, CurrentHealth = current };
+            health = new CustomSerializationDocsTests.Health { MaxHealth = max, CurrentHealth = current };
         }
     }
 
 
-    internal class TestSerializationDocs : NetcodeIntegrationTest
+    internal class CustomSerializationDocsTests : NetcodeIntegrationTest
     {
         #region HealthExample
 
@@ -35,7 +34,7 @@ namespace DocumentationCodeSamples
             public int CurrentHealth;
 
             // Register our custom serialization on load
-            [InitializeOnLoadMethod]
+            [RuntimeInitializeOnLoadMethod]
             public static void RegisterHealthSerialization()
             {
                 // You can reuse the FastBufferWriter and FastBufferReader extension methods we wrote above
