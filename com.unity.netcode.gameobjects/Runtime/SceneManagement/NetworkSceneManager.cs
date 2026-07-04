@@ -143,7 +143,7 @@ namespace Unity.Netcode
 
     /// <summary>
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
-    /// Uses the <see cref="SceneEventMessage"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
+    /// Uses the <c>SceneEventMessage</c> message to communicate <c>SceneEventData</c> between the server and client(s)
     /// </summary>
     [Serializable]
     public class NetworkSceneManager : IDisposable
@@ -162,8 +162,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The delegate callback definition for scene event notifications.<br />
         /// See also: <br />
-        /// <see cref="SceneEvent"/><br />
-        /// <see cref="SceneEventData"/>
+        /// <see cref="SceneEvent"/>
         /// </summary>
         /// <param name="sceneEvent">SceneEvent which contains information about the scene event, including type, progress, and scene details</param>
         public delegate void SceneEventDelegate(SceneEvent sceneEvent);
