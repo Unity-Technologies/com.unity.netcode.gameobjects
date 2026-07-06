@@ -1,14 +1,18 @@
-# NetworkObject and NetworkBehaviour
+# NetworkObject and NetworkBehaviour serialization
 
-`GameObjects`, `NetworkObjects` and NetworkBehaviour aren't serializable types so they can't be used in `RPCs` or `NetworkVariables` by default.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before learning how to serialize `NetworkObjects` and `NetworkBehaviours`.
 
-There are two convenience wrappers which can be used to send a reference to a NetworkObject or a NetworkBehaviour over RPCs or `NetworkVariables`.
+`GameObject`, [`NetworkObject`](../../components/core/networkobject.md) and [`NetworkBehaviour`](../../components/core/networkbehaviour.md) aren't serializable types so they can't be used in [`RPC`s](../message-system/rpc.md) or [`NetworkVariable`s](../../basics/networkvariable.md) by default.
+
+There are two convenience wrappers which can be used to send a reference to a `NetworkObject` or a `NetworkBehaviour` over an `RPC` or in a `NetworkVariable`.
 
 ## NetworkObjectReference
 
-`NetworkObjectReference` can be used to serialize a reference to a NetworkObject. It can only be used on already spawned `NetworkObjects`.
+`NetworkObjectReference` can be used to serialize a reference to a `NetworkObject`. It can only be used on already spawned `NetworkObject`s.
 
 Here is an example of using NetworkObject reference to send a target NetworkObject over an RPC:
+
 ```csharp
 public class Weapon : NetworkBehaviour
 {
@@ -36,6 +40,7 @@ public class Weapon : NetworkBehaviour
 ### Implicit Operators
 
 There are also implicit operators which convert from/to `NetworkObject/GameObject` which can be used to simplify code. For instance the above example can also be written in the following way:
+
 ```csharp
 public class Weapon : NetworkBehaviour
 {
@@ -51,6 +56,7 @@ public class Weapon : NetworkBehaviour
     }
 }
 ```
+
 > [!NOTE]
 > The implicit conversion to NetworkObject / GameObject will result in `Null` if the reference can't be found.
 
@@ -85,6 +91,6 @@ public class Weapon : NetworkBehaviour
 
 ## How NetworkObjectReference & NetworkBehaviourReference work
 
-`NetworkObjectReference` and `NetworkBehaviourReference` are convenience wrappers which serialize the id of a NetworkObject when being sent and on the receiving end retrieve the corresponding ` ` with that id. `NetworkBehaviourReference` sends an additional index which is used to find the right NetworkBehaviour on the NetworkObject.
+`NetworkObjectReference` and `NetworkBehaviourReference` are convenience wrappers which serialize the id of a `NetworkObject` when being sent and on the receiving end retrieve the corresponding `NetworkObject` with that id. `NetworkBehaviourReference` sends an additional index which is used to find the right `NetworkBehaviour` on the `NetworkObject`.
 
-Both of them are structs implementing the `INetworkSerializable` interface.
+Both of them are structs implementing the [`INetworkSerializable`](./inetworkserializable.md) interface.
