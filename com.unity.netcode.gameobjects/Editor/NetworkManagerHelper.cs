@@ -30,6 +30,10 @@ namespace Unity.Netcode.Editor
             Singleton = new NetworkManagerHelper();
 
             NetworkManager.NetworkManagerHelper = Singleton;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= AssemblyReloadEvents_beforeAssemblyReload;
+            AssemblyReloadEvents.beforeAssemblyReload += AssemblyReloadEvents_beforeAssemblyReload;
+
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
 
@@ -53,6 +57,23 @@ namespace Unity.Netcode.Editor
                     manager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { NetworkPrefabProcessor.GetOrCreateNetworkPrefabs(NetworkPrefabProcessor.DefaultNetworkPrefabsPath, out _, true) };
                 }
             };
+        }
+
+        private static void AssemblyReloadEvents_beforeAssemblyReload()
+        {
+            if (Application.isPlaying)
+            {
+#if UNITY_2023_1_OR_NEWER
+                var networkManager = Object.FindAnyObjectByType<NetworkManager>();
+#else
+                var networkManager = Object.FindObjectOfType<NetworkManager>();
+#endif
+                if (networkManager != null && (networkManager.IsServer || networkManager.IsClient))
+                {
+                    networkManager.Shutdown();
+                    networkManager.ShutdownInternal();
+                }
+            }
         }
 
         private static void EditorApplication_playModeStateChanged(PlayModeStateChange playModeStateChange)
