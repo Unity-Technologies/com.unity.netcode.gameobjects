@@ -15,7 +15,9 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "Unity.NetCode",
-        "Unity.Entities"
+        "Unity.Entities",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -114,6 +116,11 @@
           "name": "Unity",
           "expression": "6000.6.0a3",
           "define": "NGO_FINDOBJECTS_UNORDERED_IDS"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "USING_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

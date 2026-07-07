@@ -2,6 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if USING_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
+#endif
 
 
 namespace Unity.Netcode
@@ -35,6 +40,172 @@ namespace Unity.Netcode
             sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
+
+#if USING_ADDRESSABLES
+        /// <summary>
+        /// Tracks Addressable-loaded scenes by their scene handle so they can be unloaded (and their
+        /// handles released) later. A single loaded scene handle is unique per loaded scene instance.
+        /// </summary>
+        internal Dictionary<NetworkSceneHandle, AsyncOperationHandle<SceneInstance>> AddressableSceneHandles = new();
+
+        // Maps an Addressable address to the actual runtime Scene.name once the scene has loaded.
+        // The name is not knowable from the address alone, so it is recorded on load completion.
+        internal Dictionary<string, string> AddressToLoadedSceneName = new();
+
+        // Maps a loaded scene handle back to the Addressable address it was loaded from. This is required
+        // to resolve a loaded Scene to its wire hash during client synchronization (the loaded scene's
+        // path/name does not necessarily match its Addressable address).
+        internal Dictionary<NetworkSceneHandle, string> SceneHandleToAddress = new();
+
+        public ISceneEventOperation LoadAddressableSceneAsync(string address, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
+        {
+            // activateOnLoad:true preserves the existing non-deferred behavior of the default (build-settings) path.
+            var handle = Addressables.LoadSceneAsync(address, loadSceneMode);
+
+            // Subscribe the bookkeeping callback BEFORE wrapping the handle in the operation so that,
+            // when the handle completes, the scene handle and name are recorded before the scene event
+            // progress completion (OnSceneLoaded) runs and looks the scene up by name.
+            handle.Completed += completedHandle =>
+            {
+                if (completedHandle.Status == AsyncOperationStatus.Succeeded)
+                {
+                    var loadedScene = completedHandle.Result.Scene;
+                    AddressableSceneHandles[loadedScene.handle] = completedHandle;
+                    AddressToLoadedSceneName[address] = loadedScene.name;
+                    SceneHandleToAddress[loadedScene.handle] = address;
+                }
+            };
+
+            var sceneOperation = new AddressableSceneOperation(handle);
+            sceneEventProgress.SetSceneEventOperation(sceneOperation);
+            return sceneOperation;
+        }
+
+        public ISceneEventOperation UnloadAddressableSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
+        {
+            if (!AddressableSceneHandles.TryGetValue(scene.handle, out var handle))
+            {
+                throw new Exception($"[{nameof(DefaultSceneManagerHandler)}] Attempted to unload Addressable scene {scene.name} (handle {scene.handle}) that is not tracked as an Addressable scene!");
+            }
+
+            if (SceneHandleToAddress.TryGetValue(scene.handle, out var loadedAddress))
+            {
+                AddressToLoadedSceneName.Remove(loadedAddress);
+            }
+            AddressableSceneHandles.Remove(scene.handle);
+            SceneHandleToAddress.Remove(scene.handle);
+
+            // autoReleaseHandle:true releases the load handle when the unload completes.
+            var unloadHandle = Addressables.UnloadSceneAsync(handle, autoReleaseHandle: true);
+            var sceneOperation = new AddressableSceneOperation(unloadHandle);
+            sceneEventProgress.SetSceneEventOperation(sceneOperation);
+            return sceneOperation;
+        }
+
+        public bool IsAddressableSceneLoaded(Scene scene)
+        {
+            return AddressableSceneHandles.ContainsKey(scene.handle);
+        }
+
+        public bool TryGetAddressableSceneName(string address, out string sceneName)
+        {
+            return AddressToLoadedSceneName.TryGetValue(address, out sceneName);
+        }
+
+        public bool TryGetAddressableSceneAddress(Scene scene, out string address)
+        {
+            return SceneHandleToAddress.TryGetValue(scene.handle, out address);
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Works around an upstream Addressables bug that throws
+        /// "Attempting to use an invalid operation handle" when stopping play mode with an
+        /// Addressable scene still loaded (renders scene materials magenta on the way out).
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When an Addressable scene loads, <c>AddressablesImpl</c> tracks the same scene handle in
+        /// <b>two</b> internal collections: <c>m_resultToHandle</c> and <c>m_SceneInstances</c>. On
+        /// play-mode exit, <c>AddressablesImpl.Dispose()</c> iterates <b>both</b> collections and
+        /// releases every handle it finds. A freshly loaded scene handle has a reference count of 1,
+        /// so the first release destroys it and the second release throws on the now-invalid handle.
+        /// </para>
+        /// <para>
+        /// Clearing <c>m_SceneInstances</c> immediately before <c>Dispose()</c> runs lets the
+        /// <c>m_resultToHandle</c> pass release each scene handle exactly once (which is the correct
+        /// behavior). This hook is registered on editor load so it runs earlier in the
+        /// <see cref="UnityEditor.EditorApplication.playModeStateChanged"/> invocation list than
+        /// Addressables' own cleanup (which subscribes on play-mode enter). Editor-only and
+        /// play-exit-only; builds are unaffected.
+        /// </para>
+        /// </remarks>
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterAddressablesTeardownWorkaround()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChangedAddressablesTeardown;
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChangedAddressablesTeardown;
+        }
+
+        private static void OnPlayModeStateChangedAddressablesTeardown(UnityEditor.PlayModeStateChange change)
+        {
+            if (change != UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                return;
+            }
+
+            try
+            {
+                var instanceProperty = typeof(Addressables).GetProperty("Instance", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                var addressablesImpl = instanceProperty?.GetValue(null);
+                if (addressablesImpl == null)
+                {
+                    return;
+                }
+
+                var sceneInstancesField = addressablesImpl.GetType().GetField("m_SceneInstances", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (sceneInstancesField?.GetValue(addressablesImpl) is HashSet<AsyncOperationHandle> sceneInstances)
+                {
+                    // Leave m_resultToHandle intact so Dispose() still releases each scene handle once.
+                    sceneInstances.Clear();
+                }
+            }
+            catch (Exception)
+            {
+                // Best-effort, editor-only teardown workaround. If Addressables' internals change and
+                // reflection fails, silently fall back to the (harmless, cosmetic) upstream behavior
+                // rather than surfacing an exception during play-mode exit.
+            }
+        }
+#endif
+#else
+        public ISceneEventOperation LoadAddressableSceneAsync(string address, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
+        {
+            throw new NotSupportedException($"Addressable scene loading requires the com.unity.addressables package. Cannot load '{address}'.");
+        }
+
+        public ISceneEventOperation UnloadAddressableSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
+        {
+            throw new NotSupportedException("Addressable scene unloading requires the com.unity.addressables package.");
+        }
+
+        public bool IsAddressableSceneLoaded(Scene scene)
+        {
+            return false;
+        }
+
+        public bool TryGetAddressableSceneName(string address, out string sceneName)
+        {
+            sceneName = null;
+            return false;
+        }
+
+        public bool TryGetAddressableSceneAddress(Scene scene, out string address)
+        {
+            address = null;
+            return false;
+        }
+#endif
 
         /// <summary>
         /// Resets scene tracking

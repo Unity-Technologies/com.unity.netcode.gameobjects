@@ -83,6 +83,7 @@
   * [Scene management overview](basics/scenemanagement/scene-management-overview.md)
   * [Integrated management](integrated-management.md)
     * [Using NetworkSceneManager](basics/scenemanagement/using-networkscenemanager.md)
+    * [Addressable scene loading](basics/scenemanagement/addressable-scenes.md)
     * [Scene events](basics/scenemanagement/scene-events.md)
     * [Client synchronization mode](basics/scenemanagement/client-synchronization-mode.md)
     * [Timing considerations](basics/scenemanagement/timing-considerations.md)

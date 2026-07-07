@@ -51,6 +51,9 @@ In order to load a scene, there are four requirements:
 3. The scene being loaded must be registered with your project's [build settings scenes in build list](https://docs.unity3d.com/Manual/BuildSettings.html)
 4. A Scene Event can't already be in progress.
 
+> [!NOTE]
+> You can also load scenes delivered through the [Addressables](https://docs.unity3d.com/Packages/com.unity.addressables@latest) system, which don't need to be in the build settings scenes in build list. Addressable scenes work alongside build-settings scenes with full feature parity. See [Addressable scene loading](addressable-scenes.md).
+
 #### Basic Scene Loading Example
 Imagine that you have an in-scene placed NetworkObject, let's call it "ProjectSceneManager", that handles your project's scene management using the `NetworkSceneManager` and you wanted your server to load a scene when the ProjectSceneManager is spawned.
 In its simplest form, it can look something like:

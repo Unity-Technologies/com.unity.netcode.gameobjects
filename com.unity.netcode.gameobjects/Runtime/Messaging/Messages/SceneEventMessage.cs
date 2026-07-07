@@ -4,22 +4,26 @@ namespace Unity.Netcode
     // like most of the other messages when we have some more time and can come back and refactor this.
     internal struct SceneEventMessage : INetworkMessage
     {
-        public int Version => 0;
+        // Version 1 introduced the Addressable scene table (hash -> address) in the serialized payload.
+        // See SceneEventData.AddressableSceneTableVersion.
+        public int Version => SceneEventData.AddressableSceneTableVersion;
 
         public SceneEventData EventData;
 
         private const string k_Name = "SceneEventMessage";
 
         private FastBufferReader m_ReceivedData;
+        private int m_ReceivedMessageVersion;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            EventData.Serialize(writer);
+            EventData.Serialize(writer, targetVersion);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
+            m_ReceivedMessageVersion = receivedMessageVersion;
 #if UNIFIED_NETCODE
             // Defer this message if the OnGhostSpawned trigger is still being processed. This is because the scene event message can be sent
             // as part of the ghost spawning process and we want to make sure that all ghost spawning related messages are processed before we
@@ -39,7 +43,7 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            networkManager.SceneManager.HandleSceneEvent(context.SenderId, m_ReceivedData);
+            networkManager.SceneManager.HandleSceneEvent(context.SenderId, m_ReceivedData, m_ReceivedMessageVersion);
         }
     }
 }

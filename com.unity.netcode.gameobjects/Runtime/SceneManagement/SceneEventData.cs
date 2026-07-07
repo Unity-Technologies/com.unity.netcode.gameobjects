@@ -481,11 +481,19 @@ namespace Unity.Netcode
         internal bool ForwardSynchronization;
 
         /// <summary>
+        /// The <see cref="SceneEventMessage"/> version that introduced the Addressable scene table
+        /// (hash -> address) in the serialized payload. Older peers negotiate a lower version and neither
+        /// write nor read the table, preserving wire compatibility.
+        /// </summary>
+        internal const int AddressableSceneTableVersion = 1;
+
+        /// <summary>
         /// Client and Server Side:
         /// Serializes data based on the SceneEvent type (<see cref="SceneEventType"/>)
         /// </summary>
         /// <param name="writer"><see cref="FastBufferWriter"/> to write the scene event data</param>
-        internal void Serialize(FastBufferWriter writer)
+        /// <param name="serializedVersion">the negotiated <see cref="SceneEventMessage"/> version for the target</param>
+        internal void Serialize(FastBufferWriter writer, int serializedVersion)
         {
             // Write the scene event type
             writer.WriteValueSafe(SceneEventType);
@@ -494,6 +502,15 @@ namespace Unity.Netcode
             {
                 BytePacker.WriteValueBitPacked(writer, TargetClientId);
                 BytePacker.WriteValueBitPacked(writer, SenderClientId);
+            }
+
+            // Write the Addressable scene table (hash -> address) so the receiver can resolve any Addressable
+            // scene hash referenced by this event without requiring independent client-side registration.
+            // Only written when the negotiated message version supports it, so peers on an older version
+            // (which don't expect these bytes) are not desynchronized.
+            if (serializedVersion >= AddressableSceneTableVersion)
+            {
+                SerializeAddressableSceneTable(writer);
             }
 
             if (SceneEventType == SceneEventType.ActiveSceneChanged)
@@ -573,6 +590,48 @@ namespace Unity.Netcode
         private unsafe void CopyInternalBuffer(ref FastBufferWriter writer)
         {
             writer.WriteBytesSafe(InternalBuffer.GetUnsafePtrAtCurrentPosition(), InternalBuffer.Length);
+        }
+
+        /// <summary>
+        /// Writes the sender's Addressable scene table (hash -> address) so the receiver can resolve any
+        /// Addressable scene referenced by this event without requiring independent registration. The table
+        /// is small (one entry per registered Addressable scene) and is empty for projects that don't use
+        /// Addressable scenes.
+        /// </summary>
+        private void SerializeAddressableSceneTable(FastBufferWriter writer)
+        {
+            var registry = m_NetworkManager.SceneManager?.AddressableScenes;
+            var count = registry?.Count ?? 0;
+            BytePacker.WriteValueBitPacked(writer, count);
+            if (count == 0)
+            {
+                return;
+            }
+            foreach (var entry in registry.HashToAddress)
+            {
+                writer.WriteValueSafe(entry.Key);
+                writer.WriteValueSafe(entry.Value);
+            }
+        }
+
+        /// <summary>
+        /// Reads the sender's Addressable scene table (hash -> address) and registers each entry so the
+        /// corresponding Addressable scene hashes can be resolved locally during this event's processing.
+        /// </summary>
+        private void DeserializeAddressableSceneTable(FastBufferReader reader)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out int count);
+            if (count == 0)
+            {
+                return;
+            }
+            var registry = m_NetworkManager.SceneManager?.AddressableScenes;
+            for (var i = 0; i < count; i++)
+            {
+                reader.ReadValueSafe(out uint hash);
+                reader.ReadValueSafe(out string address);
+                registry?.RegisterWithHash(hash, address);
+            }
         }
 
         /// <summary>
@@ -733,13 +792,22 @@ namespace Unity.Netcode
         /// Deserialize data based on the SceneEvent type.
         /// </summary>
         /// <param name="reader"></param>
-        internal void Deserialize(FastBufferReader reader)
+        /// <param name="receivedVersion">the <see cref="SceneEventMessage"/> version the sender used</param>
+        internal void Deserialize(FastBufferReader reader, int receivedVersion)
         {
             reader.ReadValueSafe(out SceneEventType);
             if (m_NetworkManager.DistributedAuthorityMode)
             {
                 ByteUnpacker.ReadValueBitPacked(reader, out TargetClientId);
                 ByteUnpacker.ReadValueBitPacked(reader, out SenderClientId);
+            }
+
+            // Read the Addressable scene table (hash -> address) and register the entries so any Addressable
+            // scene hash referenced by this event can be resolved locally. Only present when the sender's
+            // message version supports it.
+            if (receivedVersion >= AddressableSceneTableVersion)
+            {
+                DeserializeAddressableSceneTable(reader);
             }
 
             if (SceneEventType == SceneEventType.ActiveSceneChanged)

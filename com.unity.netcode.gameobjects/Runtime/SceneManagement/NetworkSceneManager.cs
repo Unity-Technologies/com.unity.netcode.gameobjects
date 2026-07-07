@@ -542,6 +542,34 @@ namespace Unity.Netcode
         internal Dictionary<int, uint> BuildIndexToHash = new Dictionary<int, uint>();
 
         /// <summary>
+        /// Registry mapping Addressable scene addresses to the hashes used to identify them on the wire.
+        /// Populated via <see cref="RegisterAddressableScene(string)"/> or auto-scanning the Addressables
+        /// catalog. Kept separate from the build-settings tables so the two scene sources can coexist.
+        /// </summary>
+        internal AddressableSceneRegistry AddressableScenes;
+
+        /// <summary>
+        /// Addressable scene addresses registered via <see cref="RegisterAddressableScene(string)"/>. Static
+        /// so registrations persist across <see cref="NetworkManager"/> sessions and are replayed into each
+        /// <see cref="NetworkSceneManager"/> when it is constructed (allowing registration before start).
+        /// </summary>
+        internal static HashSet<string> s_RegisteredAddressableAddresses = new HashSet<string>();
+
+        /// <summary>
+        /// All currently constructed (not yet disposed) <see cref="NetworkSceneManager"/> instances, so a
+        /// static <see cref="RegisterAddressableScene(string)"/> call can be applied to live instances.
+        /// </summary>
+        internal static List<NetworkSceneManager> s_ActiveSceneManagers = new List<NetworkSceneManager>();
+
+        /// <summary>
+        /// When true, the Addressables content catalog is scanned for scene resource locations and all of
+        /// them are registered automatically when the <see cref="NetworkSceneManager"/> is constructed.
+        /// Defaults to false so that projects not using Addressable scenes incur no scan cost.
+        /// Set via <see cref="EnableAddressableSceneAutoScan"/> before starting the <see cref="NetworkManager"/>.
+        /// </summary>
+        internal static bool AutoScanAddressableScenes;
+
+        /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         /// they need to be moved into the do not destroy temporary scene
         /// When it is set: Just before starting the asynchronous loading call
@@ -556,6 +584,10 @@ namespace Unity.Netcode
             DisableReSynchronization = false;
             IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
             SceneUnloadEventHandler.ResetInstances();
+            // Clear any stale instance references from a previous play session (when domain reloading is
+            // disabled). Registered Addressable addresses are intentionally left intact so bootstrap-time
+            // registrations persist across play sessions.
+            s_ActiveSceneManagers.Clear();
         }
 #endif
 
@@ -606,6 +638,8 @@ namespace Unity.Netcode
         {
             // Always assure we no longer listen to scene changes when disposed.
             SceneManager.activeSceneChanged -= SceneManager_ActiveSceneChanged;
+            // Stop tracking this instance for static Addressable scene registration.
+            s_ActiveSceneManagers.Remove(this);
             SceneUnloadEventHandler.Shutdown();
             foreach (var keypair in SceneEventDataStore)
             {
@@ -750,6 +784,25 @@ namespace Unity.Netcode
             {
                 return "No Scene";
             }
+
+            // Build-settings scenes take precedence and resolve via their scene path.
+            if (HashToBuildIndex.ContainsKey(sceneHash))
+            {
+                return GetSceneNameFromPath(ScenePathFromHash(sceneHash));
+            }
+
+            // Addressable scenes: return the actual runtime scene name if it has already loaded (recorded
+            // by the scene manager handler), otherwise fall back to the address.
+            if (AddressableScenes != null && AddressableScenes.TryGetAddress(sceneHash, out var address))
+            {
+                if (SceneManagerHandler.TryGetAddressableSceneName(address, out var loadedName))
+                {
+                    return loadedName;
+                }
+                return address;
+            }
+
+            // Not a build-settings or Addressable scene: preserve the original behavior (throws).
             return GetSceneNameFromPath(ScenePathFromHash(sceneHash));
         }
 
@@ -762,11 +815,13 @@ namespace Unity.Netcode
             {
                 return SceneUtility.GetScenePathByBuildIndex(HashToBuildIndex[sceneHash]);
             }
-            else
+            // For Addressable scenes there is no build-settings path; the address is used as the path.
+            if (AddressableScenes != null && AddressableScenes.TryGetAddress(sceneHash, out var address))
             {
-                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!  Verify that all scenes requiring" +
-                    $" server to client synchronization are in the scenes in build list.");
+                return address;
             }
+            throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!  Verify that all scenes requiring" +
+                $" server to client synchronization are in the scenes in build list or registered as Addressable scenes.");
         }
 
         /// <summary>
@@ -786,10 +841,93 @@ namespace Unity.Netcode
                     throw new Exception($"Scene '{sceneNameOrPath}' has a build index of {buildIndex} that does not exist in the {nameof(BuildIndexToHash)} table!");
                 }
             }
-            else
+            // If the value is a registered Addressable scene address, resolve its hash.
+            if (AddressableScenes != null && AddressableScenes.TryGetHash(sceneNameOrPath, out var addressableHash))
             {
-                throw new Exception($"Scene '{sceneNameOrPath}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
+                return addressableHash;
             }
+            throw new Exception($"Scene '{sceneNameOrPath}' couldn't be loaded because it has not been added to the build settings scenes in build list nor registered as an Addressable scene.");
+        }
+
+        /// <summary>
+        /// Returns true if the provided scene hash refers to a registered Addressable scene.
+        /// </summary>
+        internal bool IsAddressableScene(uint sceneHash)
+        {
+            return AddressableScenes != null && AddressableScenes.IsAddressableScene(sceneHash);
+        }
+
+        /// <summary>
+        /// Attempts to resolve a currently loaded <see cref="Scene"/> from a wire hash. Build-settings scenes
+        /// resolve via their build index; Addressable scenes resolve via their registered address and the
+        /// loaded scene name recorded by the scene manager handler. Returns false if no matching loaded scene
+        /// is found.
+        /// </summary>
+        internal bool TryGetLoadedSceneFromHash(uint sceneHash, out Scene scene)
+        {
+            if (HashToBuildIndex.ContainsKey(sceneHash))
+            {
+                scene = SceneManager.GetSceneByBuildIndex(HashToBuildIndex[sceneHash]);
+                return scene.IsValid();
+            }
+
+            if (AddressableScenes != null && AddressableScenes.TryGetAddress(sceneHash, out var address)
+                && SceneManagerHandler.TryGetAddressableSceneName(address, out var sceneName))
+            {
+                scene = SceneManager.GetSceneByName(sceneName);
+                return scene.IsValid();
+            }
+
+            scene = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves a loaded <see cref="Scene"/> to the <c>uint</c> hash used to identify it on the wire.
+        /// Addressable-loaded scenes resolve via their address (the loaded scene's path/name does not
+        /// necessarily match its Addressable address); all other scenes resolve via their scene path.
+        /// </summary>
+        internal uint SceneHashFromScene(Scene scene)
+        {
+            if (SceneManagerHandler.IsAddressableSceneLoaded(scene)
+                && SceneManagerHandler.TryGetAddressableSceneAddress(scene, out var address)
+                && AddressableScenes != null && AddressableScenes.TryGetHash(address, out var hash))
+            {
+                return hash;
+            }
+            return SceneHashFromNameOrPath(scene.path);
+        }
+
+        /// <summary>
+        /// Central load dispatch. Routes to either the traditional (build-settings) scene load or the
+        /// Addressable scene load based on the scene hash. Returns the <see cref="AsyncOperation"/> for
+        /// build-settings scenes, or <c>null</c> for Addressable scenes (which have no
+        /// <see cref="AsyncOperation"/> available until their handle completes; progress is tracked via
+        /// the <see cref="ISceneEventOperation"/> set on <paramref name="sceneEventProgress"/>).
+        /// </summary>
+        internal AsyncOperation LoadSceneAsyncDispatch(uint sceneHash, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
+        {
+            if (IsAddressableScene(sceneHash) && AddressableScenes.TryGetAddress(sceneHash, out var address))
+            {
+                SceneManagerHandler.LoadAddressableSceneAsync(address, loadSceneMode, sceneEventProgress);
+                return null;
+            }
+            return SceneManagerHandler.LoadSceneAsync(SceneNameFromHash(sceneHash), loadSceneMode, sceneEventProgress);
+        }
+
+        /// <summary>
+        /// Central unload dispatch. Routes to either the traditional or Addressable unload based on how
+        /// the scene was loaded. Returns the <see cref="AsyncOperation"/> for build-settings scenes, or
+        /// <c>null</c> for Addressable scenes.
+        /// </summary>
+        internal AsyncOperation UnloadSceneAsyncDispatch(Scene scene, SceneEventProgress sceneEventProgress)
+        {
+            if (SceneManagerHandler.IsAddressableSceneLoaded(scene))
+            {
+                SceneManagerHandler.UnloadAddressableSceneAsync(scene, sceneEventProgress);
+                return null;
+            }
+            return SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
         }
 
         /// <summary>
@@ -835,6 +973,24 @@ namespace Unity.Netcode
 
             // Generates the scene name to hash value
             GenerateScenesInBuild();
+
+            // Set up the Addressable scene registry. Optionally auto-scan the catalog so every Addressable
+            // scene is immediately networkable. Explicit registration via RegisterAddressableScene can also
+            // be used to add or override entries.
+            AddressableScenes = new AddressableSceneRegistry(this);
+            // Track this instance so static RegisterAddressableScene calls can be applied to it, and replay
+            // any addresses that were registered (e.g. in bootstrap code) before this instance was created.
+            s_ActiveSceneManagers.Add(this);
+            foreach (var registeredAddress in s_RegisteredAddressableAddresses)
+            {
+                AddressableScenes.Register(registeredAddress);
+            }
+#if USING_ADDRESSABLES
+            if (AutoScanAddressableScenes)
+            {
+                AddressableScenes.AutoScanCatalog();
+            }
+#endif
 
             // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
             DontDestroyOnLoadScene = networkManager.gameObject.scene;
@@ -900,13 +1056,26 @@ namespace Unity.Netcode
                 }
             }
 
-            // If the scene's build index is in the hash table
+            // Resolve the active scene's wire hash. Build-settings scenes resolve via their build index;
+            // Addressable-loaded scenes resolve via their registered address.
+            var activeSceneHash = 0u;
             if (BuildIndexToHash.ContainsKey(next.buildIndex))
             {
-                // Notify clients of the change in active scene
+                activeSceneHash = BuildIndexToHash[next.buildIndex];
+            }
+            else if (SceneManagerHandler.IsAddressableSceneLoaded(next)
+                && SceneManagerHandler.TryGetAddressableSceneAddress(next, out var activeAddress)
+                && AddressableScenes != null && AddressableScenes.TryGetHash(activeAddress, out var addressableActiveHash))
+            {
+                activeSceneHash = addressableActiveHash;
+            }
+
+            // If we resolved a hash for the active scene, notify clients of the change in active scene
+            if (activeSceneHash != 0)
+            {
                 var sceneEvent = BeginSceneEvent();
                 sceneEvent.SceneEventType = SceneEventType.ActiveSceneChanged;
-                sceneEvent.ActiveSceneHash = BuildIndexToHash[next.buildIndex];
+                sceneEvent.ActiveSceneHash = activeSceneHash;
                 var sessionOwner = NetworkManager.ServerClientId;
                 if (NetworkManager.DistributedAuthorityMode)
                 {
@@ -1148,7 +1317,16 @@ namespace Unity.Netcode
                 return new SceneEventProgress(null, SceneEventProgressStatus.SceneNotLoaded);
             }
 
-            return ValidateSceneEvent(scene.name, true);
+            // For Addressable-loaded scenes, validate against the address (the loaded scene's name does
+            // not necessarily match its Addressable address).
+            var validationName = scene.name;
+            if (SceneManagerHandler.IsAddressableSceneLoaded(scene)
+                && SceneManagerHandler.TryGetAddressableSceneAddress(scene, out var address))
+            {
+                validationName = address;
+            }
+
+            return ValidateSceneEvent(validationName, true);
         }
 
         /// <summary>
@@ -1194,10 +1372,12 @@ namespace Unity.Netcode
                 return new SceneEventProgress(null, SceneEventProgressStatus.SceneEventInProgress);
             }
 
-            // Return invalid scene name status if the scene name is invalid
-            if (SceneUtility.GetBuildIndexByScenePath(sceneName) == InvalidSceneNameOrPath)
+            // Return invalid scene name status if the scene name is invalid. A scene is valid if it is
+            // either in the build settings scene list or registered as an Addressable scene.
+            if (SceneUtility.GetBuildIndexByScenePath(sceneName) == InvalidSceneNameOrPath
+                && !(AddressableScenes != null && AddressableScenes.IsAddressableScene(sceneName)))
             {
-                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
+                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list nor registered as an Addressable scene.");
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
@@ -1301,7 +1481,7 @@ namespace Unity.Netcode
             var sceneEventData = BeginSceneEvent();
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
             sceneEventData.SceneEventType = SceneEventType.Unload;
-            sceneEventData.SceneHash = SceneHashFromNameOrPath(sceneName);
+            sceneEventData.SceneHash = SceneHashFromScene(scene);
             sceneEventData.LoadSceneMode = LoadSceneMode.Additive; // The only scenes unloaded are scenes that were additively loaded
             sceneEventData.SceneHandle = sceneHandle;
 
@@ -1322,7 +1502,7 @@ namespace Unity.Netcode
                 Debug.LogError($"Failed to remove {SceneNameFromHash(sceneEventData.SceneHash)} scene handles [Server ({sceneEventData.SceneHandle})][Local({scene.handle})]");
             }
 
-            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
+            var sceneUnload = UnloadSceneAsyncDispatch(scene, sceneEventProgress);
 
             // Notify local server that a scene is going to be unloaded
             InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneUnload);
@@ -1375,7 +1555,7 @@ namespace Unity.Netcode
                 SceneEventProgressTracking.Add(sceneEventData.SceneEventProgressId, sceneEventProgress);
             }
 
-            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
+            var sceneUnload = UnloadSceneAsyncDispatch(scene, sceneEventProgress);
 
             SceneManagerHandler.StopTrackingScene(sceneHandle, sceneName, NetworkManager);
 
@@ -1475,8 +1655,11 @@ namespace Unity.Netcode
             var currentActiveScene = SceneManager.GetActiveScene();
             foreach (var keyHandleEntry in ScenesLoaded)
             {
-                // Validate the scene as well as ignore the DDOL (which will have a negative buildIndex)
-                if (currentActiveScene.name != keyHandleEntry.Value.name && keyHandleEntry.Value.buildIndex >= 0)
+                // Validate the scene as well as ignore the DDOL (which will have a negative buildIndex).
+                // Addressable scenes may report a negative buildIndex but are still valid to unload, so
+                // they are included explicitly.
+                var isAddressable = SceneManagerHandler.IsAddressableSceneLoaded(keyHandleEntry.Value);
+                if (currentActiveScene.name != keyHandleEntry.Value.name && (keyHandleEntry.Value.buildIndex >= 0 || isAddressable))
                 {
                     var sceneEventProgress = new SceneEventProgress(NetworkManager)
                     {
@@ -1491,7 +1674,7 @@ namespace Unity.Netcode
                     }
                     ClientSceneHandleToServerSceneHandle.Remove(keyHandleEntry.Value.handle);
 
-                    var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value, sceneEventProgress);
+                    var sceneUnload = UnloadSceneAsyncDispatch(keyHandleEntry.Value, sceneEventProgress);
 
                     SceneUnloadEventHandler.RegisterScene(this, keyHandleEntry.Value, LoadSceneMode.Additive, sceneUnload);
                 }
@@ -1564,12 +1747,183 @@ namespace Unity.Netcode
             // Now start loading the scene
             sceneEventProgress.SceneEventId = sceneEventId;
             sceneEventProgress.OnSceneEventCompleted = OnSceneLoaded;
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
+            var sceneLoad = LoadSceneAsyncDispatch(sceneEventData.SceneHash, loadSceneMode, sceneEventProgress);
 
             // Notify the local server that a scene loading event has begun
             InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneLoad);
 
             //Return our scene progress instance
+            return sceneEventProgress.Status;
+        }
+
+        /// <summary>
+        /// Enables (or disables) automatically scanning the Addressables content catalog for scene
+        /// resource locations and registering them when the <see cref="NetworkManager"/> starts.
+        /// </summary>
+        /// <remarks>
+        /// Must be called <b>before</b> starting the <see cref="NetworkManager"/> (the scan happens when
+        /// the <see cref="NetworkSceneManager"/> is constructed). The server (or session owner) and all
+        /// clients must build the same address to hash table, which is guaranteed when they share the same
+        /// Addressables content catalog.
+        /// </remarks>
+        /// <param name="enabled">true to auto-scan the catalog on start</param>
+        public static void EnableAddressableSceneAutoScan(bool enabled)
+        {
+            AutoScanAddressableScenes = enabled;
+        }
+
+        /// <summary>
+        /// Registers an Addressable scene by its address so it can be networked. Returns the hash used to
+        /// identify the scene on the wire.
+        /// </summary>
+        /// <remarks>
+        /// This is <b>static and persistent</b>: registrations are remembered across
+        /// <see cref="NetworkManager"/> sessions and applied to every <see cref="NetworkSceneManager"/>
+        /// when it is created, so you can (and should) register in your bootstrap code <b>before</b> starting
+        /// the <see cref="NetworkManager"/>. Registering after start is also applied immediately to any
+        /// running instance.<br/>
+        /// The same address must be registered on the server (or session owner) and every client so all
+        /// peers agree on the address to hash mapping (the same requirement that build-settings scene lists
+        /// must match across builds).
+        /// </remarks>
+        /// <param name="address">the Addressable address (key) of the scene</param>
+        /// <returns>the <c>uint</c> hash used to identify the scene on the wire</returns>
+        public static uint RegisterAddressableScene(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+            {
+                Debug.LogError($"[{nameof(NetworkSceneManager)}] {nameof(RegisterAddressableScene)} was called with a null or empty address!");
+                return 0;
+            }
+
+            // Remember for future NetworkSceneManager instances (persisted across sessions).
+            s_RegisteredAddressableAddresses.Add(address);
+
+            // Apply to any live NetworkSceneManager instances immediately.
+            foreach (var sceneManager in s_ActiveSceneManagers)
+            {
+                sceneManager.AddressableScenes.Register(address);
+            }
+
+            return AddressableSceneRegistry.HashFromAddress(address);
+        }
+
+#if USING_ADDRESSABLES
+        /// <summary>
+        /// Registers an Addressable scene from an <see cref="UnityEngine.AddressableAssets.AssetReference"/>.
+        /// See <see cref="RegisterAddressableScene(string)"/> for the peer-agreement and persistence details.
+        /// </summary>
+        /// <param name="sceneReference">the Addressable asset reference for the scene</param>
+        /// <returns>the <c>uint</c> hash used to identify the scene on the wire</returns>
+        public static uint RegisterAddressableScene(UnityEngine.AddressableAssets.AssetReference sceneReference)
+        {
+            if (sceneReference == null || !sceneReference.RuntimeKeyIsValid())
+            {
+                Debug.LogError($"[{nameof(NetworkSceneManager)}] {nameof(RegisterAddressableScene)} was called with an invalid {nameof(UnityEngine.AddressableAssets.AssetReference)}!");
+                return 0;
+            }
+            return RegisterAddressableScene(sceneReference.RuntimeKey.ToString());
+        }
+
+        /// <summary>
+        /// <b>Server/Session-owner side:</b> Loads an Addressable scene referenced by an
+        /// <see cref="UnityEngine.AddressableAssets.AssetReference"/> in either additive or single loading
+        /// mode. Works alongside build-settings scenes loaded via <see cref="LoadScene(string, LoadSceneMode)"/>.
+        /// </summary>
+        /// <remarks>
+        /// The address is auto-registered if it has not been already. The <see cref="VerifySceneBeforeLoading"/>
+        /// delegate is invoked with a scene index of <c>-1</c> and the address as the scene name for
+        /// Addressable scenes.
+        /// </remarks>
+        /// <param name="sceneReference">the Addressable asset reference for the scene to load</param>
+        /// <param name="loadSceneMode">how the scene will be loaded (single or additive mode)</param>
+        /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
+        public SceneEventProgressStatus LoadScene(UnityEngine.AddressableAssets.AssetReference sceneReference, LoadSceneMode loadSceneMode)
+        {
+            if (sceneReference == null || !sceneReference.RuntimeKeyIsValid())
+            {
+                Debug.LogError($"{nameof(LoadScene)} was called with an invalid {nameof(UnityEngine.AddressableAssets.AssetReference)}!");
+                return SceneEventProgressStatus.InvalidSceneName;
+            }
+            return LoadAddressableScene(sceneReference.RuntimeKey.ToString(), loadSceneMode);
+        }
+#endif
+
+        /// <summary>
+        /// <b>Server/Session-owner side:</b> Loads an Addressable scene by its address in either additive or
+        /// single loading mode. Works alongside build-settings scenes loaded via
+        /// <see cref="LoadScene(string, LoadSceneMode)"/>.
+        /// </summary>
+        /// <remarks>
+        /// The address is auto-registered if it has not been already. The <see cref="VerifySceneBeforeLoading"/>
+        /// delegate is invoked with a scene index of <c>-1</c> and the address as the scene name for
+        /// Addressable scenes.
+        /// </remarks>
+        /// <param name="address">the Addressable address (key) of the scene to load</param>
+        /// <param name="loadSceneMode">how the scene will be loaded (single or additive mode)</param>
+        /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
+        public SceneEventProgressStatus LoadAddressableScene(string address, LoadSceneMode loadSceneMode)
+        {
+            if (string.IsNullOrEmpty(address))
+            {
+                Debug.LogError($"{nameof(LoadAddressableScene)} was called with a null or empty address!");
+                return SceneEventProgressStatus.InvalidSceneName;
+            }
+
+            // Ensure the address is registered so it resolves to a stable hash.
+            RegisterAddressableScene(address);
+
+            var sceneEventProgress = ValidateSceneEventLoading(address);
+            if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
+            {
+                return sceneEventProgress.Status;
+            }
+
+            // This will be the message we send to everyone when this scene event sceneEventProgress is complete
+            sceneEventProgress.SceneEventType = SceneEventType.LoadEventCompleted;
+            sceneEventProgress.LoadSceneMode = loadSceneMode;
+
+            var sceneEventData = BeginSceneEvent();
+
+            sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
+            sceneEventData.SceneEventType = SceneEventType.Load;
+            sceneEventData.SceneHash = SceneHashFromNameOrPath(address);
+            sceneEventData.LoadSceneMode = loadSceneMode;
+            var sceneEventId = sceneEventData.SceneEventId;
+
+            // This both checks to make sure the scene is valid and if not resets the active scene event
+            m_IsSceneEventActive = ValidateSceneBeforeLoading(sceneEventData.SceneHash, loadSceneMode);
+            if (!m_IsSceneEventActive)
+            {
+                EndSceneEvent(sceneEventId);
+                return SceneEventProgressStatus.SceneFailedVerification;
+            }
+
+            if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
+            {
+                IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+
+                // Destroy current scene objects before switching.
+                NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects();
+
+                // Preserve the objects that should not be destroyed during the scene event
+                MoveObjectsToDontDestroyOnLoad();
+
+                // Now Unload all currently additively loaded scenes
+                UnloadAdditivelyLoadedScenes(sceneEventId);
+
+                // Register the active scene for unload scene event notifications
+                SceneUnloadEventHandler.RegisterScene(this, SceneManager.GetActiveScene(), LoadSceneMode.Single);
+            }
+
+            // Now start loading the scene
+            sceneEventProgress.SceneEventId = sceneEventId;
+            sceneEventProgress.OnSceneEventCompleted = OnSceneLoaded;
+            var sceneLoad = LoadSceneAsyncDispatch(sceneEventData.SceneHash, loadSceneMode, sceneEventProgress);
+
+            // Notify the local server that a scene loading event has begun
+            InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneLoad);
+
             return sceneEventProgress.Status;
         }
 
@@ -1737,7 +2091,7 @@ namespace Unity.Netcode
                 SceneEventProgressTracking.Add(sceneEventData.SceneEventProgressId, sceneEventProgress);
                 m_IsSceneEventActive = true;
             }
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode, sceneEventProgress);
+            var sceneLoad = LoadSceneAsyncDispatch(sceneEventData.SceneHash, sceneEventData.LoadSceneMode, sceneEventProgress);
 
             InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneLoad);
         }
@@ -1995,9 +2349,14 @@ namespace Unity.Netcode
             sceneEventData.LoadSceneMode = ClientSynchronizationMode;
             var activeScene = SceneManager.GetActiveScene();
             sceneEventData.SceneEventType = SceneEventType.Synchronize;
+            // Resolve the active scene hash for build-settings or Addressable active scenes.
             if (BuildIndexToHash.ContainsKey(activeScene.buildIndex))
             {
                 sceneEventData.ActiveSceneHash = BuildIndexToHash[activeScene.buildIndex];
+            }
+            else if (SceneManagerHandler.IsAddressableSceneLoaded(activeScene))
+            {
+                sceneEventData.ActiveSceneHash = SceneHashFromScene(activeScene);
             }
 
             // Organize how (and when) we serialize our NetworkObjects
@@ -2026,7 +2385,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    sceneEventData.SceneHash = SceneHashFromNameOrPath(scene.path);
+                    sceneEventData.SceneHash = SceneHashFromScene(scene);
                     if (sceneEventData.SceneHash == sceneEventData.ActiveSceneHash)
                     {
                         hasSynchronizedActive = true;
@@ -2051,17 +2410,17 @@ namespace Unity.Netcode
                 // If we are just a normal client and in distributed authority mode, then always use the known server scene handle
                 if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
                 {
-                    sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), ClientSceneHandleToServerSceneHandle[scene.handle]);
+                    sceneEventData.AddSceneToSynchronize(SceneHashFromScene(scene), ClientSceneHandleToServerSceneHandle[scene.handle]);
                 }
                 else
                 {
-                    sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
+                    sceneEventData.AddSceneToSynchronize(SceneHashFromScene(scene), scene.handle);
                 }
             }
 
             if (!hasSynchronizedActive && NetworkManager.CMBServiceConnection && synchronizingService)
             {
-                sceneEventData.AddSceneToSynchronize(BuildIndexToHash[activeScene.buildIndex], ClientSceneHandleToServerSceneHandle[activeScene.handle]);
+                sceneEventData.AddSceneToSynchronize(SceneHashFromScene(activeScene), ClientSceneHandleToServerSceneHandle[activeScene.handle]);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();
@@ -2145,7 +2504,7 @@ namespace Unity.Netcode
                     SceneEventId = sceneEventId,
                     OnSceneEventCompleted = ClientLoadedSynchronization
                 };
-                sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
+                sceneLoad = LoadSceneAsyncDispatch(sceneHash, loadSceneMode, sceneEventProgress);
 
                 // Notify local client that a scene load has begun
                 OnSceneEvent?.Invoke(new SceneEvent()
@@ -2289,13 +2648,9 @@ namespace Unity.Netcode
             {
                 case SceneEventType.ActiveSceneChanged:
                     {
-                        if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
+                        if (TryGetLoadedSceneFromHash(sceneEventData.ActiveSceneHash, out var scene) && scene.isLoaded)
                         {
-                            var scene = SceneManager.GetSceneByBuildIndex(HashToBuildIndex[sceneEventData.ActiveSceneHash]);
-                            if (scene.isLoaded)
-                            {
-                                SceneManager.SetActiveScene(scene);
-                            }
+                            SceneManager.SetActiveScene(scene);
                         }
                         EndSceneEvent(sceneEventId);
                         break;
@@ -2340,13 +2695,10 @@ namespace Unity.Netcode
                             PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
 
                             // If needed, set the currently active scene
-                            if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
+                            if (TryGetLoadedSceneFromHash(sceneEventData.ActiveSceneHash, out var targetActiveScene)
+                                && targetActiveScene.isLoaded && targetActiveScene.handle != SceneManager.GetActiveScene().handle)
                             {
-                                var targetActiveScene = SceneManager.GetSceneByBuildIndex(HashToBuildIndex[sceneEventData.ActiveSceneHash]);
-                                if (targetActiveScene.isLoaded && targetActiveScene.handle != SceneManager.GetActiveScene().handle)
-                                {
-                                    SceneManager.SetActiveScene(targetActiveScene);
-                                }
+                                SceneManager.SetActiveScene(targetActiveScene);
                             }
 
                             // Spawn and Synchronize all NetworkObjects
@@ -2591,12 +2943,13 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">client who sent the scene event</param>
         /// <param name="reader">data associated with the scene event</param>
-        internal void HandleSceneEvent(ulong clientId, FastBufferReader reader)
+        /// <param name="messageVersion">the <see cref="SceneEventMessage"/> version the sender used</param>
+        internal void HandleSceneEvent(ulong clientId, FastBufferReader reader, int messageVersion)
         {
             if (NetworkManager != null)
             {
                 var sceneEventData = BeginSceneEvent();
-                sceneEventData.Deserialize(reader);
+                sceneEventData.Deserialize(reader, messageVersion);
                 if (SkipSceneHandling)
                 {
                     return;

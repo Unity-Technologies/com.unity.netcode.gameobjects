@@ -107,7 +107,7 @@ namespace Unity.Netcode
         internal uint SceneEventId;
 
         private Coroutine m_TimeOutCoroutine;
-        private AsyncOperation m_AsyncOperation;
+        private ISceneEventOperation m_SceneOperation;
 
         private NetworkManager m_NetworkManager { get; }
 
@@ -124,7 +124,7 @@ namespace Unity.Netcode
             {
                 // If we are the host, then add the host-client to the list
                 // of clients that completed if the AsyncOperation is done.
-                if ((m_NetworkManager.IsHost || m_NetworkManager.LocalClient.IsSessionOwner) && m_AsyncOperation.isDone)
+                if ((m_NetworkManager.IsHost || m_NetworkManager.LocalClient.IsSessionOwner) && m_SceneOperation != null && m_SceneOperation.IsDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -143,7 +143,7 @@ namespace Unity.Netcode
                 // If we are the host, then add the host-client to the list
                 // of clients that did not complete if the AsyncOperation is
                 // not done.
-                if (m_NetworkManager.IsHost && !m_AsyncOperation.isDone)
+                if (m_NetworkManager.IsHost && (m_SceneOperation == null || !m_SceneOperation.IsDone))
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -258,20 +258,32 @@ namespace Unity.Netcode
                 }
             }
 
-            // Return the local scene event's AsyncOperation status
+            // Return the local scene event's operation status
             // Note: Integration tests process scene loading through a queue
-            // and the AsyncOperation could not be assigned for several
+            // and the operation could not be assigned for several
             // network tick periods. Return false if that is the case.
-            return m_AsyncOperation == null ? false : m_AsyncOperation.isDone;
+            return m_SceneOperation == null ? false : m_SceneOperation.IsDone;
         }
 
         /// <summary>
-        /// Sets the AsyncOperation for the scene load/unload event
+        /// Sets the AsyncOperation for the scene load/unload event.
+        /// This is the traditional (build-settings) path; the <see cref="AsyncOperation"/>
+        /// is wrapped in an <see cref="EngineSceneOperation"/>.
         /// </summary>
         internal void SetAsyncOperation(AsyncOperation asyncOperation)
         {
-            m_AsyncOperation = asyncOperation;
-            m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
+            SetSceneEventOperation(new EngineSceneOperation(asyncOperation));
+        }
+
+        /// <summary>
+        /// Sets the <see cref="ISceneEventOperation"/> for the scene load/unload event.
+        /// Used by both the traditional (<see cref="EngineSceneOperation"/>) and
+        /// Addressables (<see cref="AddressableSceneOperation"/>) scene loading paths.
+        /// </summary>
+        internal void SetSceneEventOperation(ISceneEventOperation sceneOperation)
+        {
+            m_SceneOperation = sceneOperation;
+            m_SceneOperation.Completed += () =>
             {
                 // Don't invoke the callback if the network session is disconnected
                 // during a SceneEventProgress
@@ -283,7 +295,7 @@ namespace Unity.Netcode
                 // Go ahead and try finishing even if the network session is terminated/terminating
                 // as we might need to stop the coroutine
                 TryFinishingSceneEventProgress();
-            });
+            };
         }
 
 

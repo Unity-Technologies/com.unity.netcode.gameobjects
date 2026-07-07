@@ -312,6 +312,36 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return null;
         }
 
+        // Addressable scene loading is not simulated by the integration test scene handler. These delegate
+        // to the default (real) Addressables implementation so tests that specifically exercise Addressable
+        // scenes can still run, while traditional build-settings scenes continue to use the queued path above.
+        private DefaultSceneManagerHandler m_DefaultAddressableHandler = new DefaultSceneManagerHandler();
+
+        public ISceneEventOperation LoadAddressableSceneAsync(string address, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
+        {
+            return m_DefaultAddressableHandler.LoadAddressableSceneAsync(address, loadSceneMode, sceneEventProgress);
+        }
+
+        public ISceneEventOperation UnloadAddressableSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
+        {
+            return m_DefaultAddressableHandler.UnloadAddressableSceneAsync(scene, sceneEventProgress);
+        }
+
+        public bool IsAddressableSceneLoaded(Scene scene)
+        {
+            return m_DefaultAddressableHandler.IsAddressableSceneLoaded(scene);
+        }
+
+        public bool TryGetAddressableSceneName(string address, out string sceneName)
+        {
+            return m_DefaultAddressableHandler.TryGetAddressableSceneName(address, out sceneName);
+        }
+
+        public bool TryGetAddressableSceneAddress(Scene scene, out string address)
+        {
+            return m_DefaultAddressableHandler.TryGetAddressableSceneAddress(scene, out address);
+        }
+
         /// <summary>
         /// Replacement callback takes other NetworkManagers into consideration
         /// </summary>
