@@ -1189,13 +1189,13 @@ namespace Unity.Netcode
         /// <summary>
         /// Only spawn non-authority <see cref="NetworkManager"/> instances should invoke this.
         /// This is invoked to instantiate an authority spawned <see cref="NetworkObject"/>, and
-        /// is only invoked by: <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>
+        /// is only invoked by: <see cref="NetworkObject.DeserializeAndSpawnObject"/>
         /// </summary>
         /// <remarks>
-        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.Deserialize"/>.
+        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.DeserializeAndSpawnObject"/>.
         /// </remarks>
         /// <returns>boolean indicating whether the spawn succeeded</returns>
-        internal bool NonAuthorityLocalSpawn(in NetworkObject.SerializedObject serializedObject, out NetworkObject networkObject, FastBufferReader reader, bool destroyWithScene)
+        internal bool NonAuthorityLocalSpawn(in NetworkObject.SerializedObject serializedObject, [MaybeNullWhen(false)] out NetworkObject networkObject, FastBufferReader reader, bool destroyWithScene)
         {
             if (SpawnedObjects.ContainsKey(serializedObject.NetworkObjectId))
             {
@@ -1392,7 +1392,7 @@ namespace Unity.Netcode
             }
             var message = new CreateObjectMessage
             {
-                ObjectInfo = networkObject.Serialize(clientId, NetworkManager.DistributedAuthorityMode),
+                ObjectInfo = networkObject.SerializeSpawnedObject(clientId, NetworkManager.DistributedAuthorityMode),
                 IncludesSerializedObject = true,
                 UpdateObservers = NetworkManager.DistributedAuthorityMode,
                 ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
@@ -1418,7 +1418,7 @@ namespace Unity.Netcode
 
             var message = new CreateObjectMessage
             {
-                ObjectInfo = networkObject.Serialize(),
+                ObjectInfo = networkObject.SerializeSpawnedObject(),
                 ObserverIds = networkObject.Observers.ToArray(),
                 NewObserverIds = newObservers.ToArray(),
                 IncludesSerializedObject = true,

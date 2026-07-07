@@ -148,6 +148,7 @@ namespace Unity.Netcode
         [InitializeOnLoadMethod]
         public static void NotifyOnPlayStateChange()
         {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 

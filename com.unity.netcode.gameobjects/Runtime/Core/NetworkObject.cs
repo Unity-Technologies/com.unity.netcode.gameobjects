@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -3537,7 +3538,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal SerializedObject Serialize(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
+        /// <summary>
+        /// Creates a <see cref="SerializedObject"/> on an authority client.
+        /// Used to synchronize <see cref="NetworkObject"/> state to a non-authority client.
+        /// </summary>
+        /// <remarks>This function is the authority mirror of <see cref="DeserializeAndSpawnObject"/></remarks>
+        internal SerializedObject SerializeSpawnedObject(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
         {
             var obj = new SerializedObject
             {
@@ -3615,15 +3621,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to deserialize a serialized <see cref="SerializedObject"/> which occurs
-        /// when the client is approved or during a scene transition
+        /// Does a non-authority local spawn of a given <see cref="SerializedObject"/>.
+        /// This occurs when the client is approved, a new object is spawned by an authority, or during a scene transition.
         /// </summary>
-        /// <param name="serializedObject">Deserialized scene object data</param>
-        /// <param name="reader">FastBufferReader for the NetworkVariable data</param>
-        /// <param name="networkManager">NetworkManager instance</param>
+        /// <remarks>This function is the non-authority mirror of <see cref="SerializeSpawnedObject"/></remarks>
+        /// <param name="serializedObject">Deserialized data received from the authority for this <see cref="NetworkObject"/></param>
+        /// <param name="reader">FastBufferReader for any additional data sent with this object on spawn.</param>
+        /// <param name="networkManager">NetworkManager instance.</param>
         /// <param name="invokedByMessage">will be true if invoked by CreateObjectMessage</param>
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
-        internal static NetworkObject Deserialize(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
+        [return: MaybeNull]
+        internal static NetworkObject DeserializeAndSpawnObject(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
             var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 
@@ -3650,7 +3658,8 @@ namespace Unity.Netcode
             {
                 if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"[{networkObject.name}][Deserialize][{nameof(NetworkBehaviour)}Synchronization][Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
+                    var networkObjectName = networkObject != null ? networkObject.name : "null";
+                    NetworkLog.LogWarning($"[{networkObjectName}][Deserialize][{nameof(NetworkBehaviour)}Synchronization][Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
                 }
                 reader.Seek(endOfSynchronizationData);
             }

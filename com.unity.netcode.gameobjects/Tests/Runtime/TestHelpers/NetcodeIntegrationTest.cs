@@ -2078,7 +2078,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ICollection<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
         {
             bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
             {

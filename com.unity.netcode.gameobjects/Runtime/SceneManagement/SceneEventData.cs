@@ -623,7 +623,7 @@ namespace Unity.Netcode
             {
                 var noStart = writer.Position;
                 // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                var serializedObject = networkObject.Serialize(TargetClientId, distributedAuthority);
+                var serializedObject = networkObject.SerializeSpawnedObject(TargetClientId, distributedAuthority);
 
                 serializedObject.Serialize(writer);
                 var noStop = writer.Position;
@@ -699,7 +699,7 @@ namespace Unity.Netcode
             foreach (var objectToSync in m_NetworkObjectsSync)
             {
                 // Serialize the NetworkObject
-                var serializedObject = objectToSync.Serialize(TargetClientId, distributedAuthority);
+                var serializedObject = objectToSync.SerializeSpawnedObject(TargetClientId, distributedAuthority);
                 serializedObject.Serialize(writer);
                 numberOfObjects++;
             }
@@ -876,9 +876,9 @@ namespace Unity.Netcode
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
                     }
 
-                    var networkObject = NetworkObject.Deserialize(serializedObject, m_InternalBuffer, m_NetworkManager);
+                    var networkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, m_NetworkManager);
 
-                    if (serializedObject.IsSceneObject)
+                    if (serializedObject.IsSceneObject && networkObject != null)
                     {
                         sceneObjects.Add(networkObject);
                     }
@@ -1116,7 +1116,13 @@ namespace Unity.Netcode
                     {
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
                     }
-                    var spawnedNetworkObject = NetworkObject.Deserialize(serializedObject, m_InternalBuffer, networkManager);
+
+                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager);
+                    if (spawnedNetworkObject == null)
+                    {
+                        continue;
+                    }
+                    
                     var noStop = m_InternalBuffer.Position;
 
                     if (EnableSerializationLogs)
@@ -1125,12 +1131,9 @@ namespace Unity.Netcode
                         LogArray(m_InternalBuffer.ToArray(), noStart, noStop, builder);
                     }
                     // If we failed to deserialize the NetworkObject then don't add null to the list
-                    if (spawnedNetworkObject != null)
+                    if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                     {
-                        if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
-                        {
-                            m_NetworkObjectsSync.Add(spawnedNetworkObject);
-                        }
+                        m_NetworkObjectsSync.Add(spawnedNetworkObject);
                     }
                 }
                 if (EnableSerializationLogs)

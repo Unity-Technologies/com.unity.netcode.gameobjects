@@ -27,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a NullReferenceException was thrown when a non-authority failed to spawn a NetworkObject. (#4067)
 - Issue when FastBufferReader is attempting to read a string and all or a portion of the character count has already been read by user script, it could read a character length that results in a negative byte length which could result in an editor crash. (#4052)
 - Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
 - Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
