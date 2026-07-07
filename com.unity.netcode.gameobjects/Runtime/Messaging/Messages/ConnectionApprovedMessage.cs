@@ -160,7 +160,7 @@ namespace Unity.Netcode
                     {
                         sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                        var serializedObject = sobj.Serialize(OwnerClientId, IsDistributedAuthority);
+                        var serializedObject = sobj.SerializeSpawnedObject(OwnerClientId, IsDistributedAuthority);
                         serializedObject.Serialize(writer);
                         ++sceneObjectCount;
                     }
@@ -344,7 +344,7 @@ namespace Unity.Netcode
                 {
                     var serializedObject = new NetworkObject.SerializedObject();
                     serializedObject.Deserialize(m_ReceivedSceneObjectData);
-                    NetworkObject.Deserialize(serializedObject, m_ReceivedSceneObjectData, networkManager);
+                    NetworkObject.DeserializeAndSpawnObject(serializedObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
                 if (networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide)
