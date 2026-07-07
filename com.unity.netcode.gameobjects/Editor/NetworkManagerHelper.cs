@@ -63,11 +63,7 @@ namespace Unity.Netcode.Editor
         {
             if (Application.isPlaying)
             {
-#if UNITY_2023_1_OR_NEWER
-                var networkManager = Object.FindAnyObjectByType<NetworkManager>();
-#else
-                var networkManager = Object.FindObjectOfType<NetworkManager>();
-#endif
+                var networkManager = NetworkManager.Singleton;
                 if (networkManager != null && (networkManager.IsServer || networkManager.IsClient))
                 {
                     networkManager.Shutdown();
