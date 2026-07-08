@@ -159,6 +159,8 @@ develop_nightly:
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_6000.0
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
+  # Run code coverage test
+    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
 
 
 # Run all tests on weekly bases
@@ -189,5 +191,3 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_webgl_builds
     # Run Runtime tests against CMB service
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service
-    # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
