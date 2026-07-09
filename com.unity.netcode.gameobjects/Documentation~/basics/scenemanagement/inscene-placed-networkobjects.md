@@ -78,6 +78,9 @@ private void Start()
 > [!NOTE]
 > Once migrated into the DDoL, migrating the in-scene placed NetworkObject back into a different scene after it has already been spawned will cause soft synchronization errors with late-joining clients. Once in the DDoL it should stay in the DDoL. This is only for scene switching. If you aren't using scene switching, then it's recommended to use an additively loaded scene and keep that scene loaded for as long as you wish to persist the in-scene placed NetworkObject(s) being used for state management purposes.
 
+> [!WARNING]
+> Manually calling `DontDestroyOnLoad(gameObject)` is only supported for the scene-switching manager scenario described above (that is, a single in-scene placed NetworkObject used for state management that's migrated into the DDoL and stays there). Marking ordinary in-scene placed NetworkObjects as `DontDestroyOnLoad` isn't supported and can cause the object's `GlobalObjectIdHash` to no longer resolve after a scene change, resulting in errors such as "NetworkPrefab hash was not found!". To persist in-scene placed NetworkObjects across scene changes, prefer keeping them in an additively loaded scene that stays loaded for the duration of the session rather than using `DontDestroyOnLoad`.
+
 ## Complex in-scene NetworkObjects
 
 The most common mistake when using an in-scene placed NetworkObject is to try and use it like a dynamically spawned NetworkObject. When trying to decide if you should use an in-scene placed or dynamically spawned NetworkObject, you should ask yourself the following questions:
