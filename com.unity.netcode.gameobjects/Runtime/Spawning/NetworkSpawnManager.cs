@@ -957,6 +957,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// For most cases this is client-side only, except when the server is spawning a player.
         /// </remarks>
+        [return: MaybeNull]
         internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null)
         {
             NetworkObject networkObject = null;
@@ -977,11 +978,7 @@ namespace Unity.Netcode
                 networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                    }
-
+                    NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
                     return null;
                 }
 
@@ -1122,7 +1119,14 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!sceneObject && NetworkManager.LogLevel <= LogLevel.Error)
+            if (playerObject && networkObject.InScenePlaced)
+            {
+                NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
+                networkObject.InScenePlaced = false;
+            }
+            NetworkLog.InternalAssert(sceneObject == networkObject.InScenePlaced, "Legacy sceneObject value should match calculated InScenePlaced value.");
+
+            if (!networkObject.InScenePlaced && NetworkManager.LogLevel <= LogLevel.Error)
             {
                 var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
                 if (networkObjectChildren.Length > 1)
@@ -1137,7 +1141,7 @@ namespace Unity.Netcode
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && sceneObject)
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && networkObject.InScenePlaced)
             {
                 networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
@@ -1203,6 +1207,7 @@ namespace Unity.Netcode
                 return false;
             }
 
+            networkObject.InScenePlaced = serializedObject.IsSceneObject;
             networkObject.NetworkManagerOwner = NetworkManager;
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning

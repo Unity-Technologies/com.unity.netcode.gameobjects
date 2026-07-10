@@ -1,3 +1,4 @@
+using Unity.Netcode.Logging;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -19,8 +20,22 @@ namespace Unity.Netcode.Editor
         public int callbackOrder => 0;
         public void OnProcessScene(Scene scene, BuildReport report)
         {
+            var log = new ContextualLogger();
+            log.AddInfo(scene.name, scene.handle);
             foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
             {
+                if (networkObject.SceneOrigin.handle != scene.handle)
+                {
+                    log.Warning(new Context(LogLevel.Developer, $"{nameof(NetworkObject)}'s SceneOrigin doesn't match current scene being processed! Skipping processing.").AddInfo("SceneOrigin", networkObject.SceneOriginHandle).AddNetworkObject(networkObject));
+                    continue;
+                }
+
+                if (networkObject.HasBeenSpawned)
+                {
+                    log.Error(new Context(LogLevel.Normal, $"Processing {nameof(NetworkObject)} that has already been spawned! This should not be possible. Skipping processing.").AddNetworkObject(networkObject));
+                    continue;
+                }
+
                 networkObject.InScenePlaced = true;
             }
         }

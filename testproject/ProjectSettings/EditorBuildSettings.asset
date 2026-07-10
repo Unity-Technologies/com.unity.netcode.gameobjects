@@ -133,6 +133,9 @@ EditorBuildSettings:
     guid: 17b92153f7381d34fa48c4d5c0393d13
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/EmptyScene3.unity
+    guid: bfb4addb64cf6455a88668eba2f759ba
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/MoveADynamicObjectInAwake.unity
     guid: abd4c8b51c445d54faa16c67ac973f1b
   - enabled: 1
     path: Assets/Samples/SpawnObject/SimpleSpawn.unity

@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -13,27 +15,30 @@ namespace TestProject.RuntimeTests
 {
     /// <summary>
     /// NetworkObject Scene Migration Integration Tests
-    /// <see cref="MigrateIntoNewSceneTest"/>
-    /// <see cref="ActiveSceneSynchronizationTest"/>
     /// </summary>
-    public class NetworkObjectSceneMigrationTests : NetcodeIntegrationTest
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.DAHost)]
+    internal class NetworkObjectSceneMigrationTests : NetcodeIntegrationTest
     {
-        private List<string> m_TestScenes = new List<string>() { "EmptyScene1", "EmptyScene2", "EmptyScene3" };
+        private readonly List<string> m_TestScenes = new() { "EmptyScene1", "EmptyScene2", "EmptyScene3" };
         protected override int NumberOfClients => 2;
+
         private GameObject m_TestPrefab;
         private GameObject m_TestPrefabAutoSynchActiveScene;
         private GameObject m_TestPrefabDestroyWithScene;
         private Scene m_OriginalActiveScene;
 
-        private bool m_ClientsLoadedScene;
-        private bool m_ClientsUnloadedScene;
-        private Scene m_SceneLoaded;
         private List<NetworkObject> m_ServerSpawnedPrefabInstances = new List<NetworkObject>();
         private List<NetworkObject> m_ServerSpawnedDestroyWithSceneInstances = new List<NetworkObject>();
-        private List<Scene> m_ScenesLoaded = new List<Scene>();
-        private string m_CurrentSceneLoading;
-        private string m_CurrentSceneUnloading;
+        private readonly List<Scene> m_ScenesLoaded = new List<Scene>();
 
+        public NetworkObjectSceneMigrationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        // TODO: [MTT-15430] Fix automatic scene object migration between clients
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         protected override IEnumerator OnSetup()
         {
@@ -45,99 +50,81 @@ namespace TestProject.RuntimeTests
         {
             // Synchronize Scene Changes (default) Test Network Prefab
             m_TestPrefab = CreateNetworkObjectPrefab("TestObject");
+            m_TestPrefab.AddComponent<SceneOriginTracker>();
 
             // Auto Synchronize Active Scene Changes Test Network Prefab
-            m_TestPrefabAutoSynchActiveScene = CreateNetworkObjectPrefab("ASASObject");
+            m_TestPrefabAutoSynchActiveScene = CreateNetworkObjectPrefab("ActiveSceneSynchronizationObject");
             m_TestPrefabAutoSynchActiveScene.GetComponent<NetworkObject>().ActiveSceneSynchronization = true;
+            m_TestPrefabAutoSynchActiveScene.AddComponent<SceneOriginTracker>();
 
             // Destroy With Scene Test Network Prefab
-            m_TestPrefabDestroyWithScene = CreateNetworkObjectPrefab("DWSObject");
+            m_TestPrefabDestroyWithScene = CreateNetworkObjectPrefab("DestroyWithSceneObject");
             m_TestPrefabDestroyWithScene.AddComponent<DestroyWithSceneInstancesTestHelper>();
+            m_TestPrefabDestroyWithScene.AddComponent<SceneOriginTracker>();
 
-            DestroyWithSceneInstancesTestHelper.ShouldNeverSpawn = m_TestPrefabDestroyWithScene;
+            var neverSpawnObj = CreateNetworkObjectPrefab("ShouldNeverSpawn");
+            var shouldNeverSpawn = neverSpawnObj.AddComponent<ShouldNeverSpawn>();
+            DestroyWithSceneInstancesTestHelper.ShouldNeverSpawn = shouldNeverSpawn;
 
             base.OnServerAndClientsCreated();
         }
 
-        private bool DidClientsSpawnInstance(NetworkObject serverObject, bool checkDestroyWithScene = false)
+        private enum ExpectedLoadType
         {
-            foreach (var networkManager in m_ClientNetworkManagers)
-            {
-                if (!s_GlobalNetworkObjects.ContainsKey(networkManager.LocalClientId))
-                {
-                    return false;
-                }
-                var clientNetworkObjects = s_GlobalNetworkObjects[networkManager.LocalClientId];
-                if (!clientNetworkObjects.ContainsKey(serverObject.NetworkObjectId))
-                {
-                    return false;
-                }
+            Loaded,
+            Unloaded
+        }
 
-                if (checkDestroyWithScene)
+        private bool ValidateSceneOnAllClients(StringBuilder errorLog, string sceneName, ExpectedLoadType loadType)
+        {
+            var allValid = true;
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var sceneLoaded = false;
+                foreach (var scene in networkManager.SceneManager.ScenesLoaded.Values)
                 {
-                    if (serverObject.DestroyWithScene != clientNetworkObjects[serverObject.NetworkObjectId])
+                    if (scene.name == sceneName)
                     {
-                        return false;
+                        sceneLoaded = true;
+                        break;
                     }
                 }
+                if (!sceneLoaded && loadType == ExpectedLoadType.Loaded)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} wasn't loaded on this client!");
+                    allValid = false;
+                }
+                else if (sceneLoaded && loadType == ExpectedLoadType.Unloaded)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} was still loaded on this client!");
+                    allValid = false;
+                }
             }
-            return true;
+
+            return allValid;
         }
 
-        private bool VerifyAllClientsSpawnedInstances()
+        private bool VerifyAllScenesMatch(StringBuilder errorLog, List<NetworkObject> authorityInstances)
         {
-            foreach (var serverObject in m_ServerSpawnedPrefabInstances)
+            foreach (var authorityInstance in authorityInstances)
             {
-                if (!DidClientsSpawnInstance(serverObject))
+                foreach (var networkManager in m_NetworkManagers)
                 {
-                    return false;
-                }
-            }
+                    if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(authorityInstance.NetworkObjectId, out var instance))
+                    {
+                        errorLog.AppendLine($"[{authorityInstance.name}] Client-{networkManager.LocalClientId} doesn't have a local version of network object {authorityInstance.name} with id {authorityInstance.NetworkObjectId}");
+                        return false;
+                    }
 
-            foreach (var serverObject in m_ServerSpawnedDestroyWithSceneInstances)
-            {
-                if (!DidClientsSpawnInstance(serverObject, true))
-                {
-                    return false;
-                }
-            }
+                    if (instance.gameObject.scene.name != authorityInstance.gameObject.scene.name)
+                    {
+                        errorLog.AppendLine($"[{instance.name}] NetworkObject-{authorityInstance.NetworkObjectId} is in the wrong scene! Expected: {authorityInstance.gameObject.scene.name}, Actual: {instance.gameObject.scene.name}");
+                        return false;
+                    }
 
-            return true;
-        }
-
-        private bool AreClientInstancesInTheRightScene(NetworkObject serverObject)
-        {
-            foreach (var networkManager in m_ClientNetworkManagers)
-            {
-                var clientNetworkObjects = s_GlobalNetworkObjects[networkManager.LocalClientId];
-                if (clientNetworkObjects == null)
-                {
-                    continue;
-                }
-                // If a networkObject is null then it was destroyed
-                if (clientNetworkObjects[serverObject.NetworkObjectId].gameObject.scene.name != serverObject.gameObject.scene.name)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool VerifySpawnedObjectsMigrated()
-        {
-            foreach (var serverObject in m_ServerSpawnedPrefabInstances)
-            {
-                if (!AreClientInstancesInTheRightScene(serverObject))
-                {
-                    return false;
-                }
-            }
-
-            foreach (var serverObject in m_ServerSpawnedDestroyWithSceneInstances)
-            {
-                if (!AreClientInstancesInTheRightScene(serverObject))
-                {
-                    return false;
+                    // The SceneOrigin should never change
+                    var originalSceneTracker = instance.GetComponent<SceneOriginTracker>();
+                    Assert.AreEqual(originalSceneTracker.SceneWhereAwakeHappened, (NetworkSceneHandle)instance.SceneOrigin.handle, "The SceneOrigin of an object should never change!");
                 }
             }
 
@@ -154,28 +141,34 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator MigrateIntoNewSceneTest()
         {
+            var authority = GetAuthorityNetworkManager();
+
+            var authoritySpawnedInstances = new List<NetworkObject>();
             // Spawn 9 NetworkObject instances
             for (int i = 0; i < k_MaxObjectsToSpawn; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefab);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
-                serverNetworkObject.Spawn();
-                m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
+                var instance = SpawnObject(m_TestPrefab, authority);
+                var spawnedObject = instance.GetComponent<NetworkObject>();
+                authoritySpawnedInstances.Add(spawnedObject);
             }
-            yield return WaitForConditionOrTimeOut(VerifyAllClientsSpawnedInstances);
+
+            yield return WaitForSpawnedOnAllOrTimeOut(authoritySpawnedInstances);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
 
             // Now load three scenes to migrate the newly spawned NetworkObjects into
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            for (int i = 0; i < 3; i++)
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            foreach (var sceneToLoad in m_TestScenes)
             {
-                m_ClientsLoadedScene = false;
-                m_CurrentSceneLoading = m_TestScenes[i];
-                var status = m_ServerNetworkManager.SceneManager.LoadScene(m_TestScenes[i], LoadSceneMode.Additive);
-                Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start loading scene {m_CurrentSceneLoading}! Return status: {status}");
-                yield return WaitForConditionOrTimeOut(() => m_ClientsLoadedScene);
-                AssertOnTimeout($"Timed out waiting for all clients to load scene {m_CurrentSceneLoading}!");
+                var status = authority.SceneManager.LoadScene(sceneToLoad, LoadSceneMode.Additive);
+                Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneToLoad}! Return status: {status}");
+                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneToLoad, ExpectedLoadType.Loaded));
+                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneToLoad}!");
             }
+            authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
+            Assert.AreEqual(m_TestScenes.Count, m_ScenesLoaded.Count, "Not all the test scenes were loaded!");
+
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
+            AssertOnTimeout("[After spawn] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             var objectCount = 0;
             // Migrate each networkObject into one of the three scenes.
@@ -183,31 +176,32 @@ namespace TestProject.RuntimeTests
             foreach (var scene in m_ScenesLoaded)
             {
                 // Now migrate the NetworkObject
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount].gameObject, scene);
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount + 1].gameObject, scene);
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount + 2].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(authoritySpawnedInstances[objectCount].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(authoritySpawnedInstances[objectCount + 1].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(authoritySpawnedInstances[objectCount + 2].gameObject, scene);
                 objectCount += 3;
             }
 
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Register for the server-side client synchronization so we can send an object scene migration event at the same time
             // the new client begins to synchronize
-            m_ServerNetworkManager.SceneManager.OnSynchronize += MigrateObjects_OnSynchronize;
+            m_ServerSpawnedPrefabInstances = authoritySpawnedInstances;
+            authority.SceneManager.OnSynchronize += MigrateObjects_OnSynchronize;
 
             // Verify that a late joining client synchronizes properly even while new scene migrations occur
             // during its synchronization
             yield return CreateAndStartNewClient();
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
 
             AssertOnTimeout($"[Late Joined Client] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Verify that a late joining client synchronizes properly even if we migrate
             // during its synchronization and despawn some of the NetworkObjects migrated.
-            m_ServerNetworkManager.SceneManager.OnSynchronize += MigrateAndDespawnObjects_OnSynchronize;
+            authority.SceneManager.OnSynchronize += MigrateAndDespawnObjects_OnSynchronize;
             yield return CreateAndStartNewClient();
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
 
             AssertOnTimeout($"[Late Joined Client] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
         }
@@ -219,19 +213,27 @@ namespace TestProject.RuntimeTests
         /// </summary>
         private void MigrateAndDespawnObjects_OnSynchronize(ulong clientId)
         {
-            var objectCount = 0;
+            var authority = GetAuthorityNetworkManager();
             // Migrate the NetworkObjects into different scenes than they originally were migrated into
             for (int i = m_ServerSpawnedPrefabInstances.Count - 1; i >= 0; i--)
             {
                 var scene = m_ScenesLoaded[i % m_ScenesLoaded.Count];
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[i].gameObject, scene);
+                var obj = m_ServerSpawnedPrefabInstances[i];
+                if (m_DistributedAuthority)
+                {
+                    // When the new client joins, authority will be distributed.
+                    // Ensure we have the authority instance.
+                    obj = GetAuthorityInstance(obj);
+                }
+                SceneManager.MoveGameObjectToScene(obj.gameObject, scene);
                 // De-spawn every-other object
                 if (i % 2 == 0)
                 {
-                    m_ServerSpawnedPrefabInstances[objectCount + i].Despawn();
+                    obj.Despawn();
                     m_ServerSpawnedPrefabInstances.RemoveAt(i);
                 }
             }
+            authority.SceneManager.OnSynchronize -= MigrateObjects_OnSynchronize;
         }
 
         /// <summary>
@@ -252,7 +254,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Unsubscribe to this event for this part of the test
-            m_ServerNetworkManager.SceneManager.OnSynchronize -= MigrateObjects_OnSynchronize;
+            GetAuthorityNetworkManager().SceneManager.OnSynchronize -= MigrateObjects_OnSynchronize;
         }
 
         /// <summary>
@@ -263,36 +265,36 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ActiveSceneSynchronizationTest()
         {
+            var authority = GetAuthorityNetworkManager();
             // Disable resynchronization for this test to avoid issues with trying
             // to synchronize them.
             NetworkSceneManager.DisableReSynchronization = true;
 
+            var autoSyncActive = new List<NetworkObject>();
             // Spawn 3 NetworkObject instances that auto synchronize to active scene changes
             for (int i = 0; i < 3; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefabAutoSynchActiveScene);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
                 // We are also testing that objects marked to synchronize with changes to
                 // the active scene and marked to destroy with scene =are destroyed= if
                 // the scene being unloaded is currently the active scene and the scene that
                 // the NetworkObjects reside within.
-                serverNetworkObject.Spawn(true);
-                m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
+                var serverInstance = SpawnObject(m_TestPrefabAutoSynchActiveScene, authority, true);
+                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
+                autoSyncActive.Add(serverNetworkObject);
             }
-
             // Spawn 3 NetworkObject instances that do not auto synchronize to active scene changes
             // and ==should not be== destroyed with the scene (these should be the only remaining
             // instances)
+            var autoSyncInactive = new List<NetworkObject>();
             for (int i = 0; i < 3; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefab);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
                 // This set of NetworkObjects will be used to verify that NetworkObjets
                 // spawned with DestroyWithScene set to false will migrate into the current
                 // active scene if the scene they currently reside within is destroyed and
                 // is not the currently active scene.
-                serverNetworkObject.Spawn();
-                m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
+                var serverInstance = SpawnObject(m_TestPrefab, authority);
+                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
+                autoSyncInactive.Add(serverNetworkObject);
             }
 
             // Spawn 3 NetworkObject instances that do not auto synchronize to active scene changes
@@ -307,104 +309,103 @@ namespace TestProject.RuntimeTests
                 serverNetworkObject.Spawn(true);
                 m_ServerSpawnedDestroyWithSceneInstances.Add(serverNetworkObject);
             }
+            var authoritySpawnedInstances = new List<NetworkObject>();
+            authoritySpawnedInstances.AddRange(autoSyncActive);
+            authoritySpawnedInstances.AddRange(autoSyncInactive);
+            authoritySpawnedInstances.AddRange(m_ServerSpawnedDestroyWithSceneInstances);
 
-            yield return WaitForConditionOrTimeOut(VerifyAllClientsSpawnedInstances);
+            yield return WaitForSpawnedOnAllOrTimeOut(authoritySpawnedInstances);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
 
             // Now load three scenes
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            for (int i = 0; i < 3; i++)
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            foreach (var sceneName in m_TestScenes)
             {
-                m_ClientsLoadedScene = false;
-                m_CurrentSceneLoading = m_TestScenes[i];
-                var loadStatus = m_ServerNetworkManager.SceneManager.LoadScene(m_TestScenes[i], LoadSceneMode.Additive);
-                Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {m_CurrentSceneLoading}! Return status: {loadStatus}");
-                yield return WaitForConditionOrTimeOut(() => m_ClientsLoadedScene);
-                AssertOnTimeout($"Timed out waiting for all clients to load scene {m_CurrentSceneLoading}!");
+                var loadStatus = authority.SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+                Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneName}! Return status: {loadStatus}");
+                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneName, ExpectedLoadType.Loaded));
+                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneName}!");
             }
+            authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
 
+            var sceneToMigrateTo = m_ScenesLoaded[2];
             // Migrate the instances that don't synchronize with active scene changes into the 3rd loaded scene
             // (We are making sure these stay in the same scene they are migrated into)
-            for (int i = 3; i < m_ServerSpawnedPrefabInstances.Count; i++)
+            foreach (var spawnedObject in autoSyncInactive)
             {
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[i].gameObject, m_ScenesLoaded[2]);
+                SceneManager.MoveGameObjectToScene(spawnedObject.gameObject, sceneToMigrateTo);
             }
 
             // Migrate the instances that don't synchronize with active scene changes and are destroyed with the
             // scene unloading into the 3rd loaded scene
             // (We are making sure these get destroyed when the scene is unloaded)
-            for (int i = 0; i < m_ServerSpawnedDestroyWithSceneInstances.Count; i++)
+            foreach (var spawnedObject in m_ServerSpawnedDestroyWithSceneInstances)
             {
-                SceneManager.MoveGameObjectToScene(m_ServerSpawnedDestroyWithSceneInstances[i].gameObject, m_ScenesLoaded[2]);
+                SceneManager.MoveGameObjectToScene(spawnedObject.gameObject, sceneToMigrateTo);
             }
 
             // Make sure they migrated to the proper scene
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Now change the active scene
-            SceneManager.SetActiveScene(m_ScenesLoaded[1]);
+            var newActiveScene = m_ScenesLoaded[1];
+            SceneManager.SetActiveScene(newActiveScene);
             // We have to do this
             Object.DontDestroyOnLoad(m_TestPrefabAutoSynchActiveScene);
 
             // First, make sure server-side scenes and client side scenes match
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Verify that the auto-active-scene synchronization NetworkObjects migrated to the newly
             // assigned active scene
-            for (int i = 0; i < 3; i++)
+            foreach (var obj in autoSyncActive)
             {
-                Assert.True(m_ServerSpawnedPrefabInstances[i].gameObject.scene == m_ScenesLoaded[1],
-                    $"{m_ServerSpawnedPrefabInstances[i].gameObject.name} did not migrate into scene {m_ScenesLoaded[1].name}!");
+                Assert.AreEqual(newActiveScene, obj.gameObject.scene, $"{obj.gameObject.name} did not migrate into scene {newActiveScene.name}!");
             }
 
             // Verify that the other NetworkObjects that don't synchronize with active scene changes did
             // not migrate into the active scene.
-            for (int i = 3; i < m_ServerSpawnedPrefabInstances.Count; i++)
+            foreach (var obj in autoSyncInactive)
             {
-                Assert.False(m_ServerSpawnedPrefabInstances[i].gameObject.scene == m_ScenesLoaded[1],
-                    $"{m_ServerSpawnedPrefabInstances[i].gameObject.name} migrated into scene {m_ScenesLoaded[1].name}!");
+                Assert.AreNotEqual(newActiveScene, obj.gameObject.scene, $"{obj.gameObject.name} migrated into scene {newActiveScene.name}!");
             }
 
-            for (int i = 0; i < 3; i++)
+            foreach (var obj in m_ServerSpawnedDestroyWithSceneInstances)
             {
-                Assert.False(m_ServerSpawnedDestroyWithSceneInstances[i].gameObject.scene == m_ScenesLoaded[1],
-                    $"{m_ServerSpawnedDestroyWithSceneInstances[i].gameObject.name} migrated into scene {m_ScenesLoaded[1].name}!");
+                Assert.AreNotEqual(newActiveScene, obj.gameObject.scene, $"{obj.gameObject.name} migrated into scene {newActiveScene.name}!");
             }
 
             // Verify that a late joining client synchronizes properly and destroys the appropriate NetworkObjects
             yield return CreateAndStartNewClient();
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"[Late Joined Client #1] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Now, unload the scene containing the NetworkObjects that don't synchronize with active scene changes
             DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed += OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
-            m_ClientsUnloadedScene = false;
-            m_CurrentSceneUnloading = m_ScenesLoaded[2].name;
-            var status = m_ServerNetworkManager.SceneManager.UnloadScene(m_ScenesLoaded[2]);
-            Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start unloading scene {m_ScenesLoaded[2].name} with status {status}!");
-            yield return WaitForConditionOrTimeOut(() => m_ClientsUnloadedScene);
+            var status = authority.SceneManager.UnloadScene(sceneToMigrateTo);
+            Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start unloading scene {sceneToMigrateTo.name} with status {status}!");
+            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
 
             // Clean up any destroyed NetworkObjects
-            for (int i = m_ServerSpawnedPrefabInstances.Count - 1; i >= 0; i--)
+            for (int i = authoritySpawnedInstances.Count - 1; i >= 0; i--)
             {
-                if (m_ServerSpawnedPrefabInstances[i] == null)
+                if (authoritySpawnedInstances[i] == null)
                 {
-                    m_ServerSpawnedPrefabInstances.RemoveAt(i);
+                    authoritySpawnedInstances.RemoveAt(i);
                 }
             }
 
-            AssertOnTimeout($"Timed out waiting for all clients to unload scene {m_CurrentSceneUnloading}!");
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            AssertOnTimeout($"Timed out waiting for all clients to unload scene {sceneToMigrateTo.name}!");
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // Verify that the NetworkObjects that don't synchronize with active scene changes but marked to not
             // destroy with the scene are migrated into the current active scene
-            for (int i = 3; i < m_ServerSpawnedPrefabInstances.Count; i++)
+            foreach (var obj in autoSyncInactive)
             {
-                Assert.True(m_ServerSpawnedPrefabInstances[i].gameObject.scene == m_ScenesLoaded[1],
-                    $"{m_ServerSpawnedPrefabInstances[i].gameObject.name} did not migrate into scene {m_ScenesLoaded[1].name} but are in scene {m_ServerSpawnedPrefabInstances[i].gameObject.scene.name}!");
+                Assert.True(obj.gameObject.scene == newActiveScene, $"{obj.gameObject.name} did not migrate into scene {newActiveScene.name} but are in scene {obj.gameObject.scene.name}!");
             }
 
             // Verify all NetworkObjects that should have been destroyed with the scene unloaded were destroyed
@@ -414,18 +415,16 @@ namespace TestProject.RuntimeTests
 
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
-            m_ClientsUnloadedScene = false;
-            m_CurrentSceneUnloading = m_ScenesLoaded[1].name;
-            m_ServerNetworkManager.SceneManager.UnloadScene(m_ScenesLoaded[1]);
-            yield return WaitForConditionOrTimeOut(() => m_ClientsUnloadedScene);
-            AssertOnTimeout($"Timed out waiting for all clients to unload scene {m_CurrentSceneUnloading}!");
+            authority.SceneManager.UnloadScene(newActiveScene);
+            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
+            AssertOnTimeout($"Timed out waiting for all clients to unload scene {newActiveScene.name}!");
 
             // Clean up any destroyed NetworkObjects
-            for (int i = m_ServerSpawnedPrefabInstances.Count - 1; i >= 0; i--)
+            for (int i = authoritySpawnedInstances.Count - 1; i >= 0; i--)
             {
-                if (m_ServerSpawnedPrefabInstances[i] == null)
+                if (authoritySpawnedInstances[i] == null)
                 {
-                    m_ServerSpawnedPrefabInstances.RemoveAt(i);
+                    authoritySpawnedInstances.RemoveAt(i);
                 }
             }
 
@@ -433,22 +432,17 @@ namespace TestProject.RuntimeTests
             yield return CreateAndStartNewClient();
 
             // Verify the late joining client spawns all instances
-            yield return WaitForConditionOrTimeOut(VerifyAllClientsSpawnedInstances);
-            AssertOnTimeout($"Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
+            yield return WaitForSpawnedOnAllOrTimeOut(authoritySpawnedInstances);
+            AssertOnTimeout($"[Late Joined Client #2] Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
 
             // Verify the instances are in the correct scenes
-            yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+            yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"[Late Joined Client #2] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
             // All but 3 instances should be destroyed
-            Assert.True(m_ServerSpawnedPrefabInstances.Count == 3, $"{nameof(m_ServerSpawnedPrefabInstances)} still has a count of {m_ServerSpawnedPrefabInstances.Count} " +
-                $"NetworkObject instances!");
-            Assert.True(m_ServerSpawnedDestroyWithSceneInstances.Count == 0, $"{nameof(m_ServerSpawnedDestroyWithSceneInstances)} still has a count of " +
-                $"{m_ServerSpawnedDestroyWithSceneInstances.Count} NetworkObject instances!");
-            for (int i = 0; i < 3; i++)
-            {
-                Assert.True(m_ServerSpawnedPrefabInstances[i].gameObject.name.Contains(m_TestPrefab.gameObject.name), $"Expected {m_ServerSpawnedPrefabInstances[i].gameObject.name} to contain {m_TestPrefab.gameObject.name}!");
-            }
+            Assert.IsEmpty(autoSyncActive.Where(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.ActiveSceneSynchronization)}=true should have been destroyed when the active scene was unloaded!");
+            Assert.IsEmpty(m_ServerSpawnedDestroyWithSceneInstances.Where(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.DestroyWithScene)} should have been destroyed when the active scene was unloaded!");
+            Assert.AreEqual(3, autoSyncInactive.Count(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.ActiveSceneSynchronization)}=false should have survived the active scene change!");
         }
 
         /// <summary>
@@ -462,30 +456,16 @@ namespace TestProject.RuntimeTests
 
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
+            var authority = GetAuthorityNetworkManager();
             switch (sceneEvent.SceneEventType)
             {
                 case SceneEventType.LoadComplete:
                     {
-                        if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
+                        if (sceneEvent.ClientId == authority.LocalClientId)
                         {
-                            m_SceneLoaded = sceneEvent.Scene;
                             m_ScenesLoaded.Add(sceneEvent.Scene);
                         }
-                        break;
-                    }
-                case SceneEventType.LoadEventCompleted:
-                    {
-                        Assert.IsTrue(sceneEvent.ClientsThatTimedOut.Count == 0, $"{sceneEvent.ClientsThatTimedOut.Count} clients timed out while trying to load scene {m_CurrentSceneLoading}!");
-                        m_ClientsLoadedScene = true;
-                        break;
-                    }
-                case SceneEventType.UnloadEventCompleted:
-                    {
-                        if (sceneEvent.SceneName == m_CurrentSceneUnloading)
-                        {
-                            m_ClientsUnloadedScene = true;
-                        }
-                        break;
+                        return;
                     }
             }
         }
@@ -501,6 +481,43 @@ namespace TestProject.RuntimeTests
             m_ScenesLoaded.Clear();
             yield return base.OnTearDown();
         }
+
+        private NetworkObject GetAuthorityInstance(NetworkObject instance)
+        {
+            if (instance.IsOwner)
+            {
+                return instance;
+            }
+
+            var owner = instance.OwnerClientId;
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager.LocalClientId == owner)
+                {
+                    networkManager.SpawnManager.SpawnedObjects.TryGetValue(instance.NetworkObjectId, out var networkObject);
+                    return networkObject;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    internal class SceneOriginTracker : NetworkBehaviour
+    {
+        public NetworkSceneHandle SceneWhereAwakeHappened;
+        private void Awake()
+        {
+            SceneWhereAwakeHappened = gameObject.scene.handle;
+        }
+    }
+
+    internal class ShouldNeverSpawn : NetworkBehaviour
+    {
+        public override void OnNetworkSpawn()
+        {
+            Assert.Fail("Should never spawn!");
+        }
     }
 
     /// <summary>
@@ -509,7 +526,7 @@ namespace TestProject.RuntimeTests
     /// </summary>
     internal class DestroyWithSceneInstancesTestHelper : NetworkBehaviour
     {
-        public static GameObject ShouldNeverSpawn;
+        public static ShouldNeverSpawn ShouldNeverSpawn;
 
         public static Dictionary<ulong, Dictionary<ulong, NetworkObject>> ObjectRelativeInstances = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
@@ -544,12 +561,9 @@ namespace TestProject.RuntimeTests
 
         public override void OnDestroy()
         {
-            if (NetworkManager != null)
+            if (IsSpawned && HasAuthority)
             {
-                if (NetworkManager.LocalClientId == NetworkManager.ServerClientId)
-                {
-                    NetworkObjectDestroyed?.Invoke(NetworkObject);
-                }
+                NetworkObjectDestroyed?.Invoke(NetworkObject);
             }
             base.OnDestroy();
         }

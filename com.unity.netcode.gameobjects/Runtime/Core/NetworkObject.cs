@@ -106,6 +106,9 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkObject CurrentParent { get; private set; }
 
+        private int m_SpawnCount;
+        internal bool HasBeenSpawned => m_SpawnCount > 0;
+
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
 
@@ -1448,12 +1451,16 @@ namespace Unity.Netcode
 
             set
             {
-                // The scene origin should only be set once.
-                // Once set, it should never change.
                 if (SceneOriginHandle.IsEmpty() && value.IsValid() && value.isLoaded)
                 {
-                    m_SceneOrigin = value;
                     SceneOriginHandle = value.handle;
+                }
+
+                // The scene origin should only be set once.
+                // Once set, it should never change.
+                if (!m_SceneOrigin.IsValid())
+                {
+                    m_SceneOrigin = value;
                 }
             }
         }
@@ -1782,7 +1789,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
+        private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (NetworkManagerOwner == null)
             {
@@ -1853,7 +1860,28 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), InScenePlaced, playerObject, ownerClientId, destroyWithScene))
+
+            // Calculate the legacy IsSceneObject value as the public field is obsolete with warning
+            // We can't break the public behavior of the field.
+#pragma warning disable CS0618 // Type or member is obsolete
+            var legacyIsSceneObject = IsSceneObject.HasValue && IsSceneObject.Value;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // If SpawnInternal is being called on an object that is marked as InScenePlaced,
+            // The scene object was never automatically spawned when the scene was loaded.
+            // Count this object as a dynamically spawned object.
+            // TODO-[MTT-15388]: Actually support disabled/not spawned InScenePlaced NetworkObjects
+            if (InScenePlaced && m_SpawnCount == 0)
+            {
+                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{name}][SceneOrigin={SceneOriginHandle}] Dynamically spawning InScenePlaced network object. This can cause issues!", this);
+                }
+
+                InScenePlaced = false;
+            }
+
+            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), legacyIsSceneObject, playerObject, ownerClientId, destroyWithScene))
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
@@ -2053,6 +2081,7 @@ namespace Unity.Netcode
             // When spawned, previous owner is always the first assigned owner
             PreviousOwnerId = ownerClientId;
             m_HasAuthority = NetworkManagerOwner.DistributedAuthorityMode ? OwnerClientId == NetworkManagerOwner.LocalClientId : NetworkManagerOwner.IsServer;
+            m_SpawnCount++;
             IsSpawned = true;
 
             // If this is the player, and the client is the owner, then lock ownership by default
@@ -3627,17 +3656,17 @@ namespace Unity.Netcode
                     NetworkSceneHandle = SceneOriginHandle;
                 }
             }
-            else // Otherwise, the client did not find the client to server scene handle
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
-                {
-                    // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
-                    // into, but that scenario seemed very edge case and under most instances a user should be notified that this
-                    // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
-                    // the server-side too.
-                    NetworkLog.LogWarningServer($"[Client-{NetworkManagerOwner.LocalClientId}][{name}] Server - " +
-                        $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
-                        $"has no associated server side (network) scene handle!");
-                }
+            // Otherwise, the client did not find the client to server scene handle
+            else if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+            {
+                // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
+                // into, but that scenario seemed very edge case and under most instances a user should be notified that this
+                // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
+                // the server-side too.
+                NetworkLog.LogWarningServer($"[Client-{NetworkManagerOwner.LocalClientId}][{name}] Server - " +
+                    $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
+                    $"has no associated server side (network) scene handle!");
+            }
             OnMigratedToNewScene?.Invoke();
 
             // Only the authority side will notify clients of non-parented NetworkObject scene changes

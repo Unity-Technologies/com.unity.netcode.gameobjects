@@ -103,6 +103,8 @@ namespace Unity.Netcode
         /// <param name="message">The message to log</param>
         [HideInCallstack]
         public static void LogErrorServer(string message) => s_Log.ErrorServer(new Context(LogLevel.Error, message, true));
+        [HideInCallstack]
+        internal static void LogErrorServer(Context context) => s_Log.ErrorServer(context);
 
         internal static LogType GetMessageLogType(UnityEngine.LogType engineLogType)
         {
@@ -115,14 +117,14 @@ namespace Unity.Netcode
             };
         }
 
-
         private const string k_SenderId = "SenderId";
         internal static Context BuildContextForServerMessage([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)
         {
-            var ctx = new Context(level, message, true).AddInfo(k_SenderId, senderId);
-            if (TryGetNetworkObjectName(networkManager, message, out var name))
+            var ctx = new Context(level, message, true).AddTag("Received log from client!").AddInfo(k_SenderId, senderId);
+            var networkObject = TryGetNetworkObject(networkManager, message);
+            if (networkObject != null)
             {
-                ctx.AddTag(name);
+                ctx.AddNetworkObject(networkObject);
             }
             return ctx;
         }
@@ -135,29 +137,41 @@ namespace Unity.Netcode
             None
         }
 
+        private static readonly Regex k_NetworkObjectId = new($@"\[{nameof(NetworkObject.NetworkObjectId)}=(\d+)\]", RegexOptions.Compiled);
         private static readonly Regex k_GlobalObjectIdHash = new($@"\[{nameof(NetworkObject.GlobalObjectIdHash)}=(\d+)\]", RegexOptions.Compiled);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryGetNetworkObjectName([NotNull] NetworkManager networkManager, string message, out string name)
+        private static NetworkObject TryGetNetworkObject([NotNull] NetworkManager networkManager, string message)
         {
-            name = null;
+            if (k_NetworkObjectId.IsMatch(message))
+            {
+                var stringId = k_NetworkObjectId.Match(message).Groups[1].Value;
+                if (ulong.TryParse(stringId, out var networkObjectId) && networkObjectId > 0 && networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var networkObject))
+                {
+                    return networkObject;
+                }
+            }
+
             if (!k_GlobalObjectIdHash.IsMatch(message))
             {
-                return false;
+                return null;
             }
 
             var stringHash = k_GlobalObjectIdHash.Match(message).Groups[1].Value;
             if (!ulong.TryParse(stringHash, out var globalObjectIdHash))
             {
-                return false;
+                return null;
             }
 
-            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(globalObjectIdHash, out var networkObject))
+            NetworkObject matchingObject = null;
+            foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
             {
-                return false;
+                if (networkObject.GlobalObjectIdHash == globalObjectIdHash)
+                {
+                    matchingObject = networkObject;
+                }
             }
 
-            name = networkObject.name;
-            return true;
+            return matchingObject;
         }
 
         [HideInCallstack]
