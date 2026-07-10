@@ -110,7 +110,7 @@ namespace TestProject.RuntimeTests
                 foreach (var spawnedObjectEntry in m_ServerNetworkManager.SpawnManager.SpawnedObjects)
                 {
                     var networkObject = spawnedObjectEntry.Value;
-                    if (!networkObject.IsSceneObject.Value)
+                    if (!networkObject.InScenePlaced)
                     {
                         continue;
                     }
@@ -138,7 +138,7 @@ namespace TestProject.RuntimeTests
             foreach (var spawnedObjectEntry in m_ServerNetworkManager.SpawnManager.SpawnedObjects)
             {
                 var networkObject = spawnedObjectEntry.Value;
-                if (!networkObject.IsSceneObject.Value)
+                if (!networkObject.InScenePlaced)
                 {
                     continue;
                 }

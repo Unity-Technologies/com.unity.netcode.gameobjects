@@ -206,7 +206,7 @@ namespace Unity.Netcode
         /// Unloads any scenes that have not been assigned.
         /// </summary>
         /// <param name="networkManager"></param>
-        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        public void UnloadUnassignedScenes(NetworkManager networkManager)
         {
             var sceneManager = networkManager.SceneManager;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
@@ -311,7 +311,7 @@ namespace Unity.Netcode
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
@@ -360,13 +360,13 @@ namespace Unity.Netcode
                 return;
             }
             else // Warn users if they are changing this after there are clients already connected and synchronized
-            if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
                 {
-                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                    }
                 }
-            }
 
             // For additive client synchronization, we take into consideration scenes
             // already loaded.

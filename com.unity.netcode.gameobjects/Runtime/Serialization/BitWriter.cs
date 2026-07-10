@@ -15,7 +15,7 @@ namespace Unity.Netcode
         private unsafe byte* m_BufferPointer;
         private readonly int m_Position;
         private int m_BitPosition;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private int m_AllowedBitwiseWriteMark;
 #endif
         private const int k_BitsPerByte = 8;
@@ -37,7 +37,7 @@ namespace Unity.Netcode
             m_BufferPointer = writer.Handle->BufferPointer + writer.Handle->Position;
             m_Position = writer.Handle->Position;
             m_BitPosition = 0;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             m_AllowedBitwiseWriteMark = (m_Writer.Handle->AllowedWriteMark - m_Writer.Handle->Position) * k_BitsPerByte;
 #endif
         }
@@ -97,7 +97,7 @@ namespace Unity.Netcode
                     return false;
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             m_AllowedBitwiseWriteMark = newBitPosition;
 #endif
             return true;
@@ -110,7 +110,7 @@ namespace Unity.Netcode
         /// <param name="bitCount">Amount of bits to write</param>
         public unsafe void WriteBits(ulong value, uint bitCount)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             if (bitCount > 64)
             {
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot write more than 64 bits from a 64-bit value!");
@@ -153,7 +153,7 @@ namespace Unity.Netcode
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, uint bitCount)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {
@@ -174,7 +174,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBit(bool bit)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             int checkPos = (m_BitPosition + 1);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {

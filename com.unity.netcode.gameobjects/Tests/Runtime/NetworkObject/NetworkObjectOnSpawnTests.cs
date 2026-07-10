@@ -341,7 +341,17 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
             //----------- step 2 check spawn and destroy again
-            authorityInstance.GetComponent<NetworkObject>().Spawn();
+            var authorityObject = authorityInstance.GetComponent<NetworkObject>();
+            authorityObject.Spawn();
+
+            // This validates invoking GetSceneOriginHandle will not throw an exception for a dynamically spawned NetworkObject
+            // when the scene of origin hasn't been set.
+            var sceneOriginHandle = authorityObject.GetSceneOriginHandle();
+
+            // This validates that GetSceneOriginHandle will return the GameObject's scene handle that should be the currently active scene
+            var activeSceneHandle = SceneManager.GetActiveScene().handle;
+            Assert.IsTrue(sceneOriginHandle == activeSceneHandle, $"{nameof(NetworkObject)} should have returned the active scene handle of {activeSceneHandle} but returned {sceneOriginHandle}");
+
             // wait a tick
             yield return s_DefaultWaitForTick;
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
@@ -364,23 +374,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
-        }
-
-        [Test]
-        public void DynamicallySpawnedNoSceneOriginException()
-        {
-            var gameObject = new GameObject();
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.IsSpawned = true;
-            networkObject.SceneOriginHandle = default;
-            networkObject.IsSceneObject = false;
-            // This validates invoking GetSceneOriginHandle will not throw an exception for a dynamically spawned NetworkObject
-            // when the scene of origin hasn't been set.
-            var sceneOriginHandle = networkObject.GetSceneOriginHandle();
-
-            // This validates that GetSceneOriginHandle will return the GameObject's scene handle that should be the currently active scene
-            var activeSceneHandle = SceneManager.GetActiveScene().handle;
-            Assert.IsTrue(sceneOriginHandle == activeSceneHandle, $"{nameof(NetworkObject)} should have returned the active scene handle of {activeSceneHandle} but returned {sceneOriginHandle}");
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour

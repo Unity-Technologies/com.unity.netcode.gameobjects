@@ -728,7 +728,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_PlayerPrefab = new GameObject("Player");
             OnPlayerPrefabGameObjectCreated();
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            networkObject.IsSceneObject = false;
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -2004,7 +2003,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ICollection<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
         {
             bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
             {
@@ -2493,8 +2492,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
         {
-            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
-
             // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
             m_NetworkTopologyType = networkTopologyType;
 

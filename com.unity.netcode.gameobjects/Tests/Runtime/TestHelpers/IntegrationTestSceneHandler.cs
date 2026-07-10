@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -141,47 +140,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
 
-                ProcessInSceneObjects(scene, CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager);
+                ProcessInSceneObjects(scene);
 
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
         }
 
         /// <summary>
-        /// Handles some pre-spawn processing of in-scene placed NetworkObjects
-        /// to make sure the appropriate NetworkManagerOwner is assigned.  It
-        /// also makes sure that each in-scene placed NetworkObject has an
+        /// Handles some pre-spawn processing of in-scene placed NetworkObjects.
+        /// Makes sure that each in-scene placed NetworkObject has an
         /// ObjectIdentifier component if one is not assigned to it or its
         /// children.
         /// </summary>
         /// <param name="scene">the scenes that was just loaded</param>
-        /// <param name="networkManager">the relative NetworkManager</param>
-        private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
+        private static void ProcessInSceneObjects(Scene scene)
         {
-            // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
-            var inSceneNetworkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
-            foreach (var sobj in inSceneNetworkObjects)
+            // Get all in-scene placed NetworkObjects that were instantiated when this scene loaded
+            foreach (var sceneObject in FindObjects.FromSceneByType<NetworkObject>(scene, false))
             {
-                ProcessInSceneObject(sobj, networkManager);
-            }
-        }
-
-        /// <summary>
-        /// Assures to apply an ObjectNameIdentifier to all children
-        /// </summary>
-        private static void ProcessInSceneObject(NetworkObject networkObject, NetworkManager networkManager)
-        {
-            if (networkObject.GetComponent<ObjectNameIdentifier>() == null)
-            {
-                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
-                var networkObjects = networkObject.gameObject.GetComponentsInChildren<NetworkObject>();
-                foreach (var child in networkObjects)
+                if (sceneObject.InScenePlaced && sceneObject.GetComponent<ObjectNameIdentifier>() == null)
                 {
-                    if (child == networkObject)
-                    {
-                        continue;
-                    }
-                    ProcessInSceneObject(child, networkManager);
+                    sceneObject.gameObject.AddComponent<ObjectNameIdentifier>();
                 }
             }
         }
@@ -288,7 +267,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_ServerSceneBeingLoaded == scene.name)
             {
                 SceneManager.sceneLoaded -= Sever_SceneLoaded;
-                ProcessInSceneObjects(scene, NetworkManager);
+                ProcessInSceneObjects(scene);
             }
         }
 
@@ -708,16 +687,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
-            var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true).Where((c) => c.IsSpawned);
             var distributedAuthority = networkManager.DistributedAuthorityMode;
-            foreach (var networkObject in networkObjects)
+            foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, false))
             {
-                if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
+                if (!networkObject.IsSpawned)
                 {
-                    if (networkObject != null)
-                    {
-                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Ignoring {networkObject.gameObject.name} because it isn't in scene {networkObject.gameObject.scene.name} ");
-                    }
                     continue;
                 }
 
@@ -750,7 +724,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Moving {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
                         Object.DontDestroyOnLoad(networkObject.gameObject);

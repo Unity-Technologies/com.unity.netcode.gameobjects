@@ -10,11 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor. (#3980)
 
 ### Changed
 
-- `NetworkMetricsPipelineStage` is now defined even when the multiplayer tools package is not installed, removing the need to guard its registration behind a version define when using a custom driver in `UnityTransport`. (#3980)
 
 ### Deprecated
 
@@ -25,12 +23,45 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed AnticipatedNetworkTransform not respecting the InLocalSpace flag (#3995)
+- Issue where a NullReferenceException was thrown when a non-authority failed to spawn a NetworkObject. (#4067)
+- Issue when FastBufferReader is attempting to read a string and all or a portion of the character count has already been read by user script, it could read a character length that results in a negative byte length which could result in an editor crash. (#4052)
+- Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
+- Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
 
 ### Security
 
 
 ### Obsolete
 
+
+## [2.13.0] - 2026-06-21
+
+### Added
+
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+- RPC messages now log any time they are not processed. (#3994)
+
+### Changed
+
+- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
+
+### Deprecated
+
+- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
+
+## [2.12.0] - 2026-05-24
+
+### Added
+
+- Added a new variant of `UnityTransport.GetDefaultPipelineConfigurations` that takes a reference to the created `NetworkDriver`. This will register all pipeline stages that `UnityTransport` requires, removing the need to manually register them in your own custom driver constructor. (#3980)
+
+### Changed
+
+- `NetworkMetricsPipelineStage` is now defined even when the multiplayer tools package is not installed, removing the need to guard its registration behind a version define when using a custom driver in `UnityTransport`. (#3980)
+
+### Deprecated
+
+- Deprecated a number of methods that were no longer valid or being used. (#3987)
 
 ### [2.11.2] - 2026-05-01
 

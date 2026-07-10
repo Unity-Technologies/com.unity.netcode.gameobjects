@@ -21,6 +21,20 @@ namespace Unity.Netcode
     [HelpURL(HelpUrls.NetworkManager)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            Singleton = null;
+            OnInstantiated = null;
+            OnDestroying = null;
+            OnSingletonReady = null;
+            OnNetworkManagerReset = null;
+            IsDistributedAuthority = false;
+            s_SerializedType = new List<Type>();
+            DisableNotOptimizedSerializedType = false;
+        }
+#endif
         /// <summary>
         /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance has been instantiated.
         /// </summary>
@@ -30,7 +44,6 @@ namespace Unity.Netcode
         /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance is being destroyed.
         /// </summary>
         public static event Action<NetworkManager> OnDestroying;
-
 
 #if UNITY_EDITOR
         // Inspector view expand/collapse settings for this derived child class
@@ -44,17 +57,20 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
+        [Obsolete("This field is no longer used and will be removed in a future version.")]
         internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
+        [Obsolete("This field is no longer used and will be removed in a future version.")]
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
 
         // RuntimeAccessModifiersILPP will make this `public` (legacy table should be removed in v3.x.x)
+        [Obsolete("This field is no longer used and will be removed in a future version.")]
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
         private static List<Type> s_SerializedType = new List<Type>();
         // This is used to control the serialized type not optimized messaging for integration test purposes
         internal static bool DisableNotOptimizedSerializedType;
@@ -1160,7 +1176,7 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
             if (!DisableNotOptimizedSerializedType)
             {
                 s_SerializedType.Clear();
@@ -1223,7 +1239,7 @@ namespace Unity.Netcode
 
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEBUG
                 if (NetworkConfig.NetworkProfilingMetrics)
                 {
                     MessageManager.Hook(new ProfilingHooks());
@@ -1641,7 +1657,7 @@ namespace Unity.Netcode
             // place (i.e. sending any last state updates or the like).
 
             SpawnManager?.DespawnAndDestroyNetworkObjects();
-            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            SpawnManager?.ServerResetShutdownStateForSceneObjects();
             ////
 
             RpcTarget?.Dispose();
@@ -1797,6 +1813,10 @@ namespace Unity.Netcode
 
         internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
 
+
+        /// <summary>
+        /// This is called by the Unity Editor reset button. See <see cref="OnNetworkManagerReset"/> which is handled in "NetworkManagerHelper.cs".
+        /// </summary>
         private void Reset()
         {
             OnNetworkManagerReset?.Invoke(this);
