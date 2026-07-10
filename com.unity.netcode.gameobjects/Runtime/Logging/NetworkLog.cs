@@ -120,7 +120,7 @@ namespace Unity.Netcode
         private const string k_SenderId = "SenderId";
         internal static Context BuildContextForServerMessage([NotNull] NetworkManager networkManager, LogLevel level, ulong senderId, string message)
         {
-            var ctx = new Context(level, message, true).AddTag("Received log from client").AddInfo(k_SenderId, senderId);
+            var ctx = new Context(level, message, true).AddTag("Received log from client!").AddInfo(k_SenderId, senderId);
             var networkObject = TryGetNetworkObject(networkManager, message);
             if (networkObject != null)
             {
@@ -137,8 +137,8 @@ namespace Unity.Netcode
             None
         }
 
-        private static readonly Regex k_NetworkObjectId = new($@"\[{nameof(NetworkObject.NetworkObjectId)}:(\d+)\]", RegexOptions.Compiled);
-        private static readonly Regex k_GlobalObjectIdHash = new($@"\[{nameof(NetworkObject.GlobalObjectIdHash)}:(\d+)\]", RegexOptions.Compiled);
+        private static readonly Regex k_NetworkObjectId = new($@"\[{nameof(NetworkObject.NetworkObjectId)}=(\d+)\]", RegexOptions.Compiled);
+        private static readonly Regex k_GlobalObjectIdHash = new($@"\[{nameof(NetworkObject.GlobalObjectIdHash)}=(\d+)\]", RegexOptions.Compiled);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject TryGetNetworkObject([NotNull] NetworkManager networkManager, string message)
         {

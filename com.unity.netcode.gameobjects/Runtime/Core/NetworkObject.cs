@@ -1877,28 +1877,7 @@ namespace Unity.Netcode
                 }
             }
 
-
-            // Calculate the legacy IsSceneObject value as the public field is obsolete with warning
-            // We can't break the public behavior of the field.
-#pragma warning disable CS0618 // Type or member is obsolete
-            var legacyIsSceneObject = IsSceneObject.HasValue && IsSceneObject.Value;
-#pragma warning restore CS0618 // Type or member is obsolete
-
-            // If SpawnInternal is being called on an object that is marked as InScenePlaced,
-            // The scene object was never automatically spawned when the scene was loaded.
-            // Count this object as a dynamically spawned object.
-            // TODO-[MTT-15388]: Actually support disabled/not spawned InScenePlaced NetworkObjects
-            if (InScenePlaced && !HasBeenSpawned)
-            {
-                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
-                {
-                    Debug.LogWarning($"[{name}][SceneOrigin={SceneOriginHandle}] Dynamically spawning InScenePlaced network object. This can cause issues!", this);
-                }
-
-                InScenePlaced = false;
-            }
-
-            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), legacyIsSceneObject, playerObject, ownerClientId, destroyWithScene))
+            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), InScenePlaced, playerObject, ownerClientId, destroyWithScene))
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {

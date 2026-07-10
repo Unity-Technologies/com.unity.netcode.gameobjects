@@ -110,8 +110,19 @@ namespace TestProject.RuntimeTests
                     var originalSceneTracker = instance.GetComponent<SceneOriginTracker>();
                     Assert.AreEqual(originalSceneTracker.SceneWhereAwakeHappened, (NetworkSceneHandle)instance.SceneOrigin.handle, "The SceneOrigin of an object should never change!");
                 }
+                if (!sceneLoaded && loadType == ExpectedLoadType.Loaded)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} wasn't loaded on this client!");
+                    allValid = false;
+                }
+                else if (sceneLoaded && loadType == ExpectedLoadType.Unloaded)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} was still loaded on this client!");
+                    allValid = false;
+                }
             }
-            return true;
+
+            return allValid;
         }
 
         private const int k_MaxObjectsToSpawn = 9;
