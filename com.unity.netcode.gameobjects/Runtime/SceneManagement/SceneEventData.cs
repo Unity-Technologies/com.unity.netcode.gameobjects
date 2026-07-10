@@ -504,24 +504,17 @@ namespace Unity.Netcode
                 BytePacker.WriteValueBitPacked(writer, SenderClientId);
             }
 
-            // Write the Addressable scene table (hash -> address) so the receiver can resolve any Addressable
-            // scene hash referenced by this event without requiring independent client-side registration.
-            // Only written when the negotiated message version supports it, so peers on an older version
-            // (which don't expect these bytes) are not desynchronized.
-            if (serializedVersion >= AddressableSceneTableVersion)
-            {
-                SerializeAddressableSceneTable(writer);
-            }
-
             if (SceneEventType == SceneEventType.ActiveSceneChanged)
             {
                 writer.WriteValueSafe(ActiveSceneHash);
+                SerializeAddressableSceneTable(writer, serializedVersion);
                 return;
             }
 
             if (SceneEventType == SceneEventType.ObjectSceneChanged)
             {
                 SerializeObjectsMovedIntoNewScene(writer);
+                SerializeAddressableSceneTable(writer, serializedVersion);
                 return;
             }
 
@@ -548,6 +541,10 @@ namespace Unity.Netcode
                     {
                         writer.WriteValueSafe(ActiveSceneHash);
 
+                        // The synchronization data blob is read to the end of the buffer on the receiving side,
+                        // so the Addressable scene table is written before it (still after every fixed field).
+                        SerializeAddressableSceneTable(writer, serializedVersion);
+
                         WriteSceneSynchronizationData(writer);
 
                         if (EnableSerializationLogs)
@@ -558,6 +555,10 @@ namespace Unity.Netcode
                     }
                 case SceneEventType.Load:
                     {
+                        // The trailing scene-placed-object blob is read to the end of the buffer on the
+                        // receiving side, so the Addressable scene table is written before it (still after
+                        // every fixed field).
+                        SerializeAddressableSceneTable(writer, serializedVersion);
                         if (m_NetworkManager.DistributedAuthorityMode && IsForwarding && m_NetworkManager.DAHost)
                         {
                             CopyInternalBuffer(ref writer);
@@ -585,6 +586,13 @@ namespace Unity.Netcode
                         break;
                     }
             }
+
+            // For every remaining event type the trailing sections are self-delimiting, so the Addressable
+            // scene table is written last. Load and Synchronize wrote it above, before their greedily-read blob.
+            if (SceneEventType != SceneEventType.Load && SceneEventType != SceneEventType.Synchronize)
+            {
+                SerializeAddressableSceneTable(writer, serializedVersion);
+            }
         }
 
         private unsafe void CopyInternalBuffer(ref FastBufferWriter writer)
@@ -597,9 +605,21 @@ namespace Unity.Netcode
         /// Addressable scene referenced by this event without requiring independent registration. The table
         /// is small (one entry per registered Addressable scene) and is empty for projects that don't use
         /// Addressable scenes.
+        /// The table is written after every fixed field the Distributed Authority relay parses (last of all,
+        /// or immediately before the trailing scene payload for <see cref="SceneEventType.Load"/> and
+        /// <see cref="SceneEventType.Synchronize"/> events, whose blobs are read to the end of the buffer),
+        /// so the relay's expected field offsets are preserved and it needs no matching parser change.
+        /// Only written when the negotiated message version supports it, so peers on an older version
+        /// (which don't expect these bytes) are not desynchronized.
         /// </summary>
-        private void SerializeAddressableSceneTable(FastBufferWriter writer)
+        /// <param name="writer"><see cref="FastBufferWriter"/> to write the table to</param>
+        /// <param name="serializedVersion">the negotiated <see cref="SceneEventMessage"/> version for the target</param>
+        private void SerializeAddressableSceneTable(FastBufferWriter writer, int serializedVersion)
         {
+            if (serializedVersion < AddressableSceneTableVersion)
+            {
+                return;
+            }
             var registry = m_NetworkManager.SceneManager?.AddressableScenes;
             var count = registry?.Count ?? 0;
             BytePacker.WriteValueBitPacked(writer, count);
@@ -617,9 +637,16 @@ namespace Unity.Netcode
         /// <summary>
         /// Reads the sender's Addressable scene table (hash -> address) and registers each entry so the
         /// corresponding Addressable scene hashes can be resolved locally during this event's processing.
+        /// Only present when the sender's message version supports it.
         /// </summary>
-        private void DeserializeAddressableSceneTable(FastBufferReader reader)
+        /// <param name="reader"><see cref="FastBufferReader"/> to read the table from</param>
+        /// <param name="receivedVersion">the <see cref="SceneEventMessage"/> version the sender used</param>
+        private void DeserializeAddressableSceneTable(FastBufferReader reader, int receivedVersion)
         {
+            if (receivedVersion < AddressableSceneTableVersion)
+            {
+                return;
+            }
             ByteUnpacker.ReadValueBitPacked(reader, out int count);
             if (count == 0)
             {
@@ -802,17 +829,10 @@ namespace Unity.Netcode
                 ByteUnpacker.ReadValueBitPacked(reader, out SenderClientId);
             }
 
-            // Read the Addressable scene table (hash -> address) and register the entries so any Addressable
-            // scene hash referenced by this event can be resolved locally. Only present when the sender's
-            // message version supports it.
-            if (receivedVersion >= AddressableSceneTableVersion)
-            {
-                DeserializeAddressableSceneTable(reader);
-            }
-
             if (SceneEventType == SceneEventType.ActiveSceneChanged)
             {
                 reader.ReadValueSafe(out ActiveSceneHash);
+                DeserializeAddressableSceneTable(reader, receivedVersion);
                 return;
             }
 
@@ -827,6 +847,7 @@ namespace Unity.Netcode
                 {
                     DeserializeObjectsMovedIntoNewScene(reader);
                 }
+                DeserializeAddressableSceneTable(reader, receivedVersion);
                 return;
             }
 
@@ -850,6 +871,8 @@ namespace Unity.Netcode
                 case SceneEventType.Synchronize:
                     {
                         reader.ReadValueSafe(out ActiveSceneHash);
+                        // Written before the synchronization data blob on the sending side (see Serialize).
+                        DeserializeAddressableSceneTable(reader, receivedVersion);
                         if (EnableSerializationLogs)
                         {
                             LogArray(reader.ToArray(), 0, reader.Length);
@@ -865,6 +888,8 @@ namespace Unity.Netcode
                     }
                 case SceneEventType.Load:
                     {
+                        // Written before the trailing scene-placed-object blob on the sending side (see Serialize).
+                        DeserializeAddressableSceneTable(reader, receivedVersion);
                         unsafe
                         {
                             // We store off the trailing in-scene placed serialized NetworkObject data to
@@ -886,6 +911,13 @@ namespace Unity.Netcode
                         ReadSceneEventProgressDone(reader);
                         break;
                     }
+            }
+
+            // For every remaining event type the trailing sections are self-delimiting, so the Addressable
+            // scene table is read last. Load and Synchronize read it above, before their greedily-read blob.
+            if (SceneEventType != SceneEventType.Load && SceneEventType != SceneEventType.Synchronize)
+            {
+                DeserializeAddressableSceneTable(reader, receivedVersion);
             }
         }
 
