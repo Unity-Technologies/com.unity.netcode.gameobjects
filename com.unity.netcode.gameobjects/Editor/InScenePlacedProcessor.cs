@@ -21,12 +21,6 @@ namespace Unity.Netcode.Editor
         {
             foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
             {
-                // Exclude any already spawned objects found since this executes after the NetworkSceneManager has finished
-                // migrating anything from the DDOL into the newly loaded scene.
-                if (networkObject.IsSpawned)
-                {
-                    continue;
-                }
                 networkObject.InScenePlaced = true;
             }
         }
