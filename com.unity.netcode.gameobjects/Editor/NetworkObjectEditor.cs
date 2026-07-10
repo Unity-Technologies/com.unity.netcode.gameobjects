@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Unity.NetCode;
+using Unity.NetCode.Editor;
+
 #if BYPASS_DEFAULT_ENUM_DRAWER && MULTIPLAYER_SERVICES_SDK_INSTALLED
 using System.Linq;
 #endif
@@ -163,6 +166,28 @@ namespace Unity.Netcode.GameObjects.Editor
         // Saved for use in OnDestroy
         private GameObject m_GameObject;
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Notification that the <see cref="GhostAdapter"/> component is about to be removed.
+        /// </summary>
+        /// <remarks>
+        /// TODO:
+        /// Integrate an option (perhaps multiplayer settings) and dialog the first time a user does this.
+        /// Similar to how NGO can automatically add a <see cref="NetworkObject"/> if you add a <see cref="NetworkBehaviour"/>,
+        /// but in reverse where a user can disable the "auto-remove" and remove <see cref="GhostBehaviour"/> components
+        /// manually before un-checking the "Networked" box.
+        /// </remarks>
+        /// <param name="gameObject">The <see cref="GameObject"/> that the <see cref="GhostAdapter"/> component is being removed from.</param>
+        private void OnGhostAdapterPreRemoval(GameObject gameObject)
+        {
+            var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
+            for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
+            {
+                DestroyImmediate(ghostBehaviours[i], true);
+            }
+        }
+#endif
+
         /// <summary>
         /// Invoked once when a NetworkObject component is
         /// displayed in the inspector view.
@@ -173,6 +198,9 @@ namespace Unity.Netcode.GameObjects.Editor
             // NetworkObject component is removed (i.e. when OnDestroy is invoked)
             // it is no longer valid/available.
             m_GameObject = (target as NetworkObject).gameObject;
+#if UNIFIED_NETCODE
+            GhostAdapterEditor.OnGhostAdapterPreRemoval = OnGhostAdapterPreRemoval;
+#endif
         }
 
         /// <summary>
@@ -181,6 +209,9 @@ namespace Unity.Netcode.GameObjects.Editor
         /// </summary>
         private void OnDestroy()
         {
+#if UNIFIED_NETCODE
+            GhostAdapterEditor.OnGhostAdapterPreRemoval = null;
+#endif
             // Since this is also invoked when a NetworkObject component is removed
             // from a GameObject, we go ahead and check for a NetworkObject when
             // this custom editor is destroyed.

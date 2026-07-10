@@ -8,7 +8,8 @@
         "Unity.Networking.Transport",
         "Unity.Services.Core",
         "Unity.Services.Authentication",
-        "Unity.NetCode"
+        "Unity.NetCode",
+        "Unity.NetCode.Editor"
     ],
     "includePlatforms": [
         "Editor"
