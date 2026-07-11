@@ -1179,10 +1179,7 @@ namespace Unity.Netcode
         {
             if (SpawnedObjects.ContainsKey(serializedObject.NetworkObjectId))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning($"Trying to spawn a {nameof(NetworkObject)} with a {nameof(NetworkObject.NetworkObjectId)} of {serializedObject.NetworkObjectId} but an object with that id is already in the spawned list. This should not happen!");
-                }
+                NetworkManager.Log.Warning(new Context(LogLevel.Error, $"Trying to spawn a {nameof(NetworkObject)} but an object with that {nameof(NetworkObject.NetworkObjectId)} is already in the spawned list. This should not happen!"));
                 networkObject = null;
                 return false;
             }
@@ -1199,11 +1196,7 @@ namespace Unity.Netcode
             // Log the error that the NetworkObject failed to construct
             if (networkObject == null)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogError($"[{nameof(NetworkObject.GlobalObjectIdHash)}={serializedObject.Hash}] Failed to spawn {nameof(NetworkObject)}!");
-                }
-
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"Failed to spawn {nameof(NetworkObject)}").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash));
                 return false;
             }
 
@@ -1232,11 +1225,7 @@ namespace Unity.Netcode
 
             if (networkObject.IsSpawned)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
-                }
-
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"{nameof(NetworkObject)} is already spawned!").AddNetworkObject(networkObject));
                 // Mark the spawn as a success if the object is already spawned
                 return true;
             }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Netcode.Components;
+using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -3495,11 +3496,7 @@ namespace Unity.Netcode
 
             if (serializedObject.NetworkObjectId == default)
             {
-                if (networkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"[{nameof(GlobalObjectIdHash)}={serializedObject.Hash}] Received spawn request with invalid {nameof(NetworkObjectId)} {serializedObject.NetworkObjectId}. This should not happen!");
-                }
-
+                NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"Received spawn request with invalid {nameof(NetworkObjectId)}. This should not happen!").AddInfo(nameof(NetworkObjectId), serializedObject.NetworkObjectId).AddInfo(nameof(GlobalObjectIdHash), serializedObject.Hash));
                 reader.Seek(endOfSynchronizationData);
                 return null;
             }
