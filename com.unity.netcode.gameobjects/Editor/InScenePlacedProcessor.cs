@@ -24,7 +24,7 @@ namespace Unity.Netcode.Editor
             log.AddInfo(scene.name, scene.handle);
             foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
             {
-                if (networkObject.SceneOrigin.handle != scene.handle)
+                if (networkObject.SceneOrigin.IsValid() && networkObject.SceneOrigin.handle != scene.handle)
                 {
                     log.Warning(new Context(LogLevel.Developer, $"{nameof(NetworkObject)}'s SceneOrigin doesn't match current scene being processed! Skipping processing.").AddInfo("SceneOrigin", networkObject.SceneOriginHandle).AddNetworkObject(networkObject));
                     continue;
