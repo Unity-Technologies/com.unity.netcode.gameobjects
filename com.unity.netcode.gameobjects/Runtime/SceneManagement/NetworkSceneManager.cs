@@ -2045,7 +2045,7 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
                 // Skip adding the active scene at this point as we are just adding all other additively loaded scenes to the synchronization list.
-                // Skip adding the dont destroy on load scene as that is never synchronized.                
+                // Skip adding the dont destroy on load scene as that is never synchronized.
                 if ((scene.handle == activeScene.handle) || (scene == DontDestroyOnLoadScene))
                 {
                     continue;
