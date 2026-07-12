@@ -27,10 +27,12 @@
         "unity-upm-package"
       ],
       "enabled": "true",
-      "schedule": [
-        "every weekend"
-      ],
+      "schedule": ["every weekend"],
       "rollbackPrs": false,
+    },
+    {
+      "groupName": "CI deps updates",
+      "matchPackagePatterns": ["^RecipeEngine", "actions/checkout", "package-ci/ubuntu-22.04"]
     }
   ],
 }
