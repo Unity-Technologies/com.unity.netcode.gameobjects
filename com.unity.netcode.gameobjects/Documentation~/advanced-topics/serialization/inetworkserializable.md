@@ -1,9 +1,14 @@
-# INetworkSerializable
+# Customize serializable types with INetworkSerializable
 
-You can use the `INetworkSerializable` interface to define custom serializable types.
+> [!NOTE]
+> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before customizing serializable types with `INetworkSerializable`.
+
+You can use the `INetworkSerializable` interface to define custom serializable types. This interface has one function: `NetworkSerialize<T>(BufferSerializer<T> serializer)`, which ingests a bi-directional [`BufferSerializer`](../bufferserializer.md) that you can use to implement bi-directional custom serialization.
+
+`INetworkSerializable` can be implemented on both managed and unmanaged types, although serializing managed types isn't recommended because it can reduce your game's performance.
 
 ```csharp
-struct MyComplexStruct : INetworkSerializable
+struct SpawnPoint : INetworkSerializable
 {
     public Vector3 Position;
     public Quaternion Rotation;
@@ -18,24 +23,20 @@ struct MyComplexStruct : INetworkSerializable
 }
 ```
 
-Types implementing `INetworkSerializable` are supported by `NetworkSerializer`, `RPC` s and `NetworkVariable` s.
+Types implementing `INetworkSerializable` are supported by [`FastBufferReader` and `FastBufferWriter`](./fastbufferwriter-fastbufferreader.md), [`RPC`s'](../message-system/rpc.md), and [`NetworkVariable`s](../../basics/networkvariable.md).
 
 ```csharp
-
 [Rpc(SendTo.Server)]
-void MyServerRpc(MyComplexStruct myStruct) { /* ... */ }
+void SpawnAtPointRpc(SpawnPoint spawnPoint) { /* ... */ }
 
-void Update()
+void DoSpawnHere()
 {
-    if (Input.GetKeyDown(KeyCode.P))
+    var spawnPoint = new SpawnPoint
     {
-        MyServerRpc(
-            new MyComplexStruct
-            {
-                Position = transform.position,
-                Rotation = transform.rotation
-            }); // Client -> Server
-    }
+        Position = transform.position,
+        Rotation = transform.rotation
+    };
+    SpawnAtPointRpc(spawnPoint); // Client -> Server
 }
 ```
 
@@ -59,7 +60,7 @@ The following example explores a more advanced use case.
 
 ```csharp
 
-public struct MyMoveStruct : INetworkSerializable
+public struct SpawnWithMovement : INetworkSerializable
 {
     public Vector3 Position;
     public Quaternion Rotation;
@@ -125,7 +126,7 @@ Review the following example:
 
 ```csharp
 
-public struct MyStructA : INetworkSerializable
+public struct SpawnPoint : INetworkSerializable
 {
     public Vector3 Position;
     public Quaternion Rotation;
@@ -137,17 +138,17 @@ public struct MyStructA : INetworkSerializable
     }
 }
 
-public struct MyStructB : INetworkSerializable
+public struct SpawnInfo : INetworkSerializable
 {
     public int SomeNumber;
     public string SomeText;
-    public MyStructA StructA;
+    public SpawnPoint SpawnPoint;
 
     void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref SomeNumber);
         serializer.SerializeValue(ref SomeText);
-        StructA.NetworkSerialize(serializer);
+        SpawnPoint.NetworkSerialize(serializer);
     }
 }
 ```
@@ -167,7 +168,7 @@ While you can have nested `INetworkSerializable` implementations (an `INetworkSe
 
 ```csharp
 /// This isn't supported.
-public struct MyStructB : MyStructA
+public struct SpawnInfo : SpawnPoint
 {
     public int SomeNumber;
     public string SomeText;

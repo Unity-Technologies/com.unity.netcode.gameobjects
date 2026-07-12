@@ -30,12 +30,32 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a NullReferenceException was thrown when a non-authority failed to spawn a NetworkObject. (#4067)
+- Issue where the active scene was not being serialized as the 1st scene which could result in various errors including a soft synchronization error if, on the client-side, other synchronized scenes had already been loaded prior to the active scene, which is always loaded as `LoadSceneMode.SingleMode` when client synchronization is set to `LoadSceneMode.SingleMode`, resulting in the previously loaded scene(s) to be unloaded. (#4065)
+- Issue when FastBufferReader is attempting to read a string and all or a portion of the character count has already been read by user script, it could read a character length that results in a negative byte length which could result in an editor crash. (#4052)
+- Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
+- Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
 
 ### Security
 
 
 ### Obsolete
 
+
+## [2.13.0] - 2026-06-21
+
+### Added
+
+- Added support for Unity's Fast Enter Play Mode with domain reload disabled. (#3956)
+- RPC messages now log any time they are not processed. (#3994)
+
+### Changed
+
+- Changed replaced define usages of `DEVELOPMENT_BUILD || UNITY_EDITOR` and a few niche uses of `DEVELOPMENT_BUILD` with `DEBUG`. (#4006)
+
+### Deprecated
+
+- Deprecated the nullable boolean `NetworkObject.IsSceneObject` and introduced `NetworkObject.InScenePlaced`. (#4000)
 
 ## [2.12.0] - 2026-05-24
 

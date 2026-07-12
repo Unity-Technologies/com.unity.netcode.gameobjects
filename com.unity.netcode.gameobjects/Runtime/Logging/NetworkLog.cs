@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Unity.Netcode.Logging;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Unity.Netcode
 {
@@ -158,5 +160,11 @@ namespace Unity.Netcode
             return true;
         }
 
+        [HideInCallstack]
+        [Conditional("NETCODE_INTERNAL")]
+        internal static void InternalAssert(bool condition, string message)
+        {
+            Assert.IsTrue(condition, message);
+        }
     }
 }

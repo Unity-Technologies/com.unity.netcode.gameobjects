@@ -1181,25 +1181,25 @@ namespace Unity.Netcode.Components
                     SendAnimStateRpc(m_AnimationMessage);
                 }
                 else
-                if (!IsServer && IsOwner)
-                {
-                    SendServerAnimStateRpc(m_AnimationMessage);
-                }
-                else
-                {
-                    // Just notify all remote clients and not the local server
-                    m_TargetGroup.Clear();
-                    foreach (var clientId in LocalNetworkManager.ConnectionManager.ConnectedClientIds)
+                    if (!IsServer && IsOwner)
                     {
-                        if (clientId == LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
-                        {
-                            continue;
-                        }
-                        m_TargetGroup.Add(clientId);
+                        SendServerAnimStateRpc(m_AnimationMessage);
                     }
-                    m_RpcParams.Send.Target = m_TargetGroup.Target;
-                    SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
-                }
+                    else
+                    {
+                        // Just notify all remote clients and not the local server
+                        m_TargetGroup.Clear();
+                        foreach (var clientId in LocalNetworkManager.ConnectionManager.ConnectedClientIds)
+                        {
+                            if (clientId == LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
+                            {
+                                continue;
+                            }
+                            m_TargetGroup.Add(clientId);
+                        }
+                        m_RpcParams.Send.Target = m_TargetGroup.Target;
+                        SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
+                    }
             }
         }
 

@@ -564,14 +564,36 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Reads a string
-        /// NOTE: ALLOCATES
+        /// Validates the string's total byte count based on whether we are
+        /// using one or two byte characters.
         /// </summary>
-        /// <param name="s">Stores the read string</param>
-        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
-        public unsafe void ReadValue(out string s, bool oneByteChars = false)
+        /// <remarks>
+        /// Will throw an overflow exception if the size is greater than <see cref="int.MaxValue"/>.
+        /// </remarks>
+        /// <param name="length">Character count</param>
+        /// <param name="oneByteChars">If false(default) 2 byte characters and if true 1 byte characters</param>
+        /// <returns>total size in bytes to read</returns>
+        /// <exception cref="OverflowException"></exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ValidateStringByteCount(int length, bool oneByteChars)
         {
-            ReadLength(out int length);
+            var readSize = oneByteChars ? length : length * sizeof(char);
+            if (int.MaxValue < (uint)readSize)
+            {
+                throw new OverflowException($"Invalid reader position detected when trying to read a string of size {(uint)readSize}! This can result from an error in the serialization. Ensure deserialization exactly matches what was serialized!");
+            }
+            return readSize;
+        }
+
+        /// <summary>
+        /// Commonly shared string read method between <see cref="ReadValue"/>.
+        /// </summary>
+        /// <param name="s">The output of the string read.</param>
+        /// <param name="length">The number of characters in the string.</param>
+        /// <param name="oneByteChars">If false(default) 2 byte characters and if true 1 byte characters.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadString(out string s, int length, bool oneByteChars)
+        {
             s = "".PadRight(length);
             int target = s.Length;
             fixed (char* native = s)
@@ -592,15 +614,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Reads a string.
-        /// NOTE: ALLOCATES
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
+        /// Reads a string without bounds checking.
+        /// NOTE: This method ALLOCATES memory.
         /// </summary>
+        /// <remarks>
+        /// This is the un-safe string read which requires invoking <see cref="TryBeginRead(int)"/> prior to invoking this method.<br />
+        /// Using one byte characters only allows ASCII characters.
+        /// </remarks>
         /// <param name="s">Stores the read string</param>
-        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
-        public unsafe void ReadValueSafe(out string s, bool oneByteChars = false)
+        /// <param name="oneByteChars">If false(default) 2 byte characters and if true 1 byte characters.</param>
+        public unsafe void ReadValue(out string s, bool oneByteChars = false)
         {
 #if DEBUG
             if (Handle->InBitwiseContext)
@@ -617,31 +640,37 @@ namespace Unity.Netcode
 
             ReadLength(out int length);
 
-            if (!TryBeginReadInternal(length * (oneByteChars ? 1 : sizeof(char))))
+            // Validate the string's byte count based on the character count.
+            ValidateStringByteCount(length, oneByteChars);
+
+            // Read the string
+            ReadString(out s, length, oneByteChars);
+        }
+
+        /// <summary>
+        /// Reads a string after it performs bounds checking automatically.
+        /// NOTE: This method ALLOCATES memory.
+        /// </summary>
+        /// <remarks>
+        /// This is the safe string read which invokes <see cref = "TryBeginReadInternal(int)"/> prior to reading the string.<br />
+        /// Using one byte characters only allows ASCII characters.
+        /// </remarks>
+        /// <param name="s">The string re the read string</param>
+        /// <param name="oneByteChars">If false(default) 2 byte characters and if true 1 byte characters.</param>
+        public unsafe void ReadValueSafe(out string s, bool oneByteChars = false)
+        {
+            ReadLengthSafe(out int length);
+
+            // Validate the string's byte count based on the character count and if it is valid begin reading based on the returned
+            // byte count.
+            if (!TryBeginReadInternal(ValidateStringByteCount(length, oneByteChars)))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            s = "".PadRight(length);
-            int target = s.Length;
-            fixed (char* native = s)
-            {
-                if (oneByteChars)
-                {
-                    for (int i = 0; i < target; ++i)
-                    {
-                        ReadByte(out byte b);
-                        native[i] = (char)b;
-                    }
-                }
-                else
-                {
-                    ReadBytes((byte*)native, target * sizeof(char));
-                }
-            }
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int SizeOfLengthField() => sizeof(uint);
+            // Read the string
+            ReadString(out s, length, oneByteChars);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ReadLengthSafe(out uint length) => ReadUnmanagedSafe(out length);

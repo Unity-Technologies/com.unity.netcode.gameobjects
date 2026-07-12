@@ -968,18 +968,18 @@ namespace Unity.Netcode
                 return (true, playerPrefabHash.Value);
             }
             else
-            if (NetworkManager.NetworkConfig.PlayerPrefab != null)
-            {
-                var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                if (networkObject != null)
+                if (NetworkManager.NetworkConfig.PlayerPrefab != null)
                 {
-                    return (true, networkObject.GlobalObjectIdHash);
+                    var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                    if (networkObject != null)
+                    {
+                        return (true, networkObject.GlobalObjectIdHash);
+                    }
+                    else
+                    {
+                        NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
+                    }
                 }
-                else
-                {
-                    NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
-                }
-            }
             return (false, 0);
         }
 
@@ -1218,7 +1218,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.Serialize(clientPair.Key),
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.SerializeSpawnedObject(clientPair.Key),
                     IncludesSerializedObject = true,
                 };
 

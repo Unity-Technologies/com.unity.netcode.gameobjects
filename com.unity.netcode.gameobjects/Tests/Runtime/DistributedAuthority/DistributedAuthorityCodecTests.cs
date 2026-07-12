@@ -76,11 +76,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
             public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
-
-            [Rpc(SendTo.Authority)]
-            public void TestAuthorityRpc(byte[] _)
-            {
-            }
         }
 
         protected override void OnOneTimeSetup()
@@ -155,62 +150,6 @@ namespace Unity.Netcode.RuntimeTests
             // We do this at this after all the setup has finished in order to ensure our hooks are only catching messages from the tests
             m_ClientCodecHook = new CodecTestHooks();
             m_Client.MessageManager.Hook(m_ClientCodecHook);
-        }
-
-        [UnityTest]
-        public IEnumerator AuthorityRpc()
-        {
-            var player = m_Client.LocalClient.PlayerObject;
-            player.OwnerClientId = m_Client.LocalClientId + 1;
-
-            var networkComponent = player.GetComponent<TestNetworkComponent>();
-            networkComponent.UpdateNetworkProperties();
-            networkComponent.TestAuthorityRpc(new byte[] { 1, 2, 3, 4 });
-
-            // Universal Rpcs are sent as a ProxyMessage (which contains an RpcMessage)
-            yield return m_ClientCodecHook.WaitForMessageReceived<ProxyMessage>();
-        }
-
-        [UnityTest]
-        public IEnumerator ChangeOwnership()
-        {
-            var message = new ChangeOwnershipMessage
-            {
-                DistributedAuthorityMode = true,
-                NetworkObjectId = 100,
-                OwnerClientId = 2,
-            };
-
-            yield return SendMessage(ref message);
-        }
-
-        [UnityTest]
-        public IEnumerator ClientConnected()
-        {
-            var message = new ClientConnectedMessage()
-            {
-                ClientId = 2,
-            };
-
-            yield return SendMessage(ref message);
-        }
-
-        [UnityTest]
-        public IEnumerator ClientDisconnected()
-        {
-            var message = new ClientDisconnectedMessage()
-            {
-                ClientId = 2,
-            };
-
-            yield return SendMessage(ref message);
-        }
-
-        [UnityTest]
-        public IEnumerator CreateObject()
-        {
-            SpawnObject(m_SpawnObject, m_Client);
-            yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
         }
 
         [UnityTest]

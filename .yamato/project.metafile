@@ -24,7 +24,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.85.0
+      image: package-ci/ubuntu-22.04:v4.86.0
       flavor: b1.small
 
 
@@ -39,13 +39,13 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.85.0
+          image: package-ci/ubuntu-22.04:v4.86.0
           flavor: b1.large
           standalone: StandaloneLinux64
     desktop:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.85.0
+          image: package-ci/ubuntu-22.04:v4.86.0
           flavor: b1.large
           smaller_flavor: b1.large
           larger_flavor: b1.xlarge
@@ -177,8 +177,8 @@ validation_editors:
         - 6000.3
     all:
         - 6000.3
-        - 6000.4
         - 6000.5
+        - 6000.6
         - trunk
         - f1298548e194f35ff7dfa6fee699d4464ab3919c
     minimal:
