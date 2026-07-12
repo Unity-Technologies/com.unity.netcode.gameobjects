@@ -13,59 +13,6 @@ This provides the ability to run a hosted session using the single player transp
 
 ## Example script
 
-Below is an example script that derives from NetworkManager to provide a single method to start a single or multi player session:
+Below is an example component script that provides a single method to start a single or multi player session:
 
-```csharp
-using Unity.Netcode;
-using Unity.Netcode.Transports.SinglePlayer;
-using Unity.Netcode.Transports.UTP;
-
-/// <summary>
-/// Example of how to start a single player or multiplayer session.
-/// </summary>
-public class ExtendedNetworkManager : NetworkManager
-{
-    public enum StartType
-    {
-        SinglePlayer,
-        Client,
-        Host,
-        Server
-    }
-
-    private UnityTransport m_UnityTransport;
-    private SinglePlayerTransport m_SinglePlayerTransport;
-
-    private void Awake()
-    {
-        m_UnityTransport = GetComponent<UnityTransport>();
-        m_SinglePlayerTransport = GetComponent<SinglePlayerTransport>();
-    }
-
-    public bool StartSession(StartType startType)
-    {
-        var startStatus = false;
-        NetworkConfig.NetworkTransport = startType == StartType.SinglePlayer ? m_SinglePlayerTransport : m_UnityTransport;
-        switch (startType)
-        {
-            case StartType.Host:
-            case StartType.SinglePlayer:
-                {
-                    startStatus = StartHost();
-                    break;
-                }
-            case StartType.Server:
-                {
-                    startStatus = StartServer();
-                    break;
-                }
-            case StartType.Client:
-                {
-                    startStatus = StartClient();
-                    break;
-                }
-        }
-        return startStatus;
-    }
-}
-```
+[!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/Configuration/SinglePlayerSessions.cs#SinglePlayerTransportExample)]
