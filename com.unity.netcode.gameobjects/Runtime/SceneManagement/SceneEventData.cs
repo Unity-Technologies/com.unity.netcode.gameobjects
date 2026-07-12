@@ -1104,7 +1104,7 @@ namespace Unity.Netcode
                     // information during synchronization.
                     if (serializedObject.HasGhost)
                     {
-                        if (networkManager.SpawnManager.GhostSpawnManager.ShouldDeferGhostSceneObject(serializedObject, InternalBuffer))
+                        if (networkManager.SpawnManager.GhostSpawnManager.ShouldDeferGhostSceneObject(serializedObject, m_InternalBuffer))
                         {
                             continue;
                         }
@@ -1122,10 +1122,10 @@ namespace Unity.Netcode
                         continue;
                     }
 
-                    var noStop = m_InternalBuffer.Position;
+
                     if (EnableSerializationLogs)
                     {
-                        var noStop = InternalBuffer.Position;
+                        var noStop = m_InternalBuffer.Position;
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
                         LogArray(m_InternalBuffer.ToArray(), noStart, noStop, builder);
                     }

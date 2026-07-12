@@ -633,7 +633,7 @@ namespace Unity.Netcode
             }
 #endif
 
-            if (!TryBeginReadInternal(SizeOfLengthField()))
+            if (!TryBeginReadInternal(sizeof(int)))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
