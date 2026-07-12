@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Single player session section to provide users with information about `SinglePlayerTransport` and an example script of how to switch between single and multi player sessions. (#4062)
 
 ### Changed
 
