@@ -15,7 +15,7 @@ namespace DocumentationCodeSamples
     /// Example of how to start a single player or multiplayer session.
     /// Place this on your NetworkManager's GameObject.
     /// </summary>
-    public class SwitchingTransportTypesExample : MonoBehaviour
+    internal class SwitchingTransportTypesExample : MonoBehaviour
     {
         public enum StartType
         {
