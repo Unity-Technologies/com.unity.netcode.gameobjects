@@ -429,7 +429,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Check client disconnection with data in send queue.
-        [UnityTest]
+        // Excluded on iOS: sending Unreliable data then immediately disconnecting is a race on slow
+        // iOS CI devices (the unreliable packet can be dropped), so it flakes with a "Timed out while
+        // waiting for network event" even after raising the mobile timeout. Tracked by MTT-15433.
+        [UnityTest, UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer })]
         public IEnumerator ClientDisconnectWithDataInQueue()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
