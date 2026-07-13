@@ -23,7 +23,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.86.0
+      image: package-ci/ubuntu-22.04:v4.87.0
       flavor: b1.small
 
 
@@ -38,13 +38,13 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.86.0
+          image: package-ci/ubuntu-22.04:v4.87.0
           flavor: b1.large
           standalone: StandaloneLinux64
     desktop:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.86.0
+          image: package-ci/ubuntu-22.04:v4.87.0
           flavor: b1.large
           smaller_flavor: b1.medium
           standalone: StandaloneLinux64
@@ -62,7 +62,6 @@ test_platforms:
           standalone: StandaloneOSX
           model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
-    # TODO: For android we could consider adding ARM64 configuration
     mobile_build:
         - name: android
           type: Unity::VM
@@ -102,11 +101,6 @@ test_platforms:
           image: package-ci/win10-ps4:v4
           flavor: b1.large
           standalone: PS4
-        # - name: ps5 --> SEE MTT-12118
-        #  type: Unity::VM
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  standalone: PS5
         - name: switch
           type: Unity::VM
           image: package-ci/win10-switch:v4
@@ -128,11 +122,6 @@ test_platforms:
           image: package-ci/win10-ps4:v4
           flavor: b1.large
           standalone: PS4
-        #- name: ps5 --> SEE MTT-12118
-        #  type:  Unity::console::ps5
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  standalone: PS5
         - name: switch
           type: Unity::console::switch
           image: package-ci/win10-switch:v4
@@ -152,7 +141,6 @@ test_platforms:
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv1.X official support started from 2021.3 editor
-# TODO: When a new editor will be released it should be added to this list. Correct also if we will stop supporting one of the editors present here
 
 validation_editor:
     - 6000.0
