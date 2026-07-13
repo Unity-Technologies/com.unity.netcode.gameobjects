@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -42,7 +43,11 @@ namespace Unity.Netcode.RuntimeTests
 
             // Check the invalid object spawns on the authority, expect an error from non-authority.
             LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
-            LogAssert.Expect(LogType.Error, $"[Netcode] [GlobalObjectIdHash={exceptionObject.GlobalObjectIdHash}] Failed to spawn NetworkObject!");
+            LogAssert.Expect(LogType.Error, new Regex("Failed to spawn NetworkObject!"));
+            // Authority should receive an error from non-authority and should use the globalObjectIdHash to find the failing object
+            LogAssert.Expect(LogType.Error, new Regex($@"SenderId:{nonAuthority.LocalClientId}\]\[{Regex.Escape(exceptionObject.name)}"));
+            // LogAssert.Expect(LogType.Error, new Regex(Regex.Escape(exceptionObject.name)));
+            // LogAssert.Expect(LogType.Error, "[Netcode] [Received log from client][SenderId:1][ClientSideExceptionPrefab{3}-OnServer{0}][NetworkObjectId:3] [NonAuthorityLocalSpawn][GlobalObjectIdHash:111115] Failed to spawn NetworkObject!");
             yield return WaitForConditionOrTimeOut(() => exceptionObject.IsSpawned);
             AssertOnTimeout("Failed to spawn object on authority!");
 
@@ -58,9 +63,13 @@ namespace Unity.Netcode.RuntimeTests
             newClient.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, new NetworkPrefabExceptionThrower());
             newClient.PrefabHandler.AddHandler(m_ValidPrefab, new NetworkPrefabInstanceHandler(networkObjectToSpawnOnClient));
 
-            // Expect assertions fromt the new client
+            // Expect assertions from the new client
             LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
-            LogAssert.Expect(LogType.Error, $"[Netcode] [GlobalObjectIdHash={exceptionObject.GlobalObjectIdHash}] Failed to spawn NetworkObject!");
+            LogAssert.Expect(LogType.Error, new Regex("Failed to spawn NetworkObject!"));
+
+            // Authority will receive an error from new client and should use the globalObjectIdHash to find the failing object
+            var expectedNewClientId = nonAuthority.LocalClientId + 1;
+            LogAssert.Expect(LogType.Error, new Regex($@"SenderId:{expectedNewClientId}\]\[{Regex.Escape(exceptionObject.name)}"));
 
             // Start and synchronize the new client
             yield return StartClient(newClient);

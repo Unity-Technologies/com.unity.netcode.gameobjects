@@ -907,10 +907,7 @@ namespace Unity.Netcode
             // If not, then there is an issue (user possibly didn't register the prefab properly?)
             if (networkPrefabReference == null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"[{nameof(globalObjectIdHash)}={globalObjectIdHash}] Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
-                }
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with this {nameof(NetworkManager)}").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash).AddTag(NetworkManager.name));
                 return null;
             }
 
@@ -1196,7 +1193,7 @@ namespace Unity.Netcode
             // Log the error that the NetworkObject failed to construct
             if (networkObject == null)
             {
-                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"Failed to spawn {nameof(NetworkObject)}").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash));
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"Failed to spawn {nameof(NetworkObject)}!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash));
                 return false;
             }
 
