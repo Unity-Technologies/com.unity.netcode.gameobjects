@@ -60,7 +60,7 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\target\bins'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
 # Switch related
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-21_4_3\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     players:
@@ -99,7 +99,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\target\bins'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
 # Switch related
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-21_4_3\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     logs:
