@@ -2150,16 +2150,17 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 {
                     typeMethod = GetFastBufferReaderReadMethod(k_ReadValueInPlaceMethodName, paramType);
                 }
-                else
+                else if (paramType.Resolve().FullName == "Unity.Collections.NativeArray`1")
+#else
+                if (paramType.Resolve().FullName == "Unity.Collections.NativeArray`1")
 #endif
-                    if (paramType.Resolve().FullName == "Unity.Collections.NativeArray`1")
-                    {
-                        typeMethod = GetFastBufferReaderReadMethod(k_ReadValueTempMethodName, paramType);
-                    }
-                    else
-                    {
-                        typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
-                    }
+                {
+                    typeMethod = GetFastBufferReaderReadMethod(k_ReadValueTempMethodName, paramType);
+                }
+                else
+                {
+                    typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
+                }
                 if (typeMethod != null)
                 {
                     methodRef = m_MainModule.ImportReference(typeMethod);

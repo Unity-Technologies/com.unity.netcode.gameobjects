@@ -1122,7 +1122,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    
+
                     var noStop = m_InternalBuffer.Position;
 
                     if (EnableSerializationLogs)

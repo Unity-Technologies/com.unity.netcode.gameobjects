@@ -894,10 +894,10 @@ namespace Unity.Netcode.Components
             }
 #endif
 #if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
-            return interpolationType == InterpolationTypes.Extrapolate ? m_InternalRigidbody2D.interpolation == RigidbodyInterpolation2D.Extrapolate : m_InternalRigidbody2D.interpolation == RigidbodyInterpolation2D.Interpolate;
+            return interpolationType == InterpolationTypes.Extrapolate ? m_InternalRigidbody.interpolation == RigidbodyInterpolation.Extrapolate : m_InternalRigidbody.interpolation == RigidbodyInterpolation.Interpolate;
 #endif
 #if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
-            return interpolationType == InterpolationTypes.Extrapolate ? m_InternalRigidbody.interpolation == RigidbodyInterpolation.Extrapolate : m_InternalRigidbody.interpolation == RigidbodyInterpolation.Interpolate;
+            return interpolationType == InterpolationTypes.Extrapolate ? m_InternalRigidbody2D.interpolation == RigidbodyInterpolation2D.Extrapolate : m_InternalRigidbody2D.interpolation == RigidbodyInterpolation2D.Interpolate;
 #endif
         }
 
