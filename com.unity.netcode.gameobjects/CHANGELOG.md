@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- `NetworkObject` now implements `ISerializationCallbackReceiver` in order to assure `NetworkObject.InScenePlaced` is set and serialized for any in-editor in-scene placed `NetworkObject`. (#4086)
 
 ### Deprecated
 
