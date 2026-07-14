@@ -24,22 +24,8 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
     [HelpURL(HelpUrls.NetworkObject)]
-    public sealed class NetworkObject : MonoBehaviour, ISerializationCallbackReceiver
+    public sealed class NetworkObject : MonoBehaviour
     {
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-            // If we are playing or it is an invalid GameObject, then exit early.
-            if (Application.isPlaying || gameObject == null || gameObject.IsDestroying())
-            {
-                return;
-            }
-            InScenePlaced = gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0;
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-        }
-
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
@@ -142,9 +128,6 @@ namespace Unity.Netcode
         private static NetworkObject s_PrefabAsset;
         // The InContext or InIsolation edit mode network prefab scene instance of the prefab asset (s_PrefabAsset).
         private static NetworkObject s_PrefabInstance;
-
-        private static bool s_DebugPrefabIdGeneration;
-
 
         [ContextMenu("Refresh In-Scene Prefab Instances")]
         internal void RefreshAllPrefabInstances()
@@ -342,7 +325,7 @@ namespace Unity.Netcode
         /// </remarks>
         private void CheckForInScenePlaced()
         {
-            if (gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            if (gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0)
             {
                 if (PrefabUtility.IsPartOfAnyPrefab(this))
                 {
@@ -362,7 +345,7 @@ namespace Unity.Netcode
                 SetSceneObjectStatus(true);
 #pragma warning restore CS0618 // Type or member is obsolete
 
-                // We go ahead and set this for "typical in-scene placed" usage patterns.
+                // We go ahead and set this for "typical in-scene placed" usage patterns so this is serialized
                 InScenePlaced = true;
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
@@ -1252,12 +1235,22 @@ namespace Unity.Netcode
         [Obsolete("Use InScenePlaced instead")]
         public bool? IsSceneObject { get; internal set; }
 
+
         /// <summary>
-        /// True if this object is placed in a scene; false otherwise.
+        /// The serialized value.
         /// </summary>
         [field: HideInInspector]
         [field: SerializeField]
-        public bool InScenePlaced { get; internal set; }
+        private bool m_InScenePlaced;
+
+        /// <summary>
+        /// True if this object is placed in a scene; false otherwise.
+        /// </summary>
+        public bool InScenePlaced
+        {
+            get { return m_InScenePlaced; }
+            internal set { m_InScenePlaced = value; }
+        }
 
         /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
