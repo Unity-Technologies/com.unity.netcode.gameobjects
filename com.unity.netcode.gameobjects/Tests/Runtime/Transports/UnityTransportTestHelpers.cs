@@ -12,14 +12,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         // Half a second might seem like a very long time to wait for a network event, but in CI
         // many of the machines are underpowered (e.g. old Android devices or Macs) and there are
-        // sometimes very high lag spikes. Mobile and console platforms are particularly sensitive
-        // in this regard so we allow even more time for these platforms to avoid false-negative
-        // timeouts (e.g. UnityTransportConnectionTests intermittently timing out on iOS CI).
-#if UNITY_IOS || UNITY_ANDROID || UNITY_SWITCH || UNITY_PS4 || UNITY_PS5 || UNITY_GAMECORE
-        public const float MaxNetworkEventWaitTime = 2.0f;
-#else
+        // sometimes very high lag spikes. PS4 and Switch are particularly sensitive in this regard
+        // so we allow even more time for these platforms.
         public const float MaxNetworkEventWaitTime = 0.5f;
-#endif
 
         // Wait for an event to appear in the given event list (must be the very next event).
         public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events, float timeout = MaxNetworkEventWaitTime)
