@@ -1934,6 +1934,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs.
+        /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForConditionOrTimeOutWithTimeTravel(Func<StringBuilder, bool> checkForCondition, int maxTries = 60)
+        {
+            WaitForConditionOrTimeOutWithTimeTravel(() =>
+            {
+                // Clear errorBuilder before each check to ensure the errorBuilder only contains information from the lastest run
+                m_InternalErrorLog.Clear();
+                return checkForCondition(m_InternalErrorLog);
+            }, maxTries);
+        }
+
+        /// <summary>
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
@@ -2006,6 +2022,77 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             yield return WaitForConditionOrTimeOut(ValidateObjectsSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(ulong networkObjectId, int maxTries = 60)
+        {
+            bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObjectId}!");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            WaitForConditionOrTimeOutWithTimeTravel(ValidateObjectSpawnedOnAllClients, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(NetworkObject networkObject, int maxTries = 60)
+        {
+            var networkObjectId = networkObject.NetworkObjectId;
+            WaitForSpawnedOnAllOrTimeOutWithTimeTravel(networkObjectId, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(GameObject gameObject, int maxTries = 60)
+        {
+            var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
+            WaitForSpawnedOnAllOrTimeOutWithTimeTravel(networkObjectId, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(List<NetworkObject> networkObjects, int maxTries = 60)
+        {
+            bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
+                        {
+                            errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObject.NetworkObjectId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            WaitForConditionOrTimeOutWithTimeTravel(ValidateObjectsSpawnedOnAllClients, maxTries);
         }
 
         /// <summary>
