@@ -965,6 +965,11 @@ namespace Unity.Netcode
             var parentNetworkId = serializedObject.HasParent ? serializedObject.ParentObjectId : default;
             var worldPositionStays = (!serializedObject.HasParent) || serializedObject.WorldPositionStays;
 
+            if (existingObject != null)
+            {
+                Debug.Log($"CreateLocalNetworkObject for existing object: {existingObject.name}");
+            }
+
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || (!serializedObject.IsSceneObject && existingObject == null))
             {
@@ -974,6 +979,7 @@ namespace Unity.Netcode
             {
                 if (existingObject != null)
                 {
+                    Debug.LogWarning("Have an existing object");
                     networkObject = existingObject;
                 }
                 else
@@ -1180,7 +1186,7 @@ namespace Unity.Netcode
         /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.DeserializeAndSpawnObject"/>.
         /// </remarks>
         /// <returns>boolean indicating whether the spawn succeeded</returns>
-        internal bool NonAuthorityLocalSpawn(in NetworkObject.SerializedObject serializedObject, [MaybeNullWhen(false)] out NetworkObject networkObject, FastBufferReader reader, bool destroyWithScene)
+        internal bool NonAuthorityLocalSpawn(in NetworkObject.SerializedObject serializedObject, [MaybeNullWhen(false)] out NetworkObject networkObject, FastBufferReader reader, bool destroyWithScene, NetworkObject existingObject = null)
         {
             if (SpawnedObjects.ContainsKey(serializedObject.NetworkObjectId))
             {
@@ -1194,9 +1200,13 @@ namespace Unity.Netcode
             {
                 reader.ReadValueSafe(out instantiationData);
             }
+            if (existingObject != null)
+            {
+                Debug.Log($"NonAuthorityLocalSpawn for existing object: {existingObject.name}");
+            }
 
             // Attempt to create a local NetworkObject
-            networkObject = CreateLocalNetworkObject(serializedObject, instantiationData);
+            networkObject = CreateLocalNetworkObject(serializedObject, instantiationData, existingObject);
 
             // Log the error that the NetworkObject failed to construct
             if (networkObject == null)

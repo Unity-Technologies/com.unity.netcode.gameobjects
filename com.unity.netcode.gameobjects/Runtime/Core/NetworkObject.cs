@@ -3520,8 +3520,12 @@ namespace Unity.Netcode
                 return null;
             }
 
+            if (existingObject != null)
+            {
+                Debug.Log($"Deserializing and spawning existing object: {existingObject.name}");
+            }
             // Do the SpawnManager parts of the object spawn
-            var succeeded = networkManager.SpawnManager.NonAuthorityLocalSpawn(in serializedObject, out var networkObject, reader, serializedObject.DestroyWithScene);
+            var succeeded = networkManager.SpawnManager.NonAuthorityLocalSpawn(in serializedObject, out var networkObject, reader, serializedObject.DestroyWithScene, existingObject);
 
             // Process any deferred messages once the object is 100% finished spawning
             // Ensure this is done whether the spawn succeeds or fails

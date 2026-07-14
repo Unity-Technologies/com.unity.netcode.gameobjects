@@ -1114,7 +1114,7 @@ namespace Unity.Netcode
                             existingObject = inSceneObject;
                         }
                     }
-                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager, existingObject);
+                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager, existingObject: existingObject);
                     if (spawnedNetworkObject == null)
                     {
                         continue;
