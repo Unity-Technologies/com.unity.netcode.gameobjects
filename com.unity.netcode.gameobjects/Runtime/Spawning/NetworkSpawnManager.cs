@@ -1448,7 +1448,7 @@ namespace Unity.Netcode
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true, includeInactive: true);
             foreach (var obj in networkObjects)
             {
-                if (obj.HasBeenSpawned)
+                if (obj.HasBeenSpawned && obj.InScenePlaced)
                 {
                     obj.ResetOnShutdown();
                 }
