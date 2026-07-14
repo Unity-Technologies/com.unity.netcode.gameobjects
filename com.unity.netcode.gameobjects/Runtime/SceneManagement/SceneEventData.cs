@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -1096,12 +1097,24 @@ namespace Unity.Netcode
                     var serializedObject = new NetworkObject.SerializedObject();
                     serializedObject.Deserialize(m_InternalBuffer);
 
-                    // If the sceneObject is in-scene placed, then set the scene being synchronized
-                    if (serializedObject.IsSceneObject)
+                    // On initial synchronization we want to match any objects already existing in the scene,
+                    // Always set the scene being synchronized.
+                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle, false);
+                    // If the object is not in-scene-placed do an addition check for whether the object exists in the project
+                    // We only want to do this on the initial client-side synchronize.
+                    NetworkObject existingObject = null;
+                    if (!serializedObject.IsSceneObject)
                     {
-                        m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
+                        Debug.Log($"[Client-{m_NetworkManager.LocalClientId}] looking at dynamic synchronize object {serializedObject.Hash}.");
+                        var sceneHandle = m_NetworkManager.SceneManager.SceneBeingSynchronized.handle;
+                        var inSceneObject = m_NetworkManager.SceneManager.SceneObjectStore.GetSceneRelativeInSceneNetworkObject(serializedObject.Hash, sceneHandle);
+                        if (inSceneObject != null && !inSceneObject.HasBeenSpawned)
+                        {
+                            Debug.Log($"[Client-{m_NetworkManager.LocalClientId}] Found existing object! {inSceneObject.name}");
+                            existingObject = inSceneObject;
+                        }
                     }
-                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager);
+                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager, existingObject);
                     if (spawnedNetworkObject == null)
                     {
                         continue;

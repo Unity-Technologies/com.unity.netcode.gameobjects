@@ -409,6 +409,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
             {
+                Debug.Log($"[Client-{NetworkManager.LocalClientId}] Populating {scene.name} ({scene.handle}) for Client-{NetworkManager.LocalClientId}!");
+
                 var sceneEntry = new SceneEntry()
                 {
                     IsAssigned = true,
@@ -594,6 +596,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
                 {
+                    Debug.Log($"[Client-{NetworkManager.LocalClientId}] Populating {scene.name} ({scene.handle}) for Client-{NetworkManager.LocalClientId}!");
+
                     var sceneEntry = new SceneEntry()
                     {
                         IsAssigned = false,

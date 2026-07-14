@@ -106,6 +106,12 @@ namespace Unity.Netcode
         private int m_SpawnCount;
         internal bool HasBeenSpawned => m_SpawnCount > 0;
 
+        /// <summary>
+        /// When true this object will be auto-spawned if it's instantiated before the NetworkManager starts.
+        /// Set to false to not spawn this object.
+        /// </summary>
+        internal bool AutoSpawnOnStart = true;
+
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
 
@@ -1449,10 +1455,16 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkSceneHandle SceneOriginHandle;
 
+        private NetworkSceneHandle m_TempHandle;
         /// <summary>
         /// The server-side scene origin handle
         /// </summary>
-        internal NetworkSceneHandle NetworkSceneHandle;
+        internal NetworkSceneHandle NetworkSceneHandle {get => m_TempHandle;
+            set
+            {
+                Debug.Log($"[{name}] setting NetworkSceneHandle! new value: {value}");
+                m_TempHandle = value;
+            }}
 
         private Scene m_SceneOrigin;
         /// <summary>
@@ -3413,6 +3425,7 @@ namespace Unity.Netcode
         /// <remarks>This function is the authority mirror of <see cref="DeserializeAndSpawnObject"/></remarks>
         internal SerializedObject SerializeSpawnedObject(ulong targetClientId = NetworkManager.ServerClientId, bool syncObservers = false)
         {
+            Debug.Log($"[Client-{NetworkManager.LocalClientId}][{name}] Serializing spawned object. NetworkSceneHandle: {NetworkSceneHandle}, InScenePlaced: {InScenePlaced}");
             var obj = new SerializedObject
             {
                 HasParent = transform.parent != null,
@@ -3496,7 +3509,7 @@ namespace Unity.Netcode
         /// <param name="invokedByMessage">will be true if invoked by CreateObjectMessage</param>
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
         [return: MaybeNull]
-        internal static NetworkObject DeserializeAndSpawnObject(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
+        internal static NetworkObject DeserializeAndSpawnObject(in SerializedObject serializedObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false, NetworkObject existingObject = null)
         {
             var endOfSynchronizationData = reader.Position + serializedObject.SynchronizationDataSize;
 

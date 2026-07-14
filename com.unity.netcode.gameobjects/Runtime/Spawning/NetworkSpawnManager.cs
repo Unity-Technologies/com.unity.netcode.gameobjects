@@ -955,7 +955,7 @@ namespace Unity.Netcode
         /// For most cases this is client-side only, except when the server is spawning a player.
         /// </remarks>
         [return: MaybeNull]
-        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null)
+        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null, NetworkObject existingObject = null)
         {
             NetworkObject networkObject = null;
             var globalObjectIdHash = serializedObject.Hash;
@@ -966,17 +966,25 @@ namespace Unity.Netcode
             var worldPositionStays = (!serializedObject.HasParent) || serializedObject.WorldPositionStays;
 
             // If scene management is disabled or the NetworkObject was dynamically spawned
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || (!serializedObject.IsSceneObject && existingObject == null))
             {
                 networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
             }
             else // Get the in-scene placed NetworkObject
             {
-                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
-                if (networkObject == null)
+                if (existingObject != null)
                 {
-                    NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
-                    return null;
+                    networkObject = existingObject;
+                }
+                else
+                {
+                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
+
+                    if (networkObject == null)
+                    {
+                        NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
+                        return null;
+                    }
                 }
 
                 // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
@@ -1138,7 +1146,7 @@ namespace Unity.Netcode
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && networkObject.InScenePlaced)
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement)
             {
                 networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
@@ -1582,8 +1590,8 @@ namespace Unity.Netcode
 
                 // This used to be two loops.
                 // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
-                // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                if (networkObject.InScenePlaced)
+                // Now, a parent will spawn its children when spawned, so we check whether the object has already been spawned.
+                if (!networkObject.HasBeenSpawned && networkObject.AutoSpawnOnStart)
                 {
                     var ownerId = networkObject.OwnerClientId;
                     if (NetworkManager.DistributedAuthorityMode)
@@ -1591,25 +1599,36 @@ namespace Unity.Netcode
                         ownerId = NetworkManager.LocalClientId;
                     }
 
-                    if (AuthorityLocalSpawn(networkObject, GetNetworkObjectId(), true, false, ownerId, true))
+                    if (networkObject.InScenePlaced)
                     {
-                        networkObjectsToSpawn.Add(networkObject);
+                        if (AuthorityLocalSpawn(networkObject, GetNetworkObjectId(), networkObject.InScenePlaced, false, ownerId, true))
+                        {
+                            networkObjectsToSpawn.Add(networkObject);
+                        }
+                        else
+                        {
+                            networkObject.ResetOnDespawn();
+                        }
                     }
                     else
                     {
-                        networkObject.ResetOnDespawn();
+                        Debug.Log($"Spawning {networkObject.name} on startup sweep");
+                        networkObject.Spawn();
+                        if (networkObject.IsSpawned)
+                        {
+                            networkObjectsToSpawn.Add(networkObject);
+                        }
+                        else
+                        {
+
+                            Debug.LogError($"Failed to spawn {networkObject.name} on startup sweep");
+                        }
                     }
                 }
             }
 
-            // Since we are spawing in-scene placed NetworkObjects for already loaded scenes,
-            // we need to add any in-scene placed NetworkObject to our tracking table
-            var clearFirst = true;
-            foreach (var sceneLoaded in NetworkManager.SceneManager.ScenesLoaded)
-            {
-                NetworkManager.SceneManager.PopulateScenePlacedObjects(sceneLoaded.Value, clearFirst);
-                clearFirst = false;
-            }
+            // Populate all the newly spawned objects into the scene management tables.
+            NetworkManager.SceneManager.PopulateScenePlacedObjectsOnStartup();
 
             // Notify all in-scene placed NetworkObjects have been spawned
             foreach (var networkObject in networkObjectsToSpawn)
