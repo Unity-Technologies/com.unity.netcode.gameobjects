@@ -1,4 +1,4 @@
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -236,4 +236,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-#endif // COM_UNITY_MODULES_PHYSICS
+#endif // COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
