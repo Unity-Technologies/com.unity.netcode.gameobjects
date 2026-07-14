@@ -28,7 +28,12 @@ namespace Unity.Netcode
     {
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
-            m_InScenePlaced = gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0;
+            // If we are playing or it is an invalid GameObject, then exit early.
+            if (Application.isPlaying || gameObject == null || gameObject.IsDestroying())
+            {
+                return;
+            }
+            InScenePlaced = gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0;
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
@@ -356,6 +361,9 @@ namespace Unity.Netcode
                 // TODO-3.x: remove in the 3.x branch
                 SetSceneObjectStatus(true);
 #pragma warning restore CS0618 // Type or member is obsolete
+
+                // We go ahead and set this for "typical in-scene placed" usage patterns.
+                InScenePlaced = true;
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
@@ -1245,26 +1253,11 @@ namespace Unity.Netcode
         public bool? IsSceneObject { get; internal set; }
 
         /// <summary>
-        /// The serialized field for <see cref="InScenePlaced"/>.
+        /// True if this object is placed in a scene; false otherwise.
         /// </summary>
         [field: HideInInspector]
         [field: SerializeField]
-        private bool m_InScenePlaced;
-
-        /// <summary>
-        /// True if this object is placed in a scene; false otherwise.
-        /// </summary>
-        public bool InScenePlaced
-        {
-            get
-            {
-                return m_InScenePlaced;
-            }
-            internal set
-            {
-                m_InScenePlaced = value;
-            }
-        }
+        public bool InScenePlaced { get; internal set; }
 
         /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
