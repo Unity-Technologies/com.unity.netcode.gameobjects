@@ -46,8 +46,7 @@ namespace Unity.Netcode.RuntimeTests
             LogAssert.Expect(LogType.Error, new Regex("Failed to spawn NetworkObject!"));
             // Authority should receive an error from non-authority and should use the globalObjectIdHash to find the failing object
             LogAssert.Expect(LogType.Error, new Regex($@"SenderId:{nonAuthority.LocalClientId}\]\[{Regex.Escape(exceptionObject.name)}"));
-            // LogAssert.Expect(LogType.Error, new Regex(Regex.Escape(exceptionObject.name)));
-            // LogAssert.Expect(LogType.Error, "[Netcode] [Received log from client][SenderId:1][ClientSideExceptionPrefab{3}-OnServer{0}][NetworkObjectId:3] [NonAuthorityLocalSpawn][GlobalObjectIdHash:111115] Failed to spawn NetworkObject!");
+
             yield return WaitForConditionOrTimeOut(() => exceptionObject.IsSpawned);
             AssertOnTimeout("Failed to spawn object on authority!");
 

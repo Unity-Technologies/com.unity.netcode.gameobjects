@@ -1872,7 +1872,7 @@ namespace Unity.Netcode
             // The scene object was never automatically spawned when the scene was loaded.
             // Count this object as a dynamically spawned object.
             // TODO-[MTT-15388]: Actually support disabled/not spawned InScenePlaced NetworkObjects
-            if (InScenePlaced && m_SpawnCount == 0)
+            if (InScenePlaced && !HasBeenSpawned)
             {
                 if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
@@ -2122,6 +2122,17 @@ namespace Unity.Netcode
                 SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
                 SceneManager.activeSceneChanged += CurrentlyActiveSceneChanged;
             }
+        }
+
+        /// <summary>
+        /// Resets this NetworkObject at the end of a session.
+        /// Ensures scene objects are ready to be reused
+        /// </summary>
+        internal void ResetOnShutdown()
+        {
+            NetworkLog.InternalAssert(NetworkManager.ShutdownInProgress, "This method should only be called while the NetworkManager is shutting down");
+            m_SpawnCount = 0;
+            ResetOnDespawn();
         }
 
         internal void ResetOnDespawn()
