@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using Unity.Netcode.Logging;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -50,9 +50,15 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_RuntimeAddedPrefabs = new List<NetworkPrefab>();
 
+        private ContextualLogger m_Log;
+
+        private bool m_Initialized;
+
+
         private void AddTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
         {
-            if (AddPrefabRegistration(networkPrefab))
+            // We don't have to re-validate the prefab as the PrefabList will have validated before invoking this
+            if (AddPrefabRegistrationPreValidated(networkPrefab))
             {
                 // Don't add this to m_RuntimeAddedPrefabs
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
@@ -79,6 +85,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void Shutdown()
         {
+            m_Initialized = false;
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd -= AddTriggeredByNetworkPrefabList;
@@ -93,26 +100,17 @@ namespace Unity.Netcode
         /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization</param>
         public void Initialize(bool warnInvalid = true)
         {
+            Initialize(m_Log ?? new ContextualLogger(), warnInvalid);
+        }
+
+        internal void Initialize(ContextualLogger log, bool warnInvalid = true)
+        {
+            m_Log = log;
             m_Prefabs.Clear();
             NetworkPrefabsLists.RemoveAll(x => x == null);
-            foreach (var list in NetworkPrefabsLists)
-            {
-                list.OnAdd += AddTriggeredByNetworkPrefabList;
-                list.OnRemove += RemoveTriggeredByNetworkPrefabList;
-            }
 
             NetworkPrefabOverrideLinks.Clear();
             OverrideToNetworkPrefab.Clear();
-
-            var prefabs = new List<NetworkPrefab>();
-
-            if (NetworkPrefabsLists.Count != 0)
-            {
-                foreach (var list in NetworkPrefabsLists)
-                {
-                    prefabs.AddRange(list.PrefabList);
-                }
-            }
 
             m_Prefabs = new List<NetworkPrefab>();
 
@@ -122,15 +120,33 @@ namespace Unity.Netcode
                 removeList = new List<NetworkPrefab>();
             }
 
-            foreach (var networkPrefab in prefabs)
+            foreach (var list in NetworkPrefabsLists)
             {
-                if (AddPrefabRegistration(networkPrefab))
+                if (list == null)
                 {
-                    m_Prefabs.Add(networkPrefab);
+                    continue;
                 }
-                else
+                // Validate will remove any invalid items from the list
+                list.BuildLogger();
+
+                list.OnAdd += AddTriggeredByNetworkPrefabList;
+                list.OnRemove += RemoveTriggeredByNetworkPrefabList;
+
+                foreach (var networkPrefab in list.List)
                 {
-                    removeList?.Add(networkPrefab);
+                    if (networkPrefab == null)
+                    {
+                        continue;
+                    }
+
+                    if (networkPrefab.Validate(list.Log) && AddPrefabRegistrationPreValidated(networkPrefab))
+                    {
+                        m_Prefabs.Add(networkPrefab);
+                    }
+                    else
+                    {
+                        removeList?.Add(networkPrefab);
+                    }
                 }
             }
 
@@ -149,13 +165,10 @@ namespace Unity.Netcode
             // Clear out anything that is invalid or not used
             if (removeList?.Count > 0)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    var sb = new StringBuilder("Removing invalid prefabs from Network Prefab registration: ");
-                    sb.AppendJoin(", ", removeList);
-                    NetworkLog.LogWarning(sb.ToString());
-                }
+                log.Warning(new Context(LogLevel.Error, "Removing invalid prefabs from Network Prefab registration"));
             }
+
+            m_Initialized = true;
         }
 
         /// <summary>
@@ -171,6 +184,12 @@ namespace Unity.Netcode
         /// </remarks>
         public bool Add(NetworkPrefab networkPrefab)
         {
+            if (!m_Initialized)
+            {
+                m_RuntimeAddedPrefabs.Add(networkPrefab);
+                return true;
+            }
+
             if (AddPrefabRegistration(networkPrefab))
             {
                 m_Prefabs.Add(networkPrefab);
@@ -287,43 +306,40 @@ namespace Unity.Netcode
                 return false;
             }
             // Safeguard validation check since this method is called from outside of NetworkConfig and we can't control what's passed in.
-            if (!networkPrefab.Validate())
+            if (!networkPrefab.Validate(m_Log))
             {
                 return false;
             }
+            return AddPrefabRegistrationPreValidated(networkPrefab);
+        }
 
+        private bool AddPrefabRegistrationPreValidated(NetworkPrefab networkPrefab)
+        {
             uint source = networkPrefab.SourcePrefabGlobalObjectIdHash;
             uint target = networkPrefab.TargetPrefabGlobalObjectIdHash;
 
             // Make sure the prefab isn't already registered.
-            if (NetworkPrefabOverrideLinks.ContainsKey(source))
+            if (NetworkPrefabOverrideLinks.TryGetValue(source, out var otherPrefab))
             {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
                 // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {source}!");
+                m_Log.Error(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} has a matching {nameof(NetworkObject.GlobalObjectIdHash)} with another object. This should not happen!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), source).AddInfo("Duplicated Object", otherPrefab.Prefab.name).AddObject(networkPrefab.Prefab));
                 return false;
-            }
-
-            // If we don't have an override configured, registration is simple!
-            if (networkPrefab.Override == NetworkPrefabOverride.None)
-            {
-                NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                return true;
             }
 
             switch (networkPrefab.Override)
             {
+                case NetworkPrefabOverride.None:
+                    {
+                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
+                        break;
+                    }
                 case NetworkPrefabOverride.Prefab:
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        if (!OverrideToNetworkPrefab.ContainsKey(target))
-                        {
-                            OverrideToNetworkPrefab.Add(target, source);
-                        }
+                        OverrideToNetworkPrefab.TryAdd(target, source);
+                        break;
                     }
-                    break;
             }
 
             return true;

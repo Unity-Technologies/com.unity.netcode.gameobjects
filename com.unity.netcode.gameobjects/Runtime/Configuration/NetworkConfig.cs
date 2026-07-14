@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
+using Unity.Netcode.Logging;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -246,11 +248,19 @@ namespace Unity.Netcode
         /// runtime modifications to a property outside of the recommended range.
         /// For each property checked below, provide a brief description of the reason.
         /// </remarks>
-        internal void OnValidate()
+        internal void OnValidate(ContextualLogger log)
         {
             // Legacy NGO versions defaulted this value to 1 second that has since been determiend
             // any range less than 10 seconds can lead to dropped messages during scene events.
             SpawnTimeout = Mathf.Clamp(SpawnTimeout, MinSpawnTimeout, MaxSpawnTimeout);
+
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+            // If the scene is dirty and the asset database is not currently updating then we can validate the NetworkPrefabs
+            if (activeScene.isDirty && !EditorApplication.isUpdating)
+            {
+                Prefabs.Initialize(log);
+            }
         }
 
         /// <summary>
@@ -378,26 +388,14 @@ namespace Unity.Netcode
             return hash == GetConfig();
         }
 
-        internal void InitializePrefabs()
+        internal void InitializePrefabs(ContextualLogger log)
         {
             if (HasOldPrefabList())
             {
                 MigrateOldNetworkPrefabsToNetworkPrefabsList();
             }
 
-            Prefabs.Initialize();
-        }
-
-        [NonSerialized]
-        private bool m_DidWarnOldPrefabList = false;
-
-        private void WarnOldPrefabList()
-        {
-            if (!m_DidWarnOldPrefabList)
-            {
-                Debug.LogWarning("Using Legacy Network Prefab List. Consider Migrating.");
-                m_DidWarnOldPrefabList = true;
-            }
+            Prefabs.Initialize(log);
         }
 
         /// <summary>

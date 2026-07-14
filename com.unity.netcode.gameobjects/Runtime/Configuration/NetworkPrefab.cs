@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Unity.Netcode.Logging;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -146,24 +148,37 @@ namespace Unity.Netcode
         /// <returns>True if the NetworkPrefab is valid and ready for use, false otherwise</returns>
         public bool Validate(int index = -1)
         {
+            var log = new ContextualLogger();
+            return Validate(log, index);
+        }
+
+        internal bool Validate(ContextualLogger log, int index = -1)
+        {
+            using var logContext = log.AddDisposableInfo("Invalid prefab", Prefab?.name);
+
             NetworkObject networkObject;
             if (Override == NetworkPrefabOverride.None)
             {
                 if (Prefab == null)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {index})");
+                    log.Warning(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} cannot be null").AddInfo($"{nameof(NetworkPrefab)} at index", index));
                     return false;
                 }
 
                 networkObject = Prefab.GetComponent<NetworkObject>();
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(this)} is missing a {nameof(NetworkObject)} component (entry will be ignored).");
-                    }
-
+                    log.Warning(new Context(LogLevel.Error, $"Prefab is missing a {nameof(NetworkObject)} component!").AddObject(Prefab));
                     return false;
+                }
+
+                {
+                    var childNetworkObjects = new List<NetworkObject>();
+                    Prefab.GetComponentsInChildren(true, childNetworkObjects);
+                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
+                    {
+                        log.Warning(new Context(LogLevel.Error, $"Prefab has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)").AddObject(Prefab));
+                    }
                 }
 
                 return true;
@@ -176,14 +191,9 @@ namespace Unity.Netcode
                     {
                         if (SourceHashToOverride == 0)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                            {
-                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero (entry will be ignored).");
-                            }
-
+                            log.Warning(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero!"));
                             return false;
                         }
-
                         break;
                     }
                 case NetworkPrefabOverride.Prefab:
@@ -197,20 +207,16 @@ namespace Unity.Netcode
                             {
                                 SourcePrefabToOverride = Prefab;
                             }
-                            else if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            else
                             {
-                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourcePrefabToOverride)} is null (entry will be ignored).");
+                                log.Warning(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} {nameof(SourcePrefabToOverride)} is null!"));
                                 return false;
                             }
                         }
 
                         if (!SourcePrefabToOverride.TryGetComponent(out networkObject))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                            {
-                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({SourcePrefabToOverride.name}) is missing a {nameof(NetworkObject)} component (entry will be ignored).");
-                            }
-
+                            log.Warning(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} is missing a {nameof(NetworkObject)} component!").AddObject(SourcePrefabToOverride));
                             return false;
                         }
 
@@ -221,21 +227,18 @@ namespace Unity.Netcode
             // Validate target prefab override values next
             if (OverridingTargetPrefab == null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(OverridingTargetPrefab)} is null!");
-                }
-
+                // Safe to create context early as this code is not in any hot path
+                var ctx = new Context(LogLevel.Error, $"{nameof(OverridingTargetPrefab)} is null! {nameof(NetworkPrefab)} entry will be removed and ignored.");
                 switch (Override)
                 {
                     case NetworkPrefabOverride.Hash:
                         {
-                            Debug.LogWarning($"{nameof(NetworkPrefab)} override entry {SourceHashToOverride} will be removed and ignored.");
+                            log.Warning(ctx.AddInfo(nameof(SourceHashToOverride), SourceHashToOverride));
                             break;
                         }
                     case NetworkPrefabOverride.Prefab:
                         {
-                            Debug.LogWarning($"{nameof(NetworkPrefab)} override entry ({SourcePrefabToOverride.name}) will be removed and ignored.");
+                            log.Warning(ctx.AddInfo(nameof(SourcePrefabToOverride), SourcePrefabToOverride.name));
                             break;
                         }
                 }
