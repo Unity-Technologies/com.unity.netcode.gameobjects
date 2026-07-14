@@ -1446,13 +1446,12 @@ namespace Unity.Netcode
         internal void ServerResetShutdownStateForSceneObjects()
         {
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true, includeInactive: true);
-            foreach (var sobj in networkObjects)
+            foreach (var obj in networkObjects)
             {
-                if (!sobj.InScenePlaced)
+                if (obj.HasBeenSpawned)
                 {
-                    continue;
+                    obj.ResetOnShutdown();
                 }
-                sobj.ResetOnDespawn();
             }
         }
 
