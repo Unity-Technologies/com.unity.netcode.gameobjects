@@ -9,11 +9,7 @@ using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 #if UNITY_EDITOR
 using UnityEditor;
-#if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
-#else
-using UnityEditor.Experimental.SceneManagement;
-#endif
 #endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -28,8 +24,17 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
     [HelpURL(HelpUrls.NetworkObject)]
-    public sealed class NetworkObject : MonoBehaviour
+    public sealed class NetworkObject : MonoBehaviour, ISerializationCallbackReceiver
     {
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+            m_InScenePlaced = gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0;
+        }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+        }
+
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
@@ -1232,15 +1237,34 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is a SceneObject.
         /// </summary>
+        /// <remarks>
+        /// This method is marked for deprecation.<br />
+        /// Use <see cref="InScenePlaced"/> instead.
+        /// </remarks>
         [Obsolete("Use InScenePlaced instead")]
         public bool? IsSceneObject { get; internal set; }
 
         /// <summary>
-        /// True if this object is placed in a scene; false otherwise.
+        /// The serialized field for <see cref="InScenePlaced"/>.
         /// </summary>
         [field: HideInInspector]
         [field: SerializeField]
-        public bool InScenePlaced { get; internal set; }
+        private bool m_InScenePlaced;
+
+        /// <summary>
+        /// True if this object is placed in a scene; false otherwise.
+        /// </summary>
+        public bool InScenePlaced
+        {
+            get
+            {
+                return m_InScenePlaced;
+            }
+            internal set
+            {
+                m_InScenePlaced = value;
+            }
+        }
 
         /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
@@ -2686,24 +2710,24 @@ namespace Unity.Netcode
                 }
                 else // If the parent still isn't spawned add this to the orphaned children and return false
                     if (!parentNetworkObject.IsSpawned)
-                    {
-                        OrphanChildren.Add(this);
-                        return false;
-                    }
-                    else
-                    {
-                        // If we made it this far, go ahead and set the network parenting values
-                        // with the WorldPoisitonSays value set to false
-                        // Note: Since in-scene placed NetworkObjects are parented in the scene
-                        // the default "assumption" is that children are parenting local space
-                        // relative.
-                        SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
+                {
+                    OrphanChildren.Add(this);
+                    return false;
+                }
+                else
+                {
+                    // If we made it this far, go ahead and set the network parenting values
+                    // with the WorldPoisitonSays value set to false
+                    // Note: Since in-scene placed NetworkObjects are parented in the scene
+                    // the default "assumption" is that children are parenting local space
+                    // relative.
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
 
-                        // Set the cached parent
-                        SetCachedParent(parentNetworkObject.transform);
+                    // Set the cached parent
+                    SetCachedParent(parentNetworkObject.transform);
 
-                        return true;
-                    }
+                    return true;
+                }
             }
 
             // If we are removing the parent or our latest parent is not set, then remove the parent.
