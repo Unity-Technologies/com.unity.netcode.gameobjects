@@ -1448,7 +1448,9 @@ namespace Unity.Netcode
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true, includeInactive: true);
             foreach (var obj in networkObjects)
             {
-                if (obj.HasBeenSpawned && obj.InScenePlaced) {
+                // Only reset things that have been spawned are in-scene placed, and is assigned to the relative NetworkManager (for integration testing purposes)
+                if (obj.HasBeenSpawned && obj.InScenePlaced && obj.NetworkManagerOwner == NetworkManager)
+                {
                     obj.ResetOnShutdown();
                 }
             }
@@ -1714,11 +1716,10 @@ namespace Unity.Netcode
                             NetworkLog.LogError($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} could not be moved to the root when its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} was being destroyed");
                         }
                     }
-                    else
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
-                        }
+                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                    }
                 }
             }
 

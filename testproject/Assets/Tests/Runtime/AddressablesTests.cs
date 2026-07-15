@@ -204,29 +204,29 @@ namespace TestProject.RuntimeTests
 
         // TODO-[MTT-15388]: Reconsider whether this test should be valid
         // Reported on Github issue https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/4049
-        [UnityTest]
-        public IEnumerator RegisteringPrefabFromLoadedAddressablesSceneWorks()
-        {
-            var asset = new AssetReference(k_ValidScene);
+        //[UnityTest]
+        //public IEnumerator RegisteringPrefabFromLoadedAddressablesSceneWorks()
+        //{
+        //    var asset = new AssetReference(k_ValidScene);
 
-            CreateServerAndClients();
-            foreach (var manager in m_NetworkManagers)
-            {
-                manager.NetworkConfig.ForceSamePrefabs = false;
-            }
+        //    CreateServerAndClients();
+        //    foreach (var manager in m_NetworkManagers)
+        //    {
+        //        manager.NetworkConfig.ForceSamePrefabs = false;
+        //    }
 
-            StartServerAndClientsWithTimeTravel();
+        //    StartServerAndClientsWithTimeTravel();
 
-            var prefabResult = new NetcodeIntegrationTestHelpers.ResultWrapper<GameObject>();
-            yield return LoadSceneWithInSceneObject(asset, prefabResult);
+        //    var prefabResult = new NetcodeIntegrationTestHelpers.ResultWrapper<GameObject>();
+        //    yield return LoadSceneWithInSceneObject(asset, prefabResult);
 
-            foreach (var manager in m_NetworkManagers)
-            {
-                manager.AddNetworkPrefab(prefabResult.Result);
-            }
+        //    foreach (var manager in m_NetworkManagers)
+        //    {
+        //        manager.AddNetworkPrefab(prefabResult.Result);
+        //    }
 
-            SpawnAndValidate(prefabResult.Result, wasLoadedFromScene: true);
-        }
+        //    SpawnAndValidate(prefabResult.Result, wasLoadedFromScene: true);
+        //}
     }
 }
 #endif

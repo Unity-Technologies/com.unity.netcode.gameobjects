@@ -45,9 +45,6 @@ EditorBuildSettings:
     path: Assets/Tests/Manual/NetworkSceneManagerCallbacks/SceneWeAreSwitchingFrom.unity
     guid: 073bd2111475c0643be45b7abe6a97ad
   - enabled: 1
-    path: Assets/Scenes/MultiprocessTestScene.unity
-    guid: 76743cb7b342c49279327834918a9c6e
-  - enabled: 1
     path: Assets/Scenes/EmptyScene.unity
     guid: a2545a872c007404fbb6b0393ab74974
   - enabled: 1
@@ -161,7 +158,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/NetworkAnimatorTests/AnimationBidirectionalTriggers/NetworkAnimatorDualTriggerCheer.unity
     guid: e12df855278120245a8a936a6a52b5bd
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObjectMovesToDDOL.unity
+    guid: 4c20c17b4f92e634f8796b0460851d49
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
-  m_UseUCBPForAssetBundles: 0

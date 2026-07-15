@@ -9,11 +9,7 @@ using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 #if UNITY_EDITOR
 using UnityEditor;
-#if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
-#else
-using UnityEditor.Experimental.SceneManagement;
-#endif
 #endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -132,9 +128,6 @@ namespace Unity.Netcode
         private static NetworkObject s_PrefabAsset;
         // The InContext or InIsolation edit mode network prefab scene instance of the prefab asset (s_PrefabAsset).
         private static NetworkObject s_PrefabInstance;
-
-        private static bool s_DebugPrefabIdGeneration;
-
 
         [ContextMenu("Refresh In-Scene Prefab Instances")]
         internal void RefreshAllPrefabInstances()
@@ -332,7 +325,7 @@ namespace Unity.Netcode
         /// </remarks>
         private void CheckForInScenePlaced()
         {
-            if (gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            if (gameObject.scene.IsValid() && gameObject.scene.buildIndex >= 0)
             {
                 if (PrefabUtility.IsPartOfAnyPrefab(this))
                 {
@@ -351,6 +344,9 @@ namespace Unity.Netcode
                 // TODO-3.x: remove in the 3.x branch
                 SetSceneObjectStatus(true);
 #pragma warning restore CS0618 // Type or member is obsolete
+
+                // We go ahead and set this for "typical in-scene placed" usage patterns so this is serialized
+                InScenePlaced = true;
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
@@ -1232,15 +1228,35 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is a SceneObject.
         /// </summary>
+        /// <remarks>
+        /// This method is marked for deprecation.<br />
+        /// Use <see cref="InScenePlaced"/> instead.
+        /// </remarks>
         [Obsolete("Use InScenePlaced instead")]
         public bool? IsSceneObject { get; internal set; }
+
+
+        /// <summary>
+        /// The serialized value.
+        /// </summary>
+        [field: HideInInspector]
+        [field: SerializeField]
+        private bool m_InScenePlaced;
 
         /// <summary>
         /// True if this object is placed in a scene; false otherwise.
         /// </summary>
-        [field: HideInInspector]
-        [field: SerializeField]
-        public bool InScenePlaced { get; internal set; }
+        public bool InScenePlaced
+        {
+            get
+            {
+                return m_InScenePlaced;
+            }
+            internal set
+            {
+                m_InScenePlaced = value;
+            }
+        }
 
         /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
@@ -2695,26 +2711,26 @@ namespace Unity.Netcode
                     m_CachedWorldPositionStays = false;
                     return true;
                 }
-                else // If the parent still isn't spawned add this to the orphaned children and return false
-                    if (!parentNetworkObject.IsSpawned)
-                    {
-                        OrphanChildren.Add(this);
-                        return false;
-                    }
-                    else
-                    {
-                        // If we made it this far, go ahead and set the network parenting values
-                        // with the WorldPoisitonSays value set to false
-                        // Note: Since in-scene placed NetworkObjects are parented in the scene
-                        // the default "assumption" is that children are parenting local space
-                        // relative.
-                        SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
+                // If the parent still isn't spawned add this to the orphaned children and return false
+                else if (!parentNetworkObject.IsSpawned)
+                {
+                    OrphanChildren.Add(this);
+                    return false;
+                }
+                else
+                {
+                    // If we made it this far, go ahead and set the network parenting values
+                    // with the WorldPoisitonSays value set to false
+                    // Note: Since in-scene placed NetworkObjects are parented in the scene
+                    // the default "assumption" is that children are parenting local space
+                    // relative.
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
 
-                        // Set the cached parent
-                        SetCachedParent(parentNetworkObject.transform);
+                    // Set the cached parent
+                    SetCachedParent(parentNetworkObject.transform);
 
-                        return true;
-                    }
+                    return true;
+                }
             }
 
             // If we are removing the parent or our latest parent is not set, then remove the parent.
@@ -3639,6 +3655,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Don't create notification if there is a scene event in progress.
             if (NetworkManagerOwner.SceneManager.IsSceneEventInProgress())
             {
                 return;
