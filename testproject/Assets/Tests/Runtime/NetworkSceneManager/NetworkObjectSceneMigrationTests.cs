@@ -286,6 +286,12 @@ namespace TestProject.RuntimeTests
             base.OnNewClientCreated(networkManager);
         }
 
+        private void SetActiveScene(Scene scene)
+        {
+            Debug.Log($"[Previous = {SceneManager.GetActiveScene().name}][New = {scene.name}] Changing the active scene!");
+            SceneManager.SetActiveScene(scene);
+        }
+
         /// <summary>
         /// Integration test to verify changing the currently active scene
         /// will migrate NetworkObjects with ActiveSceneSynchronization set
@@ -311,7 +317,7 @@ namespace TestProject.RuntimeTests
             authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
 
             // Set the active scene to be the 1st scene loaded so we don't instantiate within the test runner scene.
-            SceneManager.SetActiveScene(m_ScenesLoaded[0]);
+            SetActiveScene(m_ScenesLoaded[0]);
 
             var autoSyncActive = new List<NetworkObject>();
             // Spawn 3 NetworkObject instances that auto synchronize to active scene changes
@@ -385,7 +391,8 @@ namespace TestProject.RuntimeTests
 
             // Now change the active scene
             var newActiveScene = m_ScenesLoaded[1];
-            SceneManager.SetActiveScene(newActiveScene);
+            SetActiveScene(newActiveScene);
+
             // We have to do this
             //Object.DontDestroyOnLoad(m_TestPrefabAutoSynchActiveScene);
 
@@ -451,10 +458,17 @@ namespace TestProject.RuntimeTests
 
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
-
+            m_UnloadEventCompleted = false;
+            authority.SceneManager.OnUnloadEventCompleted += OnUnloadEventCompleted;
             authority.SceneManager.UnloadScene(newActiveScene);
-            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
+
+            // Always first: make sure the scene event has completed.
+            yield return WaitForConditionOrTimeOut(() => m_UnloadEventCompleted);
             AssertOnTimeout($"Timed out waiting for all clients to unload scene {newActiveScene.name}!");
+
+            // Always second: make sure all spawned objects are in the correct scene
+            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
+            AssertOnTimeout($"Timed out waiting for all clients to validate the correct scenes for spawned objects!");
 
             // Clean up any destroyed NetworkObjects
             for (int i = authoritySpawnedInstances.Count - 1; i >= 0; i--)
@@ -480,6 +494,13 @@ namespace TestProject.RuntimeTests
             Assert.IsEmpty(autoSyncActive.Where(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.ActiveSceneSynchronization)}=true should have been destroyed when the active scene was unloaded!");
             Assert.IsEmpty(m_ServerSpawnedDestroyWithSceneInstances.Where(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.DestroyWithScene)} should have been destroyed when the active scene was unloaded!");
             Assert.AreEqual(3, autoSyncInactive.Count(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.ActiveSceneSynchronization)}=false should have survived the active scene change!");
+        }
+
+
+        private bool m_UnloadEventCompleted;
+        private void OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+        {
+            m_UnloadEventCompleted = true;
         }
 
         /// <summary>

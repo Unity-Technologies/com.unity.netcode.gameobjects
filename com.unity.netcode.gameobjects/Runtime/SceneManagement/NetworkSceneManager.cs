@@ -2890,7 +2890,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void NotifyNetworkObjectSceneChanged(NetworkObject networkObject)
         {
-            Debug.Log($"{networkObject.name} changed scene to {networkObject.gameObject.scene.name}!");
             if (networkObject.NetworkManagerOwner != NetworkManager)
             {
                 Debug.Log($"!!!!!!!!!!!!! Integration test is registering for scene migration for instances outside of the bounds of this NetworkManager context !!!!!!!!!!!!!");
@@ -3060,7 +3059,14 @@ namespace Unity.Netcode
             // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
-            SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
+            try
+            {
+                SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
             ObjectsMigratedIntoNewScene.Clear();
             EndSceneEvent(sceneEvent.SceneEventId);
         }

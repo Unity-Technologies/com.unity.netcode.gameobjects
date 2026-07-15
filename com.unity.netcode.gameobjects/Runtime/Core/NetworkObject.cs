@@ -3655,7 +3655,14 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Don't create notification if there is a scene event in progress.
             if (NetworkManagerOwner.SceneManager.IsSceneEventInProgress())
+            {
+                return;
+            }
+
+            // Don't  create notification if the scene is the DDOL.
+            if (scene == NetworkManager.SceneManager.DontDestroyOnLoadScene)
             {
                 return;
             }
