@@ -1716,11 +1716,10 @@ namespace Unity.Netcode
                             NetworkLog.LogError($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} could not be moved to the root when its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} was being destroyed");
                         }
                     }
-                    else
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
-                        }
+                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                    }
                 }
             }
 

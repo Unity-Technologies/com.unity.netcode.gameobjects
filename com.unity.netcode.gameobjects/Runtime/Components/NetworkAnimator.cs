@@ -1180,26 +1180,25 @@ namespace Unity.Netcode.Components
                 {
                     SendAnimStateRpc(m_AnimationMessage);
                 }
+                else if(!IsServer && IsOwner)
+                {
+                    SendServerAnimStateRpc(m_AnimationMessage);
+                }
                 else
-                    if (!IsServer && IsOwner)
+                {
+                    // Just notify all remote clients and not the local server
+                    m_TargetGroup.Clear();
+                    foreach (var clientId in LocalNetworkManager.ConnectionManager.ConnectedClientIds)
                     {
-                        SendServerAnimStateRpc(m_AnimationMessage);
-                    }
-                    else
-                    {
-                        // Just notify all remote clients and not the local server
-                        m_TargetGroup.Clear();
-                        foreach (var clientId in LocalNetworkManager.ConnectionManager.ConnectedClientIds)
+                        if (clientId == LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
                         {
-                            if (clientId == LocalNetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
-                            {
-                                continue;
-                            }
-                            m_TargetGroup.Add(clientId);
+                            continue;
                         }
-                        m_RpcParams.Send.Target = m_TargetGroup.Target;
-                        SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
+                        m_TargetGroup.Add(clientId);
                     }
+                    m_RpcParams.Send.Target = m_TargetGroup.Target;
+                    SendClientAnimStateRpc(m_AnimationMessage, m_RpcParams);
+                }
             }
         }
 
@@ -1348,23 +1347,23 @@ namespace Unity.Netcode.Components
                 }
                 else
                     if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
+                {
+                    var valueBool = m_Animator.GetBool(hash);
+                    fixed (void* value = cacheValue.Value)
                     {
-                        var valueBool = m_Animator.GetBool(hash);
-                        fixed (void* value = cacheValue.Value)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueBool);
-                            BytePacker.WriteValuePacked(writer, valueBool);
-                        }
+                        UnsafeUtility.WriteArrayElement(value, 0, valueBool);
+                        BytePacker.WriteValuePacked(writer, valueBool);
                     }
-                    else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
+                }
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
+                {
+                    var valueFloat = m_Animator.GetFloat(hash);
+                    fixed (void* value = cacheValue.Value)
                     {
-                        var valueFloat = m_Animator.GetFloat(hash);
-                        fixed (void* value = cacheValue.Value)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
-                            BytePacker.WriteValuePacked(writer, valueFloat);
-                        }
+                        UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
+                        BytePacker.WriteValuePacked(writer, valueFloat);
                     }
+                }
             }
         }
 

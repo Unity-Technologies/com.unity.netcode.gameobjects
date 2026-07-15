@@ -46,6 +46,13 @@ namespace TestProject.RuntimeTests
             return base.OnSetup();
         }
 
+        protected override void OnCreatePlayerPrefab()
+        {
+            Object.DontDestroyOnLoad(m_PlayerPrefab);
+            m_PlayerPrefab.GetComponent<NetworkObject>().ActiveSceneSynchronization = true;
+            base.OnCreatePlayerPrefab();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             // Synchronize Scene Changes (default) Test Network Prefab
@@ -66,7 +73,18 @@ namespace TestProject.RuntimeTests
             var shouldNeverSpawn = neverSpawnObj.AddComponent<ShouldNeverSpawn>();
             DestroyWithSceneInstancesTestHelper.ShouldNeverSpawn = shouldNeverSpawn;
 
+            var authority = GetAuthorityNetworkManager();
+            authority.OnServerStarted += OnServerStarted;
+
             base.OnServerAndClientsCreated();
+        }
+
+
+        private void OnServerStarted()
+        {
+            var authority = GetAuthorityNetworkManager();
+            authority.OnServerStarted -= OnServerStarted;
+            authority.SceneManager.ActiveSceneSynchronizationEnabled = true;
         }
 
         private enum ExpectedLoadType
@@ -257,6 +275,17 @@ namespace TestProject.RuntimeTests
             GetAuthorityNetworkManager().SceneManager.OnSynchronize -= MigrateObjects_OnSynchronize;
         }
 
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            var authority = GetAuthorityNetworkManager();
+            foreach(var prefab in authority.NetworkConfig.Prefabs.Prefabs)
+            {
+                networkManager.NetworkConfig.Prefabs.Add(prefab);
+            }
+            networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            base.OnNewClientCreated(networkManager);
+        }
+
         /// <summary>
         /// Integration test to verify changing the currently active scene
         /// will migrate NetworkObjects with ActiveSceneSynchronization set
@@ -269,6 +298,20 @@ namespace TestProject.RuntimeTests
             // Disable resynchronization for this test to avoid issues with trying
             // to synchronize them.
             NetworkSceneManager.DisableReSynchronization = true;
+
+            // Load three scenes first
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            foreach (var sceneName in m_TestScenes)
+            {
+                var loadStatus = authority.SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+                Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneName}! Return status: {loadStatus}");
+                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneName, ExpectedLoadType.Loaded));
+                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneName}!");
+            }
+            authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
+
+            // Set the active scene to be the 1st scene loaded so we don't instantiate within the test runner scene.
+            SceneManager.SetActiveScene(m_ScenesLoaded[0]);
 
             var autoSyncActive = new List<NetworkObject>();
             // Spawn 3 NetworkObject instances that auto synchronize to active scene changes
@@ -317,16 +360,8 @@ namespace TestProject.RuntimeTests
             yield return WaitForSpawnedOnAllOrTimeOut(authoritySpawnedInstances);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
 
-            // Now load three scenes
-            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            foreach (var sceneName in m_TestScenes)
-            {
-                var loadStatus = authority.SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
-                Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneName}! Return status: {loadStatus}");
-                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneName, ExpectedLoadType.Loaded));
-                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneName}!");
-            }
-            authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
+
+
 
             var sceneToMigrateTo = m_ScenesLoaded[2];
             // Migrate the instances that don't synchronize with active scene changes into the 3rd loaded scene
@@ -352,7 +387,7 @@ namespace TestProject.RuntimeTests
             var newActiveScene = m_ScenesLoaded[1];
             SceneManager.SetActiveScene(newActiveScene);
             // We have to do this
-            Object.DontDestroyOnLoad(m_TestPrefabAutoSynchActiveScene);
+            //Object.DontDestroyOnLoad(m_TestPrefabAutoSynchActiveScene);
 
             // First, make sure server-side scenes and client side scenes match
             yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
@@ -379,6 +414,7 @@ namespace TestProject.RuntimeTests
 
             // Verify that a late joining client synchronizes properly and destroys the appropriate NetworkObjects
             yield return CreateAndStartNewClient();
+            AssertOnTimeout("Failed to start or create a new client!");
             yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
             AssertOnTimeout($"[Late Joined Client #1] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
@@ -415,6 +451,7 @@ namespace TestProject.RuntimeTests
 
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
+
             authority.SceneManager.UnloadScene(newActiveScene);
             yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
             AssertOnTimeout($"Timed out waiting for all clients to unload scene {newActiveScene.name}!");

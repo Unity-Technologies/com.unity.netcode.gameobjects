@@ -467,20 +467,20 @@ namespace Unity.Netcode
                         InterpolateState.CurrentValue = InterpolateState.NextValue;
                     }
                 }
-                else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
-                    if (m_BufferQueue.Count == 0)
+                // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
+                else if (m_BufferQueue.Count == 0)
+                {
+                    // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
+                    // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
+                    // we will want to reset the interpolator with the current known value. This prevents the next received state update's
+                    // time to be calculated against the last calculated time which if there is an extended period of time between the two
+                    // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
+                    // starts moving again).
+                    if ((tickLatencyAsTime - InterpolateState.Target.Value.TimeSent) > InterpolateState.MaxDeltaTime + minDeltaTime)
                     {
-                        // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
-                        // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
-                        // we will want to reset the interpolator with the current known value. This prevents the next received state update's
-                        // time to be calculated against the last calculated time which if there is an extended period of time between the two
-                        // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
-                        // starts moving again).
-                        if ((tickLatencyAsTime - InterpolateState.Target.Value.TimeSent) > InterpolateState.MaxDeltaTime + minDeltaTime)
-                        {
-                            InterpolateState.Reset(InterpolateState.CurrentValue);
-                        }
+                        InterpolateState.Reset(InterpolateState.CurrentValue);
                     }
+                }
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
@@ -595,18 +595,18 @@ namespace Unity.Netcode
             }
             else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
                 if (InterpolateState.TargetReached && m_BufferQueue.Count == 0)
+            {
+                // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
+                // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
+                // we will want to reset the interpolator with the current known value. This prevents the next received state update's
+                // time to be calculated against the last calculated time which if there is an extended period of time between the two
+                // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
+                // starts moving again).
+                if ((renderTime - InterpolateState.Target.Value.TimeSent) > 0.3f) // If we haven't recevied anything within 300ms, assume we stopped motion.
                 {
-                    // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
-                    // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
-                    // we will want to reset the interpolator with the current known value. This prevents the next received state update's
-                    // time to be calculated against the last calculated time which if there is an extended period of time between the two
-                    // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
-                    // starts moving again).
-                    if ((renderTime - InterpolateState.Target.Value.TimeSent) > 0.3f) // If we haven't recevied anything within 300ms, assume we stopped motion.
-                    {
-                        InterpolateState.Reset(InterpolateState.CurrentValue);
-                    }
+                    InterpolateState.Reset(InterpolateState.CurrentValue);
                 }
+            }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
         }
