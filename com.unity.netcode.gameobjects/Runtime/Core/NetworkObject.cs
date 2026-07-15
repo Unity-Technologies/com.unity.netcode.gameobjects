@@ -1248,8 +1248,14 @@ namespace Unity.Netcode
         /// </summary>
         public bool InScenePlaced
         {
-            get { return m_InScenePlaced; }
-            internal set { m_InScenePlaced = value; }
+            get
+            {
+                return m_InScenePlaced;
+            }
+            internal set
+            {
+                m_InScenePlaced = value;
+            }
         }
 
         /// <summary>
