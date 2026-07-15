@@ -1345,8 +1345,7 @@ namespace Unity.Netcode.Components
                         BytePacker.WriteValuePacked(writer, (uint)valueInt);
                     }
                 }
-                else
-                    if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
                     var valueBool = m_Animator.GetBool(hash);
                     fixed (void* value = cacheValue.Value)
