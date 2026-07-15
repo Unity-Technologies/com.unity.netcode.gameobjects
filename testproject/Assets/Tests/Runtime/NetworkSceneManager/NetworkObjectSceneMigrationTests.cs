@@ -278,7 +278,7 @@ namespace TestProject.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             var authority = GetAuthorityNetworkManager();
-            foreach(var prefab in authority.NetworkConfig.Prefabs.Prefabs)
+            foreach (var prefab in authority.NetworkConfig.Prefabs.Prefabs)
             {
                 networkManager.NetworkConfig.Prefabs.Add(prefab);
             }

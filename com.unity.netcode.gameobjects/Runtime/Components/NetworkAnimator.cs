@@ -1180,7 +1180,7 @@ namespace Unity.Netcode.Components
                 {
                     SendAnimStateRpc(m_AnimationMessage);
                 }
-                else if(!IsServer && IsOwner)
+                else if (!IsServer && IsOwner)
                 {
                     SendServerAnimStateRpc(m_AnimationMessage);
                 }
