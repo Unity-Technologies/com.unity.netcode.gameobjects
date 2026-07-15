@@ -3661,12 +3661,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Don't  create notification if the scene is the DDOL.
-            if (scene == NetworkManager.SceneManager.DontDestroyOnLoadScene)
-            {
-                return;
-            }
-
             SceneOriginHandle = scene.handle;
 
             // non-authority needs to update the NetworkSceneHandle

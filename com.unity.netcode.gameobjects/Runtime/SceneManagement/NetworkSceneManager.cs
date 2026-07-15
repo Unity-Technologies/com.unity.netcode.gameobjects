@@ -3059,6 +3059,7 @@ namespace Unity.Netcode
             // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
+            // SendSceneEventData can throw an exception. We need to wrap this and recover from the exception gracefully.
             try
             {
                 SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
