@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -87,41 +88,6 @@ namespace TestProject.RuntimeTests
             authority.SceneManager.ActiveSceneSynchronizationEnabled = true;
         }
 
-        private enum ExpectedLoadType
-        {
-            Loaded,
-            Unloaded
-        }
-
-        private bool ValidateSceneOnAllClients(StringBuilder errorLog, string sceneName, ExpectedLoadType loadType)
-        {
-            var allValid = true;
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                var sceneLoaded = false;
-                foreach (var scene in networkManager.SceneManager.ScenesLoaded.Values)
-                {
-                    if (scene.name == sceneName)
-                    {
-                        sceneLoaded = true;
-                        break;
-                    }
-                }
-                if (!sceneLoaded && loadType == ExpectedLoadType.Loaded)
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} wasn't loaded on this client!");
-                    allValid = false;
-                }
-                else if (sceneLoaded && loadType == ExpectedLoadType.Unloaded)
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] scene {sceneName} was still loaded on this client!");
-                    allValid = false;
-                }
-            }
-
-            return allValid;
-        }
-
         private bool VerifyAllScenesMatch(StringBuilder errorLog, List<NetworkObject> authorityInstances)
         {
             foreach (var authorityInstance in authorityInstances)
@@ -145,7 +111,6 @@ namespace TestProject.RuntimeTests
                     Assert.AreEqual(originalSceneTracker.SceneWhereAwakeHappened, (NetworkSceneHandle)instance.SceneOrigin.handle, "The SceneOrigin of an object should never change!");
                 }
             }
-
             return true;
         }
 
@@ -177,10 +142,7 @@ namespace TestProject.RuntimeTests
             authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             foreach (var sceneToLoad in m_TestScenes)
             {
-                var status = authority.SceneManager.LoadScene(sceneToLoad, LoadSceneMode.Additive);
-                Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneToLoad}! Return status: {status}");
-                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneToLoad, ExpectedLoadType.Loaded));
-                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneToLoad}!");
+                yield return LoadScene(authority, sceneToLoad);
             }
             authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
             Assert.AreEqual(m_TestScenes.Count, m_ScenesLoaded.Count, "Not all the test scenes were loaded!");
@@ -309,10 +271,7 @@ namespace TestProject.RuntimeTests
             authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             foreach (var sceneName in m_TestScenes)
             {
-                var loadStatus = authority.SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
-                Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneName}! Return status: {loadStatus}");
-                yield return WaitForConditionOrTimeOut(errorLog => ValidateSceneOnAllClients(errorLog, sceneName, ExpectedLoadType.Loaded));
-                AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneName}!");
+                yield return LoadScene(authority, sceneName);
             }
             authority.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
 
@@ -366,9 +325,6 @@ namespace TestProject.RuntimeTests
             yield return WaitForSpawnedOnAllOrTimeOut(authoritySpawnedInstances);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {nameof(NetworkObject)}s!");
 
-
-
-
             var sceneToMigrateTo = m_ScenesLoaded[2];
             // Migrate the instances that don't synchronize with active scene changes into the 3rd loaded scene
             // (We are making sure these stay in the same scene they are migrated into)
@@ -392,9 +348,6 @@ namespace TestProject.RuntimeTests
             // Now change the active scene
             var newActiveScene = m_ScenesLoaded[1];
             SetActiveScene(newActiveScene);
-
-            // We have to do this
-            //Object.DontDestroyOnLoad(m_TestPrefabAutoSynchActiveScene);
 
             // First, make sure server-side scenes and client side scenes match
             yield return WaitForConditionOrTimeOut(errorLog => VerifyAllScenesMatch(errorLog, authoritySpawnedInstances));
@@ -427,9 +380,8 @@ namespace TestProject.RuntimeTests
 
             // Now, unload the scene containing the NetworkObjects that don't synchronize with active scene changes
             DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed += OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
-            var status = authority.SceneManager.UnloadScene(sceneToMigrateTo);
-            Assert.True(status == SceneEventProgressStatus.Started, $"Failed to start unloading scene {sceneToMigrateTo.name} with status {status}!");
-            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
+
+            yield return UnloadScene(authority, sceneToMigrateTo);
 
             // Clean up any destroyed NetworkObjects
             for (int i = authoritySpawnedInstances.Count - 1; i >= 0; i--)
@@ -458,17 +410,7 @@ namespace TestProject.RuntimeTests
 
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
-            m_UnloadEventCompleted = false;
-            authority.SceneManager.OnUnloadEventCompleted += OnUnloadEventCompleted;
-            authority.SceneManager.UnloadScene(newActiveScene);
-
-            // Always first: make sure the scene event has completed.
-            yield return WaitForConditionOrTimeOut(() => m_UnloadEventCompleted);
-            AssertOnTimeout($"Timed out waiting for all clients to unload scene {newActiveScene.name}!");
-
-            // Always second: make sure all spawned objects are in the correct scene
-            yield return WaitForConditionOrTimeOut(log => ValidateSceneOnAllClients(log, sceneToMigrateTo.name, ExpectedLoadType.Unloaded));
-            AssertOnTimeout($"Timed out waiting for all clients to validate the correct scenes for spawned objects!");
+            yield return UnloadScene(authority, newActiveScene);
 
             // Clean up any destroyed NetworkObjects
             for (int i = authoritySpawnedInstances.Count - 1; i >= 0; i--)
@@ -496,6 +438,45 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(3, autoSyncInactive.Count(obj => obj != null), $"All the NetworkObjects with {nameof(NetworkObject.ActiveSceneSynchronization)}=false should have survived the active scene change!");
         }
 
+        /// <summary>
+        /// Helper method to load a scene and wait for the OnLoadEventCompleted event to trigger.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IEnumerator LoadScene(NetworkManager authority, string sceneToLoad)
+        {
+            m_LoadEventCompleted = false;
+            authority.SceneManager.OnLoadEventCompleted += OnLoadEventCompleted;
+            var loadStatus = authority.SceneManager.LoadScene(sceneToLoad, LoadSceneMode.Additive);
+            Assert.True(loadStatus == SceneEventProgressStatus.Started, $"Failed to start loading scene {sceneToLoad}! Return status: {loadStatus}");
+            yield return WaitForConditionOrTimeOut(() => m_LoadEventCompleted);
+            // Remove subscription prior to potentially asserting.
+            authority.SceneManager.OnLoadEventCompleted -= OnLoadEventCompleted;
+            AssertOnTimeout($"Timed out waiting for all clients to load scene {sceneToLoad}!");
+        }
+
+        /// <summary>
+        /// Helper method to load a scene and wait for the OnUnloadEventCompleted event to trigger.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IEnumerator UnloadScene(NetworkManager authority, Scene sceneToUnload)
+        {
+            m_UnloadEventCompleted = false;
+            authority.SceneManager.OnUnloadEventCompleted += OnUnloadEventCompleted;
+            authority.SceneManager.UnloadScene(sceneToUnload);
+
+            // Always make sure the scene event has completed. Trying to check if the scenes are loaded as a metric can
+            // create edge case scenarios where the scene might have been just loaded but not processed during synchronization.
+            yield return WaitForConditionOrTimeOut(() => m_UnloadEventCompleted);
+            // Remove subscription prior to potentially asserting.
+            authority.SceneManager.OnUnloadEventCompleted -= OnUnloadEventCompleted;
+            AssertOnTimeout($"Timed out waiting for all clients to unload scene {sceneToUnload.name}!");
+        }
+
+        private bool m_LoadEventCompleted;
+        private void OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+        {
+            m_LoadEventCompleted = true;
+        }
 
         private bool m_UnloadEventCompleted;
         private void OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
@@ -533,6 +514,8 @@ namespace TestProject.RuntimeTests
             m_TestPrefab = null;
             m_TestPrefabAutoSynchActiveScene = null;
             m_TestPrefabDestroyWithScene = null;
+            // Any static event that could be subscribed to but not unsubscribed to due to an assert needs to be cleaned up here.
+            DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed -= OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
             SceneManager.SetActiveScene(m_OriginalActiveScene);
             m_ServerSpawnedDestroyWithSceneInstances.Clear();
             m_ServerSpawnedPrefabInstances.Clear();
