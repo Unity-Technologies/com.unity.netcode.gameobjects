@@ -593,8 +593,8 @@ namespace Unity.Netcode
                 // Determine if we have reached our target
                 InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
             }
-            else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
-                if (InterpolateState.TargetReached && m_BufferQueue.Count == 0)
+            // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
+            else if (InterpolateState.TargetReached && m_BufferQueue.Count == 0)
             {
                 // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
                 // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
