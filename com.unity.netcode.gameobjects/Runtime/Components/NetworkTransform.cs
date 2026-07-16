@@ -2515,24 +2515,24 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-            // Just apply the full local scale when synchronizing
-            else if (SynchronizeScale)
-            {
-                var localScale = CachedTransform.localScale;
-                if (!UseHalfFloatPrecision)
+            else // Just apply the full local scale when synchronizing
+                if (SynchronizeScale)
                 {
+                    var localScale = CachedTransform.localScale;
+                    if (!UseHalfFloatPrecision)
+                    {
 
-                    networkState.ScaleX = localScale.x;
-                    networkState.ScaleY = localScale.y;
-                    networkState.ScaleZ = localScale.z;
+                        networkState.ScaleX = localScale.x;
+                        networkState.ScaleY = localScale.y;
+                        networkState.ScaleZ = localScale.z;
+                    }
+                    else
+                    {
+                        networkState.Scale = localScale;
+                    }
+                    flagStates.MarkChanged(AxialType.Scale, true);
+                    isScaleDirty = true;
                 }
-                else
-                {
-                    networkState.Scale = localScale;
-                }
-                flagStates.MarkChanged(AxialType.Scale, true);
-                isScaleDirty = true;
-            }
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
             if (isDirty)
@@ -3488,12 +3488,12 @@ namespace Unity.Netcode.Components
                         child.InternalInitialization();
                     }
                 }
-                // Otherwise, just run through standard synchronization of this instance
-                else if (!CanCommitToTransform)
-                {
-                    ApplySynchronization();
-                    InternalInitialization();
-                }
+                else // Otherwise, just run through standard synchronization of this instance
+                    if (!CanCommitToTransform)
+                    {
+                        ApplySynchronization();
+                        InternalInitialization();
+                    }
             }
         }
 

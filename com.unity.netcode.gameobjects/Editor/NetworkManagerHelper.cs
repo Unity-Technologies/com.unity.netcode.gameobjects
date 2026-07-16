@@ -195,11 +195,11 @@ namespace Unity.Netcode.Editor
                 {
                     return isParented;
                 }
-                else if (transform.root == gameObject.transform)
-                {
-                    // If we are no longer a child, then we can remove ourself from this list
-                    s_LastKnownNetworkManagerParents.Remove(networkManager);
-                }
+                else // If we are no longer a child, then we can remove ourself from this list
+                    if (transform.root == gameObject.transform)
+                    {
+                        s_LastKnownNetworkManagerParents.Remove(networkManager);
+                    }
             }
             if (!EditorApplication.isUpdating && isParented)
             {
