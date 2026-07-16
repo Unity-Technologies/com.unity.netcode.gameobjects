@@ -173,11 +173,26 @@ namespace Unity.Netcode
 
                     return false;
                 }
-
+                
 #if UNIFIED_NETCODE
                 // Mark this network prefab as having to be registered via the unified API
                 HasGhost = networkObject.HasGhost;
 #endif
+                if (networkObject.InScenePlaced)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(this)} InScenePlaced {nameof(NetworkObject)} is being registered as a Prefab. This can cause issues!");
+                    }
+                }
+
+                if (networkObject.IsSpawned)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(this)} Currently spawned {nameof(NetworkObject)} is being registered as a Prefab. This can cause issues!");
+                    }
+                }
 
                 return true;
             }

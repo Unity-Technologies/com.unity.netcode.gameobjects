@@ -1034,7 +1034,7 @@ namespace Unity.Netcode
                 // Most common scenario for DontDestroyOnLoad is when NetworkManager is set to not be destroyed
                 if (serverSceneHandle == DontDestroyOnLoadScene.handle)
                 {
-                    SceneBeingSynchronized = NetworkManager.gameObject.scene;
+                    SceneBeingSynchronized = DontDestroyOnLoadScene;
                     return;
                 }
                 else
@@ -2260,8 +2260,6 @@ namespace Unity.Netcode
                 {
                     networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
-
-
                     // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
                     // and move it to that scene.
                     if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
@@ -2269,11 +2267,6 @@ namespace Unity.Netcode
                         if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
                         {
                             var scene = ScenesLoaded[networkObject.SceneOriginHandle];
-                            if (scene == DontDestroyOnLoadScene)
-                            {
-                                Debug.Log($"{networkObject.gameObject.name} migrating into DDOL!");
-                            }
-
                             SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
                         }
                         else if (NetworkManager.LogLevel <= LogLevel.Normal)
@@ -2903,6 +2896,12 @@ namespace Unity.Netcode
         /// </summary>
         internal void NotifyNetworkObjectSceneChanged(NetworkObject networkObject)
         {
+            if (networkObject.NetworkManagerOwner != NetworkManager)
+            {
+                Debug.Log($"!!!!!!!!!!!!! Integration test is registering for scene migration for instances outside of the bounds of this NetworkManager context !!!!!!!!!!!!!");
+                return;
+            }
+
             // Really, this should never happen but in case it does
             if (!networkObject.HasAuthority)
             {
@@ -2926,7 +2925,7 @@ namespace Unity.Netcode
 
             // Ignore if the scene is the currently active scene and the NetworkObject is auto synchronizing/migrating
             // to the currently active scene.
-            if (networkObject.gameObject.scene == SceneManager.GetActiveScene() && networkObject.ActiveSceneSynchronization)
+            if (networkObject.gameObject.scene.name == SceneManager.GetActiveScene().name && networkObject.ActiveSceneSynchronization)
             {
                 return;
             }
@@ -2935,6 +2934,13 @@ namespace Unity.Netcode
             // Note: This does not apply to SceneEventType.Synchronize since synchronization isn't a global connected client event.
             if (IsSceneEventInProgress())
             {
+                Debug.Log($"{networkObject.name} scene event in progress -- ignoring!");
+                return;
+            }
+
+            if (IsSceneUnloading(networkObject))
+            {
+                Debug.Log($"{networkObject.name} scene unloading in progress -- ignoring!");
                 return;
             }
 
@@ -3059,7 +3065,15 @@ namespace Unity.Netcode
             // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
-            SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
+            // SendSceneEventData can throw an exception. We need to wrap this and recover from the exception gracefully.
+            try
+            {
+                SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
             ObjectsMigratedIntoNewScene.Clear();
             EndSceneEvent(sceneEvent.SceneEventId);
         }

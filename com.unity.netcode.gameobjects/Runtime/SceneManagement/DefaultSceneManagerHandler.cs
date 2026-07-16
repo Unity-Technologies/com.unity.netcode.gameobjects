@@ -359,14 +359,14 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            else // Warn users if they are changing this after there are clients already connected and synchronized
-                if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            // Warn users if they are changing this after there are clients already connected and synchronized
+            else if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
-                    }
+                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
                 }
+            }
 
             // For additive client synchronization, we take into consideration scenes
             // already loaded.
