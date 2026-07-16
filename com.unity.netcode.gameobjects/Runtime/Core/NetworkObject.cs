@@ -2713,24 +2713,24 @@ namespace Unity.Netcode
                 }
                 else // If the parent still isn't spawned add this to the orphaned children and return false
                     if (!parentNetworkObject.IsSpawned)
-                    {
-                        OrphanChildren.Add(this);
-                        return false;
-                    }
-                    else
-                    {
-                        // If we made it this far, go ahead and set the network parenting values
-                        // with the WorldPoisitonSays value set to false
-                        // Note: Since in-scene placed NetworkObjects are parented in the scene
-                        // the default "assumption" is that children are parenting local space
-                        // relative.
-                        SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
+                {
+                    OrphanChildren.Add(this);
+                    return false;
+                }
+                else
+                {
+                    // If we made it this far, go ahead and set the network parenting values
+                    // with the WorldPoisitonSays value set to false
+                    // Note: Since in-scene placed NetworkObjects are parented in the scene
+                    // the default "assumption" is that children are parenting local space
+                    // relative.
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
 
-                        // Set the cached parent
-                        SetCachedParent(parentNetworkObject.transform);
+                    // Set the cached parent
+                    SetCachedParent(parentNetworkObject.transform);
 
-                        return true;
-                    }
+                    return true;
+                }
             }
 
             // If we are removing the parent or our latest parent is not set, then remove the parent.
