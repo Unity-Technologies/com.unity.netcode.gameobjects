@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using static Unity.Netcode.Components.NetworkAnimator;
 
 
 namespace TestProject.RuntimeTests
@@ -336,7 +338,35 @@ namespace TestProject.RuntimeTests
             VerboseDebug($" ------------------ Parameter Test [{m_OwnerShipMode}] Stopping ------------------ ");
         }
 
+        private unsafe void MockWritingParameters(ref FastBufferWriter writer)
+        {
+            writer.Seek(0);
+            writer.Truncate();
+            // Write out how many parameter entries to read
+            BytePacker.WriteValuePacked(writer, (uint)1);
+            BytePacker.WriteValuePacked(writer, (uint)1000);
+            BytePacker.WriteValuePacked(writer, (uint)10);
+        }
 
+        [Test]
+        public void ParameterBoundsCheck()
+        {
+            var gameObject = new GameObject();
+            gameObject.AddComponent<NetworkObject>();
+            var networkAnimator = gameObject.AddComponent<NetworkAnimator>();
+
+            var writer = new FastBufferWriter(40, Unity.Collections.Allocator.TempJob);
+
+            MockWritingParameters(ref writer);
+
+            var invalidParameters = new ParametersUpdateMessage()
+            {
+                Parameters = writer.ToArray()
+            };
+
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex($"parameters. Ignoring the remainger of this {nameof(ParametersUpdateMessage)}!"));
+            networkAnimator.UpdateParameters(ref invalidParameters);
+        }
 
         private bool AllTriggersDetected(OwnerShipMode ownerShipMode)
         {
