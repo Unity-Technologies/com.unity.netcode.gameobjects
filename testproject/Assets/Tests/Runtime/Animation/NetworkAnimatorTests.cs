@@ -342,9 +342,12 @@ namespace TestProject.RuntimeTests
         {
             writer.Seek(0);
             writer.Truncate();
+
             // Write out how many parameter entries to read
             BytePacker.WriteValuePacked(writer, (uint)1);
+            // Write an invalid index level (anything would be invalid with no parameters)
             BytePacker.WriteValuePacked(writer, (uint)1000);
+            // Write some value for the invalid parameter
             BytePacker.WriteValuePacked(writer, (uint)10);
         }
 
@@ -357,14 +360,16 @@ namespace TestProject.RuntimeTests
 
             var writer = new FastBufferWriter(40, Unity.Collections.Allocator.TempJob);
 
+            // Mock a parameter update with an invalid index
             MockWritingParameters(ref writer);
 
             var invalidParameters = new ParametersUpdateMessage()
             {
                 Parameters = writer.ToArray()
             };
-
+            // Expect an error message
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex($"parameters. Ignoring the remainger of this {nameof(ParametersUpdateMessage)}!"));
+            // Pass in the invalid ParametersUpdateMessage
             networkAnimator.UpdateParameters(ref invalidParameters);
         }
 
