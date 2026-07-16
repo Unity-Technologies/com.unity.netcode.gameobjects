@@ -2711,8 +2711,8 @@ namespace Unity.Netcode
                     m_CachedWorldPositionStays = false;
                     return true;
                 }
-                else // If the parent still isn't spawned add this to the orphaned children and return false
-                    if (!parentNetworkObject.IsSpawned)
+                // If the parent still isn't spawned add this to the orphaned children and return false
+                else if (!parentNetworkObject.IsSpawned)
                 {
                     OrphanChildren.Add(this);
                     return false;
