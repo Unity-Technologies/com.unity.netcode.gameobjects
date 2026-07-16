@@ -223,6 +223,30 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Determines if a log message was logged or not.
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="string"/> containing the message to search for.</param>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool HasLogBeenReceived(LogType type, Regex message)
+        {
+            var found = false;
+            lock (m_Lock)
+            {
+                foreach (var logEvent in AllLogs)
+                {
+                    if (logEvent.LogType == type && message.IsMatch(logEvent.Message))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            return found;
+        }
+
+
+        /// <summary>
         /// Clears out the log history that is searched.
         /// </summary>
         public void Reset()

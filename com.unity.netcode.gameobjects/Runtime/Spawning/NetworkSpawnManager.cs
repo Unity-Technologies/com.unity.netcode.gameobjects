@@ -907,10 +907,7 @@ namespace Unity.Netcode
             // If not, then there is an issue (user possibly didn't register the prefab properly?)
             if (networkPrefabReference == null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"[{nameof(globalObjectIdHash)}={globalObjectIdHash}] Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
-                }
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Failed to create object locally. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with this {nameof(NetworkManager)}").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash).AddTag(NetworkManager.name));
                 return null;
             }
 
@@ -957,6 +954,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// For most cases this is client-side only, except when the server is spawning a player.
         /// </remarks>
+        [return: MaybeNull]
         internal NetworkObject CreateLocalNetworkObject(NetworkObject.SerializedObject serializedObject, byte[] instantiationData = null)
         {
             NetworkObject networkObject = null;
@@ -977,11 +975,7 @@ namespace Unity.Netcode
                 networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
                 if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                    }
-
+                    NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
                     return null;
                 }
 
@@ -1122,7 +1116,14 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!sceneObject && NetworkManager.LogLevel <= LogLevel.Error)
+            if (playerObject && networkObject.InScenePlaced)
+            {
+                NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
+                networkObject.InScenePlaced = false;
+            }
+            NetworkLog.InternalAssert(sceneObject == networkObject.InScenePlaced, "Legacy sceneObject value should match calculated InScenePlaced value.");
+
+            if (!networkObject.InScenePlaced && NetworkManager.LogLevel <= LogLevel.Error)
             {
                 var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
                 if (networkObjectChildren.Length > 1)
@@ -1137,7 +1138,7 @@ namespace Unity.Netcode
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && sceneObject)
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && networkObject.InScenePlaced)
             {
                 networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
@@ -1175,10 +1176,7 @@ namespace Unity.Netcode
         {
             if (SpawnedObjects.ContainsKey(serializedObject.NetworkObjectId))
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning($"Trying to spawn a {nameof(NetworkObject)} with a {nameof(NetworkObject.NetworkObjectId)} of {serializedObject.NetworkObjectId} but an object with that id is already in the spawned list. This should not happen!");
-                }
+                NetworkManager.Log.Warning(new Context(LogLevel.Error, $"Trying to spawn a {nameof(NetworkObject)} but an object with that {nameof(NetworkObject.NetworkObjectId)} is already in the spawned list. This should not happen!"));
                 networkObject = null;
                 return false;
             }
@@ -1195,14 +1193,11 @@ namespace Unity.Netcode
             // Log the error that the NetworkObject failed to construct
             if (networkObject == null)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogError($"[{nameof(NetworkObject.GlobalObjectIdHash)}={serializedObject.Hash}] Failed to spawn {nameof(NetworkObject)}!");
-                }
-
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"Failed to spawn {nameof(NetworkObject)}!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash));
                 return false;
             }
 
+            networkObject.InScenePlaced = serializedObject.IsSceneObject;
             networkObject.NetworkManagerOwner = NetworkManager;
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
@@ -1227,11 +1222,7 @@ namespace Unity.Netcode
 
             if (networkObject.IsSpawned)
             {
-                if (NetworkManager.LogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogErrorServer($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
-                }
-
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Normal, $"{nameof(NetworkObject)} is already spawned!").AddNetworkObject(networkObject));
                 // Mark the spawn as a success if the object is already spawned
                 return true;
             }
@@ -1455,13 +1446,13 @@ namespace Unity.Netcode
         internal void ServerResetShutdownStateForSceneObjects()
         {
             var networkObjects = FindObjects.ByType<NetworkObject>(orderByIdentifier: true, includeInactive: true);
-            foreach (var sobj in networkObjects)
+            foreach (var obj in networkObjects)
             {
-                if (!sobj.InScenePlaced)
+                // Only reset things that have been spawned are in-scene placed, and is assigned to the relative NetworkManager (for integration testing purposes)
+                if (obj.HasBeenSpawned && obj.InScenePlaced && obj.NetworkManagerOwner == NetworkManager)
                 {
-                    continue;
+                    obj.ResetOnShutdown();
                 }
-                sobj.ResetOnDespawn();
             }
         }
 
@@ -1725,11 +1716,10 @@ namespace Unity.Netcode
                             NetworkLog.LogError($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} could not be moved to the root when its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} was being destroyed");
                         }
                     }
-                    else
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
-                        }
+                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                    }
                 }
             }
 
