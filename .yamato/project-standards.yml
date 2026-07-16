@@ -54,7 +54,59 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
     - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix # Auto-fix formatting issues
     - git checkout -- {{ project.path }}/Packages/manifest.json {{ project.path }}/Packages/packages-lock.json {{ project.path }}/ProjectSettings/ProjectVersion.txt 2>/dev/null || true # Restore files that Unity may have modified (we only want to check code formatting)
-    - 'git diff --exit-code || (echo "ERROR: Code formatting issues found. Run dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix locally and commit the changes." && exit 1)' # Fail if formatter made any changes
+    - 'git diff --exit-code || (echo "ERROR: Code formatting issues found. Fix by EITHER running locally: dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix (then commit), OR triggering the standards_fix_and_push job in Yamato on this branch to auto-fix and push the changes." && exit 1)' # Fail if formatter made any changes
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# AUTO-FIX & PUSH JOB-----------------------------------------------------------------
+  # This job is intentionally NOT wired into any trigger pipeline (see _triggers.yml / _run-all.yml).
+  # It is meant to be run MANUALLY from Yamato against the branch that has a failing standards check.
+  # It runs the SAME `netcode.standards --fix` the check job runs (for every project), then commits
+  # and pushes the resulting formatting changes back to that branch so the standards check passes.
+  # It exists because fixing locally requires a matching installed editor + SyncSolution + the pinned
+  # SDK (global.json); this job removes that setup burden.
+  # Pushing reuses NETCODE_GITHUB_TOKEN (same token as the release automation in ngo-publish.yml).
+  # LIMITATION: cannot push to pull requests opened from forks (no write access to fork branches);
+  # those still need the local --fix workflow. Protected branches will reject the push by design.
+#------------------------------------------------------------------------------------
+
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
+standards_fix_and_push_{{ platform.name }}_{{ editor }}:
+  name: Standards Fix and Push - NGO (all projects) [{{ platform.name }}, {{ editor }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }}
+{% endif %}
+  commands:
+    - dotnet --version
+    - dotnet format --version
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # Downloads basic editor
+{% for project in projects.all %}
+    - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # Sync solution so csproj references resolve (required by the style pass)
+    - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix # Auto-fix formatting issues
+    - git checkout -- {{ project.path }}/Packages/manifest.json {{ project.path }}/Packages/packages-lock.json {{ project.path }}/ProjectSettings/ProjectVersion.txt 2>/dev/null || true # Restore files Unity may have modified
+{% endfor %}
+    - |
+      if [ -z "$(git status --porcelain)" ]; then
+        echo "No formatting changes to push; branch already conforms to standards."
+        exit 0
+      fi
+      if [ -z "$NETCODE_GITHUB_TOKEN" ]; then
+        echo "ERROR: NETCODE_GITHUB_TOKEN is not set; cannot push fixes." && exit 1
+      fi
+      if [ -z "$GIT_BRANCH" ]; then
+        echo "ERROR: GIT_BRANCH is not set; run this job against a branch, not a detached revision." && exit 1
+      fi
+      git config user.name "netcode-automation"
+      git config user.email "svc-netcode-sdk@unity3d.com"
+      git add -A
+      git commit -m "Apply netcode.standards formatting fixes"
+      git remote set-url origin "https://x-access-token:${NETCODE_GITHUB_TOKEN}@github.com/Unity-Technologies/com.unity.netcode.gameobjects.git"
+      git push origin "HEAD:${GIT_BRANCH}"
 {% endfor -%}
 {% endfor -%}
