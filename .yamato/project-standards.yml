@@ -17,6 +17,10 @@
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
   # Requires .NET SDK installed (should be preinstalled on the image so we just check for version)
+  # The SDK version is pinned in the repo-root global.json so `dotnet format` uses the same Roslyn
+  # formatter locally and in CI. Feature-band differences (e.g. 10.0.2xx vs 10.0.3xx) produce different
+  # whitespace/style results, which caused CI failures that could not be reproduced locally. If the
+  # image SDK changes, update global.json to match or `dotnet --version` below will fail fast.
   # Needs Unity Editor for solution synchronization
   # Uses custom standards validation tool (netcode.standards)
   # Generates no test artifacts (pass/fail only). Eventual failure will be visible in the logs
@@ -41,7 +45,8 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    # .NET environment setup. Ensures required .NET SDK and formatting tools are available
+    # .NET environment setup. Ensures required .NET SDK and formatting tools are available.
+    # These run from the repo root so the global.json pin applies; a missing pinned SDK fails here.
     - dotnet --version
     - dotnet format --version
     
