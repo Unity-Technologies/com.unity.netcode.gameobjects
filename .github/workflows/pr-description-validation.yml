@@ -53,6 +53,10 @@ jobs:
                 description: 'PR description must include a "## Backports" section. Please add this section and provide information about this PR backport to develop, develop-2.0.0 or develop-3.x.x branch respectively or explain why backport is not needed.'
               },
               {
+                header: '## Up-port',
+                description: 'PR description must include a "## Up-port" section. Please add this section and provide information about this PR up-port to develop-3.0.0 branch or explain why up-port is not needed.'
+              },
+              {
                 header: '## Testing & QA',
                 description: 'PR description must include a "## Testing & QA" section. Please add this section and provide information about the testing performed for this PR. It can range from adding unit tests to full samples and is needed from QA side to analyze PRs while Playtesting for the release.'
               },
