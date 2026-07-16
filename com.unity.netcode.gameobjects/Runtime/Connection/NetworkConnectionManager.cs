@@ -967,19 +967,18 @@ namespace Unity.Netcode
             {
                 return (true, playerPrefabHash.Value);
             }
-            else
-                if (NetworkManager.NetworkConfig.PlayerPrefab != null)
+            else if (NetworkManager.NetworkConfig.PlayerPrefab != null)
+            {
+                var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (networkObject != null)
                 {
-                    var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                    if (networkObject != null)
-                    {
-                        return (true, networkObject.GlobalObjectIdHash);
-                    }
-                    else
-                    {
-                        NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
-                    }
+                    return (true, networkObject.GlobalObjectIdHash);
                 }
+                else
+                {
+                    NetworkManager.Log.Error(new Logging.Context(LogLevel.Error, $"Player prefab {NetworkManager.NetworkConfig.PlayerPrefab.name} has no {nameof(NetworkObject)}!"));
+                }
+            }
             return (false, 0);
         }
 
