@@ -1204,31 +1204,51 @@ namespace Unity.Netcode
         private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)
         {
             var sceneManager = m_NetworkManager.SceneManager;
-            var ownerId = m_NetworkManager.LocalClientId;
+            var networkManagerClientId = m_NetworkManager.LocalClientId;
             if (IsForwarding)
             {
-                ownerId = m_OwnerId;
+                networkManagerClientId = m_OwnerId;
             }
 
             // Write the owner identifier
-            writer.WriteValueSafe(ownerId);
+            writer.WriteValueSafe(networkManagerClientId);
 
-            // Write the number of scene handles
-            writer.WriteValueSafe(sceneManager.ObjectsMigratedIntoNewScene.Count);
+            // Create a place holder for the number of entries written.
+            // Distributed authority this could end up being just a single entry for
+            // one of several scenes loaded. As such, we need to count how many entries
+            // are actually written.
+            var countPosition = writer.Position;
+            writer.WriteValueSafe(0);
+            var entriesWritten = 0;
             foreach (var sceneHandleObjects in sceneManager.ObjectsMigratedIntoNewScene)
             {
-                if (!sceneHandleObjects.Value.ContainsKey(ownerId))
+                // Since these are separated by scene then owner, there could be scenes that have
+                // no changes.
+                if (!sceneHandleObjects.Value.ContainsKey(networkManagerClientId))
                 {
-                    throw new Exception($"Trying to send object scene migration for Client-{ownerId} but the client has no entries to send!");
+                    continue;
                 }
                 // Write the scene handle
                 writer.WriteValueSafe(sceneHandleObjects.Key);
                 // Write the number of NetworkObjectIds to expect
-                writer.WriteValueSafe(sceneHandleObjects.Value[ownerId].Count);
-                foreach (var networkObject in sceneHandleObjects.Value[ownerId])
+                writer.WriteValueSafe(sceneHandleObjects.Value[networkManagerClientId].Count);
+                foreach (var networkObject in sceneHandleObjects.Value[networkManagerClientId])
                 {
                     writer.WriteValueSafe(networkObject.NetworkObjectId);
                 }
+                entriesWritten++;
+            }
+            if (entriesWritten == 0)
+            {
+                throw new Exception($"Trying to send object scene migration for Client-{networkManagerClientId} but the client has no entries to send!");
+            }
+            else
+            {
+                // Write the number of entries written
+                var endPosition = writer.Position;
+                writer.Seek(countPosition);
+                writer.WriteValueSafe(entriesWritten);
+                writer.Seek(endPosition);
             }
         }
 
