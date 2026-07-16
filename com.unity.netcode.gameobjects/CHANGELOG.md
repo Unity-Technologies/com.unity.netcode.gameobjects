@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where `NetworkAnimator` did no bounds check on the parameter index read prior to obtaining a pointer to the location within the array. (#4090)
 - Issue where scene migration in a distributed authority session would throw an exception on clients migrating their owned `NetworkObject` instances to a different scene.(#4086)
 - Issue where migrating a dynamically spawned or in-scene placed `NetworkObject` into a different scene during awake could result in that spawned instance to not be synchronized. (#4086)
 - Issue where a NullReferenceException was thrown when a non-authority failed to spawn a NetworkObject. (#4067)
