@@ -56,6 +56,12 @@ _Does the change require QA team to:_
 
 If any boxes above are checked the QA team will be automatically added as a PR reviewer.
 
+## Up-port
+[//]: # (
+This section is REQUIRED and should link to the PR that targets develop-3.0.0 branch. Assuming that the PR lands agains default develop-2.0.0 branch
+If this is not needed, for example feature specific to NGOv2.X, then just mention this fact.
+)
+
 ## Backports
 [//]: # (
 This section is REQUIRED and should link to the PR that targets other NGO version which is either develop or develop-2.0.0 branch
