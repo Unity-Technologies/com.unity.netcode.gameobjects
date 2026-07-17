@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer, RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Ignored test tracked in MTT-15473
+        //[UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer, RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Ignored test tracked in MTT-15473
         public IEnumerator NetworkPrefabHandlerSpawnAndSynchronizeTests()
         {
             var nonAuthority = GetNonAuthorityNetworkManager();
