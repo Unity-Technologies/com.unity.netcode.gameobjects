@@ -19,6 +19,28 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_ClientSideValidPrefab;
         private GameObject m_ClientSideExceptionPrefab;
 
+        public class VerifyLastClientSentRpcToServer : NetworkBehaviour
+        {
+            public bool RpcReceived { get; private set; }
+
+            protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+            {
+                RpcReceived = false;
+                base.OnNetworkPreSpawn(ref networkManager);
+            }
+
+            public void DelayUntilOneMessageReceivedRpc(RpcParams rpcParams = default)
+            {
+                RpcReceived = true;
+            }
+        }
+
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<VerifyLastClientSentRpcToServer>();
+            base.OnCreatePlayerPrefab();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_ValidPrefab = CreateNetworkObjectPrefab("ValidPrefab");
@@ -73,6 +95,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start and synchronize the new client
             yield return StartClient(newClient);
+            AssertOnTimeout($"Timed out waiting for the late joining client, {newClient.name}, to connect!");
+
 
             // Validate the valid prefab spawned on all clients without issue
             var expectedAuthorityHash = m_ValidPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
@@ -92,6 +116,21 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(networkManager.SpawnManager.SpawnedObjects.ContainsKey(exceptionObject.NetworkObjectId), Is.False, "Non authority should not have spawned exception object!");
                 }
             }
+
+            // Assure this test continues to run until we verify the late joining client has sent 1 message to the server
+            // This should be the fix for MTT-15473 where the test finishes/exits before the message from the client has been received and processed by the server.
+            Assert.IsTrue(authority.SpawnManager.SpawnedObjects.ContainsKey(newClient.LocalClient.PlayerObject.NetworkObjectId), $"Server does not have a player for Client-{newClient.LocalClientId}!");
+
+            // Get server and late joining client's VerifyLastClientSentRpcToServer NetworkBehaviour
+            var serverLateClientInstance = authority.SpawnManager.SpawnedObjects[newClient.LocalClient.PlayerObject.NetworkObjectId].GetComponent<VerifyLastClientSentRpcToServer>();
+            var sendRpc = newClient.LocalClient.PlayerObject.GetComponent<VerifyLastClientSentRpcToServer>();
+
+            // Send a message from the late joining client to the server
+            sendRpc.DelayUntilOneMessageReceivedRpc();
+
+            // Wait for the server to have received this message before exiting the test.
+            // If the log message has not been received by the server at this point, then there is some other type of bug specific to iOS and Mac.
+            yield return WaitForConditionOrTimeOut(() => serverLateClientInstance.RpcReceived);
         }
     }
 }
