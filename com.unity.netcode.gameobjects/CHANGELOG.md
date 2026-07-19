@@ -6,20 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.13.1] - 2026-07-19
 
 ### Added
 
 - Single player session section to provide users with information about `SinglePlayerTransport` and an example script of how to switch between single and multi player sessions. (#4062)
-
-### Changed
-
-
-### Deprecated
-
-
-### Removed
-
 
 ### Fixed
 
@@ -32,12 +23,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
 - Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
 - Fixed AnticipatedNetworkTransform not respecting the InLocalSpace flag. (#3995)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.13.0] - 2026-06-21
 
