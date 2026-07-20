@@ -1259,6 +1259,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// This provides a means to determine if the post processing had applied
+        /// the in-scene placed status or if it was already serialized. This is used
+        /// when determining if the thing being spawned is a valid thing to spawn.
+        /// </summary>
+        internal bool InScenePlacedPostProcessorMarkedDuringRuntime;
+
+        /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
         /// </summary>
         /// <remarks>Only use this when using custom scene loading</remarks>
@@ -1877,6 +1884,13 @@ namespace Unity.Netcode
                 }
             }
 
+            // Trap for runtime generated instances as this is not valid
+            if (GlobalObjectIdHash == 0)
+            {
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"{name} has a {nameof(GlobalObjectIdHash)} value of {GlobalObjectIdHash}(zero)!" +
+                    $"This is typically a sign of runtime generated {nameof(NetworkObject)}s which is not supported."));
+                return;
+            }
 
             // Calculate the legacy IsSceneObject value as the public field is obsolete with warning
             // We can't break the public behavior of the field.
@@ -1884,11 +1898,13 @@ namespace Unity.Netcode
             var legacyIsSceneObject = IsSceneObject.HasValue && IsSceneObject.Value;
 #pragma warning restore CS0618 // Type or member is obsolete
 
-            // If SpawnInternal is being called on an object that is marked as InScenePlaced,
-            // The scene object was never automatically spawned when the scene was loaded.
-            // Count this object as a dynamically spawned object.
-            // TODO-[MTT-15388]: Actually support disabled/not spawned InScenePlaced NetworkObjects
-            if (InScenePlaced && !HasBeenSpawned)
+            // If the initial state of the GameObject was disabled and InScenePlaced is marked,
+            // then spawn it as in-scene placed.[MTT-15388]
+            // Otherwise:
+            // If we are marked as in-scene place, have never been spawned, and the root GameObject
+            // was not disabled upon being instantiated, then treat this as a dynamically spawned
+            // instance.
+            if (InScenePlaced && !m_GameObjectWasDisabledWhenInstantiated && !HasBeenSpawned)
             {
                 if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
@@ -3701,10 +3717,13 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_GameObjectWasDisabledWhenInstantiated;
+
         private void Awake()
         {
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
+            m_GameObjectWasDisabledWhenInstantiated = gameObject.activeInHierarchy;
         }
 
         /// <summary>

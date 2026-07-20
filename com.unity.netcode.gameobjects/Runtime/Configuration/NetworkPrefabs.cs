@@ -48,21 +48,80 @@ namespace Unity.Netcode
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
         [NonSerialized]
+        private Dictionary<uint, NetworkPrefab> m_PrefabHashIds = new Dictionary<uint, NetworkPrefab>();
+
+        [NonSerialized]
         private List<NetworkPrefab> m_RuntimeAddedPrefabs = new List<NetworkPrefab>();
 
-        private void AddTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
+        private bool InternalAddPrefab(NetworkPrefab networkPrefab)
         {
             if (AddPrefabRegistration(networkPrefab))
             {
                 // Don't add this to m_RuntimeAddedPrefabs
                 // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
                 m_Prefabs.Add(networkPrefab);
+
+                // We are not getting all potential overrides but just determining if the prefab has been registered.
+                if (!m_PrefabHashIds.ContainsKey(networkPrefab.SourcePrefabGlobalObjectIdHash))
+                {
+                    m_PrefabHashIds.Add(networkPrefab.SourcePrefabGlobalObjectIdHash, networkPrefab);
+                }
+                if (!m_PrefabHashIds.ContainsKey(networkPrefab.TargetPrefabGlobalObjectIdHash))
+                {
+                    m_PrefabHashIds.Add(networkPrefab.TargetPrefabGlobalObjectIdHash, networkPrefab);
+                }
+                return true;
             }
+            return false;
+        }
+
+        private void InternalRemovePrefab(NetworkPrefab networkPrefab)
+        {
+            m_Prefabs.Remove(networkPrefab);
+            m_PrefabHashIds.Remove(networkPrefab.SourcePrefabGlobalObjectIdHash);
+        }
+
+        internal bool IsBasedOnRegisteredPrefab(NetworkObject networkObject)
+        {
+
+
+            return m_PrefabHashIds.ContainsKey(networkObject.GlobalObjectIdHash);
+        }
+
+        internal bool IsActualPrefabAsset(NetworkObject networkObject)
+        {
+            var isActualPrefabAsset = false;
+            if (m_PrefabHashIds.TryGetValue(networkObject.GlobalObjectIdHash, out NetworkPrefab networkPrefab))
+            {
+                switch(networkPrefab.Override)
+                {
+                    case NetworkPrefabOverride.Prefab:
+                    case NetworkPrefabOverride.None:
+                        {
+                            isActualPrefabAsset = networkPrefab.Prefab != null && networkObject.gameObject == networkPrefab.Prefab;
+                            break;
+                        }
+                    case NetworkPrefabOverride.Hash:
+                        {
+                            isActualPrefabAsset = networkPrefab.SourceHashToOverride == networkObject.GlobalObjectIdHash;
+                            break;
+                        }
+                }
+            }
+            return isActualPrefabAsset;
+        }
+
+        private void AddTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
+        {
+            // Don't add this to m_RuntimeAddedPrefabs
+            // This prefab is now in the PrefabList, so if we shutdown and initialize again, we'll pick it up from there.
+            InternalAddPrefab(networkPrefab);
+            // Log warning if this returns false?
         }
 
         private void RemoveTriggeredByNetworkPrefabList(NetworkPrefab networkPrefab)
         {
-            m_Prefabs.Remove(networkPrefab);
+            InternalRemovePrefab(networkPrefab);
         }
 
         /// <summary>
@@ -93,6 +152,7 @@ namespace Unity.Netcode
         /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization</param>
         public void Initialize(bool warnInvalid = true)
         {
+            m_PrefabHashIds.Clear();
             m_Prefabs.Clear();
             NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
@@ -113,7 +173,7 @@ namespace Unity.Netcode
                     prefabs.AddRange(list.PrefabList);
                 }
             }
-
+            m_PrefabHashIds = new Dictionary<uint, NetworkPrefab>();
             m_Prefabs = new List<NetworkPrefab>();
 
             List<NetworkPrefab> removeList = null;
@@ -124,11 +184,7 @@ namespace Unity.Netcode
 
             foreach (var networkPrefab in prefabs)
             {
-                if (AddPrefabRegistration(networkPrefab))
-                {
-                    m_Prefabs.Add(networkPrefab);
-                }
-                else
+                if (!InternalAddPrefab(networkPrefab))
                 {
                     removeList?.Add(networkPrefab);
                 }
@@ -136,11 +192,7 @@ namespace Unity.Netcode
 
             foreach (var networkPrefab in m_RuntimeAddedPrefabs)
             {
-                if (AddPrefabRegistration(networkPrefab))
-                {
-                    m_Prefabs.Add(networkPrefab);
-                }
-                else
+                if (!InternalAddPrefab(networkPrefab))
                 {
                     removeList?.Add(networkPrefab);
                 }
@@ -171,14 +223,12 @@ namespace Unity.Netcode
         /// </remarks>
         public bool Add(NetworkPrefab networkPrefab)
         {
-            if (AddPrefabRegistration(networkPrefab))
+            var added = InternalAddPrefab(networkPrefab);
+            if (added)
             {
-                m_Prefabs.Add(networkPrefab);
                 m_RuntimeAddedPrefabs.Add(networkPrefab);
-                return true;
             }
-
-            return false;
+            return added;
         }
 
         /// <summary>
@@ -197,8 +247,7 @@ namespace Unity.Netcode
             {
                 throw new ArgumentNullException(nameof(prefab));
             }
-
-            m_Prefabs.Remove(prefab);
+            InternalRemovePrefab(prefab);
             m_RuntimeAddedPrefabs.Remove(prefab);
             OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
@@ -294,14 +343,12 @@ namespace Unity.Netcode
 
             uint source = networkPrefab.SourcePrefabGlobalObjectIdHash;
             uint target = networkPrefab.TargetPrefabGlobalObjectIdHash;
-
             // Make sure the prefab isn't already registered.
             if (NetworkPrefabOverrideLinks.ContainsKey(source))
             {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
+                var nameOrHashOverride = networkPrefab.Override == NetworkPrefabOverride.Hash ? $"Hash: {networkPrefab.SourcePrefabGlobalObjectIdHash}" : networkPrefab.Prefab?.name;
                 // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {source}!");
+                Debug.LogError($"{nameof(NetworkPrefab)} ({nameOrHashOverride}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {source}!");
                 return false;
             }
 
