@@ -25,14 +25,12 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
-        protected override void OnServerAndClientsCreated()
+        private GameObject GenerateAndRegisterPrefab()
         {
-            m_Prefab = new GameObject("Object");
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
-            m_Prefab.AddComponent<EmptyComponent>();
-
+            var originalPrefabInstance = NetcodeIntegrationTestHelpers.CreateNetworkObject("PrefabTest");
             // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(originalPrefabInstance.GetComponent<NetworkObject>());
+            
 
             m_ServerNetworkManager.NetworkConfig.SpawnTimeout = 0;
             m_ServerNetworkManager.NetworkConfig.ForceSamePrefabs = false;
@@ -41,6 +39,12 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = 0;
                 client.NetworkConfig.ForceSamePrefabs = false;
             }
+            return originalPrefabInstance;
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            RegisterPrefab();
         }
 
         private EmptyComponent GetObjectForClient(ulong clientId)
@@ -50,15 +54,25 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
                 {
-                    return component;
+                    var prefabGlobalObjectIdHash = m_Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                    var componentGlobalObjectIdHash = m_Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                    if (prefabGlobalObjectIdHash == componentGlobalObjectIdHash)
+                    {
+                        return component;
+                    }
                 }
             }
             return null;
         }
 
-        private void RegisterPrefab()
+        private void RegisterPrefab(bool includeClients = true)
         {
+            m_Prefab = GenerateAndRegisterPrefab();
             m_ServerNetworkManager.AddNetworkPrefab(m_Prefab);
+            if (!includeClients)
+            {
+                return;
+            }
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.AddNetworkPrefab(m_Prefab);
@@ -89,7 +103,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSpawningAfterAddingServerPrefabButBeforeAddingClientPrefab_SpawnFails()
         {
-            m_ServerNetworkManager.AddNetworkPrefab(m_Prefab);
+            RegisterPrefab(false);
 
             var serverObject = Object.Instantiate(m_Prefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
@@ -104,10 +118,12 @@ namespace Unity.Netcode.RuntimeTests
             RegisterPrefab();
 
             var serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
-            serverObject.GetComponent<NetworkObject>().Spawn();
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<CreateObjectMessage>(m_ClientNetworkManagers[0]);
-            Assert.IsNotNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
+            var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
+            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverNetworkObject.Spawn();
+            yield return WaitForSpawnedOnAllOrTimeOut(serverObject);
+            AssertOnTimeout($"{serverObject.name} did not spawn on all clients!");
+            Assert.IsTrue(m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(serverNetworkObject.NetworkObjectId), $"Client did not spawn object!");
         }
 
         [UnityTest]
@@ -116,10 +132,13 @@ namespace Unity.Netcode.RuntimeTests
             RegisterPrefab();
 
             var serverObject = Object.Instantiate(m_Prefab);
+            var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
+
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
-            Assert.IsNotNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
+            yield return WaitForSpawnedOnAllOrTimeOut(serverObject);
+            AssertOnTimeout($"{serverObject.name} did not spawn on all clients!");
+            Assert.IsTrue(m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(serverNetworkObject.NetworkObjectId), $"Client did not spawn object!");
 
             serverObject.GetComponent<NetworkObject>().Despawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<DestroyObjectMessage>(m_ClientNetworkManagers[0]);
