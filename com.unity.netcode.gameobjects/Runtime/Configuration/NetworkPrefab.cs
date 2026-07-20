@@ -173,7 +173,7 @@ namespace Unity.Netcode
 
                     return false;
                 }
-                
+
 #if UNIFIED_NETCODE
                 // Mark this network prefab as having to be registered via the unified API
                 HasGhost = networkObject.HasGhost;

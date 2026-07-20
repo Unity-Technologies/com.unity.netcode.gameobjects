@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Single player session section to provide users with information about `SinglePlayerTransport` and an example script of how to switch between single and multi player sessions. (#4062)
 
 ### Changed
 
@@ -28,6 +27,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+
+### Security
+
+
+### Obsolete
+
+
+## [2.13.1] - 2026-07-19
+
+### Added
+
+- Single player session section to provide users with information about `SinglePlayerTransport` and an example script of how to switch between single and multi player sessions. (#4062)
+
+### Fixed
+
 - Issue where `NetworkAnimator` did no bounds check on the parameter index read prior to obtaining a pointer to the location within the array. (#4090)
 - Issue where scene migration in a distributed authority session would throw an exception on clients migrating their owned `NetworkObject` instances to a different scene.(#4086)
 - Issue where migrating a dynamically spawned or in-scene placed `NetworkObject` into a different scene during awake could result in that spawned instance to not be synchronized. (#4086)
@@ -37,12 +51,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue where NetworkRigidbodyBase was not applying rotation correctly when using Rigidbody2D. (#4012)
 - Issue where NetworkRigidbodyBase was always checking the 3D rigid body's interpolation mode when determining if it is kinematic and needs to put the rigid body to sleep and then switch to interpolation. (#4012)
 - Fixed AnticipatedNetworkTransform not respecting the InLocalSpace flag. (#3995)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.13.0] - 2026-06-21
 
