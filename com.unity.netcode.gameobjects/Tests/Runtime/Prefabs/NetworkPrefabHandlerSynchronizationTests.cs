@@ -35,7 +35,10 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkObjectToSpawnOnClient = m_ClientSideValidPrefab.GetComponent<NetworkObject>();
             nonAuthority.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, new NetworkPrefabExceptionThrower());
-            nonAuthority.PrefabHandler.AddHandler(m_ValidPrefab, new NetworkPrefabInstanceHandler(networkObjectToSpawnOnClient));
+            var prefabHandlerObject = new GameObject();
+            var prefabHandler = prefabHandlerObject.AddComponent<NetworkPrefabInstanceHandler>();
+            prefabHandler.Initialize(nonAuthority, m_ValidPrefab.GetComponent<NetworkObject>());
+            //nonAuthority.PrefabHandler.AddHandler(m_ValidPrefab, new NetworkPrefabInstanceHandler(networkObjectToSpawnOnClient));
 
             var authority = GetAuthorityNetworkManager();
 
@@ -60,8 +63,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // Create a new client and register the same PrefabHandlers on the client
             var newClient = CreateNewClient();
+            var prefabHandlerObject2 = new GameObject();
+            var prefabHandler2 = prefabHandlerObject2.AddComponent<NetworkPrefabExceptionThrower>();
+
             newClient.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, new NetworkPrefabExceptionThrower());
-            newClient.PrefabHandler.AddHandler(m_ValidPrefab, new NetworkPrefabInstanceHandler(networkObjectToSpawnOnClient));
+
+            var prefabHandlerObject3 = new GameObject();
+            var prefabHandler3 = prefabHandlerObject3.AddComponent<NetworkPrefabInstanceHandler>();
+            prefabHandler3.Initialize(nonAuthority, networkObjectToSpawnOnClient);
 
             // Expect assertions from the new client
             LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
@@ -92,6 +101,8 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(networkManager.SpawnManager.SpawnedObjects.ContainsKey(exceptionObject.NetworkObjectId), Is.False, "Non authority should not have spawned exception object!");
                 }
             }
+
+            Object.Destroy(prefabHandlerObject);
         }
     }
 }
