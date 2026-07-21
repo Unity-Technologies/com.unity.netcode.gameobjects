@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -73,8 +74,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForSpawnedOnAllOrTimeOut(spawned);
             AssertOnTimeout($"Not all clients spawned {spawned.name}!");
 
-
-
             // When running with Distributed Authority, test a late-joiner after an ownership change
             // The object owner will synchronize the late joining client, showing that the instantiationData will survive host migration.
             if (m_DistributedAuthority)
@@ -111,8 +110,8 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
         {
             var authority = GetAuthorityNetworkManager();
-            var instance = UnityEngine.Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
-            
+            var instance = Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
+
             GetAuthorityNetworkManager().PrefabHandler.SetInstantiationData(instance, data);
 
             SpawnObjectInstance(instance, authority);
@@ -137,12 +136,12 @@ namespace Unity.Netcode.RuntimeTests
             public override NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
                 InstantiationData = data;
-                return UnityEngine.Object.Instantiate(m_Prefab, position, rotation).GetComponent<NetworkObject>();
+                return Object.Instantiate(m_Prefab, position, rotation).GetComponent<NetworkObject>();
             }
 
             public override void Destroy(NetworkObject networkObject)
             {
-                UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
+                Object.DestroyImmediate(networkObject.gameObject);
             }
         }
 
@@ -158,7 +157,9 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             public bool IsSynchronizedWith(NetworkSerializableTest other)
-                => Value == other.Value && Math.Abs(Value2 - other.Value2) < 0.0001f;
+            {
+                return Value == other.Value && Math.Abs(Value2 - other.Value2) < 0.0001f;
+            }
         }
     }
 }

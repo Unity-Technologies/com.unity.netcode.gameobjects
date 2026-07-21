@@ -41,10 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             m_PrefabToSpawn = CreateNetworkObjectPrefab("TestPrefab");
             m_PrefabToSpawn.AddComponent<SimpleNetworkBehaviour>();
 
-            var childObject = new GameObject
-            {
-                name = "ChildObject"
-            };
+            var childObject = new GameObject("ChildObject");
             childObject.transform.parent = m_PrefabToSpawn.transform;
             childObject.AddComponent<NetworkTransform>();
             base.OnServerAndClientsCreated();
@@ -147,6 +144,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // We make an instance of the m_PrefabToSpawn
             var validateInstance = Object.Instantiate(m_PrefabToSpawn);
+
             // Then destroy the NetworkObject componwent of that instance.
             Object.DestroyImmediate(validateInstance.GetComponent<NetworkObject>());
 
@@ -161,6 +159,7 @@ namespace Unity.Netcode.RuntimeTests
 
             simpleNetworkBehaviour.IsSpawned = false;
             simpleNetworkBehaviour = null;
+
             // Destroy this test instance
             Object.DestroyImmediate(validateInstance);
            
