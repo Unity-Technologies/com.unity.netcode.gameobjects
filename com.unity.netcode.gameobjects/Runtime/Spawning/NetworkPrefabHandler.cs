@@ -422,7 +422,7 @@ namespace Unity.Netcode
                 m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
             }
 
-#if UNIFIED_NETCODE
+#if UNIFIED_NGO_REGISTERS_PREFABS
             if (m_NetworkManager.IsListening)
             {
                 var ghost = prefab.GetComponent<GhostAdapter>();
