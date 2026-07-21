@@ -1603,13 +1603,13 @@ namespace Unity.Netcode
                     // Then it is not in-scene placed and was pre-instantiated. Spawn dynamically.
                     networkObject.InScenePlaced = false;
                 }
-                else if(networkObject.InScenePlaced && !networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
+                else if (networkObject.InScenePlaced && !networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
                 {
                     // If this was marked as in-scene placed within the editor, then it is valid.
                     isInvalidInstanceToSpawn = false;
                 }
 
-                 var wasPreInstantiated = !networkObject.IsSpawned && !networkObject.InScenePlaced;
+                var wasPreInstantiated = !networkObject.IsSpawned && !networkObject.InScenePlaced;
 
                 // Dynamically created NetworkObjects instances are not supported and will not be spawned during the sweep.
                 if (wasPreInstantiated && isInvalidInstanceToSpawn)

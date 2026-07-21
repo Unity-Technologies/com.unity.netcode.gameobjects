@@ -47,6 +47,8 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
+        internal List<NetworkPrefab> InternalPrefabs => m_Prefabs;
+
         [NonSerialized]
         private Dictionary<uint, NetworkPrefab> m_PrefabHashIds = new Dictionary<uint, NetworkPrefab>();
 
@@ -93,7 +95,7 @@ namespace Unity.Netcode
             var isActualPrefabAsset = false;
             if (m_PrefabHashIds.TryGetValue(networkObject.GlobalObjectIdHash, out NetworkPrefab networkPrefab))
             {
-                switch(networkPrefab.Override)
+                switch (networkPrefab.Override)
                 {
                     case NetworkPrefabOverride.Prefab:
                     case NetworkPrefabOverride.None:
