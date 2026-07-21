@@ -19,6 +19,28 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_ClientSideValidPrefab;
         private GameObject m_ClientSideExceptionPrefab;
 
+        public class VerifyLastClientSentRpcToServer : NetworkBehaviour
+        {
+            public bool RpcReceived { get; private set; }
+
+            protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+            {
+                RpcReceived = false;
+                base.OnNetworkPreSpawn(ref networkManager);
+            }
+
+            public void DelayUntilOneMessageReceivedRpc(RpcParams rpcParams = default)
+            {
+                RpcReceived = true;
+            }
+        }
+
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<VerifyLastClientSentRpcToServer>();
+            base.OnCreatePlayerPrefab();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_ValidPrefab = CreateNetworkObjectPrefab("ValidPrefab");
@@ -28,17 +50,22 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer, RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Ignored test tracked in MTT-15473
         public IEnumerator NetworkPrefabHandlerSpawnAndSynchronizeTests()
         {
             var nonAuthority = GetNonAuthorityNetworkManager();
 
             var networkObjectToSpawnOnClient = m_ClientSideValidPrefab.GetComponent<NetworkObject>();
-            nonAuthority.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, new NetworkPrefabExceptionThrower());
-            var prefabHandlerObject = new GameObject();
-            var prefabHandler = prefabHandlerObject.AddComponent<NetworkPrefabInstanceHandler>();
-            prefabHandler.Initialize(nonAuthority, m_ValidPrefab.GetComponent<NetworkObject>());
-            //nonAuthority.PrefabHandler.AddHandler(m_ValidPrefab, new NetworkPrefabInstanceHandler(networkObjectToSpawnOnClient));
+
+            var clientSideHandler = new GameObject();
+            var clientPrefabHandler = clientSideHandler.AddComponent<NetworkPrefabInstanceHandler>();
+            clientPrefabHandler.Initialize(nonAuthority, m_ClientSideValidPrefab.GetComponent<NetworkObject>());
+
+            nonAuthority.PrefabHandler.AddHandler(m_ValidPrefab, clientPrefabHandler);
+
+            var clientSideExceptionHandler = new GameObject();
+            var clientSideExceptionPrefabHandler = clientSideExceptionHandler.AddComponent<NetworkPrefabExceptionThrower>();
+
+            nonAuthority.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, clientSideExceptionPrefabHandler);
 
             var authority = GetAuthorityNetworkManager();
 
@@ -63,14 +90,16 @@ namespace Unity.Netcode.RuntimeTests
 
             // Create a new client and register the same PrefabHandlers on the client
             var newClient = CreateNewClient();
-            var prefabHandlerObject2 = new GameObject();
-            var prefabHandler2 = prefabHandlerObject2.AddComponent<NetworkPrefabExceptionThrower>();
 
-            newClient.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, new NetworkPrefabExceptionThrower());
+            var lateJoinClientSideHandler = new GameObject();
+            var lateJoinClientPrefabHandler = clientSideHandler.AddComponent<NetworkPrefabInstanceHandler>();
+            var lateJoinExceptionHandler = new GameObject();
+            var lateJoinClientExceptionHandler = lateJoinExceptionHandler.AddComponent<NetworkPrefabExceptionThrower>();
 
-            var prefabHandlerObject3 = new GameObject();
-            var prefabHandler3 = prefabHandlerObject3.AddComponent<NetworkPrefabInstanceHandler>();
-            prefabHandler3.Initialize(nonAuthority, networkObjectToSpawnOnClient);
+            lateJoinClientPrefabHandler.Initialize(newClient, m_ClientSideValidPrefab.GetComponent<NetworkObject>());
+
+            newClient.PrefabHandler.AddHandler(m_ClientSideExceptionPrefab, lateJoinClientExceptionHandler);
+            newClient.PrefabHandler.AddHandler(m_ValidPrefab, lateJoinClientPrefabHandler);
 
             // Expect assertions from the new client
             LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
@@ -82,6 +111,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start and synchronize the new client
             yield return StartClient(newClient);
+            AssertOnTimeout($"Timed out waiting for the late joining client, {newClient.name}, to connect!");
+
 
             // Validate the valid prefab spawned on all clients without issue
             var expectedAuthorityHash = m_ValidPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
@@ -102,7 +133,20 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            Object.Destroy(prefabHandlerObject);
+            // Assure this test continues to run until we verify the late joining client has sent 1 message to the server
+            // This should be the fix for MTT-15473 where the test finishes/exits before the message from the client has been received and processed by the server.
+            Assert.IsTrue(authority.SpawnManager.SpawnedObjects.ContainsKey(newClient.LocalClient.PlayerObject.NetworkObjectId), $"Server does not have a player for Client-{newClient.LocalClientId}!");
+
+            // Get server and late joining client's VerifyLastClientSentRpcToServer NetworkBehaviour
+            var serverLateClientInstance = authority.SpawnManager.SpawnedObjects[newClient.LocalClient.PlayerObject.NetworkObjectId].GetComponent<VerifyLastClientSentRpcToServer>();
+            var sendRpc = newClient.LocalClient.PlayerObject.GetComponent<VerifyLastClientSentRpcToServer>();
+
+            // Send a message from the late joining client to the server
+            sendRpc.DelayUntilOneMessageReceivedRpc();
+
+            // Wait for the server to have received this message before exiting the test.
+            // If the log message has not been received by the server at this point, then there is some other type of bug specific to iOS and Mac.
+            yield return WaitForConditionOrTimeOut(() => serverLateClientInstance.RpcReceived);
         }
     }
 }
