@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -98,6 +99,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("Unexpected owner write-permission error logged on CoreCLR, see https://jira.unity3d.com/browse/UUM-149597")]
+#endif
         public IEnumerator OwnerPermissionTest()
         {
             // create 3 objects

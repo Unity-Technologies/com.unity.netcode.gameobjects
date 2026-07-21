@@ -1125,6 +1125,9 @@ namespace Unity.Netcode.RuntimeTests
 #endif
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -1539,6 +1542,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),

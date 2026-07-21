@@ -168,6 +168,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestSerializeNull([Values] NetworkObjectConstructorTypes networkObjectConstructorTypes)
         {
             TestNetworkBehaviour.ReceivedRPC = false;
@@ -215,6 +218,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestRpc()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
@@ -245,6 +251,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestRpcImplicitNetworkObject()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
@@ -275,6 +284,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestRpcImplicitGameObject()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
@@ -305,6 +317,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public void TestNetworkVariable()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();

@@ -244,6 +244,9 @@ namespace Unity.Netcode.RuntimeTests
 
         // don't extend this please
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator LegacyPredicateTesting()
         {
             var authority = GetAuthorityNetworkManager();

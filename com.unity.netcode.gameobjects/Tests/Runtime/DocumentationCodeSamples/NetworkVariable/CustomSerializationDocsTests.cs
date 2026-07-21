@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Text;
+using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -173,6 +174,9 @@ namespace DocumentationCodeSamples
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestHealthCode()
         {
             var authority = GetAuthorityNetworkManager();

@@ -104,6 +104,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+#if ENABLE_CORECLR
+        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
+#endif
         public IEnumerator TestPeerDisconnectCallback([Values] ClientDisconnectType clientDisconnectType, [Values(1ul, 2ul, 3ul)] ulong disconnectedClient)
         {
             m_TargetClientShutdown = false;
