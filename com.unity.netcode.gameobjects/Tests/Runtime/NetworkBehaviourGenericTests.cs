@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
             // to the NetworkObject a warning is logged.
             var simpleNetworkBehaviour = validateInstance.GetComponent<SimpleNetworkBehaviour>();
             simpleNetworkBehaviour.IsSpawned = true;
-            
+
             // Verify the warning gets logged under normal conditions
             var isNull = simpleNetworkBehaviour.NetworkObject == null;
             LogAssert.Expect(LogType.Warning, $"[Netcode] Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
@@ -162,7 +162,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Destroy this test instance
             Object.DestroyImmediate(validateInstance);
-           
+
             // Now create a spawned instance (NetworkObject will exist)
             var instance = SpawnObject(m_PrefabToSpawn, GetAuthorityNetworkManager()).GetComponent<NetworkObject>();
 

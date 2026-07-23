@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
             var originalPrefabInstance = NetcodeIntegrationTestHelpers.CreateNetworkObject("PrefabTest");
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(originalPrefabInstance.GetComponent<NetworkObject>());
-            
+
 
             m_ServerNetworkManager.NetworkConfig.SpawnTimeout = 0;
             m_ServerNetworkManager.NetworkConfig.ForceSamePrefabs = false;

@@ -359,7 +359,7 @@ namespace Unity.Netcode.RuntimeTests
             var authority = GetAuthorityNetworkManager();
 
             // Shutdown the other clients
-            foreach(var networkManager in m_NetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 if (networkManager == authority)
                 {
@@ -381,7 +381,7 @@ namespace Unity.Netcode.RuntimeTests
             //var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);
 
             //NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-            
+
             var instance = SpawnObject(prefabToSpawn, authority);
             var networkVariableTestComponent = instance.GetComponent<NetworkVariableTestComponent>();
 
@@ -402,7 +402,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Disable this once we are done.
 
-            
+
 
 
             // This would normally go in Teardown, but since every other test but this one
