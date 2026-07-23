@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5e590a4aab514d859dd0ac8982d9e78c
+labels:
+- gvh_version-1.2.185
+- gvhp_exportpath-MobileDependencyResolver/Editor/mobile-dependency-resolver_version-1.2.185_manifest.txt
+- gvh
+- gvh_manifest
+- gvhp_manifestname-0External Dependency Manager
+- gvhp_manifestname-play-services-resolver
+timeCreated: 1474401009
+licenseType: Pro
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
