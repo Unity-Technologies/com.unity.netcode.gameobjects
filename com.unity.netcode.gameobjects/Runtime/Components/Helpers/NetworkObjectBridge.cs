@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// This is a component that is added to the root of all N4E-spawned hybrid prefab instances. It is used to link
     /// <see cref="NetworkObject.SerializedObject"/> the N4E-spawned hybrid prefab instances to the incoming <see cref="CreateObjectMessage"/>
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
-    /// </summary>   
+    /// </summary>
 
     [DefaultExecutionOrder(GhostAdapterExecutionOrder.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
