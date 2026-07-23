@@ -25,25 +25,6 @@ namespace Unity.Netcode.RuntimeTests
             return false;
         }
 
-        ///// <summary>
-        ///// Assure no player prefab is assigned.
-        ///// </summary>
-        //protected override void OnServerAndClientsCreated()
-        //{
-        //    foreach (var networkManager in m_NetworkManagers)
-        //    {
-        //        networkManager.NetworkConfig.Prefabs.Remove(m_PlayerPrefab);
-        //        networkManager.NetworkConfig.PlayerPrefab = null;
-        //    }
-        //    base.OnServerAndClientsCreated();
-        //}
-
-        //protected override void OnNewClientCreated(NetworkManager networkManager)
-        //{
-        //    networkManager.NetworkConfig.PlayerPrefab = null;
-        //    base.OnNewClientCreated(networkManager);
-        //}
-
         /// <summary>
         /// Do not wait for spawned players as there are none.
         /// </summary>

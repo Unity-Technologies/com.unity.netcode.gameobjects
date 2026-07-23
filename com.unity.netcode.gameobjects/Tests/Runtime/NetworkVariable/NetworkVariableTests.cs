@@ -368,20 +368,6 @@ namespace Unity.Netcode.RuntimeTests
                 StopOneClientWithTimeTravel(networkManager);
             }
 
-            // Create, instantiate, and host
-            // This would normally go in Setup, but since every other test but this one
-            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
-            //  for now we put this within this one test until we migrate it to MIH
-            //Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost == HostOrServer.Host ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
-
-            //Assert.IsTrue(server.IsHost == (useHost == HostOrServer.Host), $"{nameof(useHost)} does not match the server.IsHost value!");
-
-            //Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
-
-            //var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);
-
-            //NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-
             var instance = SpawnObject(prefabToSpawn, authority);
             var networkVariableTestComponent = instance.GetComponent<NetworkVariableTestComponent>();
 
@@ -400,16 +386,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(networkVariableTestComponent.DidAllValuesChange());
             networkVariableTestComponent.AssertAllValuesAreCorrect();
 
-            // Disable this once we are done.
-
-
-
-
-            // This would normally go in Teardown, but since every other test but this one
-            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
-            //  for now we put this within this one test until we migrate it to MIH
+            // Stop the authority NetworkManager instance
             StopOneClientWithTimeTravel(authority);
-            //NetworkManagerHelper.ShutdownNetworkManager();
         }
 
         [Test]

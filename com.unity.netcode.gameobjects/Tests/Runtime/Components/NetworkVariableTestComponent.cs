@@ -356,11 +356,6 @@ namespace Unity.Netcode.RuntimeTests
             return m_FinishedTests;
         }
 
-        public void Awake()
-        {
-            //InitializeTest();
-        }
-
         public void AssertAllValuesAreCorrect()
         {
             Assert.AreEqual(false, m_NetworkVariableBool.Value);
