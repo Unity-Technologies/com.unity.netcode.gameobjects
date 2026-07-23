@@ -51,7 +51,7 @@
 pr_minimal_required_checks:
   name: Minimal PR checks
   dependencies:
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
     - .yamato/package-pack.yml#package_pack_-_ngo_win
   triggers:
     expression: |-
