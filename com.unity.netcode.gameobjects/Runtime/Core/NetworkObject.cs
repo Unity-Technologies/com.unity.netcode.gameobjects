@@ -370,17 +370,38 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HadBridge;
 #if UNITY_EDITOR
+        private void OnApplicationUpdate()
+        {
+            NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
+            HadBridge = true;
+            // Transform synchronization is handled by unified netcode
+            SynchronizeTransform = false;
+
+            EditorApplication.update -= OnApplicationUpdate;
+        }
+
         internal void UnifiedValidation()
         {
             NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
             GhostAdapter = GetComponent<GhostAdapter>();
+
             HasGhost = GhostAdapter != null;
-            if (HasGhost && NetworkObjectBridge == null)
+            if (HasGhost)
             {
-                NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
-                HadBridge = true;
-                // Transform synchronization is handled by unified netcode
-                SynchronizeTransform = false;
+                //TODO: Needs to be validated once develop-2.0.0 is merged.
+                if (InScenePlaced)
+                {
+                    Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
+                    Destroy(GhostAdapter);
+                    HasGhost = false;
+                    return;
+                }
+
+                if (NetworkObjectBridge == null)
+                {
+                    EditorApplication.update -= OnApplicationUpdate;
+                    EditorApplication.update += OnApplicationUpdate;
+                }
             }
             else if (HadBridge && !HasGhost && !NetworkObjectBridge)
             {
@@ -389,6 +410,14 @@ namespace Unity.Netcode
             }
         }
 #endif
+
+        public void ApplyScale(Vector3 scale)
+        {
+            if (HasGhost)
+            {
+                GhostAdapter.ApplyPostTransformMatrixScale(scale);
+            }
+        }
 #endif
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -2856,33 +2885,53 @@ namespace Unity.Netcode
 #endif
             }
 #if UNIFIED_NETCODE
-            // For now, cycle through all known NetworkTransform and NetworkRigidbodyBase derived components
+            // For now, cycle through all known NetworkRigidbodyBase derived components
             // and destroy them all if this is a hybrid prefab instance.
             // This allows a user to not have to make direct adjustments until trying out their NGO prefab
-            // as a hybrid spawned prefab (optional to completely remove, will eventually become obsolete and
-            // automatically removed later).
+            // as a hybrid spawned prefab.
             if (HasGhost && !NetworkManager.DistributedAuthorityMode)
             {
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                // TODO-UNIFIED: This needs to be updated to make it "opt-in".
+                // If the GhostAdapter is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
+                // the client side to improve performance by default.
+                // TODO-UNIFIED: Determine if recent unified physics updates does not require checking for prediction.
                 if (NetworkRigidbodies != null)
                 {
+                    var isServer = NetworkManager.IsServer;
                     for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
                     {
-                        // TODO-UNIFIED: This needs to be updated to make it "opt-in".
-                        // Only clients remove the rigidbody for performance purposes when running a hybrid spawn client-server topology.
-                        if (!NetworkManager.IsServer)
+                        var currenObject = NetworkRigidbodies[i].gameObject;
+                        var currentHasGhostRigidBody = currenObject.GetComponent<GhostRigidbody>() != null;
+                        if (!isServer)
                         {
-                            var rigidBody = NetworkRigidbodies[i].gameObject.GetComponent<Rigidbody>();
-                            if (rigidBody != null)
+#if COM_UNITY_MODULES_PHYSICS
+                            var rigidBody = currenObject.GetComponent<Rigidbody>();
+
+                            if (rigidBody != null && !currentHasGhostRigidBody)
                             {
                                 Destroy(rigidBody);
                             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS2D
+                            var rigidBody2D = currenObject.GetComponent<Rigidbody2D>();
+                            if (rigidBody2D != null && !currentHasGhostRigidBody)
+                            {
+                                Destroy(rigidBody2D);
+                            }
+#endif
                         }
-                        ChildNetworkBehaviours.Remove(NetworkRigidbodies[i].NetworkBehaviourId);
-                        Destroy(NetworkRigidbodies[i]);
+                        // Both the server and clients will still remove and destroy the NetworkRigidbody
+                        // since there is no point in synchronizing these when it is handled via unified.
+                        var networkRigidbody = NetworkRigidbodies[i];
+                        NetworkRigidbodies.Remove(networkRigidbody);
+                        ChildNetworkBehaviours.Remove(networkRigidbody.NetworkBehaviourId);
+                        Destroy(networkRigidbody);
                     }
-                    NetworkRigidbodies.Clear();
                 }
-
+#endif
+                // This is defined out since users might have derived NetworkTransforms
+#if UNIFIED_NETCODE_DESTROY
                 // When hybrid spawning, the transform is synchronized by the GhostObject.
                 // As a convenience, we remove and destroy all NetworkTransforms.
                 // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostAdapter
@@ -2898,6 +2947,7 @@ namespace Unity.Netcode
                     }
                     NetworkTransforms.Clear();
                 }
+#endif
             }
 #endif
             return true;
