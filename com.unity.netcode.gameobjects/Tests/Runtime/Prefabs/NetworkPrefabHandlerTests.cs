@@ -258,10 +258,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void OnDestroy()
         {
-            if (m_NetworkManager != null)
-            {
-                m_NetworkManager.PrefabHandler.RemoveHandler(m_NetworkObject);
-            }
+            m_NetworkManager?.PrefabHandler.RemoveHandler(m_NetworkObject);
             m_Instances.Clear();
             m_Instances = null;
         }
