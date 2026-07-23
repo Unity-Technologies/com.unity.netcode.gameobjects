@@ -1,0 +1,13 @@
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.IOSResolver.dll
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.IOSResolver.pdb
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.JarResolver.dll
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.JarResolver.pdb
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.PackageManagerResolver.dll
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.PackageManagerResolver.pdb
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.VersionHandlerImpl.dll
+Assets/MobileDependencyResolver/Editor/1.2.185/Google.VersionHandlerImpl.pdb
+Assets/MobileDependencyResolver/Editor/CHANGELOG.md
+Assets/MobileDependencyResolver/Editor/Google.VersionHandler.dll
+Assets/MobileDependencyResolver/Editor/Google.VersionHandler.pdb
+Assets/MobileDependencyResolver/Editor/LICENSE
+Assets/MobileDependencyResolver/Editor/README.md
