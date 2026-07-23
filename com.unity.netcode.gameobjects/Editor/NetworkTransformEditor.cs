@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
@@ -94,9 +95,40 @@ namespace Unity.Netcode.GameObjects.Editor
             base.OnEnable();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetGUIActive(bool active = true)
+        {
+#if UNIFIED_NETCODE
+            if (Application.IsPlaying(m_NetworkObject) && m_NetworkObject.HasGhost)
+            {
+                GUI.enabled = false;
+            }
+            else
+            {
+                GUI.enabled = active;
+            }
+#else
+            GUI.enabled = active;
+#endif
+
+        }
+
+        private NetworkObject m_NetworkObject;
+
         private void DisplayNetworkTransformProperties()
         {
             var networkTransform = target as NetworkTransform;
+
+#if UNIFIED_NETCODE
+            m_NetworkObject = networkTransform.GetComponent<NetworkObject>();
+            var hasGhost = m_NetworkObject.HasGhost;
+            SetGUIActive();
+#else
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            var hasGhost = false;
+#endif
+#endif
+
             EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
             {
                 GUILayout.BeginHorizontal();
@@ -190,7 +222,7 @@ namespace Unity.Netcode.GameObjects.Editor
             {
                 networkTransform.UseUnreliableDeltas = false;
             }
-            GUI.enabled = !networkTransform.SwitchTransformSpaceWhenParented;
+            SetGUIActive(!networkTransform.SwitchTransformSpaceWhenParented);
             if (networkTransform.SwitchTransformSpaceWhenParented)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -202,11 +234,13 @@ namespace Unity.Netcode.GameObjects.Editor
             {
                 EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
             }
-            GUI.enabled = true;
+
+            SetGUIActive(true);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
-            GUI.enabled = !networkTransform.UseUnreliableDeltas;
+
+            SetGUIActive(!networkTransform.UseUnreliableDeltas);
             if (networkTransform.UseUnreliableDeltas)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -218,7 +252,7 @@ namespace Unity.Netcode.GameObjects.Editor
             {
                 EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
             }
-            GUI.enabled = true;
+            SetGUIActive(true);
             if (m_SwitchTransformSpaceWhenParented.boolValue)
             {
                 m_TickSyncChildren.boolValue = true;
@@ -297,20 +331,23 @@ namespace Unity.Netcode.GameObjects.Editor
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
-            if (networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
+            if (hasGhost && networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
             {
-                EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +
+                EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n " +
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
             }
 #endif // COM_UNITY_MODULES_PHYSICS
 
 #if COM_UNITY_MODULES_PHYSICS2D
-            if (networkTransform.TryGetComponent<Rigidbody2D>(out _) && networkTransform.TryGetComponent<NetworkRigidbody2D>(out _) == false)
+            if (!hasGhost && networkTransform.TryGetComponent<Rigidbody2D>(out _) && networkTransform.TryGetComponent<NetworkRigidbody2D>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
 #endif // COM_UNITY_MODULES_PHYSICS2D
+#if UNIFIED_NETCODE
+            GUI.enabled = true;
+#endif
         }
 
         /// <summary>
