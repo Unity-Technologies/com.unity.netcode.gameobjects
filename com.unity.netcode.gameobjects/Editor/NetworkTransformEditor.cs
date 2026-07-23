@@ -124,7 +124,9 @@ namespace Unity.Netcode.GameObjects.Editor
             var hasGhost = m_NetworkObject.HasGhost;
             SetGUIActive();
 #else
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var hasGhost = false;
+#endif
 #endif
 
             EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
