@@ -421,19 +421,6 @@ namespace Unity.Netcode
             {
                 m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
             }
-
-#if UNIFIED_NGO_REGISTERS_PREFABS
-            if (m_NetworkManager.IsListening)
-            {
-                var ghost = prefab.GetComponent<GhostAdapter>();
-                if (ghost)
-                {
-                    m_NetworkManager.InitializeNetcodeWorld();
-                    NetCode.Netcode.RegisterPrefabSingleWorld(prefab, m_NetworkManager.IsHost,
-                        m_NetworkManager.NetcodeWorld);
-                }
-            }
-#endif
         }
 
         /// <summary>
