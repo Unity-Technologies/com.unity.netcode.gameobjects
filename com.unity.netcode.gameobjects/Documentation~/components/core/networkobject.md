@@ -21,16 +21,25 @@ You can use [NetworkBehaviours](networkbehaviour.md) to add your own custom Netc
 
 ### What is a valid NetworkObject?
 
-There are basically two categories of NetworkObjects:
+There are two categories of NetworkObjects:
+* Dynamically intantiated
+* [In-scene placed](../../basics/scenemanagement/inscene-placed-networkobjects.md)
 
-- Dynamically instantiated network prefabs.
-  - Requirements:
-    - It must be a valid [network prefab](./networkobject.md#network-prefabs) created within the editor.
-    - It must be registered within a network prefab list that is assigned to your NetworkManager.
-- [In-scene placed](../../basics/scenemanagement/inscene-placed-networkobjects.md):
-  - Requirements:
-    - It can be a valid network prefab instance within a scene.
-    - It can be a GameObject with a `NetworkObject` component created within the scene while in the editor.
+The following provides the validity requirements for both types.
+
+#### Dynamically instantiated network prefabs.
+
+Requirements
+
+* It must be a valid [network prefab](./networkobject.md#network-prefabs) created within the editor.
+* It must be registered within a network prefab list that is assigned to your NetworkManager.
+
+#### In-scene placed
+
+Requirements
+  
+* It can be a valid network prefab instance within a scene.
+* It can be a GameObject with a `NetworkObject` component created within the scene while in the editor.
 
 ### What is an invalid NetworkObject?
 
