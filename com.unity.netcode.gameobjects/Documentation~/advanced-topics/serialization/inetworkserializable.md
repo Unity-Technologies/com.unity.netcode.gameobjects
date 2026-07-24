@@ -22,12 +22,7 @@ struct MyComplexStruct : INetworkSerializable
     // ~INetworkSerializable
 }
 ```
-
-<<<<<<< HEAD
-Types implementing `INetworkSerializable` are supported by `NetworkSerializer`, `RPC` s and `NetworkVariable` s.
-=======
 Types implementing `INetworkSerializable` are supported by [`FastBufferReader` and `FastBufferWriter`](../fastbufferwriter-fastbufferreader.md), [`RPC`s'](../message-system/rpc.md), and [`NetworkVariable`s](../../basics/networkvariable.md).
->>>>>>> 7b39329a2 (Docs-wide link fixes and xref update)
 
 ```csharp
 
