@@ -1911,14 +1911,14 @@ namespace Unity.Netcode
 #pragma warning restore CS0618 // Type or member is obsolete
 
             // If the initial state of the GameObject was disabled and InScenePlaced is marked,
-            // then spawn it as in-scene placed.[MTT-15388]
+            // then spawn it as in-scene placed.
             // Otherwise:
             // If we are marked as in-scene place, have never been spawned, and the root GameObject
             // was not disabled upon being instantiated, then treat this as a dynamically spawned
             // instance.
             if (InScenePlaced && !m_InScenePlacedDisabledByDefault && !HasBeenSpawned)
             {
-                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
                     Debug.LogWarning($"[{name}][SceneOrigin={SceneOriginHandle}] Dynamically spawning InScenePlaced network object. This can cause issues!", this);
                 }

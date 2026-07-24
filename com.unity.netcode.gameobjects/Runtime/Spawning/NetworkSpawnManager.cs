@@ -1617,9 +1617,9 @@ namespace Unity.Netcode
                     // If this isn't the original prefab asset being skipped over (integration test would be a good example), then log the error.
                     if (!NetworkManager.NetworkConfig.Prefabs.IsActualPrefabAsset(networkObject))
                     {
-                        NetworkManager.Log.Error(new Context(LogLevel.Error, $"{networkObject.name} appears to be a pre-instantiated {nameof(GameObject)} " +
-                            $"with a {nameof(NetworkObject)} component instance that is not a registered prefab nor is it an in-scene placed {nameof(NetworkObject)}." +
-                            $" Dynamically creating unregistered {nameof(NetworkObject)}s is not supported! {networkObject.name} will not be spawned."));
+                        NetworkManager.Log.Error(new Context(LogLevel.Error, $"Detected a pre-instantiated {nameof(GameObject)} " +
+                            $"with a {nameof(NetworkObject)} component instance that is not a registered prefab nor an in-scene placed {nameof(NetworkObject)}." +
+                            $" Dynamically creating unregistered {nameof(NetworkObject)}s is not supported! This {nameof(NetworkObject)} will not be spawned.").AddNetworkObject(networkObject));
                     }
                     continue;
                 }
