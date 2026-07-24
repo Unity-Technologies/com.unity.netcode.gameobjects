@@ -47,7 +47,34 @@ namespace Unity.Netcode
         [NonSerialized]
         private List<NetworkPrefab> m_Prefabs = new List<NetworkPrefab>();
 
-        internal List<NetworkPrefab> InternalPrefabs => m_Prefabs;
+        /// <summary>
+        /// Returns the last registered prefab.
+        /// </summary>
+        internal NetworkPrefab GetLastRegisteredPrefab()
+        {
+            if (m_Prefabs.Count == 0)
+            {
+                return null;
+            }
+            return m_Prefabs[m_Prefabs.Count - 1];
+        }
+
+        /// <summary>
+        /// Applies a network prefab at a specific index
+        /// </summary>
+        /// <param name="index">index to apply</param>
+        /// <param name="networkPrefab">network prefab to be applied</param>
+        /// <returns></returns>
+        internal bool AssignPrefabAtIndex(int index, NetworkPrefab networkPrefab)
+        {
+            if (index >= m_Prefabs.Count)
+            {
+                NetworkManager.Singleton.Log.Error(new Logging.Context(LogLevel.Normal, $"[{nameof(NetworkPrefabs)}][{nameof(AssignPrefabAtIndex)}] Cannot apply prefab to index {index} when the {nameof(m_Prefabs)} count is only {m_Prefabs.Count}!"));
+                return false;
+            }
+            m_Prefabs[index] = networkPrefab;
+            return true;
+        }
 
         [NonSerialized]
         private Dictionary<uint, NetworkPrefab> m_PrefabHashIds = new Dictionary<uint, NetworkPrefab>();

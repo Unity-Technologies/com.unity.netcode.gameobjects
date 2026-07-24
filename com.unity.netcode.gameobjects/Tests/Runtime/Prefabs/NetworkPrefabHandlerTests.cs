@@ -79,20 +79,20 @@ namespace Unity.Netcode.RuntimeTests
             // This would be the scenario that a hash would be used (typically when scene management is disabled)
             validPrefabForSourceHash.InScenePlaced = true;
 
-            var networkPrefab = authority.NetworkConfig.Prefabs.InternalPrefabs[authority.NetworkConfig.Prefabs.InternalPrefabs.Count - 1];
+            var networkPrefab = authority.NetworkConfig.Prefabs.GetLastRegisteredPrefab();
             networkPrefab.SourceHashToOverride = validPrefabForSourceHash.GlobalObjectIdHash;
             networkPrefab.OverridingTargetPrefab = validPrefabAsset.gameObject;
             networkPrefab.Override = NetworkPrefabOverride.Hash;
-            authority.NetworkConfig.Prefabs.InternalPrefabs[authority.NetworkConfig.Prefabs.InternalPrefabs.Count - 1] = networkPrefab;
+            Assert.True(authority.NetworkConfig.Prefabs.AssignPrefabAtIndex(authority.NetworkConfig.Prefabs.Prefabs.Count - 1, networkPrefab), $"Failed to assign network prefab!");
 
             var sourcePrefab = MakeValidNetworkPrefab();
-            networkPrefab = authority.NetworkConfig.Prefabs.InternalPrefabs[authority.NetworkConfig.Prefabs.InternalPrefabs.Count - 1];
+            networkPrefab = authority.NetworkConfig.Prefabs.GetLastRegisteredPrefab();
             var index = authority.NetworkConfig.Prefabs.Prefabs.Count - 1;
             var targetPrefab = MakeValidNetworkPrefab();
             networkPrefab.Prefab = sourcePrefab;
             networkPrefab.SourcePrefabToOverride = sourcePrefab;
             networkPrefab.OverridingTargetPrefab = targetPrefab;
-            authority.NetworkConfig.Prefabs.InternalPrefabs[index] = networkPrefab;
+            Assert.True(authority.NetworkConfig.Prefabs.AssignPrefabAtIndex(index, networkPrefab), $"Failed to assign network prefab!");
 
             m_CanStart = true;
             yield return StartServerAndClients();
@@ -100,8 +100,6 @@ namespace Unity.Netcode.RuntimeTests
             // In the end we should only have 3 valid registered network prefabs
             Assert.AreEqual(5, authority.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Count);
         }
-
-        private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
 
         [UnityTest]

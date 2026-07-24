@@ -768,10 +768,7 @@ namespace Unity.Netcode.Components
             if (!m_Animator)
             {
 #if !UNITY_EDITOR
-                if (!m_Animator)
-                {
-                    Debug.LogWarning($"{nameof(NetworkAnimator)} {name} does not have an {nameof(UnityEngine.Animator)} assigned to it. The {nameof(NetworkAnimator)} will not initialize properly.");
-                }
+                Debug.LogWarning($"{nameof(NetworkAnimator)} {name} does not have an {nameof(UnityEngine.Animator)} assigned to it. The {nameof(NetworkAnimator)} will not initialize properly.");
 #endif
                 return;
             }

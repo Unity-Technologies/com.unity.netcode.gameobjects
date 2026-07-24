@@ -350,9 +350,21 @@ namespace Unity.Netcode
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
+
+                // Set our disabled in-scene placed flag for spawning initially disabled in-scene placed objects.
+                m_InScenePlacedDisabledByDefault = gameObject.activeInHierarchy;
             }
         }
 #endif // UNITY_EDITOR
+
+        /// <summary>
+        /// Used to provide support for initially disabled in-scene placed objects.
+        /// This is only ever set on in-scene placed objects that are already disabled
+        /// in the scene asset itself.
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
+        private bool m_InScenePlacedDisabledByDefault;
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -1887,8 +1899,8 @@ namespace Unity.Netcode
             // Trap for runtime generated instances as this is not valid
             if (GlobalObjectIdHash == 0)
             {
-                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"{name} has a {nameof(GlobalObjectIdHash)} value of {GlobalObjectIdHash}(zero)!" +
-                    $"This is typically a sign of runtime generated {nameof(NetworkObject)}s which is not supported."));
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Detected {nameof(NetworkObject)} {nameof(GlobalObjectIdHash)} value of 0!" +
+                    $"This is typically a sign of runtime generated network prefab assets which are not supported.").AddNetworkObject(this));
                 return;
             }
 
@@ -1904,7 +1916,7 @@ namespace Unity.Netcode
             // If we are marked as in-scene place, have never been spawned, and the root GameObject
             // was not disabled upon being instantiated, then treat this as a dynamically spawned
             // instance.
-            if (InScenePlaced && !m_GameObjectWasDisabledWhenInstantiated && !HasBeenSpawned)
+            if (InScenePlaced && !m_InScenePlacedDisabledByDefault && !HasBeenSpawned)
             {
                 if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
@@ -3717,13 +3729,13 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_GameObjectWasDisabledWhenInstantiated;
+        
 
         private void Awake()
         {
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
-            m_GameObjectWasDisabledWhenInstantiated = gameObject.activeInHierarchy;
+            m_GameObjectWasDisabledWhenInstantiated = true;
         }
 
         /// <summary>
