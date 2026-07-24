@@ -34,14 +34,14 @@ namespace Unity.Netcode.GameObjects.Editor
         [InitializeOnLoadMethod]
         private static void OnApplicationStart()
         {
-            GhostObjectEditor.OnGhostAdapterPreRemoval = OnGhostAdapterPreRemoval;
+            GhostObjectEditor.OnGhostObjectPreRemoval = OnGhostObjectPreRemoval;
         }
 
         /// <summary>
         /// Callback to remove the GhostBehaviours prior to removing GhostObject.
         /// </summary>
         /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
-        private static void OnGhostAdapterPreRemoval(GameObject gameObject)
+        private static void OnGhostObjectPreRemoval(GameObject gameObject)
         {
             var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
             for (int i = ghostBehaviours.Length - 1; i >= 0; i--)

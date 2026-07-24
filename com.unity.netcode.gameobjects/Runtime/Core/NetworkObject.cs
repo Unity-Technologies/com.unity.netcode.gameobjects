@@ -3043,7 +3043,7 @@ namespace Unity.Netcode
             {
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 // TODO-UNIFIED: This needs to be updated to make it "opt-in".
-                // If the GhostAdapter is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
+                // If the GhostObject is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
                 // the client side to improve performance by default.
                 // TODO-UNIFIED: Determine if recent unified physics updates does not require checking for prediction.
                 if (NetworkRigidbodies != null)
@@ -3084,8 +3084,8 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE_DESTROY
                 // When hybrid spawning, the transform is synchronized by the GhostObject.
                 // As a convenience, we remove and destroy all NetworkTransforms.
-                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostAdapter
-                // Possibly use a "Synchronize" property and display only on children of a root parent GhostAdapter.
+                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostObject
+                // Possibly use a "Synchronize" property and display only on children of a root parent GhostObject.
                 if (NetworkTransforms != null)
                 {
                     NetworkManager.Log.Warning(new Logging.Context(LogLevel.Developer, $"[]{name} Hybrid spawned objects do not support {nameof(NetworkTransform)} and " +
@@ -3896,7 +3896,7 @@ namespace Unity.Netcode
             Debug.Log("Disabled!");
             if (IsSpawned || HasGhost)
             {
-                if (HasGhost && GhostAdapter.IsPrefab())
+                if (HasGhost && GhostObject.IsPrefab())
                 {
                     return;
                 }

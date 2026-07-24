@@ -16,8 +16,8 @@ namespace Unity.Netcode
     public partial class NetworkObjectBridge : GhostBehaviour
     {
         // DefaultExecutionOrder
-        // TODO: Define a const for the value used on GhostAdapter and use that value
-        // to set the execution order so if it changes on GhostAdapter it updates here.
+        // TODO: Define a const for the value used on GhostObject and use that value
+        // to set the execution order so if it changes on GhostObject it updates here.
 #if UNITY_EDITOR
         private void OnValidate()
         {
