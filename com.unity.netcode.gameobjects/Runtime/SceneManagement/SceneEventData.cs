@@ -131,21 +131,21 @@ namespace Unity.Netcode
         /// was synchronizing (if so server will send another message back to the client informing the client of NetworkObjects to remove)
         /// spawned during an initial synchronization.
         /// </summary>
-        private List<NetworkObject> m_NetworkObjectsSync = new List<NetworkObject>();
+        private readonly List<NetworkObject> m_NetworkObjectsSync = new List<NetworkObject>();
 
-        private List<NetworkObject> m_DespawnedInSceneObjectsSync = new List<NetworkObject>();
+        private readonly List<NetworkObject> m_DespawnedInSceneObjectsSync = new List<NetworkObject>();
 
         /// <summary>
         /// Server Side Re-Synchronization:
         /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
         /// the server will compile a list and send back an Event_ReSync message to the client.
         /// </summary>
-        private List<ulong> m_NetworkObjectsToBeRemoved = new List<ulong>();
+        private readonly List<ulong> m_NetworkObjectsToBeRemoved = new List<ulong>();
 
         private bool m_HasInternalBuffer;
-        internal FastBufferReader InternalBuffer;
+        private FastBufferReader m_InternalBuffer;
 
-        private NetworkManager m_NetworkManager;
+        private readonly NetworkManager m_NetworkManager;
 
         internal List<ulong> ClientsCompleted;
         internal List<ulong> ClientsTimedOut;
@@ -392,12 +392,12 @@ namespace Unity.Netcode
         /// <param name="networkObject"></param>
         internal void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
         {
-            if (!m_SceneNetworkObjects.ContainsKey(sceneIndex))
+            if (!m_SceneNetworkObjects.TryGetValue(sceneIndex, out var sceneNetworkObject))
             {
-                m_SceneNetworkObjects.Add(sceneIndex, new List<NetworkObject>());
+                sceneNetworkObject = new List<NetworkObject>();
+                m_SceneNetworkObjects.Add(sceneIndex, sceneNetworkObject);
             }
-
-            m_SceneNetworkObjects[sceneIndex].Add(networkObject);
+            sceneNetworkObject.Add(networkObject);
         }
 
         /// <summary>
@@ -572,7 +572,7 @@ namespace Unity.Netcode
 
         private unsafe void CopyInternalBuffer(ref FastBufferWriter writer)
         {
-            writer.WriteBytesSafe(InternalBuffer.GetUnsafePtrAtCurrentPosition(), InternalBuffer.Length);
+            writer.WriteBytesSafe(m_InternalBuffer.GetUnsafePtrAtCurrentPosition(), m_InternalBuffer.Length);
         }
 
         /// <summary>
@@ -580,9 +580,9 @@ namespace Unity.Netcode
         /// Called at the end of a <see cref="SceneEventType.Load"/> event once the scene is loaded and scene placed NetworkObjects
         /// have been locally spawned
         /// </summary>
-        internal void WriteSceneSynchronizationData(FastBufferWriter writer)
+        private void WriteSceneSynchronizationData(FastBufferWriter writer)
         {
-            var builder = (StringBuilder)null;
+            StringBuilder builder = null;
             if (EnableSerializationLogs)
             {
                 builder = new StringBuilder();
@@ -605,11 +605,10 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Size Place Holder -- Start
+            // Size Placeholder -- Start
             // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
             // for stream offset purposes this MUST not be a packed value!
             writer.WriteValueSafe(0);
-            int totalBytes = 0;
 
             // Write the number of NetworkObjects we are serializing
             writer.WriteValueSafe(m_NetworkObjectsSync.Count);
@@ -620,16 +619,14 @@ namespace Unity.Netcode
             var distributedAuthority = m_NetworkManager.DistributedAuthorityMode;
 
             // Serialize all NetworkObjects that are spawned
-            for (var i = 0; i < m_NetworkObjectsSync.Count; ++i)
+            foreach (var networkObject in m_NetworkObjectsSync)
             {
-                var networkObject = m_NetworkObjectsSync[i];
                 var noStart = writer.Position;
                 // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
-                var serializedObject = m_NetworkObjectsSync[i].Serialize(TargetClientId, distributedAuthority);
+                var serializedObject = networkObject.SerializeSpawnedObject(TargetClientId, distributedAuthority);
 
                 serializedObject.Serialize(writer);
                 var noStop = writer.Position;
-                totalBytes += noStop - noStart;
                 if (EnableSerializationLogs)
                 {
                     var offStart = noStart - (positionStart + sizeof(int));
@@ -646,16 +643,13 @@ namespace Unity.Netcode
             // Write the number of despawned in-scene placed NetworkObjects
             writer.WriteValueSafe(m_DespawnedInSceneObjectsSync.Count);
             // Write the scene handle and GlobalObjectIdHash value
-            for (var i = 0; i < m_DespawnedInSceneObjectsSync.Count; ++i)
+            foreach (var despawnedInSceneObject in m_DespawnedInSceneObjectsSync)
             {
-                var noStart = writer.Position;
-                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
-                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
-                var noStop = writer.Position;
-                totalBytes += noStop - noStart;
+                writer.WriteValueSafe(despawnedInSceneObject.GetSceneOriginHandle());
+                writer.WriteValueSafe(despawnedInSceneObject.GlobalObjectIdHash);
             }
 
-            // Size Place Holder -- End
+            // Size Placeholder -- End
             var positionEnd = writer.Position;
             var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
             writer.Seek(positionStart);
@@ -674,12 +668,12 @@ namespace Unity.Netcode
         /// have been locally spawned
         /// Maximum number of objects that could theoretically be synchronized is 65536
         /// </summary>
-        internal void SerializeScenePlacedObjects(FastBufferWriter writer)
+        private void SerializeScenePlacedObjects(FastBufferWriter writer)
         {
-            var numberOfObjects = (ushort)0;
+            ushort numberOfObjects = 0;
             var headPosition = writer.Position;
 
-            // Write our count place holder (must not be packed!)
+            // Write our count placeholder (must not be packed!)
             writer.WriteValueSafe((ushort)0);
             var distributedAuthority = m_NetworkManager.DistributedAuthorityMode;
             // If distributed authority mode and sending to the service, then ignore observers
@@ -702,10 +696,10 @@ namespace Unity.Netcode
             SortObjectsToSync();
 
             // Serialize the sorted objects to sync.
-            foreach (var objectToSycn in m_NetworkObjectsSync)
+            foreach (var objectToSync in m_NetworkObjectsSync)
             {
                 // Serialize the NetworkObject
-                var serializedObject = objectToSycn.Serialize(TargetClientId, distributedAuthority);
+                var serializedObject = objectToSync.SerializeSpawnedObject(TargetClientId, distributedAuthority);
                 serializedObject.Serialize(writer);
                 numberOfObjects++;
             }
@@ -713,10 +707,10 @@ namespace Unity.Netcode
             // Write the number of despawned in-scene placed NetworkObjects
             writer.WriteValueSafe(m_DespawnedInSceneObjectsSync.Count);
             // Write the scene handle and GlobalObjectIdHash value
-            for (var i = 0; i < m_DespawnedInSceneObjectsSync.Count; ++i)
+            foreach (var despawnedInSceneObject in m_DespawnedInSceneObjectsSync)
             {
-                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
-                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
+                writer.WriteValueSafe(despawnedInSceneObject.GetSceneOriginHandle());
+                writer.WriteValueSafe(despawnedInSceneObject.GlobalObjectIdHash);
             }
 
             var tailPosition = writer.Position;
@@ -803,7 +797,7 @@ namespace Unity.Netcode
                             // be processed once we are done loading.
                             m_HasInternalBuffer = true;
                             // We use Allocator.Persistent since scene loading could take longer than 4 frames
-                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, reader.Length - reader.Position);
+                            m_InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, reader.Length - reader.Position);
                         }
                         break;
                     }
@@ -829,7 +823,7 @@ namespace Unity.Netcode
         /// into the internal buffer to be used throughout the synchronization process.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CopySceneSynchronizationData(FastBufferReader reader)
+        private void CopySceneSynchronizationData(FastBufferReader reader)
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
@@ -851,10 +845,10 @@ namespace Unity.Netcode
 
                 m_HasInternalBuffer = true;
                 // We use Allocator.Persistent since scene synchronization will most likely take longer than 4 frames
-                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
+                m_InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
                 if (EnableSerializationLogs)
                 {
-                    LogArray(InternalBuffer.ToArray());
+                    LogArray(m_InternalBuffer.ToArray());
                 }
             }
         }
@@ -869,12 +863,12 @@ namespace Unity.Netcode
             try
             {
                 // is not packed!
-                InternalBuffer.ReadValueSafe(out ushort newObjectsCount);
+                m_InternalBuffer.ReadValueSafe(out ushort newObjectsCount);
                 var sceneObjects = new List<NetworkObject>();
                 for (ushort i = 0; i < newObjectsCount; i++)
                 {
                     var serializedObject = new NetworkObject.SerializedObject();
-                    serializedObject.Deserialize(InternalBuffer);
+                    serializedObject.Deserialize(m_InternalBuffer);
 
                     if (serializedObject.IsSceneObject)
                     {
@@ -882,9 +876,9 @@ namespace Unity.Netcode
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
                     }
 
-                    var networkObject = NetworkObject.Deserialize(serializedObject, InternalBuffer, m_NetworkManager);
+                    var networkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, m_NetworkManager);
 
-                    if (serializedObject.IsSceneObject)
+                    if (serializedObject.IsSceneObject && networkObject != null)
                     {
                         sceneObjects.Add(networkObject);
                     }
@@ -901,7 +895,7 @@ namespace Unity.Netcode
             }
             finally
             {
-                InternalBuffer.Dispose();
+                m_InternalBuffer.Dispose();
                 m_HasInternalBuffer = false;
             }
         }
@@ -913,7 +907,7 @@ namespace Unity.Netcode
         /// client handles any returned values by the server.
         /// </summary>
         /// <param name="reader"></param>
-        internal void ReadClientReSynchronizationData(FastBufferReader reader)
+        private void ReadClientReSynchronizationData(FastBufferReader reader)
         {
             reader.ReadValueSafe(out uint[] networkObjectsToRemove);
 
@@ -950,7 +944,7 @@ namespace Unity.Netcode
         /// the server will compile a list and send back an Event_ReSync message to the client.
         /// </summary>
         /// <param name="writer"></param>
-        internal void WriteClientReSynchronizationData(FastBufferWriter writer)
+        private void WriteClientReSynchronizationData(FastBufferWriter writer)
         {
             //Write how many objects need to be removed
             writer.WriteValueSafe(m_NetworkObjectsToBeRemoved.ToArray());
@@ -964,7 +958,7 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal bool ClientNeedsReSynchronization()
         {
-            return (m_NetworkObjectsToBeRemoved.Count > 0);
+            return m_NetworkObjectsToBeRemoved.Count > 0;
         }
 
         /// <summary>
@@ -974,7 +968,7 @@ namespace Unity.Netcode
         /// have since been despawned.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CheckClientSynchronizationResults(FastBufferReader reader)
+        private void CheckClientSynchronizationResults(FastBufferReader reader)
         {
             m_NetworkObjectsToBeRemoved.Clear();
             reader.ReadValueSafe(out uint networkObjectIdCount);
@@ -991,12 +985,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Client Side:
         /// During the deserialization process of the servers Event_Sync, the client builds a list of
-        /// all NetworkObjectIds that were spawned.  Upon responding to the server with the Event_Sync_Complete
+        /// all NetworkObjectIds that were spawned. Upon responding to the server with the Event_Sync_Complete,
         /// this list is included for the server to review over and determine if the client needs a minor resynchronization
         /// of NetworkObjects that might have been despawned while the client was processing the Event_Sync.
         /// </summary>
         /// <param name="writer"></param>
-        internal void WriteClientSynchronizationResults(FastBufferWriter writer)
+        private void WriteClientSynchronizationResults(FastBufferWriter writer)
         {
             //Write how many objects were spawned
             writer.WriteValueSafe((uint)m_NetworkObjectsSync.Count);
@@ -1013,14 +1007,14 @@ namespace Unity.Netcode
         private void DeserializeDespawnedInScenePlacedNetworkObjects()
         {
             // Process all de-spawned in-scene NetworkObjects for this network session
-            InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
+            m_InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
             var sceneCache = new Dictionary<NetworkSceneHandle, Dictionary<uint, NetworkObject>>();
 
             for (int i = 0; i < despawnedObjectsCount; i++)
             {
                 // We just need to get the scene
-                InternalBuffer.ReadValueSafe(out NetworkSceneHandle networkSceneHandle);
-                InternalBuffer.ReadValueSafe(out uint globalObjectIdHash);
+                m_InternalBuffer.ReadValueSafe(out NetworkSceneHandle networkSceneHandle);
+                m_InternalBuffer.ReadValueSafe(out uint globalObjectIdHash);
 
                 // Check if we already have processed the objects in this scene
                 if (!sceneCache.TryGetValue(networkSceneHandle, out var sceneRelativeNetworkObjects))
@@ -1061,15 +1055,10 @@ namespace Unity.Netcode
                     // Since this is a NetworkObject that was never spawned, we just need to send a notification
                     // out that it was despawned so users can make adjustments
                     despawnedObject.InvokeBehaviourNetworkDespawn();
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
-                    {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
-                    }
 
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(despawnedObject.GetSceneOriginHandle()))
-                    {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(despawnedObject.GetSceneOriginHandle(), despawnedObject);
-                    }
+                    m_NetworkManager.SceneManager.ScenePlacedObjects.TryAdd(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
+
+                    m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].TryAdd(despawnedObject.GetSceneOriginHandle(), despawnedObject);
                 }
                 else
                 {
@@ -1087,7 +1076,7 @@ namespace Unity.Netcode
         /// <param name="networkManager"></param>
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
-            var builder = (StringBuilder)null;
+            StringBuilder builder = null;
             if (EnableSerializationLogs)
             {
                 builder = new StringBuilder();
@@ -1096,17 +1085,17 @@ namespace Unity.Netcode
             try
             {
                 // Process all spawned NetworkObjects for this network session
-                InternalBuffer.ReadValueSafe(out int newObjectsCount);
+                m_InternalBuffer.ReadValueSafe(out int newObjectsCount);
                 if (EnableSerializationLogs)
                 {
-                    builder.AppendLine($"[Read][Synchronize Objects][WPos: {InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
+                    builder.AppendLine($"[Read][Synchronize Objects][WPos: {m_InternalBuffer.Position}][NO-Count: {newObjectsCount}] Begin:");
                 }
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    var noStart = InternalBuffer.Position;
+                    var noStart = m_InternalBuffer.Position;
                     var serializedObject = new NetworkObject.SerializedObject();
-                    serializedObject.Deserialize(InternalBuffer);
+                    serializedObject.Deserialize(m_InternalBuffer);
 
 #if UNIFIED_NETCODE
                     // This handles the case where a NetworkObject is serialized with a ghost component but the ghost isn't actually included in
@@ -1127,21 +1116,24 @@ namespace Unity.Netcode
                     {
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
                     }
-                    var spawnedNetworkObject = NetworkObject.Deserialize(serializedObject, InternalBuffer, networkManager);
+
+                    var spawnedNetworkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, m_InternalBuffer, networkManager);
+                    if (spawnedNetworkObject == null)
+                    {
+                        continue;
+                    }
+
+                    var noStop = m_InternalBuffer.Position;
 
                     if (EnableSerializationLogs)
                     {
-                        var noStop = InternalBuffer.Position;
                         builder.AppendLine($"[Head: {noStart}][Tail: {noStop}][Size: {noStop - noStart}][{spawnedNetworkObject.name}][NID-{spawnedNetworkObject.NetworkObjectId}][Children: {spawnedNetworkObject.ChildNetworkBehaviours.Count}]");
-                        LogArray(InternalBuffer.ToArray(), noStart, noStop, builder);
+                        LogArray(m_InternalBuffer.ToArray(), noStart, noStop, builder);
                     }
                     // If we failed to deserialize the NetworkObject then don't add null to the list
-                    if (spawnedNetworkObject != null)
+                    if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                     {
-                        if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
-                        {
-                            m_NetworkObjectsSync.Add(spawnedNetworkObject);
-                        }
+                        m_NetworkObjectsSync.Add(spawnedNetworkObject);
                     }
                 }
                 if (EnableSerializationLogs)
@@ -1172,7 +1164,7 @@ namespace Unity.Netcode
             }
             finally
             {
-                InternalBuffer.Dispose();
+                m_InternalBuffer.Dispose();
                 m_HasInternalBuffer = false;
             }
         }
@@ -1181,7 +1173,7 @@ namespace Unity.Netcode
         /// Writes the all clients loaded or unloaded completed and timed out lists
         /// </summary>
         /// <param name="writer"></param>
-        internal void WriteSceneEventProgressDone(FastBufferWriter writer)
+        private void WriteSceneEventProgressDone(FastBufferWriter writer)
         {
             writer.WriteValueSafe((ushort)ClientsCompleted.Count);
             foreach (var clientId in ClientsCompleted)
@@ -1200,7 +1192,7 @@ namespace Unity.Netcode
         /// Reads the all clients loaded or unloaded completed and timed out lists
         /// </summary>
         /// <param name="reader"></param>
-        internal void ReadSceneEventProgressDone(FastBufferReader reader)
+        private void ReadSceneEventProgressDone(FastBufferReader reader)
         {
             reader.ReadValueSafe(out ushort completedCount);
             ClientsCompleted = new List<ulong>();
@@ -1229,31 +1221,51 @@ namespace Unity.Netcode
         private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)
         {
             var sceneManager = m_NetworkManager.SceneManager;
-            var ownerId = m_NetworkManager.LocalClientId;
+            var networkManagerClientId = m_NetworkManager.LocalClientId;
             if (IsForwarding)
             {
-                ownerId = m_OwnerId;
+                networkManagerClientId = m_OwnerId;
             }
 
             // Write the owner identifier
-            writer.WriteValueSafe(ownerId);
+            writer.WriteValueSafe(networkManagerClientId);
 
-            // Write the number of scene handles
-            writer.WriteValueSafe(sceneManager.ObjectsMigratedIntoNewScene.Count);
+            // Create a place holder for the number of entries written.
+            // Distributed authority this could end up being just a single entry for
+            // one of several scenes loaded. As such, we need to count how many entries
+            // are actually written.
+            var countPosition = writer.Position;
+            writer.WriteValueSafe(0);
+            var entriesWritten = 0;
             foreach (var sceneHandleObjects in sceneManager.ObjectsMigratedIntoNewScene)
             {
-                if (!sceneManager.ObjectsMigratedIntoNewScene[sceneHandleObjects.Key].ContainsKey(ownerId))
+                // Since these are separated by scene then owner, there could be scenes that have
+                // no changes.
+                if (!sceneHandleObjects.Value.ContainsKey(networkManagerClientId))
                 {
-                    throw new Exception($"Trying to send object scene migration for Client-{ownerId} but the client has no entries to send!");
+                    continue;
                 }
                 // Write the scene handle
                 writer.WriteValueSafe(sceneHandleObjects.Key);
                 // Write the number of NetworkObjectIds to expect
-                writer.WriteValueSafe(sceneHandleObjects.Value[ownerId].Count);
-                foreach (var networkObject in sceneHandleObjects.Value[ownerId])
+                writer.WriteValueSafe(sceneHandleObjects.Value[networkManagerClientId].Count);
+                foreach (var networkObject in sceneHandleObjects.Value[networkManagerClientId])
                 {
                     writer.WriteValueSafe(networkObject.NetworkObjectId);
                 }
+                entriesWritten++;
+            }
+            if (entriesWritten == 0)
+            {
+                throw new Exception($"Trying to send object scene migration for Client-{networkManagerClientId} but the client has no entries to send!");
+            }
+            else
+            {
+                // Write the number of entries written
+                var endPosition = writer.Position;
+                writer.Seek(countPosition);
+                writer.WriteValueSafe(entriesWritten);
+                writer.Seek(endPosition);
             }
         }
 
@@ -1266,40 +1278,31 @@ namespace Unity.Netcode
             var sceneManager = m_NetworkManager.SceneManager;
             var spawnManager = m_NetworkManager.SpawnManager;
 
-            var numberOfScenes = 0;
-            NetworkSceneHandle sceneHandle;
-            var objectCount = 0;
-            var networkObjectId = (ulong)0;
-
-            var ownerID = (ulong)0;
-            reader.ReadValueSafe(out ownerID);
+            reader.ReadValueSafe(out ulong ownerID);
             m_OwnerId = ownerID;
-            reader.ReadValueSafe(out numberOfScenes);
+            reader.ReadValueSafe(out int numberOfScenes);
 
             for (int i = 0; i < numberOfScenes; i++)
             {
-                reader.ReadValueSafe(out sceneHandle);
+                reader.ReadValueSafe(out NetworkSceneHandle sceneHandle);
                 if (!sceneManager.ObjectsMigratedIntoNewScene.TryGetValue(sceneHandle, out var migratedObjects))
                 {
                     migratedObjects = new Dictionary<ulong, List<NetworkObject>>();
                     sceneManager.ObjectsMigratedIntoNewScene.Add(sceneHandle, migratedObjects);
                 }
 
-                if (!migratedObjects.ContainsKey(ownerID))
-                {
-                    migratedObjects.Add(ownerID, new List<NetworkObject>());
-                }
+                migratedObjects.TryAdd(ownerID, new List<NetworkObject>());
 
-                reader.ReadValueSafe(out objectCount);
+                reader.ReadValueSafe(out int objectCount);
                 for (int j = 0; j < objectCount; j++)
                 {
-                    reader.ReadValueSafe(out networkObjectId);
-                    if (!spawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    reader.ReadValueSafe(out ulong networkObjectId);
+                    if (!spawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var networkObject))
                     {
                         NetworkLog.LogError($"[Object Scene Migration] Trying to synchronize NetworkObjectId ({networkObjectId}) but it was not spawned or no longer exists!!");
                         continue;
                     }
-                    var networkObject = spawnManager.SpawnedObjects[networkObjectId];
+
                     // Add NetworkObject scene migration to ObjectsMigratedIntoNewScene dictionary that is processed
                     migratedObjects[ownerID].Add(networkObject);
                 }
@@ -1315,15 +1318,8 @@ namespace Unity.Netcode
         private void DeferObjectsMovedIntoNewScene(FastBufferReader reader)
         {
             var sceneManager = m_NetworkManager.SceneManager;
-            var spawnManager = m_NetworkManager.SpawnManager;
-            var ownerId = (ulong)0;
-            var numberOfScenes = 0;
-            NetworkSceneHandle sceneHandle;
-            var objectCount = 0;
-            var networkObjectId = (ulong)0;
 
-            reader.ReadValueSafe(out ownerId);
-
+            reader.ReadValueSafe(out ulong ownerId);
 
             var deferredObjectsMovedEvent = new NetworkSceneManager.DeferredObjectsMovedEvent()
             {
@@ -1331,17 +1327,16 @@ namespace Unity.Netcode
                 ObjectsMigratedTable = new Dictionary<NetworkSceneHandle, List<ulong>>(),
             };
 
-
-            reader.ReadValueSafe(out numberOfScenes);
+            reader.ReadValueSafe(out int numberOfScenes);
             for (int i = 0; i < numberOfScenes; i++)
             {
-                reader.ReadValueSafe(out sceneHandle);
+                reader.ReadValueSafe(out NetworkSceneHandle sceneHandle);
                 var objectsMigrated = new List<ulong>();
                 deferredObjectsMovedEvent.ObjectsMigratedTable.Add(sceneHandle, objectsMigrated);
-                reader.ReadValueSafe(out objectCount);
+                reader.ReadValueSafe(out int objectCount);
                 for (int j = 0; j < objectCount; j++)
                 {
-                    reader.ReadValueSafe(out networkObjectId);
+                    reader.ReadValueSafe(out ulong networkObjectId);
                     objectsMigrated.Add(networkObjectId);
                 }
             }
@@ -1365,10 +1360,9 @@ namespace Unity.Netcode
                         migratedObjects = new Dictionary<ulong, List<NetworkObject>>();
                         sceneManager.ObjectsMigratedIntoNewScene.Add(keyEntry.Key, migratedObjects);
                     }
-                    if (!migratedObjects.ContainsKey(objectsMovedEvent.OwnerId))
-                    {
-                        migratedObjects.Add(objectsMovedEvent.OwnerId, new List<NetworkObject>());
-                    }
+
+                    migratedObjects.TryAdd(objectsMovedEvent.OwnerId, new List<NetworkObject>());
+                    var objectList = migratedObjects[objectsMovedEvent.OwnerId];
 
                     foreach (var objectId in keyEntry.Value)
                     {
@@ -1378,9 +1372,9 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        if (!migratedObjects[objectsMovedEvent.OwnerId].Contains(networkObject))
+                        if (!objectList.Contains(networkObject))
                         {
-                            migratedObjects[objectsMovedEvent.OwnerId].Add(networkObject);
+                            objectList.Add(networkObject);
                         }
                     }
                 }
@@ -1396,7 +1390,7 @@ namespace Unity.Netcode
         {
             if (m_HasInternalBuffer)
             {
-                InternalBuffer.Dispose();
+                m_InternalBuffer.Dispose();
                 m_HasInternalBuffer = false;
             }
         }

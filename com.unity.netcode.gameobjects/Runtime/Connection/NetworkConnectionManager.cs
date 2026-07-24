@@ -967,8 +967,7 @@ namespace Unity.Netcode
             {
                 return (true, playerPrefabHash.Value);
             }
-            else
-            if (NetworkManager.NetworkConfig.PlayerPrefab != null)
+            else if (NetworkManager.NetworkConfig.PlayerPrefab != null)
             {
                 var networkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
                 if (networkObject != null)
@@ -1218,7 +1217,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.Serialize(clientPair.Key),
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.SerializeSpawnedObject(clientPair.Key),
                     IncludesSerializedObject = true,
                 };
 

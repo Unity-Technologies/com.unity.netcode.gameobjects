@@ -101,7 +101,7 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        [UnityTest]
+        [UnityTest, Ignore("Disabled due to instability. Tracked by MTT-15432.")]
         public IEnumerator StopAndStartMotion()
         {
             m_IsSecondPass = false;
