@@ -733,8 +733,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
         private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
         {
-            var ghost = networkObject.GetComponent<GhostAdapter>();
-            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostAdapter)}!");
+            var ghost = networkObject.GetComponent<GhostObject>();
+            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostObject)}!");
             foreach (var networkManager in m_NetworkManagers)
             {
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
@@ -1837,9 +1837,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
 #if UNIFIED_NETCODE
                     // Handle removing the prefab reference and destroying it
-                    // and then destroying the ghostAdapter prior to destroying
+                    // and then destroying the GhostObject prior to destroying
                     // a hybrid prefab.
-                    var ghostAdapter = networkObject.GetComponent<GhostAdapter>();
+                    var ghostAdapter = networkObject.GetComponent<GhostObject>();
                     if (ghostAdapter != null)
                     {
                         if (ghostAdapter.prefabReference != null)
@@ -2423,10 +2423,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // When adding a Hybrid/Ghost prefab:
             // - We disabled the GameObject prior to adding the GhostPrefabReference (so IsPrefab() == true).
-            // - Add the GhostAdapter and GhostPrefabReference
+            // - Add the GhostObject and GhostPrefabReference
             // - Then set it back to active.
             gameObject.SetActive(false);
-            var adapter = gameObject.AddComponent<GhostAdapter>();
+            var adapter = gameObject.AddComponent<GhostObject>();
             // Mark the reference as post processing to avoid registering this instance automatically.
             GhostPrefabReference.s_IsPostProcessing = true;
             adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
@@ -2443,7 +2443,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // with the dependency to prediction manual test).
             adapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
-            // Once done with setting up the GhostAdapter, we can set it back to active in the hierarchy
+            // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);
 
             // GhostBehaviours that are part of a prefab will not invoke Ghost.InternalAcquireEntityReference
@@ -2455,12 +2455,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // NetworkObject Ghost specific settings
             no.HasGhost = true;
-            no.GhostAdapter = adapter;
+            no.GhostObject = adapter;
             no.HadBridge = true;
             no.NetworkObjectBridge = bridge;
 
             // Disable transform synchronization for NetworkObject serialization
-            // since that is handled by the GhostAdapter.
+            // since that is handled by the GhostObject.
             no.SynchronizeTransform = false;
 
             // Turn it into a test prefab

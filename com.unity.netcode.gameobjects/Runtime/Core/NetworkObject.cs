@@ -365,7 +365,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
         [HideInInspector]
         [SerializeField]
-        internal GhostAdapter GhostAdapter;
+        internal GhostObject GhostObject;
 
         [HideInInspector]
         [SerializeField]
@@ -388,16 +388,16 @@ namespace Unity.Netcode
         internal void UnifiedValidation()
         {
             NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
-            GhostAdapter = GetComponent<GhostAdapter>();
+            GhostObject = GetComponent<GhostObject>();
 
-            HasGhost = GhostAdapter != null;
+            HasGhost = GhostObject != null;
             if (HasGhost)
             {
                 //TODO: Needs to be validated once develop-2.0.0 is merged.
                 if (InScenePlaced)
                 {
                     Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
-                    Destroy(GhostAdapter);
+                    Destroy(GhostObject);
                     HasGhost = false;
                     return;
                 }
@@ -420,7 +420,7 @@ namespace Unity.Netcode
         {
             if (HasGhost)
             {
-                GhostAdapter.ApplyPostTransformMatrixScale(scale);
+                GhostObject.ApplyPostTransformMatrixScale(scale);
             }
         }
 #endif
@@ -3043,7 +3043,7 @@ namespace Unity.Netcode
             {
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 // TODO-UNIFIED: This needs to be updated to make it "opt-in".
-                // If the GhostAdapter is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
+                // If the GhostObject is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
                 // the client side to improve performance by default.
                 // TODO-UNIFIED: Determine if recent unified physics updates does not require checking for prediction.
                 if (NetworkRigidbodies != null)
@@ -3084,8 +3084,8 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE_DESTROY
                 // When hybrid spawning, the transform is synchronized by the GhostObject.
                 // As a convenience, we remove and destroy all NetworkTransforms.
-                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostAdapter
-                // Possibly use a "Synchronize" property and display only on children of a root parent GhostAdapter.
+                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostObject
+                // Possibly use a "Synchronize" property and display only on children of a root parent GhostObject.
                 if (NetworkTransforms != null)
                 {
                     NetworkManager.Log.Warning(new Logging.Context(LogLevel.Developer, $"[]{name} Hybrid spawned objects do not support {nameof(NetworkTransform)} and " +
@@ -3896,7 +3896,7 @@ namespace Unity.Netcode
             Debug.Log("Disabled!");
             if (IsSpawned || HasGhost)
             {
-                if (HasGhost && GhostAdapter.IsPrefab())
+                if (HasGhost && GhostObject.IsPrefab())
                 {
                     return;
                 }
@@ -3933,7 +3933,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
+            if (!HasGhost || !NetworkObjectBridge || GhostObject.IsPrefab())
             {
                 // Nothing to register
                 return;
@@ -3944,7 +3944,7 @@ namespace Unity.Netcode
             {
                 Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
             }
-            if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
+            if (GhostObject.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
             {
                 NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(NetworkObjectBridge.NetworkObjectId.Value, this);
             }

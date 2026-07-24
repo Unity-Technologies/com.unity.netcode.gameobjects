@@ -2781,7 +2781,7 @@ namespace Unity.Netcode
 
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per-scene basis (for additive scenes)
 #if UNIFIED_NETCODE
-                // TODO: When we solve for GhostAdapter in-scene placed.
+                // TODO: When we solve for GhostObject in-scene placed.
                 if (!networkObjectInstance.HasGhost && networkObjectInstance.NetworkManagerOwner == NetworkManager && networkObjectInstance.isActiveAndEnabled)
 #else
                 if (networkObjectInstance.NetworkManagerOwner == NetworkManager && networkObjectInstance.isActiveAndEnabled)
