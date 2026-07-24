@@ -144,7 +144,7 @@ namespace Unity.Netcode
             {
                 m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
             }
-            var networkObject = NetworkObject.Deserialize(serializedObject, reader, m_NetworkManager);
+            var networkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, reader, m_NetworkManager);
 
             // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
             //if (serializedObject.IsSceneObject)

@@ -1104,7 +1104,7 @@ namespace Unity.Netcode
                     // information during synchronization.
                     if (serializedObject.HasGhost)
                     {
-                        if (networkManager.SpawnManager.GhostSpawnManager.ShouldDeferGhostSceneObject(serializedObject, InternalBuffer))
+                        if (networkManager.SpawnManager.GhostSpawnManager.ShouldDeferGhostSceneObject(serializedObject, m_InternalBuffer))
                         {
                             continue;
                         }
