@@ -1,6 +1,7 @@
 # NetworkObject and NetworkBehaviour
 
-`GameObjects`, `NetworkObjects` and NetworkBehaviour aren't serializable types so they can't be used in `RPCs` or `NetworkVariables` by default.
+> [!NOTE]
+> Read the [Serialization overview](./serialization-overview.md) page to understand the basics of serialization before learning how to serialize `NetworkObjects` and `NetworkBehaviours`.
 
 There are two convenience wrappers which can be used to send a reference to a NetworkObject or a NetworkBehaviour over RPCs or `NetworkVariables`.
 

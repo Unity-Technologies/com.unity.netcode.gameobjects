@@ -2,6 +2,9 @@
 
 In addition to the standard [`NetworkVariable`s](networkvariable.md) available in Netcode for GameObjects, you can also create custom `NetworkVariable`s for advanced implementations. The `NetworkVariable` and `NetworkList` classes were created as `NetworkVariableBase` class implementation examples. While the `NetworkVariable<T>` class is considered production ready, you might run into scenarios where you have a more advanced implementation in mind. In this case, you can create your own custom implementation.
 
+> [!NOTE]
+> Read the [Serialization overview](../advanced-topics/serialization/serialization-overview.md) page to understand how Netcode for GameObjects handles serialization.
+
 To create your own `NetworkVariableBase`-derived container, you should:
 
 1. Create a class deriving from `NetworkVariableBase`.

@@ -8,5 +8,5 @@ The Bite Size samples are small, focused examples that demonstrate specific feat
 | **[Bitesize introduction](bitesize-introduction.md)** | The Bitesize Samples repository provides a series of sample code as modules to use in your games and better understand Netcode for GameObjects. |
 | **[Bitesize space shooter](bitesize-spaceshooter.md)** | Learn more about physics movement and status effects using Netcode for GameObjects (Netcode) NetworkVariables and ObjectPooling. |
 | **[Bitesize client driven](bitesize-clientdriven.md)** | Learn more about Client driven movements, networked physics, spawning vs statically placed objects, object reparenting. |
-| **[Bitesize dynamic prefabs](bitesize-dynamicPrefabs.md)** | Learn more about the dynamic Prefab system, which allows you to add new spawnable Prefabs at runtime. |
+| **[Bitesize dynamic prefabs](bitesize-dynamicprefabs.md)** | Learn more about the dynamic Prefab system, which allows you to add new spawnable Prefabs at runtime. |
 | **[Bitesize social hub](bitesize-socialhub.md)** | The Distributed Authority Social Hub Sample is a project that demonstrates Distributed Authority's features and helps you integrate Distributed Authority into your own game projects. |
