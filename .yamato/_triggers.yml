@@ -91,6 +91,7 @@ pr_code_changes_checks:
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     # Run code coverage test
     - .yamato/code-coverage.yml#code_coverage_package_test_ubuntu_trunk
+    - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_trunk
   triggers:
     expression: |-
       (pull_request.comment eq "ngo" OR
@@ -161,6 +162,7 @@ develop_nightly:
     - .yamato/vetting-test.yml#vetting_test
   # Run code coverage test
     - .yamato/code-coverage.yml#code_coverage_package_test_ubuntu_trunk
+    - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_trunk
 
 
 # Run all tests on weekly bases
@@ -191,5 +193,3 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_webgl_builds
     # Run Runtime tests against CMB service
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service
-    # Run code coverage on the testproject project tests
-    - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_trunk
