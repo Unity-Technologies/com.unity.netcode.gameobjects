@@ -7,7 +7,7 @@ Netcode for GameObjects' high level components, [the RPC system](../../advanced-
   1. NetworkObject
   2. [NetworkBehaviour](networkbehaviour.md)
 
-NetworkObjects require the use of specialized [`NetworkObjectReference`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObjectReference.html) structures before you can serialize and use them with RPCs and `NetworkVariable`s
+NetworkObjects require the use of specialized [`NetworkObjectReference`](xref:Unity.Netcode.NetworkObjectReference) structures before you can serialize and use them with RPCs and `NetworkVariable`s
 
 Netcode for GameObjects also has [PlayerObjects](playerobjects.md), an optional feature that you can use to assign a NetworkObject to a specific client.
 
@@ -65,7 +65,7 @@ Refer to the [NetworkSceneManager active scene synchronization](../../basics/sce
 
 ![image](../../images/SceneMigrationSynchronization.png)
 
-Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
+Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](xref:Unity.Netcode.NetworkObject.SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
 
 `NetworkObject.ActiveSceneSynchronization` can be used with `NetworkObject.SceneMigrationSynchronization` as long as you take into consideration that if you migrate a NetworkObject into a non-active scene via `SceneManager.MoveGameObjectToScene` and later change the active scene, then the NetworkObject instance will be automatically migrated to the newly set active scene.
 

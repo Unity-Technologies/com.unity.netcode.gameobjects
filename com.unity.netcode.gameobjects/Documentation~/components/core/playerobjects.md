@@ -53,14 +53,14 @@ In addition to the [session-mode agnostic spawning methods](#session-mode-agnost
 
 ### Distributed authority contexts only
 
-In addition to the [session-mode agnostic spawning methods](#session-mode-agnostic-methods) above, you can use the [`OnFetchLocalPlayerPrefabToSpawn`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnFetchLocalPlayerPrefabToSpawn) method to assign a unique player prefab on a per-client basis when in [distributed authority contexts](../../terms-concepts/distributed-authority.md).
+In addition to the [session-mode agnostic spawning methods](#session-mode-agnostic-methods) above, you can use the [`OnFetchLocalPlayerPrefabToSpawn`](xref:Unity.Netcode.NetworkManager.OnFetchLocalPlayerPrefabToSpawn) method to assign a unique player prefab on a per-client basis when in [distributed authority contexts](../../terms-concepts/distributed-authority.md).
 
 To use `OnFetchLocalPlayerPrefabToSpawn` in your project, assign a callback handler to `OnFetchLocalPlayerPrefabToSpawn` and whatever the client script returns is what will be spawned for that client. Ensure that the prefab being spawned is in a NetworkPrefabList [registered with the NetworkManager](../../basics/object-spawning.md#registering-a-network-prefab).
 
 If you don't assign a callback handler to `OnFetchLocalPlayerPrefabToSpawn`, then the default behavior is to return the `NetworkConfig.PlayerPrefab` (or null if neither are set).
 
 :::note `AutoSpawnPlayerPrefabClientSide` required
-For `OnFetchLocalPlayerPrefabToSpawn` to work, [`AutoSpawnPlayerPrefabClientSide`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_AutoSpawnPlayerPrefabClientSide) must be enabled.
+For `OnFetchLocalPlayerPrefabToSpawn` to work, [`AutoSpawnPlayerPrefabClientSide`](xref:Unity.Netcode.NetworkManager.AutoSpawnPlayerPrefabClientSide) must be enabled.
 :::
 
 ## PlayerObject spawning timeline

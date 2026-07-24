@@ -1,6 +1,6 @@
 # Single player sessions
 
-Netcode for GameObjects provides a [SinglePlayerTransport](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.13/api/Unity.Netcode.Transports.SinglePlayer.SinglePlayerTransport.html) which derives from [NetworkTransport](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.13/api/Unity.Netcode.NetworkTransport.html).
+Netcode for GameObjects provides a [SinglePlayerTransport](xref:Unity.Netcode.Transports.SinglePlayer.SinglePlayerTransport) which derives from [NetworkTransport](xref:Unity.Netcode.NetworkTransport).
 
 This provides the ability to run a hosted session using the single player transport without having to modify your primary netcode script.
 
