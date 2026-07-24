@@ -37,7 +37,7 @@ Requirements
 #### In-scene placed
 
 Requirements
-  
+
 * It can be a valid network prefab instance within a scene.
 * It can be a GameObject with a `NetworkObject` component created within the scene while in the editor.
 
