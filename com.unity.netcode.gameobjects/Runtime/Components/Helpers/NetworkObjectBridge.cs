@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
 
-    [DefaultExecutionOrder(GhostAdapterExecutionOrder.ExecutionOrder + 1)]
+    [DefaultExecutionOrder(GhostObjectExecutionOrder.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
     public partial class NetworkObjectBridge : GhostBehaviour
     {
@@ -23,7 +23,7 @@ namespace Unity.Netcode
         {
             hideFlags = HideFlags.HideInInspector;
 
-            var ghostAdapter = GetComponent<GhostAdapter>();
+            var ghostAdapter = GetComponent<GhostObject>();
             if (ghostAdapter == null)
             {
                 return;

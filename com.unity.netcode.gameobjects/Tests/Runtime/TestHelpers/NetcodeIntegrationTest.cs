@@ -2455,7 +2455,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // NetworkObject Ghost specific settings
             no.HasGhost = true;
-            no.GhostAdapter = adapter;
+            no.GhostObject = adapter;
             no.HadBridge = true;
             no.NetworkObjectBridge = bridge;
 

@@ -365,7 +365,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
         [HideInInspector]
         [SerializeField]
-        internal GhostAdapter GhostAdapter;
+        internal GhostObject GhostObject;
 
         [HideInInspector]
         [SerializeField]
@@ -388,16 +388,16 @@ namespace Unity.Netcode
         internal void UnifiedValidation()
         {
             NetworkObjectBridge = GetComponent<NetworkObjectBridge>();
-            GhostAdapter = GetComponent<GhostAdapter>();
+            GhostObject = GetComponent<GhostObject>();
 
-            HasGhost = GhostAdapter != null;
+            HasGhost = GhostObject != null;
             if (HasGhost)
             {
                 //TODO: Needs to be validated once develop-2.0.0 is merged.
                 if (InScenePlaced)
                 {
                     Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
-                    Destroy(GhostAdapter);
+                    Destroy(GhostObject);
                     HasGhost = false;
                     return;
                 }
@@ -420,7 +420,7 @@ namespace Unity.Netcode
         {
             if (HasGhost)
             {
-                GhostAdapter.ApplyPostTransformMatrixScale(scale);
+                GhostObject.ApplyPostTransformMatrixScale(scale);
             }
         }
 #endif
@@ -3933,7 +3933,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
+            if (!HasGhost || !NetworkObjectBridge || GhostObject.IsPrefab())
             {
                 // Nothing to register
                 return;
@@ -3944,7 +3944,7 @@ namespace Unity.Netcode
             {
                 Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
             }
-            if (GhostAdapter.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
+            if (GhostObject.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
             {
                 NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(NetworkObjectBridge.NetworkObjectId.Value, this);
             }
