@@ -352,7 +352,7 @@ namespace Unity.Netcode
                 SceneMigrationSynchronization = false;
 
                 // Set our disabled in-scene placed flag for spawning initially disabled in-scene placed objects.
-                m_InScenePlacedDisabledByDefault = gameObject.activeInHierarchy;
+                m_InScenePlacedDisabledByDefault = !gameObject.activeInHierarchy;
             }
         }
 #endif // UNITY_EDITOR
