@@ -1121,9 +1121,6 @@ namespace Unity.Netcode
                 NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
                 networkObject.InScenePlaced = false;
             }
-            // This logic is no longer true with the adjustments to spawn pre-disabled in-scene placed NetworkObjects.
-            // Leaving this for reference purposes.
-            //NetworkLog.InternalAssert(sceneObject == networkObject.InScenePlaced, "Legacy sceneObject value should match calculated InScenePlaced value.");
 
             if (!networkObject.InScenePlaced && NetworkManager.LogLevel <= LogLevel.Error)
             {
@@ -1595,10 +1592,10 @@ namespace Unity.Netcode
                 // Determine if this is even a valid thing to spawn:
                 // - If it is not based on a registered prefab, it is invalid.
                 // - If the GlobalObjectIdHash is zero, it is invalid.
-                var isInvalidInstanceToSpawn = !NetworkManager.NetworkConfig.Prefabs.IsBasedOnRegisteredPrefab(networkObject) || networkObject.GlobalObjectIdHash == 0;
+                var isValidInstanceToSpawn = NetworkManager.NetworkConfig.Prefabs.IsBasedOnRegisteredPrefab(networkObject) && networkObject.GlobalObjectIdHash != 0;
 
                 // If we are a valid prefab asset, marked as in-scene placed, but this was marked during runtime by the post processor.
-                if (!isInvalidInstanceToSpawn && networkObject.InScenePlaced && networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
+                if (isValidInstanceToSpawn && networkObject.InScenePlaced && networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
                 {
                     // Then it is not in-scene placed and was pre-instantiated. Spawn dynamically.
                     networkObject.InScenePlaced = false;
@@ -1606,21 +1603,17 @@ namespace Unity.Netcode
                 else if (networkObject.InScenePlaced && !networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
                 {
                     // If this was marked as in-scene placed within the editor, then it is valid.
-                    isInvalidInstanceToSpawn = false;
+                    isValidInstanceToSpawn = true;
                 }
 
                 var wasPreInstantiated = !networkObject.IsSpawned && !networkObject.InScenePlaced;
 
                 // Dynamically created NetworkObjects instances are not supported and will not be spawned during the sweep.
-                if (wasPreInstantiated && isInvalidInstanceToSpawn)
+                if (wasPreInstantiated && !isValidInstanceToSpawn)
                 {
-                    // If this isn't the original prefab asset being skipped over (integration test would be a good example), then log the error.
-                    if (!NetworkManager.NetworkConfig.Prefabs.IsActualPrefabAsset(networkObject))
-                    {
-                        NetworkManager.Log.Error(new Context(LogLevel.Error, $"Detected a pre-instantiated {nameof(GameObject)} " +
-                            $"with a {nameof(NetworkObject)} component instance that is not a registered prefab nor an in-scene placed {nameof(NetworkObject)}." +
-                            $" Dynamically creating unregistered {nameof(NetworkObject)}s is not supported! This {nameof(NetworkObject)} will not be spawned.").AddNetworkObject(networkObject));
-                    }
+                    NetworkManager.Log.Error(new Context(LogLevel.Error, $"Detected a pre-instantiated {nameof(GameObject)} " +
+                        $"with a {nameof(NetworkObject)} component instance that is not a registered prefab nor an in-scene placed {nameof(NetworkObject)}." +
+                        $" Dynamically creating unregistered {nameof(NetworkObject)}s is not supported! This {nameof(NetworkObject)} will not be spawned.").AddNetworkObject(networkObject));
                     continue;
                 }
 
