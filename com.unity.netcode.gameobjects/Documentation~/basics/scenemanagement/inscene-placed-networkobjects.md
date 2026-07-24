@@ -184,9 +184,13 @@ public class MyInSceneNetworkObjectBehaviour : NetworkBehaviour
 > [!NOTE]
 > You only need to enable the NetworkObject on the server-side to be able to respawn it. Netcode for GameObjects only enables a disabled in-scene placed NetworkObject on the client-side if the server-side spawns it. This **does not** apply to dynamically spawned `NetworkObjects`. Refer to [the object pooling page](../../advanced-topics/object-pooling.md) for an example of recycling dynamically spawned NetworkObjects.
 
+### Pre-disabled in-scene placed NetworkObjects
+
+If you want to always have an in-scene placed NetworkObject start off as disabled and then spawn it at a later time, you only need to set its GameObject to inactive in the editor while the respective scene is open. Once you have started a networked session, you can re-enable it and then spawn it any time.
+
 ### Setting an in-scene placed NetworkObject to a despawned state when instantiating
 
-Since in-scene placed NetworkObjects are automatically spawned when their respective scene has finished loading during a network session, you might run into the scenario where you want it to start in a despawned state until a certain condition has been met. To do this, you need to add some additional code in the `OnNetworkSpawn` part of your NetworkBehaviour component:
+If you want to programmatically disable an in-scene placed NetworkObject you can add some additional code in the `OnNetworkSpawn` part of a NetworkBehaviour component:
 
 ```csharp
 using UnityEngine;
