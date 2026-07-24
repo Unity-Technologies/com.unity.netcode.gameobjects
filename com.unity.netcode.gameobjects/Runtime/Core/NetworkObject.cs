@@ -358,6 +358,15 @@ namespace Unity.Netcode
 #endif // UNITY_EDITOR
 
         /// <summary>
+        /// This is intentionally private since this is a sealed class.
+        /// </summary>
+        private void Awake()
+        {
+            SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
+        }
+
+        /// <summary>
         /// Used to provide support for initially disabled in-scene placed objects.
         /// This is only ever set on in-scene placed objects that are already disabled
         /// in the scene asset itself.
@@ -3729,14 +3738,7 @@ namespace Unity.Netcode
             }
         }
 
-        
 
-        private void Awake()
-        {
-            SetCachedParent(transform.parent);
-            SceneOrigin = gameObject.scene;
-            m_GameObjectWasDisabledWhenInstantiated = true;
-        }
 
         /// <summary>
         /// Update
