@@ -2536,14 +2536,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-#if UNIFIED_NETCODE
-                // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
-                // assigning this.
-                if (networkObjectToSpawn.HasGhost)
-                {
-                    NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
-                }
-#endif
                 networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
                 if (spawnAuthority == m_ServerNetworkManager)
                 {

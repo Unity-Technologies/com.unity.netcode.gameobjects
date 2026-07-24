@@ -3924,18 +3924,18 @@ namespace Unity.Netcode
 
         private void InitGhost()
         {
-            if (!NetworkManager.IsListening)
+            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
+            {
+                // Nothing to register
+                return;
+            }
+            
+            if (!NetworkManager || !NetworkManager.IsListening)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
                     Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
                 }
-                return;
-            }
-
-            if (!HasGhost || !NetworkObjectBridge || GhostAdapter.IsPrefab())
-            {
-                // Nothing to register
                 return;
             }
 

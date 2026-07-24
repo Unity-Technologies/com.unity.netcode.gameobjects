@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
 
 namespace TestProject.RuntimeTests
 {
