@@ -174,15 +174,14 @@ test_platforms:
 
 validation_editors:
     default:
-        - 6000.3
+        - 6000.6
     all:
-        - 6000.3
-        - 6000.4
-        - 6000.5
+        - 6000.6.0b5
+        - 6000.6
         - trunk
         - f1298548e194f35ff7dfa6fee699d4464ab3919c
     minimal:
-        - 6000.0
+        - 6000.6.0b5
 pinnedTrunk:  f1298548e194f35ff7dfa6fee699d4464ab3919c
 
 
