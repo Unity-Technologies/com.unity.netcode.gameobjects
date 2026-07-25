@@ -1180,8 +1180,7 @@ namespace Unity.Netcode.Components
                 {
                     SendAnimStateRpc(m_AnimationMessage);
                 }
-                else
-                if (!IsServer && IsOwner)
+                else if (!IsServer && IsOwner)
                 {
                     SendServerAnimStateRpc(m_AnimationMessage);
                 }
@@ -1346,8 +1345,7 @@ namespace Unity.Netcode.Components
                         BytePacker.WriteValuePacked(writer, (uint)valueInt);
                     }
                 }
-                else
-                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
                     var valueBool = m_Animator.GetBool(hash);
                     fixed (void* value = cacheValue.Value)
@@ -1379,6 +1377,13 @@ namespace Unity.Netcode.Components
             while (totalParametersRead < totalParametersToRead)
             {
                 ByteUnpacker.ReadValuePacked(reader, out uint parameterIndex);
+
+                // Do bounds check prior to getting the element as a reference at that index.
+                if (parameterIndex >= m_CachedAnimatorParameters.Length)
+                {
+                    NetworkManager.Log.ErrorServer(new Logging.Context(LogLevel.Error, $"[{nameof(NetworkAnimator)}][{name}] Invalid index of {parameterIndex} was received when there are only {m_CachedAnimatorParameters.Length} parameters. Ignoring the remainger of this {nameof(ParametersUpdateMessage)}!"));
+                    return;
+                }
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), (int)parameterIndex);
                 var hash = cacheValue.Hash;
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)

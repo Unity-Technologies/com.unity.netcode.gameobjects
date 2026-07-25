@@ -733,8 +733,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
         private void RegisterPendingGhost(NetworkObject networkObject, ulong networkObjectId)
         {
-            var ghost = networkObject.GetComponent<GhostAdapter>();
-            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostAdapter)}!");
+            var ghost = networkObject.GetComponent<GhostObject>();
+            Assert.IsNotNull(ghost, $"[RegisterPendingGhost][NetworkObject-{networkObjectId}] Has no {nameof(GhostObject)}!");
             foreach (var networkManager in m_NetworkManagers)
             {
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
@@ -1837,9 +1837,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
 #if UNIFIED_NETCODE
                     // Handle removing the prefab reference and destroying it
-                    // and then destroying the ghostAdapter prior to destroying
+                    // and then destroying the GhostObject prior to destroying
                     // a hybrid prefab.
-                    var ghostAdapter = networkObject.GetComponent<GhostAdapter>();
+                    var ghostAdapter = networkObject.GetComponent<GhostObject>();
                     if (ghostAdapter != null)
                     {
                         if (ghostAdapter.prefabReference != null)
@@ -2025,6 +2025,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs.
+        /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForConditionOrTimeOutWithTimeTravel(Func<StringBuilder, bool> checkForCondition, int maxTries = 60)
+        {
+            WaitForConditionOrTimeOutWithTimeTravel(() =>
+            {
+                // Clear errorBuilder before each check to ensure the errorBuilder only contains information from the lastest run
+                m_InternalErrorLog.Clear();
+                return checkForCondition(m_InternalErrorLog);
+            }, maxTries);
+        }
+
+        /// <summary>
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
         /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
@@ -2078,7 +2094,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(List<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ICollection<NetworkObject> networkObjects, TimeoutHelper timeOutHelper = null)
         {
             bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
             {
@@ -2097,6 +2113,77 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             yield return WaitForConditionOrTimeOut(ValidateObjectsSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(ulong networkObjectId, int maxTries = 60)
+        {
+            bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObjectId}!");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            WaitForConditionOrTimeOutWithTimeTravel(ValidateObjectSpawnedOnAllClients, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(NetworkObject networkObject, int maxTries = 60)
+        {
+            var networkObjectId = networkObject.NetworkObjectId;
+            WaitForSpawnedOnAllOrTimeOutWithTimeTravel(networkObjectId, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(GameObject gameObject, int maxTries = 60)
+        {
+            var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
+            WaitForSpawnedOnAllOrTimeOutWithTimeTravel(networkObjectId, maxTries);
+        }
+
+        /// <summary>
+        /// Waits until all given NetworkObjects are spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjects">The list of <see cref="NetworkObject"/>s to wait for.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
+        protected void WaitForSpawnedOnAllOrTimeOutWithTimeTravel(List<NetworkObject> networkObjects, int maxTries = 60)
+        {
+            bool ValidateObjectsSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    foreach (var networkObject in networkObjects)
+                    {
+                        if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
+                        {
+                            errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObject.NetworkObjectId}!");
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            WaitForConditionOrTimeOutWithTimeTravel(ValidateObjectsSpawnedOnAllClients, maxTries);
         }
 
         /// <summary>
@@ -2336,10 +2423,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // When adding a Hybrid/Ghost prefab:
             // - We disabled the GameObject prior to adding the GhostPrefabReference (so IsPrefab() == true).
-            // - Add the GhostAdapter and GhostPrefabReference
+            // - Add the GhostObject and GhostPrefabReference
             // - Then set it back to active.
             gameObject.SetActive(false);
-            var adapter = gameObject.AddComponent<GhostAdapter>();
+            var adapter = gameObject.AddComponent<GhostObject>();
             // Mark the reference as post processing to avoid registering this instance automatically.
             GhostPrefabReference.s_IsPostProcessing = true;
             adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
@@ -2356,7 +2443,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // with the dependency to prediction manual test).
             adapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
-            // Once done with setting up the GhostAdapter, we can set it back to active in the hierarchy
+            // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);
 
             // GhostBehaviours that are part of a prefab will not invoke Ghost.InternalAcquireEntityReference
@@ -2368,12 +2455,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // NetworkObject Ghost specific settings
             no.HasGhost = true;
-            no.GhostAdapter = adapter;
+            no.GhostObject = adapter;
             no.HadBridge = true;
             no.NetworkObjectBridge = bridge;
 
             // Disable transform synchronization for NetworkObject serialization
-            // since that is handled by the GhostAdapter.
+            // since that is handled by the GhostObject.
             no.SynchronizeTransform = false;
 
             // Turn it into a test prefab
