@@ -34,21 +34,21 @@ namespace Unity.Netcode
             ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
 #if COM_UNITY_MODULES_PHYSICS
-            var rigidBody = GetComponent<Rigidbody>();
-            var ghostRigidBody = GetComponent<GhostRigidbody>();
-            if (rigidBody != null)
-            {
-                // This must be enabled when replicating the rigid body.
+            //var rigidBody = GetComponent<Rigidbody>();
+            //var ghostRigidBody = GetComponent<GhostRigidbody>();
+            //if (rigidBody != null)
+            //{
+            //    // This must be enabled when replicating the rigid body.
 
-                ghostAdapter.SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
-                // TODO: Currently, this is added only if you enable replication of the rigid body.
-                // There is a bug where if you don't add this component it doesn't synchronize the transform.
-                // Remove this once the issue is resolved.
-                if (ghostRigidBody == null)
-                {
-                    gameObject.AddComponent<GhostRigidbody>();
-                }
-            }
+            //    ghostAdapter.SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
+            //    // TODO: Currently, this is added only if you enable replication of the rigid body.
+            //    // There is a bug where if you don't add this component it doesn't synchronize the transform.
+            //    // Remove this once the issue is resolved.
+            //    if (ghostRigidBody == null)
+            //    {
+            //        gameObject.AddComponent<GhostRigidbody>();
+            //    }
+            //}
 #endif
 #if COM_UNITY_MODULES_PHYSICS2D
             // TODO: Fill out a similar script as above but for the 2D version

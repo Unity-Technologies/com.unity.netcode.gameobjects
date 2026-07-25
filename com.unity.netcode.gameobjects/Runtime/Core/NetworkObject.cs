@@ -393,13 +393,10 @@ namespace Unity.Netcode
             HasGhost = GhostObject != null;
             if (HasGhost)
             {
-                //TODO: Needs to be validated once develop-2.0.0 is merged.
+                //TODO: This appears to be getting set when I duplicate prefabs
                 if (InScenePlaced)
                 {
-                    Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
-                    Destroy(GhostObject);
-                    HasGhost = false;
-                    return;
+                    InScenePlaced = false;
                 }
 
                 if (NetworkObjectBridge == null)
