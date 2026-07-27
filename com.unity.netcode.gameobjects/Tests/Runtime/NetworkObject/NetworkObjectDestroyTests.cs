@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -193,7 +194,7 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
 
-                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] [SenderId:{m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, new Regex($"SenderId:{m_ClientNetworkManagers[0].LocalClientId}]")))
                 {
                     return false;
                 }

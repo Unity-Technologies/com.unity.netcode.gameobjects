@@ -125,7 +125,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkObject.HasGhost)
             {
-                // Handles the GhostAdapter side of things for parenting
+                // Handles the GhostObject side of things for parenting
                 networkObject.NetworkObjectBridge.HybridParentUpdate(Scale);
             }
             else

@@ -418,8 +418,7 @@ namespace Unity.Netcode.RuntimeTests
                     // make the last one disabled.
                     return false;
                 }
-                else
-                if (!first && !second)
+                else if (!first && !second)
                 {
                     // If both are disabled, then make the
                     // last one enabled.

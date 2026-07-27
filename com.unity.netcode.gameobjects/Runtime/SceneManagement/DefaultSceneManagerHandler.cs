@@ -359,8 +359,8 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            else // Warn users if they are changing this after there are clients already connected and synchronized
-            if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            // Warn users if they are changing this after there are clients already connected and synchronized
+            else if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
