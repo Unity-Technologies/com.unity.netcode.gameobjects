@@ -176,6 +176,7 @@ test_platforms:
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv2.X official support started from 6000.0 editor
 # TODO: When a new editor will be released it should be added to this list
+# standards editor is used for standards check so we won't get random manifest changes due to newer editor being used
 
 validation_editors:
     default:
@@ -188,6 +189,8 @@ validation_editors:
         - 5fe7931aab8c4fff9274e15ef0800125c68b8d6a
     minimal:
         - 6000.0
+    standards:
+        - 6000.3.21f1
 pinnedTrunk:  5fe7931aab8c4fff9274e15ef0800125c68b8d6a
 
 
