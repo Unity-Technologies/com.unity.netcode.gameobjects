@@ -2961,7 +2961,7 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="originalOwnerId">the owner prior to beginning the change in ownership change.</param>
         /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
-        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId, bool authorityChangedOwnership = false)
+        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
             var currentOwnerId = OwnerClientId;
             OwnerClientId = originalOwnerId;
@@ -2973,7 +2973,7 @@ namespace Unity.Netcode
 
             // If the spawn authority of a distributed authority network topology has invoked a change in ownership,
             // then we want to invoke the NetworkBehaviourUpdate prior to changing the owner back.
-            if (authorityChangedOwnership && NetworkManager.DistributedAuthorityMode)
+            if (NetworkManager.DistributedAuthorityMode)
             {
                 // Force send a state update for all owner read NetworkVariables  and any currently dirty
                 // owner write NetworkVariables.

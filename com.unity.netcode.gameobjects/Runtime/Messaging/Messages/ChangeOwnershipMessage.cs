@@ -241,7 +241,7 @@ namespace Unity.Netcode
             if (!distributedAuthorityMode && originalOwner == networkManager.LocalClientId)
             {
                 // Fully synchronize NetworkVariables with either read or write ownership permissions.
-                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId, true);
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId);
             }
 
             // Always invoke ownership change notifications
