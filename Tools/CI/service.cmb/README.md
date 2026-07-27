@@ -1,6 +1,6 @@
 # Testing against the CMB Service
 
-The CMB Service is a tool that is external to our repository. The tool is inside the `runtime` folder in the [mps-common-multiplayer-backend](https://github.com/Unity-Technologies/mps-common-multiplayer-backend) repository.
+The CMB Service is a tool that is external to our repository. The tool is inside the `runtime` folder of the [CMB service](https://github.com/Unity-Technologies/unity-player-services/tree/main/services/common-multiplayer-backend) in the Unity Player Services monorepo.
 
 Due to this, there is some more setup needed when running tests against the CMB Service.
 
@@ -16,9 +16,12 @@ First, ensure the `USE_CMB_SERVICE` scripting define or environment variable is 
 
 ### Download the service
 
-Go to the `CMB Runtime CI` action inside the cmb repo ([link here](https://github.com/Unity-Technologies/mps-common-multiplayer-backend/actions/workflows/runtime.yaml)). Open the most recent job and scroll down to the bottom of the page (You may have to scroll in the sidebar on the left, the centre of the page is not scrollable).
+1. Go to the [CMB Runtime Build workflow](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/actions/workflows/cmb-runtime-build.yaml) on this repo's Actions page.
+2. Trigger a new run with **Run workflow**
+  a. optionally pass a unity-player-services branch, tag, or SHA (default will build `main`).
+3. Wait for the action to finish running.
 
-Inside the **Artifacts** section at the bottom of the page, download the `comb-server-<platform>-latest` that matches your computer architecture. This will download a pre-built binary of the most recent CMB Service.
+Inside the **Artifacts** section at the bottom of the page of the finished run you will see three pre-built `comb-server` binaries. Download the `comb-server-<platform>-latest` binary that matches your computer architecture.
 
 ### Run the service locally
 
@@ -56,3 +59,7 @@ The following environment variables allow for further configuration of the setup
 `CMB_SERVICE_PORT` defines the port where the tests will try to connect to the service (defaults to `7789`).
 
 `NGO_HOST` defines the http address where the tests will try to connect to the service (defaults to `127.0.0.1`).
+
+## Running on CI (Yamato)
+
+The CMB tests can also be run from Yamato. The jobs are defined in [`.yamato/cmb-service-standalone-tests.yml`](../../../.yamato/cmb-service-standalone-tests.yml) and appear in Yamato as `CMB Service Test - NGO <project> - [<platform>, <editor>, <backend>]`. The job can be triggered manually from any branch meaning it can be easier to run the CMB tests from Yamato rather than set them up locally. The test uses [`run_cmb_service.sh`](./run_cmb_service.sh) to setup and run the CMB service.

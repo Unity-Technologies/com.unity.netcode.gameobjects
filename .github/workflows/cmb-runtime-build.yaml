@@ -1,0 +1,49 @@
+# Builds the CMB runtime (comb-server) from unity-player-services on all
+# desktop platforms and publishes the binaries as downloadable artifacts.
+# See ../Tools/CI/service.cmb/README.md for more information.
+name: CMB Runtime Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'unity-player-services branch, tag, or SHA to build'
+        required: false
+        default: 'main'
+
+env:
+  RUNTIME_DIR: services/common-multiplayer-backend/runtime
+
+jobs:
+  build:
+    name: Build comb-server (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Unity-Technologies/unity-player-services
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.NETCODE_CI_SERVICE_TOKEN }}
+          sparse-checkout: services/common-multiplayer-backend/runtime
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.8.2
+        with:
+          workspaces: ${{ env.RUNTIME_DIR }}
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        working-directory: ${{ env.RUNTIME_DIR }}
+        run: cargo build --release --locked
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: comb-server-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            ${{ env.RUNTIME_DIR }}/target/release/comb-server
+            ${{ env.RUNTIME_DIR }}/target/release/comb-server.exe
