@@ -4,6 +4,9 @@
 name: CMB Runtime Build
 
 on:
+  push:
+    branches:
+      - chore/point-cmb-at-monorepo
   workflow_dispatch:
     inputs:
       ref:
