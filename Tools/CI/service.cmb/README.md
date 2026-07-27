@@ -16,12 +16,9 @@ First, ensure the `USE_CMB_SERVICE` scripting define or environment variable is 
 
 ### Download the service
 
-1. Go to the [CMB Runtime Build workflow](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/actions/workflows/cmb-runtime-build.yaml) on this repo's Actions page.
-2. Trigger a new run with **Run workflow**
-  a. optionally pass a unity-player-services branch, tag, or SHA (default will build `main`).
-3. Wait for the action to finish running.
+Go to the `CMB Runtime CI` action inside the cmb repo ([link here](https://github.com/Unity-Technologies/mps-common-multiplayer-backend/actions/workflows/runtime.yaml)). Open the most recent job and scroll down to the bottom of the page (You may have to scroll in the sidebar on the left, the centre of the page is not scrollable).
 
-Inside the **Artifacts** section at the bottom of the page of the finished run you will see three pre-built `comb-server` binaries. Download the `comb-server-<platform>-latest` binary that matches your computer architecture.
+Inside the **Artifacts** section at the bottom of the page, download the `comb-server-<platform>-latest` that matches your computer architecture. This will download a pre-built binary of the most recent CMB Service.
 
 ### Run the service locally
 
