@@ -61,11 +61,6 @@ namespace Unity.Netcode
         /// N4E-spawned hybrid prefab instances.
         /// </summary>
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
-        public void SetNetworkObjectId(ulong networkObjectId)
-        {
-            NetworkObjectId.PresetValue(networkObjectId);
-            NetworkObjectId.Value = networkObjectId;
-        }
 
         /// <summary>
         /// Currently, NGO provides the parenting event handling via <see cref="ParentSyncMessage"/>.
