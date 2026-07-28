@@ -22,28 +22,28 @@ You can use [NetworkBehaviours](networkbehaviour.md) to add your own custom Netc
 ### What is a valid NetworkObject?
 
 There are two categories of NetworkObjects:
-* Dynamically intantiated
+* Dynamically instantiated
 * [In-scene placed](../../basics/scenemanagement/inscene-placed-networkobjects.md)
 
 The following provides the validity requirements for both types.
 
-#### Dynamically instantiated network prefabs.
+#### Dynamically instantiated network prefabs
 
-Requirements
+Dynamically instantiated network prefabs must:
 
-* It must be a valid [network prefab](./networkobject.md#network-prefabs) created within the editor.
-* It must be registered within a network prefab list that is assigned to your NetworkManager.
+* Be a valid [network prefab](./networkobject.md#network-prefabs) created within the Editor.
+* Be registered in a network prefab list that's assigned to your NetworkManager.
 
-#### In-scene placed
+#### In-scene placed network prefabs
 
-Requirements
+In-scene placed network prefabs must:
 
-* It can be a valid network prefab instance within a scene.
-* It can be a GameObject with a `NetworkObject` component created within the scene while in the editor.
+* Be a valid network prefab instance within a scene.
+* Be a GameObject with a NetworkObject component created within the scene while in the Editor.
 
 ### What is an invalid NetworkObject?
 
-Any GameObjects that have `NetworkObject` components added to them during runtime is **not supported** and will result in the NetworkObject's `GlobalObjectIdHash` being zero which would eventually result in synchronization issues. In the event you make this mistake, a warning message will be logged and the NetworkObject will not get spawned.
+GameObjects that have NetworkObject components added to them during runtime are **not supported** and will result in the NetworkObject's `GlobalObjectIdHash` being zero, which causes synchronization issues. In the event you make this mistake, a warning message will be logged and the NetworkObject won't be spawned.
 
 ### Component order
 
