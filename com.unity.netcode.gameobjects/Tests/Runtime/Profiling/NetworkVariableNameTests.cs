@@ -1,41 +1,41 @@
-using System;
+using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    internal sealed class NetworkVariableNameTests
+    internal class NetworkVariableNameTests : NetcodeIntegrationTest
     {
+        protected override int NumberOfClients => 1;
         private NetworkVariableNameComponent m_NetworkVariableNameComponent;
 
-        [OneTimeSetUp]
-        public void OneTimeSetup()
+        private GameObject m_PrefabToTest;
+
+        protected override void OnServerAndClientsCreated()
         {
-            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
-            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            m_PrefabToTest = CreateNetworkObjectPrefab("NetVarNameTest");
+            m_PrefabToTest.AddComponent<NetworkVariableNameComponent>();
+            base.OnServerAndClientsCreated();
         }
 
-        [SetUp]
-        public void SetUp()
+        [UnityTest]
+        public IEnumerator VerifyNetworkVariableNameInitialization()
         {
-            NetworkManagerHelper.StartNetworkManager(out _);
+            var authority = GetAuthorityNetworkManager();
+            var authorityInstance = SpawnObject(m_PrefabToTest, authority);
+            var authorityNetworkObject = authorityInstance.GetComponent<NetworkVariableNameComponent>();
 
-            var gameObjectId = NetworkManagerHelper.AddGameNetworkObject(Guid.NewGuid().ToString());
-            m_NetworkVariableNameComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableNameComponent>(gameObjectId);
-            NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-        }
+            yield return WaitForSpawnedOnAllOrTimeOut(authorityInstance);
+            AssertOnTimeout($"Not all clients spawned {authorityInstance.name}!");
 
-        [TearDown]
-        public void TearDown()
-        {
-            NetworkManagerHelper.ShutdownNetworkManager();
-        }
-
-        [Test]
-        public void VerifyNetworkVariableNameInitialization()
-        {
-            // Fields have regular naming
-            Assert.AreEqual(nameof(NetworkVariableNameComponent.NetworkVarList), m_NetworkVariableNameComponent.NetworkVarList.Name);
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var componentInstance = networkManager.SpawnManager.SpawnedObjects[authorityNetworkObject.NetworkObjectId].GetComponent<NetworkVariableNameComponent>();
+                // Verify fields have regular naming
+                Assert.AreEqual(nameof(NetworkVariableNameComponent.NetworkVarList), componentInstance.NetworkVarList.Name);
+            }
         }
 
         private class NetworkVariableNameComponent : NetworkBehaviour
