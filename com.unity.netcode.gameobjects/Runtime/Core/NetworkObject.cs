@@ -2971,17 +2971,31 @@ namespace Unity.Netcode
                 childBehaviour.MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
 
+            // If the spawn authority of a distributed authority network topology has invoked a change in ownership,
+            // then we want to invoke the NetworkBehaviourUpdate prior to changing the owner back.
+            if (NetworkManager.DistributedAuthorityMode)
+            {
+                // Force send a state update for all owner read NetworkVariables  and any currently dirty
+                // owner write NetworkVariables.
+                NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            }
+
             // Now set the new owner and previous owner identifiers back to their original new values
-            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
-            // operations is **particularly important** as we need to first (above) mark things as dirty
-            // from the context of the original owner and then second (below) we need to send the messages
-            // which requires the new owner to be set for owner read permission NetworkVariables.
+            // after we run the NetworkBehaviourUpdate.
             OwnerClientId = currentOwnerId;
             PreviousOwnerId = originalOwnerId;
 
-            // Force send a state update for all owner read NetworkVariables  and any currently dirty
-            // owner write NetworkVariables.
-            NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            // For owner read only permissions this order of operations is **particularly important** as
+            // we need to first (above) mark things as dirty from the context of the original owner and
+            // then second (below) we need to send the messages which requires the new owner to be set.
+            // Note: Owner read only NetworkVariables do not make sense in a distributed authority topology
+            // since the only instance that can write is the owner.
+            if (!NetworkManager.DistributedAuthorityMode)
+            {
+                // Force send a state update for all owner read NetworkVariables and any currently dirty
+                // owner write NetworkVariables.
+                NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            }
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
