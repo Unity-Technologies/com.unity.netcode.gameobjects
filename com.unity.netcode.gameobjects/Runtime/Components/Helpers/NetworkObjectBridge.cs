@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
 
-    [DefaultExecutionOrder(GhostObjectExecutionOrder.ExecutionOrder + 1)]
+    [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
     public partial class NetworkObjectBridge : GhostBehaviour
     {
