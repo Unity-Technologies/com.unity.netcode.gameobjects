@@ -19,6 +19,32 @@ When spawning a NetworkObject, the `NetworkObject.GlobalObjectIdHash` value init
 
 You can use [NetworkBehaviours](networkbehaviour.md) to add your own custom Netcode logic to the associated NetworkObject.
 
+### What is a valid NetworkObject?
+
+There are two categories of NetworkObjects:
+* Dynamically instantiated
+* [In-scene placed](../../basics/scenemanagement/inscene-placed-networkobjects.md)
+
+The following provides the validity requirements for both types.
+
+#### Dynamically instantiated network prefabs
+
+Dynamically instantiated network prefabs must:
+
+* Be a valid [network prefab](./networkobject.md#network-prefabs) created within the Editor.
+* Be registered in a network prefab list that's assigned to your NetworkManager.
+
+#### In-scene placed network prefabs
+
+In-scene placed network prefabs must:
+
+* Be a valid network prefab instance within a scene.
+* Be a GameObject with a NetworkObject component created within the scene while in the Editor.
+
+### What is an invalid NetworkObject?
+
+GameObjects that have NetworkObject components added to them during runtime are **not supported** and will result in the NetworkObject's `GlobalObjectIdHash` being zero, which causes synchronization issues. In the event you make this mistake, a warning message will be logged and the NetworkObject won't be spawned.
+
 ### Component order
 
 The order of components on a networked GameObject matters. When adding netcode components to a GameObject, ensure that the NetworkObject component is ordered before any NetworkBehaviour components.

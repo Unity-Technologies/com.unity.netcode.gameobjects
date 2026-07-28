@@ -1135,7 +1135,6 @@ namespace Unity.Netcode
                 NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
                 networkObject.InScenePlaced = false;
             }
-            NetworkLog.InternalAssert(sceneObject == networkObject.InScenePlaced, "Legacy sceneObject value should match calculated InScenePlaced value.");
 
             if (!networkObject.InScenePlaced && NetworkManager.LogLevel <= LogLevel.Error)
             {
@@ -1613,10 +1612,48 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                // This used to be two loops.
-                // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
-                // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                if (networkObject.InScenePlaced)
+                // Do not attempt to spawn if it is the actual prefab asset itself:
+                // - This is not supported by NGO.
+                // - This will lead to other issues if it gets destroyed, when de-spawned, but the prefab is still registered.
+                // - This also prevents from spawning integration test prefabs.
+                if (NetworkManager.NetworkConfig.Prefabs.IsActualPrefabAsset(networkObject))
+                {
+                    NetworkManager.Log.Warning(new Context(LogLevel.Developer, $"Skipping {networkObject.name} as it is the actual prefab asset itself!"));
+                    continue;
+                }
+
+                // Determine if this is even a valid thing to spawn:
+                // - If it is not based on a registered prefab, it is invalid.
+                // - If the GlobalObjectIdHash is zero, it is invalid.
+                var isValidInstanceToSpawn = NetworkManager.NetworkConfig.Prefabs.IsBasedOnRegisteredPrefab(networkObject) && networkObject.GlobalObjectIdHash != 0;
+
+                // If we are a valid prefab asset, marked as in-scene placed, but this was marked during runtime by the post processor.
+                if (isValidInstanceToSpawn && networkObject.InScenePlaced && networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
+                {
+                    // Then it is not in-scene placed and was pre-instantiated. Spawn dynamically.
+                    networkObject.InScenePlaced = false;
+                }
+                else if (networkObject.InScenePlaced && !networkObject.InScenePlacedPostProcessorMarkedDuringRuntime)
+                {
+                    // If this was marked as in-scene placed within the editor, then it is valid.
+                    isValidInstanceToSpawn = true;
+                }
+
+                var wasPreInstantiated = !networkObject.IsSpawned && !networkObject.InScenePlaced;
+
+                // Dynamically created NetworkObjects instances are not supported and will not be spawned during the sweep.
+                if (wasPreInstantiated && !isValidInstanceToSpawn)
+                {
+                    NetworkManager.Log.Error(new Context(LogLevel.Error, $"Detected a pre-instantiated {nameof(GameObject)} " +
+                        $"with a {nameof(NetworkObject)} component instance that is not a registered prefab nor an in-scene placed {nameof(NetworkObject)}." +
+                        $" Dynamically creating unregistered {nameof(NetworkObject)}s is not supported! This {nameof(NetworkObject)} will not be spawned.").AddNetworkObject(networkObject));
+                    continue;
+                }
+
+                // The only valid things to spawn during the sweep are:
+                // - In-scene placed NetworkObjects.
+                // - Pre-instantiated NetworkObjects that are registered with the NetworkManager's network prefab list(s).
+                if (networkObject.InScenePlaced || wasPreInstantiated)
                 {
                     var ownerId = networkObject.OwnerClientId;
                     if (NetworkManager.DistributedAuthorityMode)

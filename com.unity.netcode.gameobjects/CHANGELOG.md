@@ -19,6 +19,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
   - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
 
+
+
 ### Deprecated
 
 
@@ -26,6 +28,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ### Fixed
+
+- Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
+- Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
+- Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
 
 
 ### Security
