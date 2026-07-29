@@ -51,7 +51,7 @@
 pr_minimal_required_checks:
   name: Minimal PR checks
   dependencies:
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.minimal }}
     - .yamato/package-pack.yml#package_pack_-_ngo_win
   triggers:
     expression: |-
@@ -132,7 +132,7 @@ develop_nightly:
         rerun: always
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.minimal }}
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 6000.0

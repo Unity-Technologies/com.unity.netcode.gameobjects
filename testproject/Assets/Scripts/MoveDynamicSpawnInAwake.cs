@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 #if UNITY_6000_6_OR_NEWER && UNITY_EDITOR
-    [Unity.Scripting.LifecycleManagement.AutoStaticsCleanup]
+[Unity.Scripting.LifecycleManagement.AutoStaticsCleanup]
 #endif
 public partial class MoveDynamicSpawnInAwake : MonoBehaviour
 {
