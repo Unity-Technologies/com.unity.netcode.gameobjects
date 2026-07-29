@@ -1,7 +1,7 @@
 # Customize serializable types with INetworkSerializable
 
 > [!NOTE]
-> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before customizing serializable types with `INetworkSerializable`.
+> Read the [Serialization overview](./serialization-overview.md) page to understand the basics of serialization before customizing serializable types with `INetworkSerializable`.
 
 You can use the `INetworkSerializable` interface to define custom serializable types. This interface has one function: `NetworkSerialize<T>(BufferSerializer<T> serializer)`, which ingests a bi-directional [`BufferSerializer`](../bufferserializer.md) that you can use to implement bi-directional custom serialization.
 
@@ -23,7 +23,7 @@ struct SpawnPoint : INetworkSerializable
 }
 ```
 
-Types implementing `INetworkSerializable` are supported by [`FastBufferReader` and `FastBufferWriter`](./fastbufferwriter-fastbufferreader.md), [`RPC`s'](../message-system/rpc.md), and [`NetworkVariable`s](../../basics/networkvariable.md).
+Types implementing `INetworkSerializable` are supported by [`FastBufferReader` and `FastBufferWriter`](../fastbufferwriter-fastbufferreader.md), [`RPC`s'](../message-system/rpc.md), and [`NetworkVariable`s](../../basics/networkvariable.md).
 
 ```csharp
 [Rpc(SendTo.Server)]

@@ -9,11 +9,11 @@ Read more about how to detect when ownership has changed in [NetworkBehaviour ow
 ## Helpful properties
 
 > [!NOTE]
-> All NetworkObject properties are only valid while the NetworkObject is spawned. Use [`NetworkObject.IsSpawned`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsSpawned) to check the spawned status of the NetworkObject.
+> All NetworkObject properties are only valid while the NetworkObject is spawned. Use [`NetworkObject.IsSpawned`](xref:Unity.Netcode.NetworkObject.IsSpawned) to check the spawned status of the NetworkObject.
 
-To identify whether the local client is the owner of a NetworkObject, you can check the[`NetworkObject.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.IsOwner.html) or the [`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwner.html) property.
+To identify whether the local client is the owner of a NetworkObject, you can check the[`NetworkObject.IsOwner`](xref:Unity.Netcode.NetworkObject.IsOwner) or the [`NetworkBehaviour.IsOwner`](xref:Unity.Netcode.NetworkBehaviour.IsOwner) property.
 
-To identify whether the server owns a NetworkObject, you can check the [`NetworkObject.IsOwnedByServer`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.IsOwnedByServer.html) or the [`NetworkBehaviour.IsOwnedByServer`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwnedByServer.html) property.
+To identify whether the server owns a NetworkObject, you can check the [`NetworkObject.IsOwnedByServer`](xref:Unity.Netcode.NetworkObject.IsOwnedByServer) or the [`NetworkBehaviour.IsOwnedByServer`](xref:Unity.Netcode.NetworkBehaviour.IsOwnedByServer) property.
 
 > [!NOTE]
 > To assure a spawned NetworkObject persists after the owner leaves a session, set the `NetworkObject.DontDestroyWithOwner` property to true. This assures the client-owned NetworkObject doesn't get destroyed when the owning client leaves.
@@ -39,7 +39,7 @@ NetworkObject.SpawnWithOwnership(clientId);
 > [!NOTE]
 > Using `SpawnWithOwnership` can result in unexpected behavior when the spawning game client makes any other changes on the object immediately after spawning.
 
-Using `SpawnWithOwnership` and then editing the NetworkObject locally means that the client doing the spawning will behave as the spawn authority. The spawn authority has limited local [authority](../terms-concepts/authority.md) over the NetworkObject, but not [ownership](../terms-concepts/ownership.md) of the NetworkObject that's spawned. This means any owner-specific checks during the spawn sequence will not be invoked on the spawn authority side.
+Using `SpawnWithOwnership` and then editing the NetworkObject locally means that the client doing the spawning will behave as the spawn authority. The spawn authority has limited local [authority](../../terms-concepts/authority.md) over the NetworkObject, but not [ownership](../../terms-concepts/ownership.md) of the NetworkObject that's spawned. This means any owner-specific checks during the spawn sequence will not be invoked on the spawn authority side.
 
 If you want to spawn a NetworkObject for another client and then immediately make adjustments to that NetworkObject, it's recommended to use the `Spawn` method. After adjusting, the spawn authority can immediately follow with a call to `ChangeOwnership`.
 
@@ -111,15 +111,15 @@ The authority of any NetworkObject can always change ownership, as outlined in [
 
 ### Ownership permission settings
 
-The following ownership permission settings, defined by [`NetworkObject.OwnershipStatus`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.OwnershipStatus.html), control how ownership of NetworkObjects can be changed during a distributed authority session:
+The following ownership permission settings, defined by [`NetworkObject.OwnershipStatus`](xref:Unity.Netcode.NetworkObject.OwnershipStatus), control how ownership of NetworkObjects can be changed during a distributed authority session:
 
 |**Ownership setting**|Description|Related Property|Multi-select|
 |-----|-----|-----|-----|
 |`None`|Ownership of this NetworkObject can't be redistributed, requested, or transferred (a Player might have this, for example).||No|
-|`Distributable`|Ownership of this NetworkObject is automatically redistributed when a client joins or leaves, as long as ownership is not locked or a request is pending.|[`IsOwnershipDistributable`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsOwnershipDistributable)|**Yes**|
-|`Transferable`|Any client can change ownership of this NetworkObject at any time, as long as ownership is not locked or a request is pending.|[`IsOwnershipTransferable`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsOwnershipTransferable)|**Yes**|
-|`RequestRequired`|Ownership of this NetworkObject must be requested before ownership can be changed.|[`IsOwnershipRequestRequired`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsOwnershipRequestRequired), [`IsRequestInProgress`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsRequestInProgress)|**Yes**|
-|`SessionOwner`|This NetworkObject is always owned by the [session owner](distributed-authority.md#session-ownership) and can't be transferred or distributed. If the session owner changes, this NetworkObject is automatically transferred to the new session owner.|[`IsOwnershipSessionOwner`](Unity_Netcode_NetworkObject_IsOwnershipSessionOwner)|No|
+|`Distributable`|Ownership of this NetworkObject is automatically redistributed when a client joins or leaves, as long as ownership is not locked or a request is pending.|[`IsOwnershipDistributable`](xref:Unity.Netcode.NetworkObject.IsOwnershipDistributable)|**Yes**|
+|`Transferable`|Any client can change ownership of this NetworkObject at any time, as long as ownership is not locked or a request is pending.|[`IsOwnershipTransferable`](xref:Unity.Netcode.NetworkObject.IsOwnershipTransferable)|**Yes**|
+|`RequestRequired`|Ownership of this NetworkObject must be requested before ownership can be changed.|[`IsOwnershipRequestRequired`](xref:Unity.Netcode.NetworkObject.IsOwnershipRequestRequired), [`IsRequestInProgress`](xref:Unity.Netcode.NetworkObject.IsRequestInProgress)|**Yes**|
+|`SessionOwner`|This NetworkObject is always owned by the [session owner](../../terms-concepts/distributed-authority.md#session-ownership) and can't be transferred or distributed. If the session owner changes, this NetworkObject is automatically transferred to the new session owner.|[`IsOwnershipSessionOwner`](xref:Unity.Netcode.NetworkObject.IsOwnershipSessionOwner)|No|
 
 Ownership permissions can be set in the editor using the **Ownership** dropdown.
 
@@ -127,7 +127,7 @@ Ownership permissions can be set in the editor using the **Ownership** dropdown.
 
 They can also be set in script using
 
-You can also use `NetworkObject.SetOwnershipLock` to lock and unlock the permission settings of a NetworkObject for a period of time, preventing ownership changes on a temporary basis. The [`IsOwnershipLocked`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_IsOwnershipLocked) property can be used to detect if an object has locked ownership.
+You can also use `NetworkObject.SetOwnershipLock` to lock and unlock the permission settings of a NetworkObject for a period of time, preventing ownership changes on a temporary basis. The [`IsOwnershipLocked`](xref:Unity.Netcode.NetworkObject.IsOwnershipLocked) property can be used to detect if an object has locked ownership.
 
 ```csharp
 // To lock an object from any ownership changes
@@ -148,7 +148,7 @@ NetworkObject.ChangeOwnership(clientId);
 NetworkObject.ChangeOwnership(NetworkManager.LocalClientId);
 ```
 
-When a non-authoritative game client calls `ChangeOwnership`, the ownership change can fail. On a failed attempt to change ownership, the `OnOwnershipPermissionsFailure` callback will be invoked with a [`NetworkObject.OwnershipPermissionsFailureStatus`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.OwnershipPermissionsFailureStatus.html) to give information on the failure.
+When a non-authoritative game client calls `ChangeOwnership`, the ownership change can fail. On a failed attempt to change ownership, the `OnOwnershipPermissionsFailure` callback will be invoked with a [`NetworkObject.OwnershipPermissionsFailureStatus`](xref:Unity.Netcode.NetworkObject.OwnershipPermissionsFailureStatus) to give information on the failure.
 
 ```csharp
 /*
@@ -200,9 +200,9 @@ When a NetworkObject is set with `OwnershipPermissions.RequestRequired` any clie
 var requestStatus = NetworkObject.RequestOwnership();
 ```
 
-`RequestOwnership` returns an [`OwnershipRequestStatus`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.OwnershipRequestStatus.html) to indicate the initial status of the request. To view the result of the request, the `OnOwnershipRequestResponse` callback will be invoked with a [`NetworkObject.OwnershipRequestResponseStatus`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.OwnershipRequestResponseStatus.html).
+`RequestOwnership` returns an [`OwnershipRequestStatus`](xref:Unity.Netcode.NetworkObject.OwnershipRequestStatus) to indicate the initial status of the request. To view the result of the request, the `OnOwnershipRequestResponse` callback will be invoked with a [`NetworkObject.OwnershipRequestResponseStatus`](xref:Unity.Netcode.NetworkObject.OwnershipRequestResponseStatus).
 
-By default, any requests for ownership will automatically be approved. To control which client is approved for ownership, use the [`OnOwnershipRequested`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_OnOwnershipRequested) callback
+By default, any requests for ownership will automatically be approved. To control which client is approved for ownership, use the [`OnOwnershipRequested`](xref:Unity.Netcode.NetworkObject.OnOwnershipRequested) callback
 
 ```csharp
 /*
@@ -264,8 +264,8 @@ public class RequestableOwnershipBehaviour : NetworkBehaviour
 
 ## Additional resources
 
-- [NetworkObject](../components/core/networkobject.md)
+- [NetworkObject](./networkobject.md)
 - [NetworkBehaviour](./networkbehaviour.md)
 - [NetworkBehaviour ownership](./networkbehaviour-ownership.md)
-- [Ownership](../terms-concepts/ownership.md)
-- [Authority](../terms-concepts/authority.md)
+- [Ownership](../../terms-concepts/ownership.md)
+- [Authority](../../terms-concepts/authority.md)
