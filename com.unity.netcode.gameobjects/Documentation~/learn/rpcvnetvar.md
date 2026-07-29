@@ -1,7 +1,7 @@
 # RPC vs NetworkVariable
 
 Choosing the wrong data syncing mechanism can create bugs, use too much bandwidth, and add too much complexity to your code.
-Netcode for GameObjects (Netcode) has two main ways of syncing information between players: RPCs ([Remote Procedure Calls](../advanced-topics/messaging-system.md)) and replicated states [(`NetworkVariable`s)](../basics/networkvariable). They both send messages over the network. The logic and your design around how they send messages is what will make you choose one over the other.
+Netcode for GameObjects (Netcode) has two main ways of syncing information between players: RPCs ([Remote Procedure Calls](../advanced-topics/messaging-system.md)) and replicated states [(`NetworkVariable`s)](../basics/networkvariable.md). They both send messages over the network. The logic and your design around how they send messages is what will make you choose one over the other.
 
 ## Choosing between `NetworkVariable`s or RPCs
 
