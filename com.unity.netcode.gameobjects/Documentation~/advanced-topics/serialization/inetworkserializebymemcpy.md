@@ -17,7 +17,7 @@ public struct MyStruct : INetworkSerializeByMemcpy
 }
 ```
 
-If you have a type you wish to serialize that you know is compatible with this method of serialization, but don't have access to modify the struct to add this interface, you can wrap your values in `ForceNetworkSerializeByMemcpy` to enable it to be serialized this way. This works in both `RPC`s and `NetworkVariables`, as well as in other contexts such as `BufferSerializer<>`, `FastBufferReader`, and `FastBufferWriter`.
+If you have a type you wish to serialize that you know is compatible with this method of serialization, but don't have access to modify the struct to add this interface, you can wrap your values in `ForceNetworkSerializeByMemcpy` to enable it to be serialized this way. This works in both [`RPC`s](../message-system/rpc.md) and [`NetworkVariable`s](../../basics/networkvariable.md), as well as in other contexts such as with [`BufferSerializer<>`](../bufferserializer.md) or [`FastBufferReader`, and `FastBufferWriter`](../fastbufferwriter-fastbufferreader.md).
 
 ```csharp
 public NetworkVariable<ForceNetworkSerializeByMemcpy<Guid>> GuidVar;

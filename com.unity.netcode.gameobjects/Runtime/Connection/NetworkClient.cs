@@ -52,7 +52,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The ClientId of the NetworkClient
         /// </summary>
-        public ulong ClientId;
+        public ulong ClientId { get; internal set; }
 
         /// <summary>
         /// The PlayerObject of the Client

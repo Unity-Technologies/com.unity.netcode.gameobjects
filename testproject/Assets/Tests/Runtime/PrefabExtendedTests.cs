@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using TestProject.ManualTests;
@@ -217,9 +216,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator TestPrefabsSpawning([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
         {
-            var gloabalObjectId = m_SceneManagementEnabled ? 0 : InScenePlacedHelper.ServerInSceneDefined.First().GlobalObjectIdHash;
-            var firstError = $"[Netcode] Failed to create object locally. [globalObjectIdHash={gloabalObjectId}]. NetworkPrefab could not be found. Is the prefab registered with NetworkManager?";
-            var secondError = $"[Netcode] Failed to spawn NetworkObject for Hash {gloabalObjectId}.";
             m_InstantiateAndSpawnType = instantiateAndSpawnType;
 
             // We have to spawn the first client manually in order to account for the errors when scene management is disabled.
@@ -228,7 +224,6 @@ namespace TestProject.RuntimeTests
             // spawn the original prefab and when spawning dynamically the override is used.
             yield return CreateAndStartNewClient();
 
-            var spawnManager = m_ServerNetworkManager.SpawnManager;
             // If scene management is enabled, then we want to verify against the editor
             // assigned in-scene placed NetworkObjects
             if (m_SceneManagementEnabled)

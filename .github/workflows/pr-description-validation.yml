@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check PR description
         uses: actions/github-script@v9
@@ -51,6 +51,10 @@ jobs:
               {
                 header: '## Backports',
                 description: 'PR description must include a "## Backports" section. Please add this section and provide information about this PR backport to develop, develop-2.0.0 or develop-3.x.x branch respectively or explain why backport is not needed.'
+              },
+              {
+                header: '## Up-port',
+                description: 'PR description must include a "## Up-port" section. Please add this section and provide information about this PR up-port to develop-3.0.0 branch or explain why up-port is not needed.'
               },
               {
                 header: '## Testing & QA',

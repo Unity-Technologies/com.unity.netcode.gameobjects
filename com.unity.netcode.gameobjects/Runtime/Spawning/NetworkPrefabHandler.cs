@@ -344,8 +344,8 @@ namespace Unity.Netcode
                     prefabInstanceHandler.Destroy(networkObjectInstance);
                 }
             }
-            else // Otherwise the NetworkObject is the source NetworkPrefab
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkObjectInstanceHash, out var prefabInstanceHandler))
+            // Otherwise the NetworkObject is the source NetworkPrefab
+            else if (m_PrefabAssetToPrefabHandler.TryGetValue(networkObjectInstanceHash, out var prefabInstanceHandler))
             {
                 prefabInstanceHandler.Destroy(networkObjectInstance);
             }

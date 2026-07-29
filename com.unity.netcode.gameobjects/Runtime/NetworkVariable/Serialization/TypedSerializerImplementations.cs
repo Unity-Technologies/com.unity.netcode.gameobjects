@@ -243,11 +243,23 @@ namespace Unity.Netcode
 
         public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
         {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.WriteDelta(writer, value, previousValue);
+                return;
+            }
+
             Write(writer, ref value);
         }
 
         public void ReadDelta(FastBufferReader reader, ref T value)
         {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.ReadDelta(reader, ref value);
+                return;
+            }
+
             Read(reader, ref value);
         }
 
@@ -258,6 +270,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in T value, ref T duplicatedValue)
         {
+            if (UserNetworkVariableSerialization<T>.DuplicateValue != null)
+            {
+                UserNetworkVariableSerialization<T>.DuplicateValue(value, ref duplicatedValue);
+                return;
+            }
+
             duplicatedValue = value;
         }
     }
@@ -959,6 +977,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in T value, ref T duplicatedValue)
         {
+            if (UserNetworkVariableSerialization<T>.DuplicateValue != null)
+            {
+                UserNetworkVariableSerialization<T>.DuplicateValue(value, ref duplicatedValue);
+                return;
+            }
+
             duplicatedValue = value;
         }
     }
@@ -1128,6 +1152,12 @@ namespace Unity.Netcode
 
         public void Duplicate(in T value, ref T duplicatedValue)
         {
+            if (UserNetworkVariableSerialization<T>.DuplicateValue != null)
+            {
+                UserNetworkVariableSerialization<T>.DuplicateValue(value, ref duplicatedValue);
+                return;
+            }
+
             using var writer = new FastBufferWriter(256, Allocator.Temp, int.MaxValue);
             var refValue = value;
             Write(writer, ref refValue);

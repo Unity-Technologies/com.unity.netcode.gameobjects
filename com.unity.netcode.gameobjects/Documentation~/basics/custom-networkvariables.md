@@ -19,11 +19,14 @@ To create your own `NetworkVariableBase`-derived container, you should:
 
 The way you read and write `NetworkVariable`s changes depending on the type you use.
 
-* Known, non-generic types: Use `FastBufferReader.ReadValue` to read from and `FastBufferWriter.WriteValue` to write to the `NetworkVariable` value.
-* Integer types:  This type gives you the option to use `BytePacker` and `ByteUnpacker` to compress the `NetworkVariable` value. This process can save bandwidth but adds CPU processing time.
+* Known, non-generic types can use [`FastBufferWriter` and `FastBufferReader`](../advanced-topics/fastbufferwriter-fastbufferreader.md) to serialize the `NetworkVariable` value.
+* Integer types:  This type gives you the option to use [`BytePacker` and `ByteUnpacker`](../advanced-topics/fastbufferwriter-fastbufferreader.md#packing) to compress the `NetworkVariable` value. This process can save bandwidth but adds CPU processing time.
 * Generic types: Use serializers that Unity generates based on types discovered during a compile-time code generation process. This means you need to tell Unity's code generation algorithm which types to generate serializers for. To tell Unity which types to serialize, use the following methods:
     * Use `GenerateSerializationForTypeAttribute` to serialize hard-coded types.
     * Use `GenerateSerializationForGenericParameterAttribute` to serialize generic types.
+* Types implementing [`INetworkSerializable`](../advanced-topics/serialization/inetworkserializable.md) can also be serialized using `FastBufferWriter` and `FastBufferReader`.
+
+Read more about [custom serialization](../advanced-topics/custom-serialization.md) for more approaches to customizing serialization.
 
 ### Serialize a hard-coded type
 
@@ -69,175 +72,22 @@ For dynamically-allocated types with a value that isn't `null` (for example, man
 
 You can use `AreEqual` to determine if a value is different from the value that `Duplicate` cached. This avoids sending the same value multiple times. You can also use the previous value that `Duplicate` cached to calculate deltas to use in `ReadDelta` and `WriteDelta`.
 
-The type you use must be serializable according to the [support types list above](#supported-types). Each type needs its own serializer instantiated, so this step tells the codegen which types to create serializers for. Unity's code generator assumes that all `NetworkVariable` types exist as fields inside NetworkBehaviour types. This means that Unity only inspects fields inside NetworkBehaviour types to identify the types to create serializers for.
+The type you use must be serializable according to the [supported types list](./networkvariable.md#supported-types). Each type needs its own serializer instantiated, so this step tells the codegen which types to create serializers for. Unity's code generator assumes that all `NetworkVariable` types exist as fields inside NetworkBehaviour types. This means that Unity only inspects fields inside NetworkBehaviour types to identify the types to create serializers for.
 
-## Custom NetworkVariable example
+> [!NOTE]
+> These attributes won't generate delta serialization. If you would like to customize how deltas are sent when a custom value has partially changed, refer to [`UserNetworkVariableSerialization`](../advanced-topics/custom-serialization.md#networkvariable).
+
+## Custom NetworkVariableBase example
 
 This example shows a custom `NetworkVariable` type to help you understand how you might implement such a type. In the current version of Netcode for GameObjects, this example is possible without using a custom `NetworkVariable` type; however, for more complex situations that aren't natively supported, this basic example should help inform you of how to approach the implementation:
 
- ```csharp
-    /// Using MyCustomNetworkVariable within a NetworkBehaviour
-    public class TestMyCustomNetworkVariable : NetworkBehaviour
-    {
-        public MyCustomNetworkVariable CustomNetworkVariable = new MyCustomNetworkVariable();
-        public MyCustomGenericNetworkVariable<int> CustomGenericNetworkVariable = new MyCustomGenericNetworkVariable<int>();
-        public override void OnNetworkSpawn()
-        {
-            if (IsServer)
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    var someData = new SomeData();
-                    someData.SomeFloatData = (float)i;
-                    someData.SomeIntData = i;
-                    someData.SomeListOfValues.Add((ulong)i + 1000000);
-                    someData.SomeListOfValues.Add((ulong)i + 2000000);
-                    someData.SomeListOfValues.Add((ulong)i + 3000000);
-                    CustomNetworkVariable.SomeDataToSynchronize.Add(someData);
-                    CustomNetworkVariable.SetDirty(true);
-
-                    CustomGenericNetworkVariable.SomeDataToSynchronize.Add(i);
-                    CustomGenericNetworkVariable.SetDirty(true);
-                }
-            }
-        }
-    }
-
-    /// Bare minimum example of NetworkVariableBase derived class
-    [Serializable]
-    public class MyCustomNetworkVariable : NetworkVariableBase
-    {
-        /// Managed list of class instances
-        public List<SomeData> SomeDataToSynchronize = new List<SomeData>();
-
-        /// <summary>
-        /// Writes the complete state of the variable to the writer
-        /// </summary>
-        /// <param name="writer">The stream to write the state to</param>
-        public override void WriteField(FastBufferWriter writer)
-        {
-            // Serialize the data we need to synchronize
-            writer.WriteValueSafe(SomeDataToSynchronize.Count);
-            foreach (var dataEntry in SomeDataToSynchronize)
-            {
-                writer.WriteValueSafe(dataEntry.SomeIntData);
-                writer.WriteValueSafe(dataEntry.SomeFloatData);
-                writer.WriteValueSafe(dataEntry.SomeListOfValues.Count);
-                foreach (var valueItem in dataEntry.SomeListOfValues)
-                {
-                    writer.WriteValueSafe(valueItem);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Reads the complete state from the reader and applies it
-        /// </summary>
-        /// <param name="reader">The stream to read the state from</param>
-        public override void ReadField(FastBufferReader reader)
-        {
-            // De-Serialize the data being synchronized
-            var itemsToUpdate = (int)0;
-            reader.ReadValueSafe(out itemsToUpdate);
-            SomeDataToSynchronize.Clear();
-            for (int i = 0; i < itemsToUpdate; i++)
-            {
-                var newEntry = new SomeData();
-                reader.ReadValueSafe(out newEntry.SomeIntData);
-                reader.ReadValueSafe(out newEntry.SomeFloatData);
-                var itemsCount = (int)0;
-                var tempValue = (ulong)0;
-                reader.ReadValueSafe(out itemsCount);
-                newEntry.SomeListOfValues.Clear();
-                for (int j = 0; j < itemsCount; j++)
-                {
-                    reader.ReadValueSafe(out tempValue);
-                    newEntry.SomeListOfValues.Add(tempValue);
-                }
-                SomeDataToSynchronize.Add(newEntry);
-            }
-        }
-
-        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
-        {
-            // Do nothing for this example
-        }
-
-        public override void WriteDelta(FastBufferWriter writer)
-        {
-            // Do nothing for this example
-        }
-    }
-
-    /// Bare minimum example of generic NetworkVariableBase derived class
-    [Serializable]
-    [GenerateSerializationForGenericParameter(0)]
-    public class MyCustomGenericNetworkVariable<T> : NetworkVariableBase
-    {
-        /// Managed list of class instances
-        public List<T> SomeDataToSynchronize = new List<T>();
-
-        /// <summary>
-        /// Writes the complete state of the variable to the writer
-        /// </summary>
-        /// <param name="writer">The stream to write the state to</param>
-        public override void WriteField(FastBufferWriter writer)
-        {
-            // Serialize the data we need to synchronize
-            writer.WriteValueSafe(SomeDataToSynchronize.Count);
-            for (var i = 0; i < SomeDataToSynchronize.Count; ++i)
-            {
-                var dataEntry = SomeDataToSynchronize[i];
-                // NetworkVariableSerialization<T> is used for serializing generic types
-                NetworkVariableSerialization<T>.Write(writer, ref dataEntry);
-            }
-        }
-
-        /// <summary>
-        /// Reads the complete state from the reader and applies it
-        /// </summary>
-        /// <param name="reader">The stream to read the state from</param>
-        public override void ReadField(FastBufferReader reader)
-        {
-            // De-Serialize the data being synchronized
-            var itemsToUpdate = (int)0;
-            reader.ReadValueSafe(out itemsToUpdate);
-            SomeDataToSynchronize.Clear();
-            for (int i = 0; i < itemsToUpdate; i++)
-            {
-                T newEntry = default;
-                // NetworkVariableSerialization<T> is used for serializing generic types
-                NetworkVariableSerialization<T>.Read(reader, ref newEntry);
-                SomeDataToSynchronize.Add(newEntry);
-            }
-        }
-
-        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
-        {
-            // Do nothing for this example
-        }
-
-        public override void WriteDelta(FastBufferWriter writer)
-        {
-            // Do nothing for this example
-        }
-    }
-
-    /// Example managed class used as the item type in the
-    /// MyCustomNetworkVariable.SomeDataToSynchronize list
-    [Serializable]
-    public class SomeData
-    {
-        public int SomeIntData = default;
-        public float SomeFloatData = default;
-        public List<ulong> SomeListOfValues = new List<ulong>();
-    }
- ```
+[!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/NetworkVariable/CustomNetworkVariable.cs#TestMyCustomNetworkVariable)]
 
 While the above example isn't the recommended way to synchronize a list where the number or order of elements in the list often changes, it's an example of how you can define your own rules using `NetworkVariableBase`.
 
 You can test the code above by:
-- Using the above code with a project that includes Netcode for GameObjects v1.0 (or higher).
+
+- Using the above code with a project that includes Netcode for GameObjects.
 - Adding the `TestMyCustomNetworkVariable` component to an in-scene placed NetworkObject.
 - Creating a stand alone build and running that as a host or server.
 - Running the same scene within the Editor and connecting as a client.

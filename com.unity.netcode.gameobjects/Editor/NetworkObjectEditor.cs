@@ -29,19 +29,19 @@ namespace Unity.Netcode.GameObjects.Editor
 
 #if UNIFIED_NETCODE
         /// <summary>
-        /// Register for the GhostAdapter removal event.
+        /// Register for the GhostObject removal event.
         /// </summary>
         [InitializeOnLoadMethod]
         private static void OnApplicationStart()
         {
-            GhostAdapterEditor.OnGhostAdapterPreRemoval = OnGhostAdapterPreRemoval;
+            GhostObjectEditor.OnGhostObjectPreRemoval = OnGhostObjectPreRemoval;
         }
 
         /// <summary>
-        /// Callback to remove the GhostBehaviours prior to removing GhostAdapter.
+        /// Callback to remove the GhostBehaviours prior to removing GhostObject.
         /// </summary>
-        /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostAdapter"/> component being removed.</param>
-        private static void OnGhostAdapterPreRemoval(GameObject gameObject)
+        /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
+        private static void OnGhostObjectPreRemoval(GameObject gameObject)
         {
             var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
             for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
@@ -49,7 +49,7 @@ namespace Unity.Netcode.GameObjects.Editor
                 DestroyImmediate(ghostBehaviours[i], true);
             }
             var networkObject = gameObject.GetComponent<NetworkObject>();
-            networkObject.GhostAdapter = null;
+            networkObject.GhostObject = null;
             networkObject.HasGhost = false;
             networkObject.HadBridge = true;
         }

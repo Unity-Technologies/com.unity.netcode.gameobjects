@@ -11,19 +11,19 @@ namespace Unity.Netcode
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
 
-    [DefaultExecutionOrder(GhostAdapterExecutionOrder.ExecutionOrder + 1)]
+    [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
     public partial class NetworkObjectBridge : GhostBehaviour
     {
         // DefaultExecutionOrder
-        // TODO: Define a const for the value used on GhostAdapter and use that value
-        // to set the execution order so if it changes on GhostAdapter it updates here.
+        // TODO: Define a const for the value used on GhostObject and use that value
+        // to set the execution order so if it changes on GhostObject it updates here.
 #if UNITY_EDITOR
         private void OnValidate()
         {
             hideFlags = HideFlags.HideInInspector;
 
-            var ghostAdapter = GetComponent<GhostAdapter>();
+            var ghostAdapter = GetComponent<GhostObject>();
             if (ghostAdapter == null)
             {
                 return;
@@ -61,11 +61,6 @@ namespace Unity.Netcode
         /// N4E-spawned hybrid prefab instances.
         /// </summary>
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
-        public void SetNetworkObjectId(ulong networkObjectId)
-        {
-            NetworkObjectId.PresetValue(networkObjectId);
-            NetworkObjectId.Value = networkObjectId;
-        }
 
         /// <summary>
         /// Currently, NGO provides the parenting event handling via <see cref="ParentSyncMessage"/>.

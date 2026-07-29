@@ -20,37 +20,6 @@ Using built-in primitive types is fairly straightforward:
 void HelloServerRpc(int[] scores, Color[] colors) { /* ... */ }
 ```
 
-## INetworkSerializable implementation example
-
-There are many ways to handle sending an array of managed types. The following example is a simple `string` container class that implements `INetworkSerializable` and can be used as an array of "StringContainers":
-
-```csharp
-[Rpc(SendTo.ClientsAndHost)]
-void SendMessagesClientRpc(StringContainer[] messages)
-{
-    foreach (var stringContainer in stringContainers)
-    {
-        Debug.Log($"{stringContainer.SomeText}");
-    }
-}
-
-public class StringContainer : INetworkSerializable
-{
-    public string SomeText;
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        if (serializer.IsWriter)
-        {
-            serializer.GetFastBufferWriter().WriteValueSafe(SomeText);
-        }
-        else
-        {
-            serializer.GetFastBufferReader().ReadValueSafe(out SomeText);
-        }
-    }
-}
-```
-
 ## Native containers
 
 Netcode for GameObjects supports `NativeArray` and `NativeList` native containers with built-in serialization, RPCs, and NetworkVariables. However, you can't nest either of these containers without causing a crash.
@@ -80,3 +49,7 @@ To serialize a `NativeList` container, you must:
 > [!NOTE]
 > When using `NativeLists` within `INetworkSerializable`, the list `ref` value must be a valid, initialized `NativeList`.
 > NetworkVariables are similar that the value must be initialized before it can receive updates. For example, `public NetworkVariable<NativeList<byte>> ByteListVar = new NetworkVariable<NativeList<byte>>{Value = new NativeList<byte>(Allocator.Persistent)};`. RPCs do this automatically.
+
+## Generic collections
+
+For performance reasons, Netcode for GameObjects does not have built-in serialization code for C# generic collections. However, `NetworkVariable` does support [synchronizing generic collection types](../../basics/networkvariable.md#using-collections-with-networkvariables).
