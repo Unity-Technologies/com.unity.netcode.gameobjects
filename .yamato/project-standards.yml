@@ -30,7 +30,7 @@
 
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.standards -%}
+{% for editor in validation_editors.minimal -%}
 standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
   name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:

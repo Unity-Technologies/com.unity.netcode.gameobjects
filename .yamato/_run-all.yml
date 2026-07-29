@@ -16,7 +16,7 @@ run_quick_checks:
   name: Run Quick Initial Checks
   dependencies:
     # Ensure the code is running to our current standards
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.minimal }}
     # This is needed for most of the jobs to execute tests + it runs xray PVP checks (all fast checks)
     - .yamato/package-pack.yml#package_pack_-_ngo_win
 
@@ -115,7 +115,7 @@ run_all_projects_standards:
   dependencies:
 {% for platform in test_platforms.default -%}
 {% for project in projects.all -%}
-{% for editor in validation_editors.standards -%}
+{% for editor in validation_editors.minimal -%}
     - .yamato/project-standards.yml#standards_{{ platform.name }}_{{ project.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
