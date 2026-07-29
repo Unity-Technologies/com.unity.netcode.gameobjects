@@ -24,6 +24,12 @@ namespace Unity.Netcode.Editor
             log.AddInfo(scene.name, scene.handle);
             foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
             {
+                // Trap for users just creating things during runtime where this will be zero.
+                if (networkObject.GlobalObjectIdHash == 0)
+                {
+                    log.Warning(new Context(LogLevel.Developer, $"{nameof(NetworkObject)}'s GlobalObjectIdHash value is zero! Runtime creating of {nameof(NetworkObject)}s is not supported. Skipping processing.").AddNetworkObject(networkObject));
+                    continue;
+                }
                 if (networkObject.SceneOrigin.IsValid() && networkObject.SceneOrigin.handle != scene.handle)
                 {
                     log.Warning(new Context(LogLevel.Developer, $"{nameof(NetworkObject)}'s SceneOrigin doesn't match current scene being processed! Skipping processing.").AddInfo("SceneOrigin", networkObject.SceneOriginHandle).AddNetworkObject(networkObject));
@@ -36,7 +42,15 @@ namespace Unity.Netcode.Editor
                     continue;
                 }
 
+                // If already marked, the do nothing.
+                if (networkObject.InScenePlaced)
+                {
+                    continue;
+                }
+
                 networkObject.InScenePlaced = true;
+                // Will not be true when making a build and the values are serialized.
+                networkObject.InScenePlacedPostProcessorMarkedDuringRuntime = Application.isPlaying;
             }
         }
     }

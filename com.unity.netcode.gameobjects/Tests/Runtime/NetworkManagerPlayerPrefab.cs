@@ -20,22 +20,9 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
-        /// <summary>
-        /// Assure no player prefab is assigned.
-        /// </summary>
-        protected override void OnServerAndClientsCreated()
+        internal override bool ShouldCreatePlayerPrefab()
         {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager.NetworkConfig.PlayerPrefab = null;
-            }
-            base.OnServerAndClientsCreated();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.PlayerPrefab = null;
-            base.OnNewClientCreated(networkManager);
+            return false;
         }
 
         /// <summary>
