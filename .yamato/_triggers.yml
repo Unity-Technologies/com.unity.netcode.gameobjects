@@ -27,7 +27,7 @@
 # Nightly:
   # This test validates same subset as pull_request_trigger with addition of mobile/console tests and webgl builds
   # Runs daily on develop (local configuration)
-  # Includes all test types but only on trunk.
+  # Includes all test types but only on trunk and the default editor.
   # Adds platform-specific and APV validation
 
 # Weekly:
@@ -76,13 +76,13 @@ pr_code_changes_checks:
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
 
-    # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.3)
+    # Run package EditMode and Playmode package tests on pinned trunk and the minimal supported editor
     - .yamato/package-tests.yml#package_test_-_ngo_{{ pinnedTrunk }}_mac
-    - .yamato/package-tests.yml#package_test_-_ngo_6000.3_win
+    - .yamato/package-tests.yml#package_test_-_ngo_{{ validation_editors.minimal }}_win
 
-    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (6000.3)
+    # Run testproject EditMode and Playmode project tests on pinned trunk and the minimal supported editor
     - .yamato/project-tests.yml#test_testproject_win_{{ pinnedTrunk }}
-    - .yamato/project-tests.yml#test_testproject_mac_6000.3
+    - .yamato/project-tests.yml#test_testproject_mac_{{ validation_editors.minimal }}
 
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
@@ -120,14 +120,14 @@ pr_code_changes_checks:
 
 
 
-# Run all tests on trunk on nightly basis.
+# Run all tests on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
-# Those tests are all running on trunk editor (since it's daily and running all of them would add a lot of overhead)
+# Those tests are all running on trunk and the default editor (since it's daily and running all of them would add a lot of overhead)
 develop_nightly:
-  name: "\U0001F319 [Nightly] Run All Tests [Trunk and 6000]"
+  name: "\U0001F319 [Nightly] Run All Tests [Trunk and Default]"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch:  develop-3.x.x
         frequency: daily
         rerun: always
   dependencies:
@@ -135,30 +135,30 @@ develop_nightly:
     - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.minimal }}
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run package EditMode and Playmode tests on desktop platforms on trunk and 6000.0
+    # Run package EditMode and Playmode tests on desktop platforms on trunk and default editor
     - .yamato/_run-all.yml#run_all_package_tests_trunk
-    - .yamato/_run-all.yml#run_all_package_tests_6000
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk and 6000.0
+    - .yamato/_run-all.yml#run_all_package_tests_default
+    # Run project EditMode and PLaymode tests on desktop platforms on trunk and default editor
     - .yamato/_run-all.yml#run_all_project_tests_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_6000
-    # Run Runtime tests on desktop players on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_project_tests_default
+    # Run Runtime tests on desktop players on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_6000
-    # Run Runtime tests on mobile players on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_default
+    # Run Runtime tests on mobile players on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_6000
-    # Run Runtime tests on console players on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_default
+    # Run Runtime tests on console players on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_6000
-    # Build player for webgl platform on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_default
+    # Build player for webgl platform on trunk and default editors
     - .yamato/_run-all.yml#run_all_webgl_builds_trunk
-    - .yamato/_run-all.yml#run_all_webgl_builds_6000
-    # Run Runtime tests against cmb service on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_webgl_builds_default
+    # Run Runtime tests against cmb service on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_cmb_service_6000
-    # Build player for webgl platform on trunk and 6000.0 editors
+    - .yamato/_run-all.yml#run_all_project_tests_cmb_service_default
+    # Build player for webgl platform on trunk and default editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
-    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_6000.0
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_{{ validation_editors.default }}
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
   # Run code coverage test
@@ -173,7 +173,7 @@ develop_weekly_trunk:
   name: "\U0001F319 [Weekly] Run All Tests"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch: develop-3.x.x
         frequency: weekly
         rerun: always
   dependencies:
