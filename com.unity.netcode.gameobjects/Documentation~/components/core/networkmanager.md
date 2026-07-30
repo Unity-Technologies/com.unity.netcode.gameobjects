@@ -19,6 +19,15 @@ The NetworkManager is a required Netcode for GameObjects component that has all 
 - **Enable Scene Management**: When checked, Netcode for GameObjects will handle scene management and client synchronization for you.  When not checked, you will have to create your own scene management scripts and handle client synchronization.
 - **Load Scene Time Out**: When Enable Scene Management is checked, this specifies the period of time the `NetworkSceneManager` will wait while a scene is being loaded asynchronously before `NetworkSceneManager` considers the load/unload scene event to have failed/timed out.
 
+### Distributed authority network topology
+
+> [!NOTE]
+> The distributed authority network topology requires Multiplayer Services. If the Multiplayer Services package is not installed, the **Network Topology** property will not be displayed.
+
+- **Network Topology**:  Defines the network topology to use.
+  - **Client-Server**: Selects the client-server network topology.
+  - **Distributed authority**: Selects the distributed authority network topology.
+
 ## NetworkManager sub-systems
 NetworkManager is also where you can find references to other Netcode related management systems:<br/>
 
