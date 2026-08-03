@@ -78,6 +78,9 @@ private void Start()
 > [!NOTE]
 > Once migrated into the DDoL, migrating the in-scene placed NetworkObject back into a different scene after it has already been spawned will cause soft synchronization errors with late-joining clients. Once in the DDoL it should stay in the DDoL. This is only for scene switching. If you aren't using scene switching, then it's recommended to use an additively loaded scene and keep that scene loaded for as long as you wish to persist the in-scene placed NetworkObject(s) being used for state management purposes.
 
+> [!WARNING]
+> Manually calling `DontDestroyOnLoad(gameObject)` is only supported for the scene-switching manager scenario described above (that is, a single in-scene placed NetworkObject used for state management that's migrated into the DDoL and stays there). Marking ordinary in-scene placed NetworkObjects as `DontDestroyOnLoad` isn't supported and can cause the object's `GlobalObjectIdHash` to no longer resolve after a scene change, resulting in errors such as "NetworkPrefab hash was not found!". To persist in-scene placed NetworkObjects across scene changes, prefer keeping them in an additively loaded scene that stays loaded for the duration of the session rather than using `DontDestroyOnLoad`.
+
 ## Complex in-scene NetworkObjects
 
 The most common mistake when using an in-scene placed NetworkObject is to try and use it like a dynamically spawned NetworkObject. When trying to decide if you should use an in-scene placed or dynamically spawned NetworkObject, you should ask yourself the following questions:
@@ -181,9 +184,13 @@ public class MyInSceneNetworkObjectBehaviour : NetworkBehaviour
 > [!NOTE]
 > You only need to enable the NetworkObject on the server-side to be able to respawn it. Netcode for GameObjects only enables a disabled in-scene placed NetworkObject on the client-side if the server-side spawns it. This **does not** apply to dynamically spawned `NetworkObjects`. Refer to [the object pooling page](../../advanced-topics/object-pooling.md) for an example of recycling dynamically spawned NetworkObjects.
 
+### Pre-disabled in-scene placed NetworkObjects
+
+To initialize an in-scene placed NetworkObject in a disabled state and spawn it later, set its GameObject to inactive in the Editor while the respective scene is open. Once a networked session begins, you can re-enable and spawn it at any time.
+
 ### Setting an in-scene placed NetworkObject to a despawned state when instantiating
 
-Since in-scene placed NetworkObjects are automatically spawned when their respective scene has finished loading during a network session, you might run into the scenario where you want it to start in a despawned state until a certain condition has been met. To do this, you need to add some additional code in the `OnNetworkSpawn` part of your NetworkBehaviour component:
+To programmatically disable an in-scene placed NetworkObject, add some additional code in the `OnNetworkSpawn` part of a NetworkBehaviour component:
 
 ```csharp
 using UnityEngine;
@@ -225,7 +232,7 @@ The above example keeps track of whether the in-scene placed NetworkObject has s
 
 ### Synchronizing late-joining clients when an in-scene placed NetworkObject has been despawned and destroyed
 
-Referring back to the [section on complex in-scene NetworkObjects](#complex-in-scene-networkobjects), it's recommended to use dynamically spawned NetworkObjects if you intend to destroy the object when it's despawned. However, if either despawning but not destroying or using the [hybrid approach](#a-hybrid-approach-example) don't appear to be options for your project's needs, then there are two other possible (but not recommended) alternatives:
+Referring back to the [section on complex in-scene NetworkObjects](#complex-in-scene-networkobjects), it's recommended to use dynamically spawned NetworkObjects if you intend to destroy the object when it's despawned. However, if either despawning but not destroying or using the [hybrid approach](#hybrid-approach) don't appear to be options for your project's needs, then there are two other possible (but not recommended) alternatives:
 
 - Have another in-scene placed NetworkObject track which in-scene placed NetworkObjects have been destroyed and upon a player late-joining (that is, `OnClientConnected`) you would need to send the newly-joined client the list of in-scene placed NetworkObjects that it should destroy. This adds an additional in-scene placed NetworkObject to your scene hierarchy and will consume memory keeping track of what was destroyed.
 - Disable the visual and physics-related components (in Editor as a default) of the in-scene placed NetworkObject(s) in question and only enable them in `OnNetworkSpawn`. This doesn't delete/remove the in-scene placed NetworkObject(s) for the late-joining client and can be tricky to implement without running into edge case scenario bugs.

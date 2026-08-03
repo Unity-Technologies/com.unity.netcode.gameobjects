@@ -820,6 +820,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreateServerAndClients(NumberOfClients);
         }
 
+        internal virtual bool ShouldCreatePlayerPrefab()
+        {
+            return true;
+        }
+
         /// <summary>
         /// Creates the server and clients
         /// </summary>
@@ -828,7 +833,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
 
-            CreatePlayerPrefab();
+            if (ShouldCreatePlayerPrefab())
+            {
+                CreatePlayerPrefab();
+            }
+
 
             if (m_EnableTimeTravel)
             {

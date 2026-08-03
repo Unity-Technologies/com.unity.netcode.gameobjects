@@ -38,8 +38,7 @@ namespace Unity.Netcode.RuntimeTests
         private List<byte> m_SendBuffer;
         private List<byte> m_PreCalculatedBufferValues;
 
-        // Start is called before the first frame update
-        private void Start()
+        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             m_WaitForValidation = false;
             m_CurrentBufferSize = BufferSizeStart;
@@ -49,6 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_PreCalculatedBufferValues.Add((byte)Random.Range(0, 255));
             }
+            base.OnNetworkPreSpawn(ref networkManager);
         }
 
         /// <summary>
@@ -67,7 +67,12 @@ namespace Unity.Netcode.RuntimeTests
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkManager.Singleton.IsListening && EnableTesting && !IsTestComplete() && !m_WaitForValidation)
+            if (!EnableTesting || !IsSpawned)
+            {
+                return;
+            }
+
+            if (!m_WaitForValidation && !IsTestComplete())
             {
                 m_SendBuffer.Clear();
                 //Keep the current contents of the bufffer and fill the buffer with the delta difference of the buffer's current size and new size from the m_PreCalculatedBufferValues
@@ -77,16 +82,16 @@ namespace Unity.Netcode.RuntimeTests
                 m_WaitForValidation = true;
 
                 //Send the buffer
-                SendBufferServerRpc(m_SendBuffer.ToArray());
+                SendBufferRpc(m_SendBuffer.ToArray());
             }
+
         }
 
         /// <summary>
-        /// Server side RPC for testing
+        /// Sends to self for buffer queue testing
         /// </summary>
-        /// <param name="parameters">server rpc parameters</param>
-        [ServerRpc]
-        private void SendBufferServerRpc(byte[] buffer)
+        [Rpc(SendTo.Me)]
+        private void SendBufferRpc(byte[] buffer)
         {
             TestFailed = !NetworkManagerHelper.BuffersMatch(0, buffer.Length, buffer, m_SendBuffer.ToArray());
             if (!TestFailed)

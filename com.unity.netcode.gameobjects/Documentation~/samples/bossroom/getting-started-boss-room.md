@@ -25,8 +25,8 @@ Join the multiplayer community on the Unity [Discord](https://discord.gg/mNgM2XR
 ### Contents and quick links
 
 - [Boss Room Overview](#boss-room-overview)
-- [Install the Boss Room project](#getting-the-project)
-  - [Install Git LFS to clone locally](#installing-git-lfs-to-clone-locally)
+- [Install the Boss Room project](#install-the-boss-room-project)
+  - [Install Git LFS to clone locally](#install-git-lfs-to-clone-locally)
   - [Direct download](#direct-download)
 - [Registering the project with Unity Gaming Services (UGS)](#registering-the-project-with-unity-gaming-services-ugs)
 - [Opening the project for the first time](#opening-the-project-for-the-first-time)

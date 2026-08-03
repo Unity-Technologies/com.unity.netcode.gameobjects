@@ -68,4 +68,4 @@ Reading and writing a value provides the minimal amount of `NetworkVariable` fun
 
 Here is a full implementation of a custom type with the methods needed for `UserNetworkVariableSerialization`
 
-[!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/NetworkVariable/NetworkVariableSerialization.cs#HealthExample)]
+[!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/NetworkVariable/CustomSerializationDocsTests.cs#HealthExample)]
