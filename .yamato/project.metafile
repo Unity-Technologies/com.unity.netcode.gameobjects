@@ -111,23 +111,19 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
-        # - name: ps5 --> SEE MTT-12118
-        #  type: Unity::VM
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  larger_flavor: b1.xlarge
-        #  standalone: PS5
-        # - name: switch --> TEMPORARILY DISABLED. SEE MTT-12118
-        #   The NintendoSDK on the win10-switch:v4 Bokken image is incomplete for the SDK
-        #   version the newer editor Playback Engines require: 18_3_0 is missing the
-        #   nintendo-switch-support lib the new toolchain links against, and 21_4_3 is missing the
-        #   Tools\Graphics\NvnTools (GraphicsConverter) libraries needed to package textures.
-        #   Neither is fixable from .yamato; re-enable once Package CI ships a complete SDK on the image.
-        #   type: Unity::VM
-        #   image: package-ci/win10-switch:v4
-        #   flavor: b1.large
-        #   larger_flavor: b1.xlarge
-        #   standalone: Switch
+        # ps5 uses the PlayStation team image (SDK 13.000); package-ci/win10-ps5:v4 only ships SDK 9.00.
+        - name: ps5
+          type: Unity::VM
+          image: playstation/ps5-buildandexecute:v10.8.7
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: PS5
+        - name: switch
+          type: Unity::VM
+          image: package-ci/win10-switch:v4
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: Switch
         - name: GameCoreXboxOne
           type: Unity::VM
           image: package-ci/win10-xbox:v4
@@ -147,19 +143,19 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
-        #- name: ps5 --> SEE MTT-12118
-        #  type:  Unity::console::ps5
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  larger_flavor: b1.xlarge
-        #  standalone: PS5
-        # - name: switch --> TEMPORARILY DISABLED. SEE MTT-12118 (incomplete NintendoSDK on win10-switch:v4 image)
-        #   type: Unity::console::switch
-        #   image: package-ci/win10-switch:v4
-        #   flavor: b1.large
-        #   larger_flavor: b1.xlarge
-        #   standalone: Switch
-        #   base: win
+        - name: ps5
+          type: Unity::console::ps5
+          image: playstation/ps5-buildandexecute:v10.8.7
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: PS5
+        - name: switch
+          type: Unity::console::switch
+          image: package-ci/win10-switch:v4
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: Switch
+          base: win
         - name: GameCoreXboxOne
           type: Unity::console::xbox
           image: package-ci/win10-xbox:v4
