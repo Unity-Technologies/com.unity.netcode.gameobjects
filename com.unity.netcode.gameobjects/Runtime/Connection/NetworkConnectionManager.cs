@@ -6,6 +6,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
 using Unity.Profiling;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -433,6 +436,9 @@ namespace Unity.Netcode
 
             TransportIdToClientIdMap.Remove(transportId);
             ClientIdToTransportIdMap.Remove(clientId);
+#if UNIFIED_NETCODE
+            m_ClientIdToNetworkId.Remove(clientId);
+#endif
             return (clientId, true);
         }
 
@@ -496,6 +502,45 @@ namespace Unity.Netcode
 
         private bool m_IsTransportConnected = false;
 
+
+#if UNIFIED_NETCODE
+        private Dictionary<ulong, NetworkId> m_ClientIdToNetworkId = new Dictionary<ulong, NetworkId>();
+        private NetCodeConnectionEvent m_IncomingNetworkConnectionEvent;
+        private bool m_HasIncomingEvent;
+        internal void SetIncomingNetworkConnectionEvent(NetCodeConnectionEvent networkConnectionEvent)
+        {
+            m_IncomingNetworkConnectionEvent = networkConnectionEvent;
+            m_HasIncomingEvent = true;
+        }
+
+        internal (bool, NetworkId) GetClientNetworkId(ulong clientId)
+        {
+            if (m_ClientIdToNetworkId.TryGetValue(clientId, out var networkId))
+            {
+                return (true, networkId);
+            }
+            return (false, default);
+        }
+
+        internal void RegisterHostLocalConnection(ulong clientId, NetworkId networkId)
+        {
+            m_ClientIdToNetworkId.Add(clientId, networkId);
+            NetworkManager.LocalClient.SetNetworkId(networkId);
+        }
+
+        internal void MapClientIdToNetworkId(ulong clientId)
+        {
+            m_HasIncomingEvent = false;
+            if (m_ClientIdToNetworkId.ContainsKey(clientId))
+            {
+                Debug.LogError($"Already mapped client id {clientId} to {m_ClientIdToNetworkId[clientId]} or the table has not been cleaned properly!");
+                return;
+            }
+            m_ClientIdToNetworkId.Add(clientId, m_IncomingNetworkConnectionEvent.Id);
+        }
+
+#endif
+
         /// <summary>
         /// Handles a <see cref="NetworkEvent.Connect"/> event.
         /// </summary>
@@ -555,7 +600,12 @@ namespace Unity.Netcode
             ClientIdToTransportIdMap[clientId] = transportId;
             TransportIdToClientIdMap[transportId] = clientId;
             MessageManager.ClientConnected(clientId);
-
+#if UNIFIED_NETCODE
+            if (m_HasIncomingEvent)
+            {
+                MapClientIdToNetworkId(clientId);
+            }
+#endif
             if (LocalClient.IsServer)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1305,6 +1355,13 @@ namespace Unity.Netcode
                 }
             }
 
+#if UNIFIED_NETCODE
+            if (m_ClientIdToNetworkId.TryGetValue(clientId, out var networkId))
+            {
+                networkClient.SetNetworkId(networkId);
+            }
+#endif
+
             return networkClient;
         }
 
@@ -1639,6 +1696,9 @@ namespace Unity.Netcode
             // Prepare for a new session
             m_LocalClientTransportId = 0;
             LocalClient.IsApproved = false;
+#if UNIFIED_NETCODE
+            m_ClientIdToNetworkId.Clear();
+#endif
             m_PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();

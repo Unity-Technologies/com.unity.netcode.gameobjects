@@ -1,3 +1,4 @@
+using Unity.NetCode;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -65,6 +66,13 @@ namespace Unity.Netcode
         public NetworkObject[] OwnedObjects => IsConnected ? SpawnManager.GetClientOwnedObjects(ClientId) : new NetworkObject[] { };
 
         internal NetworkSpawnManager SpawnManager { get; private set; }
+
+        internal NetworkId NetworkId { get; private set; }
+
+        internal void SetNetworkId(NetworkId networkId)
+        {
+            NetworkId = networkId;
+        }
 
         internal bool SetRole(bool isServer, bool isClient, NetworkManager networkManager = null)
         {

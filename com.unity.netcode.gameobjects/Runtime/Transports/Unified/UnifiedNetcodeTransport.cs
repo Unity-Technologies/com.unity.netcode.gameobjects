@@ -275,6 +275,7 @@ namespace Unity.Netcode.Unified
                 Connection = connection
             };
             m_ServerClientId = connectionEvent.Id.Value;
+            //m_NetworkManager.ConnectionManager.SetIncomingNetworkConnectionEvent(connectionEvent);
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
@@ -287,7 +288,8 @@ namespace Unity.Netcode.Unified
                 ReceiveQueue = null,
                 SendQueue = new BatchedSendQueue(BatchedSendQueue.MaximumMaximumCapacity),
                 Connection = connection
-            }; ;
+            };
+            m_NetworkManager.ConnectionManager.SetIncomingNetworkConnectionEvent(connectionEvent);
             InvokeOnTransportEvent(NetworkEvent.Connect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
             var updateSystem = m_NetworkManager.NetcodeWorld.GetExistingSystemManaged<UnifiedNetcodeUpdateSystem>();
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);

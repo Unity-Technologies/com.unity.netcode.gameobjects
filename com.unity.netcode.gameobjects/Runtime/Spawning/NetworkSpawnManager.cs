@@ -1176,7 +1176,8 @@ namespace Unity.Netcode
             // the NetworkObject is fully spawned.
             if (networkObject.HasGhost)
             {
-                networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
+                var clientNetworkId = NetworkManager.ConnectionManager.GetClientNetworkId(networkObject.OwnerClientId);
+                networkObject.NetworkObjectBridge.SpawnGhost(networkObject, clientNetworkId);
             }
 #endif
 

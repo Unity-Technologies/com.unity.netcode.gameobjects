@@ -1402,6 +1402,13 @@ namespace Unity.Netcode
             /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             DefaultWorldInitialization.Initialize("Default World", false);
+
+            // Host has to register itself using the local connection NetworkId.
+            // Note: If this is not done, then host unified owned objects won't work correctly.
+            if (IsHost && NetcodeWorld.IsCreated)
+            {
+                ConnectionManager.RegisterHostLocalConnection(LocalClientId, NetcodeWorld.LocalConnection.NetworkId);
+            }
         }
 
         /// <summary>

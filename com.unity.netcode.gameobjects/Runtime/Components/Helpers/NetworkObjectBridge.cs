@@ -31,7 +31,7 @@ namespace Unity.Netcode
 
             // Start users with just interpolation (they can adjust this if they want prediction)
             // to make the initial transition less problematic for users.
-            ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            //ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
 #if COM_UNITY_MODULES_PHYSICS
             var rigidBody = GetComponent<Rigidbody>();
@@ -61,6 +61,16 @@ namespace Unity.Netcode
         /// N4E-spawned hybrid prefab instances.
         /// </summary>
         internal GhostField<ulong> NetworkObjectId = new GhostField<ulong>();
+
+
+        internal void SpawnGhost(NetworkObject networkObject, (bool, NetworkId) clientNetworkId)
+        {
+            if (networkObject.GhostObject.HasOwner && clientNetworkId.Item1)
+            {
+                networkObject.GhostObject.OwnerNetworkId = clientNetworkId.Item2;
+            }
+            NetworkObjectId.Value = networkObject.NetworkObjectId;
+        }
 
         /// <summary>
         /// Currently, NGO provides the parenting event handling via <see cref="ParentSyncMessage"/>.
