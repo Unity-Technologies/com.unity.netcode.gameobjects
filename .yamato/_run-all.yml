@@ -129,7 +129,7 @@ run_all_webgl_builds:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/webgl-test.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -141,7 +141,7 @@ run_all_webgl_builds_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_trunk
+    - .yamato/webgl-test.yml#webgl_build_{{ project.name }}_{{ platform.name }}_trunk
 {% endfor -%}
 {% endfor -%}
 
@@ -152,7 +152,7 @@ run_all_webgl_builds_pinnedTrunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ pinnedTrunk }}
+    - .yamato/webgl-test.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ pinnedTrunk }}
 {% endfor -%}
 {% endfor -%}
 
@@ -162,7 +162,41 @@ run_all_webgl_builds_6000:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_6000.0
+    - .yamato/webgl-test.yml#webgl_build_{{ project.name }}_{{ platform.name }}_6000.0
+{% endfor -%}
+{% endfor -%}
+
+
+# Runs all WebGL PlayMode tests (runs the produced player in a browser on a GPU agent)
+run_all_webgl_tests:
+  name: Run All WebGl Tests
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.webgl_test -%}
+{% for editor in validation_editors.all -%}
+    - .yamato/webgl-test.yml#webgl_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+
+# Runs all WebGL PlayMode tests on trunk editor
+run_all_webgl_tests_trunk:
+  name: Run All WebGl Tests [Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.webgl_test -%}
+    - .yamato/webgl-test.yml#webgl_test_{{ project.name }}_{{ platform.name }}_trunk
+{% endfor -%}
+{% endfor -%}
+
+# Runs all WebGL PlayMode tests on 6000.0 editor
+run_all_webgl_tests_6000:
+  name: Run All WebGl Tests [6000.0]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.webgl_test -%}
+    - .yamato/webgl-test.yml#webgl_test_{{ project.name }}_{{ platform.name }}_6000.0
 {% endfor -%}
 {% endfor -%}
 

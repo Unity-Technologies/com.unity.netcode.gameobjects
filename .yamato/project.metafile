@@ -168,6 +168,15 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: GameCoreScarlett
+    # WebGL runtime tests run the built player inside a browser, which requires a real GPU and display.
+    # We therefore run them on a GPU-backed Ubuntu VM (rtx2080). Firefox is preinstalled on the package-ci Ubuntu image.
+    webgl_test:
+        - name: ubuntu
+          type: Unity::VM::GPU
+          image: package-ci/ubuntu-22.04:v4.87.0
+          flavor: b1.large
+          model: rtx2080
+          standalone: WebGL
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv2.X official support started from 6000.0 editor

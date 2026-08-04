@@ -21,7 +21,7 @@ CI related files are present inside .yamato/ folder and we can distinguish speci
 - `.yamato/project-standards.yml` responsible for running standards check on a package.
 - `.yamato/code-coverage.yml` responsible for running code coverage analysis.
 - `.yamato/performance-tests.yml` responsible for running performance tests.
-- `.yamato/webgl-build.yml` responsible for making a build for webgl platform.
+- `.yamato/webgl-test.yml` responsible for building a webgl player and running its PlayMode tests in a browser.
 
 ### Standalone Tests
 - `.yamato/desktop-standalone-tests.yml` responsible for running tests on standalone desktops.
