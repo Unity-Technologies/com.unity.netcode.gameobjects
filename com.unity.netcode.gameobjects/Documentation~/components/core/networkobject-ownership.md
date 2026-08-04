@@ -112,7 +112,7 @@ The authority of any NetworkObject can always change ownership, as outlined in [
 ### Ownership permission settings
 
 > [!NOTE]
-> Permissions are only valid when using the distributed authority network topology that requires Multiplayer Services. If the Multiplayer Services package is not installed, the permissions setting will not be displayed.
+> Permissions are only valid when using the distributed authority network topology, which requires Multiplayer Services. If the Multiplayer Services package is not installed, the permissions setting will not be displayed.
 
 The following ownership permission settings, defined by [`NetworkObject.OwnershipStatus`](xref:Unity.Netcode.NetworkObject.OwnershipStatus), control how ownership of NetworkObjects can be changed during a distributed authority session:
 
