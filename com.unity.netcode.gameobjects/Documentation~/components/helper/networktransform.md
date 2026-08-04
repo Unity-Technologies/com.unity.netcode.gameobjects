@@ -1,6 +1,6 @@
 # NetworkTransform
 
-[NetworkTransform](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkTransform.html) is a concrete class that inherits from [NetworkBehaviour](../core/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
+[NetworkTransform](xref:Unity.Netcode.Components.NetworkTransform) is a concrete class that inherits from [NetworkBehaviour](../core/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
 
 The synchronization of a GameObject's Transform is a key netcode task, and usually proceeds in the following order:
 
@@ -39,7 +39,7 @@ Theoretically, you can have a NetworkTransform on every child object of a 100 le
 
 When nesting NetworkTransforms, you should first determine if there are any alternative approaches to handling child object motion (such as synchronizing through animations or using an algorithm that uses the synchronized network time) to ensure you're not consuming unnecessary processing time and bandwidth.
 
-For example, if you use a [NetworkAnimator](networkanimator.md) component to synchronize animations (instead of nested NetworkTransforms), then you don't need to manage synchronizing each child node of the model because the animation system and NetworkAnimator handle it for you. Similarly, if you want a child object to orbit its parent object, you can use the server time ([`NetworkManager.ServerTime`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?sufolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_ServerTime)) to feed into an algorithm that's used on all instances (local and remote). This removes the need to synchronize motion between child and parent because the algorithm is driven by a value that's already being synchronized on all clients.
+For example, if you use a [NetworkAnimator](networkanimator.md) component to synchronize animations (instead of nested NetworkTransforms), then you don't need to manage synchronizing each child node of the model because the animation system and NetworkAnimator handle it for you. Similarly, if you want a child object to orbit its parent object, you can use the server time ([`NetworkManager.ServerTime`](xref:Unity.Netcode.NetworkManager.ServerTime)) to feed into an algorithm that's used on all instances (local and remote). This removes the need to synchronize motion between child and parent because the algorithm is driven by a value that's already being synchronized on all clients.
 
 > [!NOTE]
 > Generally, unless you have some unique motion that needs to be applied to a child object and it can't be synchronized through an animation or an algorithm based on a synchronized value, then you shouldn't nest NetworkTransforms. However, nesting NetworkTransforms is more optimal then creating multiple individual single-node network prefabs with NetworkTransforms and parenting those once they're spawned.
@@ -58,13 +58,13 @@ Some NetworkTransform properties are automatically synchronized by the authorita
 
 The following are a list of NetworkTransform properties that will cause a full state update (effectively a teleport) when changed during runtime by the authority instance:
 
-- [UseUnreliableDeltas](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseUnreliableDeltas)
-- [InLocalSpace](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_InLocalSpace)
-- [Interpolate](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_Interpolate)
-- [SlerpPosition](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_SlerpPosition)
-- [UseQuaternionSynchronization](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseQuaternionSynchronization)
-- [UseQuaternionCompression](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseQuaternionCompression)
-- [UseHalfFloatPrecision](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseHalfFloatPrecision)
+- [UseUnreliableDeltas](xref:Unity.Netcode.Components.NetworkTransform.UseUnreliableDeltas)
+- [InLocalSpace](xref:Unity.Netcode.Components.NetworkTransform.InLocalSpace)
+- [Interpolate](xref:Unity.Netcode.Components.NetworkTransform.Interpolate)
+- [SlerpPosition](xref:Unity.Netcode.Components.NetworkTransform.SlerpPosition)
+- [UseQuaternionSynchronization](xref:Unity.Netcode.Components.NetworkTransform.UseQuaternionSynchronization)
+- [UseQuaternionCompression](xref:Unity.Netcode.Components.NetworkTransform.UseQuaternionCompression)
+- [UseHalfFloatPrecision](xref:Unity.Netcode.Components.NetworkTransform.UseHalfFloatPrecision)
 
 The following NetworkTransform properties can cause a full state update when changed during runtime by the authority instance:
 

@@ -2,191 +2,160 @@ using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Unit tests to test:
-    /// - Serializing NetworkObject to NetworkObjectReference
-    /// - Deserializing NetworkObjectReference to NetworkObject
-    /// - Implicit operators of NetworkObjectReference
+    /// - Serializing NetworkBehaviour to NetworkBehaviourReference
+    /// - Deserializing NetworkBehaviourReference to NetworkBehaviour
+    /// - Implicit operators of NetworkBehaviourReference
     /// </summary>
-    internal class NetworkBehaviourReferenceTests : IDisposable
+    internal class NetworkBehaviourReferenceTests : BaseReferenceTests
     {
-        [OneTimeSetUp]
-        public void OneTimeSetup()
+        public NetworkBehaviourReferenceTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
-            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
         }
 
-        private class TestNetworkBehaviour : NetworkBehaviour
-        {
-            public static bool ReceivedRPC;
-
-            public NetworkVariable<NetworkBehaviourReference> TestVariable = new NetworkVariable<NetworkBehaviourReference>();
-
-            public TestNetworkBehaviour RpcReceivedBehaviour;
-
-            [ServerRpc]
-            public void SendReferenceServerRpc(NetworkBehaviourReference value)
-            {
-                RpcReceivedBehaviour = (TestNetworkBehaviour)value;
-                ReceivedRPC = true;
-            }
-        }
+        #region Tests using non-null NetworkBehaviours and RPCs
 
         [UnityTest]
         public IEnumerator TestRpc()
         {
-            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
-            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
-            networkObjectContext.Object.Spawn();
+            yield return SpawnTestPrefabInstance();
 
-            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
-            otherObjectContext.Object.Spawn();
+            // Explicitly send the NetworkBehaviour as a reference
+            m_ValidatingInstance.TestNetworkBehaviour.SendNetworkBehaviourReferenceRpc(new NetworkBehaviourReference(m_ReferenceToUse.TestNetworkBehaviour));
 
-            testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference(testNetworkBehaviour));
-
-            // wait for rpc completion
-            float t = 0;
-            while (testNetworkBehaviour.RpcReceivedBehaviour == null)
-            {
-                t += Time.deltaTime;
-                if (t > 5f)
-                {
-                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
-                }
-
-                yield return null;
-            }
-
-            // validate
-            Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
+            // Validated the reference
+            yield return WaitForConditionOrTimeOut(RpcWasReceivedAndBehaviourValidated);
+            AssertOnTimeout($"[{nameof(TestRpc)}] Failed to validate reference!");
         }
 
-        [UnityTest]
-        public IEnumerator TestSerializeNull([Values] bool initializeWithNull)
-        {
-            TestNetworkBehaviour.ReceivedRPC = false;
-            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
-            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
-            networkObjectContext.Object.Spawn();
-
-            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
-            otherObjectContext.Object.Spawn();
-
-            // If not initializing with null, then use the default constructor with no assigned NetworkBehaviour
-            if (!initializeWithNull)
-            {
-                testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference());
-            }
-            else // Otherwise, initialize and pass in null as the reference
-            {
-                testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference(null));
-            }
-
-            // wait for rpc completion
-            float t = 0;
-            while (!TestNetworkBehaviour.ReceivedRPC)
-            {
-                t += Time.deltaTime;
-                if (t > 5f)
-                {
-                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
-                }
-
-                yield return null;
-            }
-
-            // validate
-            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedBehaviour);
-        }
 
         [UnityTest]
         public IEnumerator TestRpcImplicitNetworkBehaviour()
         {
-            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
-            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
-            networkObjectContext.Object.Spawn();
+            yield return SpawnTestPrefabInstance();
 
-            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
-            otherObjectContext.Object.Spawn();
+            // Implicitly send the NetworkBehaviour as a reference
+            m_ValidatingInstance.TestNetworkBehaviour.SendNetworkBehaviourReferenceRpc(m_ReferenceToUse.TestNetworkBehaviour);
 
-            testNetworkBehaviour.SendReferenceServerRpc(testNetworkBehaviour);
+            // Validated the reference
+            yield return WaitForConditionOrTimeOut(RpcWasReceivedAndBehaviourValidated);
+            AssertOnTimeout($"[{nameof(TestRpc)}] Failed to validate reference!");
+        }
+        #endregion
 
-            // wait for rpc completion
-            float t = 0;
-            while (testNetworkBehaviour.RpcReceivedBehaviour == null)
+        #region Tests using non-null NetworkBehaviours and NetworkVariable
+        [UnityTest]
+        public IEnumerator TestNetworkVariable()
+        {
+            yield return SpawnTestPrefabInstance();
+
+            // Assure the authority instance's value is the default (null) value
+            Assert.IsNull((NetworkBehaviour)m_ValidatingInstance.TestNetworkBehaviour.NetworkBehaviourVariable.Value);
+
+            // Implicitly assign the NetworkBehaviourReference by assigning the NetworkBehaviour to the NetworkVariable.
+            m_ValidatingInstance.TestNetworkBehaviour.NetworkBehaviourVariable.Value = m_ReferenceToUse.TestNetworkBehaviour;
+
+            // Validated the NetworkVariable reference propogates to clients
+            yield return WaitForConditionOrTimeOut(NetworkVariableChangedAndBehaviourValidated);
+            AssertOnTimeout($"[{nameof(TestNetworkVariable)}] Failed to validate reference!");
+        }
+        #endregion
+
+        #region Validating using NULL as a NetworkBehaviourReference
+        [UnityTest]
+        public IEnumerator TestSerializeNull()
+        {
+            yield return SpawnTestPrefabInstance(true);
+
+            // Initialize with NULL parameter
+            var initializeWithNull = new NetworkBehaviourReference(null);
+            // Initialize with no parameter
+            var initializeWithNothing = new NetworkBehaviourReference();
+
+            // Initialized with NULL parameter
+            // Explicitly send the NetworkBehaviour as a reference
+            m_ValidatingInstance.TestNetworkBehaviour.SendNetworkBehaviourReferenceRpc(initializeWithNull);
+
+            // Validated the reference
+            yield return WaitForConditionOrTimeOut(RpcSerializingNullValidated);
+            AssertOnTimeout($"[{nameof(TestRpc)}] Failed to validate reference!");
+
+            // Reset the RPC NetworkBehaviourReference to the local instance for all spawned instances.
+            foreach (var networkManager in m_NetworkManagers)
             {
-                t += Time.deltaTime;
-                if (t > 5f)
-                {
-                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
-                }
-
-                yield return null;
+                var testBehaviour = networkManager.SpawnManager.SpawnedObjects[m_ValidatingInstance.NetworkObject.NetworkObjectId].GetComponent<TestNetworkBehaviour>();
+                testBehaviour.RpcReceivedBehaviour = testBehaviour;
             }
 
-            // validate
-            Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
+            // Initialized with no parameter
+            // Explicitly send the NetworkBehaviour as a reference
+            m_ValidatingInstance.TestNetworkBehaviour.SendNetworkBehaviourReferenceRpc(initializeWithNothing);
+
+            // Validated the reference
+            yield return WaitForConditionOrTimeOut(RpcSerializingNullValidated);
+            AssertOnTimeout($"[{nameof(TestRpc)}] Failed to validate reference!");
+
+
+            // Initialize NetworkBehaviourVariable with NULL parameter
+            m_ValidatingInstance.TestNetworkBehaviour.NetworkBehaviourVariable.Value = initializeWithNull;
+            yield return WaitForConditionOrTimeOut(NetworkVariableSerializingNullValidated);
+            AssertOnTimeout($"[{nameof(TestSerializeNull)}][Initialize with null parameter] Failed to validate null {nameof(NetworkBehaviour)} reference!");
+
+            // Reset the NetworkVaraible NetworkBehaviourReference to the local instance for all spawned instances.
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var testBehaviour = networkManager.SpawnManager.SpawnedObjects[m_ValidatingInstance.NetworkObject.NetworkObjectId].GetComponent<TestNetworkBehaviour>();
+                testBehaviour.TestVariableBehaviour = testBehaviour;
+                testBehaviour.TestVariableChanged = false;
+            }
+
+            // Initialize NetworkBehaviourVariable with no parameter
+            m_ValidatingInstance.TestNetworkBehaviour.NetworkBehaviourVariable.Value = initializeWithNothing;
+            yield return WaitForConditionOrTimeOut(NetworkVariableSerializingNullValidated);
+            AssertOnTimeout($"[{nameof(TestSerializeNull)}][Initialize with no parameter] Failed to validate null {nameof(NetworkBehaviour)} reference!");
         }
+        #endregion
 
-        [Test]
-        public void TestNetworkVariable()
+        #region Serialization Failure validation tests
+
+        /// <summary>
+        /// This test is ok to create but not spawn.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator FailSerializeNonSpawnedNetworkObject()
         {
-            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
-            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
-            networkObjectContext.Object.Spawn();
-
-            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
-            otherObjectContext.Object.Spawn();
-
-            // check default value is null
-            Assert.IsNull((NetworkBehaviour)testNetworkBehaviour.TestVariable.Value);
-
-            testNetworkBehaviour.TestVariable.Value = testNetworkBehaviour;
-
-            Assert.AreEqual((NetworkBehaviour)testNetworkBehaviour.TestVariable.Value, testNetworkBehaviour);
-        }
-
-        [Test]
-        public void FailSerializeNonSpawnedNetworkObject()
-        {
-            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
-            var component = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            yield return s_DefaultWaitForTick;
+            var instance = Object.Instantiate(m_TestPrefab);
 
             Assert.Throws<ArgumentException>(() =>
             {
-                NetworkBehaviourReference outReference = component;
+                NetworkBehaviourReference outReference = instance.GetComponent<TestNetworkBehaviour>();
             });
+
+            Object.Destroy(instance);
         }
 
-        [Test]
-        public void FailSerializeGameObjectWithoutNetworkObject()
+        [UnityTest]
+        public IEnumerator FailSerializeGameObjectWithoutNetworkObject()
         {
-            using var gameObjectContext = UnityObjectContext.CreateGameObject();
-            var component = gameObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            yield return s_DefaultWaitForTick;
+            var instance = Object.Instantiate(m_TestPrefab);
+            Object.Destroy(instance.GetComponent<NetworkObject>());
 
             Assert.Throws<ArgumentException>(() =>
             {
-                NetworkBehaviourReference outReference = component;
+                NetworkBehaviourReference outReference = instance.GetComponent<TestNetworkBehaviour>();
             });
-        }
 
-        public void Dispose()
-        {
-            //Stop, shutdown, and destroy
-            NetworkManagerHelper.ShutdownNetworkManager();
+            Object.Destroy(instance);
         }
-
-        public NetworkBehaviourReferenceTests()
-        {
-            //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _);
-        }
+        #endregion
     }
 
     /// <summary>
