@@ -54,12 +54,12 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
-# PS5 related --> playstation/ps5-buildandexecute image ships SDK 13.000.
+# PS5 related --> win10-ps5:v4 ships SDK 13.000 but defaults SCE_PROSPERO_SDK_DIR to an unsupported version, so set it explicitly.
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-22_2_0\NintendoSDK'
+# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly to the installed SDK 22.2.0.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     players:
@@ -93,12 +93,12 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
-# PS5 related --> playstation/ps5-buildandexecute image ships SDK 13.000.
+# PS5 related --> win10-ps5:v4 ships SDK 13.000 but defaults SCE_PROSPERO_SDK_DIR to an unsupported version, so set it explicitly.
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-22_2_0\NintendoSDK'
+# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly to the installed SDK 22.2.0.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     logs:

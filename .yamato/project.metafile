@@ -111,10 +111,10 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
-        # ps5 uses the PlayStation team image (SDK 13.000); package-ci/win10-ps5:v4 only ships SDK 9.00.
+        # ps5: win10-ps5:v4 defaults SCE_PROSPERO_SDK_DIR to an unsupported SDK, so it is overridden to 13.000 in console-standalone-test.yml.
         - name: ps5
           type: Unity::VM
-          image: playstation/ps5-buildandexecute:v10.8.7
+          image: package-ci/win10-ps5:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
@@ -145,7 +145,7 @@ test_platforms:
           standalone: PS4
         - name: ps5
           type: Unity::console::ps5
-          image: playstation/ps5-buildandexecute:v10.8.7
+          image: package-ci/win10-ps5:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
