@@ -17,6 +17,7 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+    [UnityPlatform(exclude = new[] { RuntimePlatform.WebGLPlayer })] // Addressables content is served over HTTP, which the WebGL CI player cannot reach - MTT-15569
     public class AddressablesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
