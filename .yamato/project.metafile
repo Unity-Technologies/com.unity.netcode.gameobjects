@@ -191,7 +191,7 @@ validation_editors:
     minimal:
         - 6000.0
     standards:
-        - 6000.0.21f1
+        - 6000.0.72f1
 pinnedTrunk:  5fe7931aab8c4fff9274e15ef0800125c68b8d6a
 
 
