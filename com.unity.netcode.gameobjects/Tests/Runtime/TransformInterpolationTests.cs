@@ -11,11 +11,15 @@ namespace Unity.Netcode.RuntimeTests
     internal class TransformInterpolationObject : NetworkTransform
     {
         public static bool TestComplete = false;
-        // Set the minimum threshold which we will use as our margin of error
-#if UNITY_EDITOR
+        // Set the minimum threshold which we will use as our margin of error.
+        // Consoles interpolate with lower floating point precision, so they need additional room for error.
+        // The platform define is set both in a console player and in the editor when it targets a console,
+        // which covers console tests whether they run on-device or through the editor playmode harness.
+#if UNITY_PS4 || UNITY_PS5 || UNITY_SWITCH || UNITY_GAMECORE
+        public const float MinThreshold = 0.009999f;
+#elif UNITY_EDITOR
         public const float MinThreshold = 0.00555555f;
 #else
-        // Add additional room for error on console tests
         public const float MinThreshold = 0.009999f;
 #endif
 
