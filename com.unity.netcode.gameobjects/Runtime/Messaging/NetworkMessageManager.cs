@@ -543,12 +543,12 @@ namespace Unity.Netcode
             var messageType = typeof(T);
 
             // new(T) is boxed by Mono and so will make an allocation even when T is a struct. default(T) avoids the allocation.
-            var message = default(T);
+            var message = new T();
             // If T is a class, default(T) will be null. Users can register classes as custom messages, so we need to ensure we create a valid instance.
-            if (message == null)
-            {
-                message = new T();
-            }
+            // if (message == null)
+            // {
+            //     message = new T();
+            // }
 
             var messageVersion = 0;
 
