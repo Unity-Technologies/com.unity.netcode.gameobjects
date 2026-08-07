@@ -1780,7 +1780,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public unsafe T RandGenBytes<T>(System.Random rand) where T : unmanaged
         {
-            var t = new T();
+            var t = default(T);
             T* tPtr = &t;
             var s = new Span<byte>(tPtr, sizeof(T));
             rand.NextBytes(s);

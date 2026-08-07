@@ -9,6 +9,8 @@ using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Random = UnityEngine.Random;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -104,7 +106,10 @@ namespace Unity.Netcode.RuntimeTests
                 var val = Random.Range(0, 1234);
                 m_ExpectedValues.Add(val);
 
-                authorityInstance.TheList.Add(val);
+                Assert.That(() =>
+                {
+                    authorityInstance.TheList.Add(val);
+                }, Is.Not.AllocatingGCMemory());
             }
 
             yield return WaitForConditionOrTimeOut(OnVerifyData);
@@ -124,7 +129,10 @@ namespace Unity.Netcode.RuntimeTests
                 var valToInsert = Random.Range(1, 99);
                 m_ExpectedValues.Insert(indexToInsert, valToInsert);
 
-                authorityInstance.TheList.Insert(indexToInsert, valToInsert);
+                Assert.That(() =>
+                {
+                    authorityInstance.TheList.Insert(indexToInsert, valToInsert);
+                }, Is.Not.AllocatingGCMemory());
             }
 
             yield return WaitForConditionOrTimeOut(OnVerifyData);

@@ -541,7 +541,15 @@ namespace Unity.Netcode
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
             var messageType = typeof(T);
-            var message = new T();
+
+            // new(T) is boxed by Mono and so will make an allocation even when T is a struct. default(T) avoids the allocation.
+            var message = default(T);
+            // If T is a class, default(T) will be null. Users can register classes as custom messages, so we need to ensure we create a valid instance.
+            if (message == null)
+            {
+                message = new T();
+            }
+
             var messageVersion = 0;
 
             // Special cases because these are the messages that carry the version info - thus the version info isn't
@@ -633,8 +641,9 @@ namespace Unity.Netcode
             return largestSerializedSize;
         }
 
-        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds, int messageVersionFilter)
+        internal unsafe int SendPreSerializedMessage<TMessageType, TClientIdListType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, int messageVersionFilter)
             where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
             using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<NetworkMessageHeader>(), Allocator.Temp);
 
