@@ -8,9 +8,9 @@ using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Random = UnityEngine.Random;
 using UnityEngine.TestTools.Constraints;
 using Is = NUnit.Framework.Is;
+using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {

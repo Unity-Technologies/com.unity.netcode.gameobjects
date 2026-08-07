@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -25,12 +26,18 @@ namespace Unity.Netcode.RuntimeTests
 
         public void ReleaseMessages()
         {
-
             foreach (var caughtSpawn in m_CaughtMessages)
             {
                 // Reader will be disposed within HandleMessage
                 m_OwnerNetworkManager.ConnectionManager.MessageManager.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
             }
+        }
+
+        public void HandleCaughtMessage(int index)
+        {
+            var caughtMessage = m_CaughtMessages[index];
+            // Reader will be disposed within HandleMessage
+            m_OwnerNetworkManager.ConnectionManager.MessageManager.HandleMessage(caughtMessage.Header, caughtMessage.Reader, caughtMessage.SenderId, caughtMessage.Timestamp, caughtMessage.SerializedHeaderSize);
         }
 
         public int CaughtMessageCount => m_CaughtMessages.Count;
