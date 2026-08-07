@@ -503,9 +503,9 @@ namespace Unity.Netcode
             m_DisconnectedClients.Clear();
         }
 
-        public static int CreateMessageAndGetVersion<T>() where T : INetworkMessage, new()
+        public static int CreateMessageAndGetVersion<T>() where T : struct, INetworkMessage
         {
-            return new T().Version;
+            return default(T).Version;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -538,18 +538,10 @@ namespace Unity.Netcode
 
 
 
-        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : struct, INetworkMessage
         {
             var messageType = typeof(T);
-
-            // new(T) is boxed by Mono and so will make an allocation even when T is a struct. default(T) avoids the allocation.
-            var message = new T();
-            // If T is a class, default(T) will be null. Users can register classes as custom messages, so we need to ensure we create a valid instance.
-            // if (message == null)
-            // {
-            //     message = new T();
-            // }
-
+            var message = default(T);
             var messageVersion = 0;
 
             // Special cases because these are the messages that carry the version info - thus the version info isn't

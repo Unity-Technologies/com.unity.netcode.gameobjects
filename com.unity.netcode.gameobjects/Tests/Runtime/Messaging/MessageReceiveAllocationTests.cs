@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-        public MessageReceiveAllocationTests(HostOrServer hostOrServer) : base(hostOrServer) {}
+        public MessageReceiveAllocationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private GameObject m_Prefab;
 

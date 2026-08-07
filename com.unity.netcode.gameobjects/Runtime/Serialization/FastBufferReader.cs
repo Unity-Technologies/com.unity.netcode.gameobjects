@@ -493,14 +493,7 @@ namespace Unity.Netcode
         /// <exception cref="NotImplementedException">Thrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable, new()
         {
-            // new T() will always cause an allocation.
-            // Assign default first to see if T is a value type with a valid default
-            value = default;
-            if (value == null)
-            {
-                // The allocation is unavoidable, ensure T is created.
-                value = new T();
-            }
+            value = new T();
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(this));
             value.NetworkSerialize(bufferSerializer);
         }

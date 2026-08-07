@@ -17,7 +17,7 @@ namespace Unity.Netcode.EditorTests
             public int C;
             public static bool Deserialized;
             public static bool Handled;
-            public static List<TestMessage> DeserializedValues = new List<TestMessage>(100000);
+            public static List<TestMessage> DeserializedValues = new List<TestMessage>();
 
             public void Serialize(FastBufferWriter writer, int targetVersion)
             {
