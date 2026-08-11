@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -95,22 +96,23 @@ namespace Unity.Netcode.EditorTests
             };
             var message = GetMessage();
 
-            var writer = new FastBufferWriter(1300, Allocator.Temp);
-            using (writer)
-            {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
-                writer.WriteValue(message);
+            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
+            writer.WriteValue(message);
 
-                var reader = new FastBufferReader(writer, Allocator.Temp);
-                using (reader)
-                {
-                    m_MessageManager.HandleMessage(messageHeader, reader, 0, 0, 0);
-                    Assert.IsTrue(TestMessage.Deserialized);
-                    Assert.IsTrue(TestMessage.Handled);
-                    Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
-                    Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
-                }
-            }
+            using var reader = new FastBufferReader(writer, Allocator.Temp);
+            m_MessageManager.HandleMessage(messageHeader, reader, 0, 0, 0);
+            Assert.IsTrue(TestMessage.Deserialized);
+            Assert.IsTrue(TestMessage.Handled);
+            Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
+            Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
+
+            // Check for GC Allocations
+            Assert.That(() =>
+            {
+                reader.Seek(0);
+                m_MessageManager.HandleMessage(messageHeader, reader, 0, 0, 0);
+            }, Is.Not.AllocatingGCMemory());
         }
 
         [Test]
@@ -220,44 +222,45 @@ namespace Unity.Netcode.EditorTests
             var message = GetMessage();
             var message2 = GetMessage();
 
-            var writer = new FastBufferWriter(1300, Allocator.Temp);
-            using (writer)
+            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            writer.WriteValueSafe(batchHeader);
+            BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
+            BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
+            writer.WriteValueSafe(message);
+            BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
+            BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
+            writer.WriteValueSafe(message2);
+
+            // Fill out the rest of the batch header
+            writer.Seek(0);
+            batchHeader = new NetworkBatchHeader
             {
-                writer.WriteValueSafe(batchHeader);
-                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
-                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
-                writer.WriteValueSafe(message);
-                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
-                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
-                writer.WriteValueSafe(message2);
+                Magic = NetworkBatchHeader.MagicValue,
+                BatchSize = writer.Length,
+                BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                BatchCount = 2
+            };
+            writer.WriteValue(batchHeader);
 
-                // Fill out the rest of the batch header
-                writer.Seek(0);
-                batchHeader = new NetworkBatchHeader
-                {
-                    Magic = NetworkBatchHeader.MagicValue,
-                    BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
-                    BatchCount = 2
-                };
-                writer.WriteValue(batchHeader);
+            var data = new ArraySegment<byte>(writer.ToArray());
+            m_MessageManager.HandleIncomingData(0, data, 0);
+            Assert.IsFalse(TestMessage.Deserialized);
+            Assert.IsFalse(TestMessage.Handled);
+            Assert.IsEmpty(TestMessage.DeserializedValues);
 
-                var reader = new FastBufferReader(writer, Allocator.Temp);
-                using (reader)
-                {
-                    m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
-                    Assert.IsFalse(TestMessage.Deserialized);
-                    Assert.IsFalse(TestMessage.Handled);
-                    Assert.IsEmpty(TestMessage.DeserializedValues);
+            m_MessageManager.ProcessIncomingMessageQueue();
+            Assert.IsTrue(TestMessage.Deserialized);
+            Assert.IsTrue(TestMessage.Handled);
+            Assert.AreEqual(2, TestMessage.DeserializedValues.Count);
+            Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
+            Assert.AreEqual(message2, TestMessage.DeserializedValues[1]);
 
-                    m_MessageManager.ProcessIncomingMessageQueue();
-                    Assert.IsTrue(TestMessage.Deserialized);
-                    Assert.IsTrue(TestMessage.Handled);
-                    Assert.AreEqual(2, TestMessage.DeserializedValues.Count);
-                    Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
-                    Assert.AreEqual(message2, TestMessage.DeserializedValues[1]);
-                }
-            }
+            // Check for GC Allocations
+            Assert.That(() =>
+            {
+                m_MessageManager.HandleIncomingData(0, data, 0);
+                m_MessageManager.ProcessIncomingMessageQueue();
+            }, Is.Not.AllocatingGCMemory());
         }
     }
 }
