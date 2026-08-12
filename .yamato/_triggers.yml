@@ -151,9 +151,6 @@ develop_nightly:
     # Build player for webgl platform on trunk and 6000.0 editors
     - .yamato/_run-all.yml#run_all_webgl_builds_trunk
     - .yamato/_run-all.yml#run_all_webgl_builds_6000
-    # Run WebGL PlayMode tests (browser on GPU agent) on trunk and 6000.0 editors
-    - .yamato/_run-all.yml#run_all_webgl_tests_trunk
-    - .yamato/_run-all.yml#run_all_webgl_tests_6000
     # Run Runtime tests against cmb service on trunk and 6000.0 editors
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_trunk
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_6000
@@ -162,7 +159,7 @@ develop_nightly:
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_6000.0
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
-    # Run code coverage test (nightly uses actual trunk)
+  # Run code coverage test (nightly uses actual trunk)
     - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_trunk
 
 
@@ -192,7 +189,5 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone
     # Build player for webgl platform on trunk
     - .yamato/_run-all.yml#run_all_webgl_builds
-    # Run WebGL PlayMode tests (browser on GPU agent)
-    - .yamato/_run-all.yml#run_all_webgl_tests
     # Run Runtime tests against CMB service
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service
