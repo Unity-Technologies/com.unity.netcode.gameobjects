@@ -72,11 +72,13 @@ namespace Unity.Netcode.Components
                 // If we have any pending connections
                 if (m_NewConnections.Count > 0)
                 {
+                    var isConnectedClient = !isServer && networkManager.IsConnectedClient;
+
                     foreach (var entry in m_NewConnections)
                     {
                         // Server: always connect
                         // Client: wait until we have synchronized before announcing we are ready to receive snapshots
-                        if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
+                        if (isServer || isConnectedClient)
                         {
                             // Set the connection in-game
                             commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);

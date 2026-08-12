@@ -2678,6 +2678,9 @@ namespace Unity.Netcode
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
             var isParentingAuthority = m_HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
+#if UNIFIED_NETCODE
+            isParentingAuthority |= AutoObjectParentSync && HasGhost && GhostObject.ParentReplication;
+#endif
             // If we are spawned and don't have authority; reset the parent back to the cached parent and exit
             if (!isParentingAuthority)
             {
@@ -2733,6 +2736,22 @@ namespace Unity.Netcode
             var authorityApplied = AuthorityAppliedParenting;
             ApplyNetworkParenting(removeParent);
 
+
+            // We need to preserve the m_CachedWorldPositionStays value until after we create the message
+            // in order to assure any local space values changed/reset get applied properly. If our
+            // parent is null then go ahead and reset the m_CachedWorldPositionStays the default value.
+            if (parentTransform == null)
+            {
+                m_CachedWorldPositionStays = true;
+            }
+#if UNIFIED_NETCODE
+            if (HasGhost)
+            {
+                // Ghosts are handled by the GhostSystem and should not send parenting messages. The GhostSystem will handle parenting for ghosts.
+                return;
+            }
+#endif
+            // Create teh message to send to the server or observers. This message will contain the latest parent and the world position stays value.
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
@@ -2745,14 +2764,6 @@ namespace Unity.Netcode
                 Rotation = m_CachedWorldPositionStays ? transform.rotation : transform.localRotation,
                 Scale = transform.localScale,
             };
-
-            // We need to preserve the m_CachedWorldPositionStays value until after we create the message
-            // in order to assure any local space values changed/reset get applied properly. If our
-            // parent is null then go ahead and reset the m_CachedWorldPositionStays the default value.
-            if (parentTransform == null)
-            {
-                m_CachedWorldPositionStays = true;
-            }
 
             // If we're not the server, we should tell the server about this parent change
             if (!networkManager.IsServer)
@@ -2794,6 +2805,28 @@ namespace Unity.Netcode
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad() => OrphanChildren = new HashSet<NetworkObject>();
 #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetParent(NetworkObject parent, bool enableNotification)
+        {
+            var parentTransform = parent?.transform;
+#if UNIFIED_NETCODE
+            // Only apply parenting if we are not a ghost. Ghosts are handled by the GhostSystem and should not be re-parented.
+            if (!HasGhost)
+
+#endif
+            {
+                // We must use Transform.SetParent when taking WorldPositionStays into
+                // consideration, otherwise just setting transform.parent = null defaults
+                // to WorldPositionStays which can cause scaling issues if the parent's
+                // scale is not the default (Vetctor3.one) value.
+                transform.SetParent(parentTransform, m_CachedWorldPositionStays);
+            }
+            if (enableNotification)
+            {
+                InvokeBehaviourOnNetworkObjectParentChanged(parent);
+            }
+        }
 
         internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false, bool enableNotification = true)
         {
@@ -2862,15 +2895,7 @@ namespace Unity.Netcode
             if (removeParent || !m_LatestParent.HasValue)
             {
                 SetCachedParent(null);
-                // We must use Transform.SetParent when taking WorldPositionStays into
-                // consideration, otherwise just setting transform.parent = null defaults
-                // to WorldPositionStays which can cause scaling issues if the parent's
-                // scale is not the default (Vetctor3.one) value.
-                transform.SetParent(null, m_CachedWorldPositionStays);
-                if (enableNotification)
-                {
-                    InvokeBehaviourOnNetworkObjectParentChanged(null);
-                }
+                SetParent(null, enableNotification);
                 return true;
             }
 
@@ -2895,11 +2920,7 @@ namespace Unity.Netcode
                 }
             }
             SetCachedParent(parentObject.transform);
-            transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-            if (enableNotification)
-            {
-                InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
-            }
+            SetParent(parentObject, enableNotification);
             return true;
         }
 

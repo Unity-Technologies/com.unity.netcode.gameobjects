@@ -5,19 +5,13 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// This is a component that is added to the root of all N4E-spawned hybrid prefab instances. It is used to link
     /// <see cref="NetworkObject.SerializedObject"/> the N4E-spawned hybrid prefab instances to the incoming <see cref="CreateObjectMessage"/>
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
-
-    [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
-    //BREAK --- Fix this on UNIFIED side 1st
+    [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]    
     public partial class NetworkObjectBridge : GhostBehaviour
     {
-        // DefaultExecutionOrder
-        // TODO: Define a const for the value used on GhostObject and use that value
-        // to set the execution order so if it changes on GhostObject it updates here.
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -78,9 +72,25 @@ namespace Unity.Netcode
             Ghost.ApplyPostTransformMatrixScale(scale);
         }
 
-        internal void ApplyScale(Vector3 scale)
+        /// <summary>
+        /// Invoked by NGO when spawning a hybrid prefab instance.
+        /// </summary>
+        /// <param name="networkObject">object being spawned</param>
+        /// <param name="clientNetworkId">owner of the object</param>
+        internal void SpawnGhost(NetworkObject networkObject, (bool, NetworkId) clientNetworkId)
         {
-            Ghost.ApplyPostTransformMatrixScale(scale);
+            // Update the owner of the object if it has an owner and the clientNetworkId is valid.
+            if (networkObject.GhostObject.HasOwner && clientNetworkId.Item1)
+            {
+                networkObject.GhostObject.OwnerNetworkId = clientNetworkId.Item2;
+            }
+
+            // This is used to link <see cref="NetworkObject.SerializedObject"/> data to N4E-spawned hybrid prefab instances.
+            NetworkObjectId.Value = networkObject.NetworkObjectId;
+
+            // Honor the parenting settings from NetworkObject.
+            // This is important for hybrid prefabs that are spawned with a parent, as the parent may not be known at the time of spawning.
+            networkObject.GhostObject.ParentReplication = networkObject.AutoObjectParentSync;
         }
     }
 }
