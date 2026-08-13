@@ -50,10 +50,6 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-{% if platform.name == "switch" %}
-    # TEMPORARY DIAGNOSTIC (MTT-12118): print which installed Nintendo SDKs contain NvnImage.dll and which nintendo-switch-support version the editor expects, to pick the correct NINTENDO_SDK_ROOT. Remove once the SDK version is chosen.
-    - powershell -Command "Write-Host '--- SWITCH SDK DIAGNOSTIC (MTT-12118) ---'; Get-ChildItem C:\Nintendo -Directory -ErrorAction SilentlyContinue | ForEach-Object { $d = Join-Path $_.FullName 'NintendoSDK\Tools\Graphics\NvnTools\NvnImage.dll'; Write-Host ('SDK ' + $_.Name + ' NvnImage.dll=' + (Test-Path $d)) }; $sup = Get-ChildItem -Path .Editor -Recurse -Directory -Filter 'nintendo-switch-support' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($sup) { Get-ChildItem $sup.FullName -Directory | ForEach-Object { Write-Host ('editor-expects-switch-support ' + $_.Name) } } else { Write-Host 'nintendo-switch-support dir not found under .Editor' }"
-{% endif %}
     - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics{% if platform.name == "switch" %} --extra-editor-arg=-overrideTextureCompression --extra-editor-arg=ForceUncompressed{% endif %} --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
   variables:
 # PS4 related
@@ -62,8 +58,8 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly to the installed SDK 22.2.0.
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
+# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly. SDK 21.4.0 is installed on the image AND matches the editor playback engine's nintendo-switch-support version (21_04); the newer 22.2.0 is NOT installed on this image.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-21_4_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     players:
@@ -101,8 +97,8 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly to the installed SDK 22.2.0.
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
+# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly. SDK 21.4.0 is installed on the image AND matches the editor playback engine's nintendo-switch-support version (21_04); the newer 22.2.0 is NOT installed on this image.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-21_4_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     logs:
