@@ -8,6 +8,8 @@ using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -335,6 +337,12 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(ValidateInvocationOrder(errorLog), $"[Has nested][nonAuthority][{testType}] Rpcs were invoked in an incorrect order\n {errorLog}");
                 errorLog.Clear();
             }
+
+            // Safety check for GC allocations
+            Assert.That(() =>
+            {
+                nonAuthorityInstance.EveryoneInvokePermissionRpc();
+            }, Is.Not.AllocatingGCMemory());
         }
 
         private void ResetAllExpectedInvocations()
