@@ -58,7 +58,7 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> Switch is DISABLED in project.metafile (MTT-12118): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
+# Switch related --> Switch is DISABLED in project.metafile (MTT-15636): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
@@ -97,7 +97,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> Switch is DISABLED in project.metafile (MTT-12118): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
+# Switch related --> Switch is DISABLED in project.metafile (MTT-15636): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
