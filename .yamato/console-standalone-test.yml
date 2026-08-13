@@ -50,6 +50,10 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
+{% if platform.name == "switch" %}
+    # TEMPORARY DIAGNOSTIC (MTT-12118): print which installed Nintendo SDKs contain NvnImage.dll and which nintendo-switch-support version the editor expects, to pick the correct NINTENDO_SDK_ROOT. Remove once the SDK version is chosen.
+    - powershell -Command "Write-Host '--- SWITCH SDK DIAGNOSTIC (MTT-12118) ---'; Get-ChildItem C:\Nintendo -Directory -ErrorAction SilentlyContinue | ForEach-Object { $d = Join-Path $_.FullName 'NintendoSDK\Tools\Graphics\NvnTools\NvnImage.dll'; Write-Host ('SDK ' + $_.Name + ' NvnImage.dll=' + (Test-Path $d)) }; $sup = Get-ChildItem -Path .Editor -Recurse -Directory -Filter 'nintendo-switch-support' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($sup) { Get-ChildItem $sup.FullName -Directory | ForEach-Object { Write-Host ('editor-expects-switch-support ' + $_.Name) } } else { Write-Host 'nintendo-switch-support dir not found under .Editor' }"
+{% endif %}
     - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics{% if platform.name == "switch" %} --extra-editor-arg=-overrideTextureCompression --extra-editor-arg=ForceUncompressed{% endif %} --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
   variables:
 # PS4 related
