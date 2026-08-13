@@ -58,8 +58,8 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly. SDK 21.4.0 is installed on the image AND matches the editor playback engine's nintendo-switch-support version (21_04); the newer 22.2.0 is NOT installed on this image.
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-21_4_0\NintendoSDK'
+# Switch related --> Switch is DISABLED in project.metafile (MTT-12118): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     players:
@@ -97,8 +97,8 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\13.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\host_tools\bin'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
-# Switch related --> win10-switch:v4 unsets NINTENDO_SDK_ROOT, so set it explicitly. SDK 21.4.0 is installed on the image AND matches the editor playback engine's nintendo-switch-support version (21_04); the newer 22.2.0 is NOT installed on this image.
-    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-21_4_0\NintendoSDK'
+# Switch related --> Switch is DISABLED in project.metafile (MTT-12118): 6000.x/trunk editors mandate NintendoSDK 22.2.x, which is not installed on win10-switch:v4 (only nintendosdk-en-21_4_0 is). This target path is correct for when PETS ships 22.2.x and Switch is re-enabled.
+    NINTENDO_SDK_ROOT: 'C:\Nintendo\nintendosdk-en-22_2_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
     logs:

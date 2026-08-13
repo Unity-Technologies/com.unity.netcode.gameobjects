@@ -118,12 +118,13 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
-        - name: switch
-          type: Unity::VM
-          image: package-ci/win10-switch:v4
-          flavor: b1.large
-          larger_flavor: b1.xlarge
-          standalone: Switch
+        # switch --> DISABLED. SEE MTT-12118. 6000.x/trunk editors mandate NintendoSDK 22.2.x, but package-ci/win10-switch:v4 currently ships only nintendosdk-en-21_4_0. That fixes texture packaging but the native IL2CPP link then fails (undefined symbol std::__1::__hash_memory, from the 22_02 SwitchPlayer.a). Re-enable once PETS publishes a win10-switch image with nintendosdk-en-22_2_x.
+        # - name: switch
+        #   type: Unity::VM
+        #   image: package-ci/win10-switch:v4
+        #   flavor: b1.large
+        #   larger_flavor: b1.xlarge
+        #   standalone: Switch
         - name: GameCoreXboxOne
           type: Unity::VM
           image: package-ci/win10-xbox:v4
@@ -149,13 +150,14 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
-        - name: switch
-          type: Unity::console::switch
-          image: package-ci/win10-switch:v4
-          flavor: b1.large
-          larger_flavor: b1.xlarge
-          standalone: Switch
-          base: win
+        # switch --> DISABLED. SEE MTT-12118 (needs NintendoSDK 22.2.x on the image; see console_build note).
+        # - name: switch
+        #   type: Unity::console::switch
+        #   image: package-ci/win10-switch:v4
+        #   flavor: b1.large
+        #   larger_flavor: b1.xlarge
+        #   standalone: Switch
+        #   base: win
         - name: GameCoreXboxOne
           type: Unity::console::xbox
           image: package-ci/win10-xbox:v4
