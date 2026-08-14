@@ -353,10 +353,6 @@ namespace Unity.Netcode.Components
             // Set when a state has been explicitly set (i.e. SetState)
             internal bool ExplicitSet;
 
-            // Used during serialization
-            private FastBufferReader m_Reader;
-            private FastBufferWriter m_Writer;
-
             internal FlagStates FlagStates;
 
             /// <summary>
@@ -625,9 +621,10 @@ namespace Unity.Netcode.Components
             /// <returns><see cref="Quaternion"/></returns>
             public Quaternion GetRotation()
             {
-                if (HasRotAngleChange)
+                // Internal reads use FlagStates fields as opposed to using the public properties (property access has a measurable cost).
+                if (FlagStates.HasRotAngleChange)
                 {
-                    if (QuaternionSync)
+                    if (FlagStates.QuaternionSync)
                     {
                         return Rotation;
                     }
@@ -652,11 +649,11 @@ namespace Unity.Netcode.Components
             /// <returns><see cref="Vector3"/></returns>
             public Vector3 GetPosition()
             {
-                if (HasPositionChange)
+                if (FlagStates.HasPositionChange)
                 {
-                    if (UseHalfFloatPrecision)
+                    if (FlagStates.UseHalfFloatPrecision)
                     {
-                        if (IsTeleportingNextFrame)
+                        if (FlagStates.IsTeleportingNextFrame)
                         {
                             return CurrentPosition;
                         }
@@ -680,11 +677,11 @@ namespace Unity.Netcode.Components
             /// <returns><see cref="Vector3"/></returns>
             public Vector3 GetScale()
             {
-                if (HasScaleChange)
+                if (FlagStates.HasScaleChange)
                 {
-                    if (UseHalfFloatPrecision)
+                    if (FlagStates.UseHalfFloatPrecision)
                     {
-                        if (IsTeleportingNextFrame)
+                        if (FlagStates.IsTeleportingNextFrame)
                         {
                             return Scale;
                         }
@@ -714,15 +711,20 @@ namespace Unity.Netcode.Components
                 // Used to calculate the LastSerializedSize value
                 var positionStart = 0;
                 var isWriting = serializer.IsWriter;
+                // Moving the reader and writer properties into this method, as opposed to fields, to assure
+                // NetworkTransformState remains an unmanaged type in order to store the entire state in a
+                // NativeArray.
+                var writer = default(FastBufferWriter);
+                var reader = default(FastBufferReader);
                 if (isWriting)
                 {
-                    m_Writer = serializer.GetFastBufferWriter();
-                    positionStart = m_Writer.Position;
+                    writer = serializer.GetFastBufferWriter();
+                    positionStart = writer.Position;
                 }
                 else
                 {
-                    m_Reader = serializer.GetFastBufferReader();
-                    positionStart = m_Reader.Position;
+                    reader = serializer.GetFastBufferReader();
+                    positionStart = reader.Position;
                 }
 
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
@@ -756,30 +758,30 @@ namespace Unity.Netcode.Components
                         }
 
                         // Serialize the flags as an unsigned int
-                        BytePacker.WriteValueBitPacked(m_Writer, FlagStates.GetBitsetRepresentation());
+                        BytePacker.WriteValueBitPacked(writer, FlagStates.GetBitsetRepresentation());
 
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
-                        BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
+                        BytePacker.WriteValueBitPacked(writer, NetworkTick);
                     }
                     else
                     {
                         // Deserialize the flags
-                        ByteUnpacker.ReadValueBitPacked(m_Reader, out uint bitset);
+                        ByteUnpacker.ReadValueBitPacked(reader, out uint bitset);
                         // Set the flags
                         FlagStates.SetStateFromBitset(bitset);
 
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
-                        ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
+                        ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
                     }
                 }
 
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
                 if (isWriting)
                 {
-                    bitSetAndTickSize = m_Writer.Position - positionStart;
-                    lastPosition = m_Writer.Position;
+                    bitSetAndTickSize = writer.Position - positionStart;
+                    lastPosition = writer.Position;
                 }
 #endif
 
@@ -790,23 +792,23 @@ namespace Unity.Netcode.Components
                 }
 
                 // Synchronize Position
-                if (HasPositionChange)
+                if (FlagStates.HasPositionChange)
                 {
-                    if (UseHalfFloatPrecision)
+                    if (FlagStates.UseHalfFloatPrecision)
                     {
                         NetworkDeltaPosition.SynchronizeBase = FlagStates.SynchronizeBaseHalfFloat;
 
                         // Apply which axis should be updated for both write/read (teleporting, synchronizing, or just updating)
-                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
-                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
-                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = FlagStates.HasPositionX;
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = FlagStates.HasPositionY;
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = FlagStates.HasPositionZ;
 
-                        if (IsTeleportingNextFrame)
+                        if (FlagStates.IsTeleportingNextFrame)
                         {
                             // **Always use full precision when teleporting and UseHalfFloatPrecision is enabled**
                             serializer.SerializeValue(ref CurrentPosition);
                             // If we are synchronizing, then include the half vector position's delta offset
-                            if (IsSynchronizing)
+                            if (FlagStates.IsSynchronizing)
                             {
                                 serializer.SerializeValue(ref DeltaPosition);
                                 if (!isWriting)
@@ -835,17 +837,17 @@ namespace Unity.Netcode.Components
                     }
                     else // Full precision axis specific position synchronization
                     {
-                        if (HasPositionX)
+                        if (FlagStates.HasPositionX)
                         {
                             serializer.SerializeValue(ref PositionX);
                         }
 
-                        if (HasPositionY)
+                        if (FlagStates.HasPositionY)
                         {
                             serializer.SerializeValue(ref PositionY);
                         }
 
-                        if (HasPositionZ)
+                        if (FlagStates.HasPositionZ)
                         {
                             serializer.SerializeValue(ref PositionZ);
                         }
@@ -855,25 +857,25 @@ namespace Unity.Netcode.Components
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
                 if (isWriting)
                 {
-                    positionSize = m_Writer.Position - lastPosition;
-                    lastPosition = m_Writer.Position;
+                    positionSize = writer.Position - lastPosition;
+                    lastPosition = writer.Position;
                 }
 #endif
 
                 // Synchronize Rotation
-                if (HasRotAngleChange)
+                if (FlagStates.HasRotAngleChange)
                 {
-                    if (QuaternionSync)
+                    if (FlagStates.QuaternionSync)
                     {
                         // Always use the full quaternion if teleporting
-                        if (IsTeleportingNextFrame)
+                        if (FlagStates.IsTeleportingNextFrame)
                         {
                             serializer.SerializeValue(ref Rotation);
                         }
                         else
                         {
                             // Use the quaternion compressor if enabled
-                            if (QuaternionCompression)
+                            if (FlagStates.QuaternionCompression)
                             {
                                 if (isWriting)
                                 {
@@ -889,7 +891,7 @@ namespace Unity.Netcode.Components
                             }
                             else
                             {
-                                if (UseHalfFloatPrecision)
+                                if (FlagStates.UseHalfFloatPrecision)
                                 {
                                     if (isWriting)
                                     {
@@ -913,14 +915,14 @@ namespace Unity.Netcode.Components
                     else // Euler Rotation Synchronization
                     {
                         // Half float precision (full precision when teleporting)
-                        if (UseHalfFloatPrecision && !IsTeleportingNextFrame)
+                        if (FlagStates.UseHalfFloatPrecision && !FlagStates.IsTeleportingNextFrame)
                         {
-                            if (HasRotAngleChange)
+                            if (FlagStates.HasRotAngleChange)
                             {
                                 // Apply which axis should be updated for both write/read
-                                HalfEulerRotation.AxisToSynchronize[0] = HasRotAngleX;
-                                HalfEulerRotation.AxisToSynchronize[1] = HasRotAngleY;
-                                HalfEulerRotation.AxisToSynchronize[2] = HasRotAngleZ;
+                                HalfEulerRotation.AxisToSynchronize[0] = FlagStates.HasRotAngleX;
+                                HalfEulerRotation.AxisToSynchronize[1] = FlagStates.HasRotAngleY;
+                                HalfEulerRotation.AxisToSynchronize[2] = FlagStates.HasRotAngleZ;
 
                                 if (isWriting)
                                 {
@@ -932,17 +934,17 @@ namespace Unity.Netcode.Components
                                 if (!isWriting)
                                 {
                                     var eulerRotation = HalfEulerRotation.ToVector3();
-                                    if (HasRotAngleX)
+                                    if (FlagStates.HasRotAngleX)
                                     {
                                         RotAngleX = eulerRotation.x;
                                     }
 
-                                    if (HasRotAngleY)
+                                    if (FlagStates.HasRotAngleY)
                                     {
                                         RotAngleY = eulerRotation.y;
                                     }
 
-                                    if (HasRotAngleZ)
+                                    if (FlagStates.HasRotAngleZ)
                                     {
                                         RotAngleZ = eulerRotation.z;
                                     }
@@ -952,17 +954,17 @@ namespace Unity.Netcode.Components
                         else // Full precision Euler
                         {
                             // RotAngle Values
-                            if (HasRotAngleX)
+                            if (FlagStates.HasRotAngleX)
                             {
                                 serializer.SerializeValue(ref RotAngleX);
                             }
 
-                            if (HasRotAngleY)
+                            if (FlagStates.HasRotAngleY)
                             {
                                 serializer.SerializeValue(ref RotAngleY);
                             }
 
-                            if (HasRotAngleZ)
+                            if (FlagStates.HasRotAngleZ)
                             {
                                 serializer.SerializeValue(ref RotAngleZ);
                             }
@@ -973,33 +975,33 @@ namespace Unity.Netcode.Components
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
                 if (isWriting)
                 {
-                    rotationSize = m_Writer.Position - lastPosition;
-                    lastPosition = m_Writer.Position;
+                    rotationSize = writer.Position - lastPosition;
+                    lastPosition = writer.Position;
                 }
 #endif
 
                 // Synchronize Scale
-                if (HasScaleChange)
+                if (FlagStates.HasScaleChange)
                 {
                     // If we are teleporting (which includes synchronizing) and the associated NetworkObject has a parent
                     // then we want to serialize the LossyScale since NetworkObject spawn order is not guaranteed
-                    if (IsTeleportingNextFrame && FlagStates.IsParented)
+                    if (FlagStates.IsTeleportingNextFrame && FlagStates.IsParented)
                     {
                         serializer.SerializeValue(ref LossyScale);
                     }
                     // Half precision scale synchronization
-                    if (UseHalfFloatPrecision)
+                    if (FlagStates.UseHalfFloatPrecision)
                     {
-                        if (IsTeleportingNextFrame)
+                        if (FlagStates.IsTeleportingNextFrame)
                         {
                             serializer.SerializeValue(ref Scale);
                         }
                         else
                         {
                             // Apply which axis should be updated for both write/read
-                            HalfVectorScale.AxisToSynchronize[0] = HasScaleX;
-                            HalfVectorScale.AxisToSynchronize[1] = HasScaleY;
-                            HalfVectorScale.AxisToSynchronize[2] = HasScaleZ;
+                            HalfVectorScale.AxisToSynchronize[0] = FlagStates.HasScaleX;
+                            HalfVectorScale.AxisToSynchronize[1] = FlagStates.HasScaleY;
+                            HalfVectorScale.AxisToSynchronize[2] = FlagStates.HasScaleZ;
 
                             // For scale, when half precision is enabled we can still only send the axis with deltas
                             if (isWriting)
@@ -1012,36 +1014,36 @@ namespace Unity.Netcode.Components
                             if (!isWriting)
                             {
                                 Scale = HalfVectorScale.ToVector3();
-                                if (HasScaleX)
+                                if (FlagStates.HasScaleX)
                                 {
                                     ScaleX = Scale.x;
                                 }
 
-                                if (HasScaleY)
+                                if (FlagStates.HasScaleY)
                                 {
                                     ScaleY = Scale.y;
                                 }
 
-                                if (HasScaleZ)
+                                if (FlagStates.HasScaleZ)
                                 {
-                                    ScaleZ = Scale.x;
+                                    ScaleZ = Scale.z;
                                 }
                             }
                         }
                     }
                     else // Full precision scale synchronization
                     {
-                        if (HasScaleX)
+                        if (FlagStates.HasScaleX)
                         {
                             serializer.SerializeValue(ref ScaleX);
                         }
 
-                        if (HasScaleY)
+                        if (FlagStates.HasScaleY)
                         {
                             serializer.SerializeValue(ref ScaleY);
                         }
 
-                        if (HasScaleZ)
+                        if (FlagStates.HasScaleZ)
                         {
                             serializer.SerializeValue(ref ScaleZ);
                         }
@@ -1051,8 +1053,8 @@ namespace Unity.Netcode.Components
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
                 if (isWriting)
                 {
-                    scaleSize = m_Writer.Position - lastPosition;
-                    lastPosition = m_Writer.Position;
+                    scaleSize = writer.Position - lastPosition;
+                    lastPosition = writer.Position;
                 }
 #endif
 
@@ -1060,12 +1062,12 @@ namespace Unity.Netcode.Components
                 if (!isWriting)
                 {
                     // Go ahead and mark the local state dirty
-                    FlagStates.IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
-                    LastSerializedSize = m_Reader.Position - positionStart;
+                    FlagStates.IsDirty = FlagStates.HasPositionChange || FlagStates.HasRotAngleChange || FlagStates.HasScaleChange;
+                    LastSerializedSize = reader.Position - positionStart;
                 }
                 else
                 {
-                    LastSerializedSize = m_Writer.Position - positionStart;
+                    LastSerializedSize = writer.Position - positionStart;
 #if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
                     Debug.Log($"[NT-WriteSize][BitsAndTick: {bitSetAndTickSize}][position: {positionSize}][rotation: {rotationSize}][scale: {scaleSize}]");
 #endif
@@ -2329,21 +2331,14 @@ namespace Unity.Netcode.Components
                     isPositionDirty = true;
                 }
 
-                // For NetworkDeltaPosition, if any axial value is dirty then we always send a full update
+                // For NetworkDeltaPosition, if any axial value is dirty then we always send a full update.
+                // This uses a direct field approach to avoid bounds checking costs.
                 if (!isPositionDirty)
                 {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        if (Math.Abs(position[i] - m_HalfPositionState.PreviousPosition[i]) >= positionThreshold[i])
-                        {
-                            isPositionDirty = i == 0 ? SyncPositionX : i == 1 ? SyncPositionY : SyncPositionZ;
-                            if (!isPositionDirty)
-                            {
-                                continue;
-                            }
-                            break;
-                        }
-                    }
+                    var previousPosition = m_HalfPositionState.PreviousPosition;
+                    isPositionDirty = (SyncPositionX && Math.Abs(position.x - previousPosition.x) >= positionThreshold.x)
+                        || (SyncPositionY && Math.Abs(position.y - previousPosition.y) >= positionThreshold.y)
+                        || (SyncPositionZ && Math.Abs(position.z - previousPosition.z) >= positionThreshold.z);
                 }
 
                 // If the position is dirty or we are teleporting (which includes synchronization)
@@ -2459,14 +2454,9 @@ namespace Unity.Netcode.Components
                 if (!isRotationDirty)
                 {
                     var previousRotation = networkState.Rotation.eulerAngles;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        if (Mathf.Abs(Mathf.DeltaAngle(previousRotation[i], rotAngles[i])) >= rotationThreshold[i])
-                        {
-                            isRotationDirty = true;
-                            break;
-                        }
-                    }
+                    isRotationDirty = Mathf.Abs(Mathf.DeltaAngle(previousRotation.x, rotAngles.x)) >= rotationThreshold.x
+                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.y, rotAngles.y)) >= rotationThreshold.y
+                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.z, rotAngles.z)) >= rotationThreshold.z;
                 }
                 if (isRotationDirty)
                 {
@@ -2515,14 +2505,28 @@ namespace Unity.Netcode.Components
                 else if (SynchronizeScale)
                 {
                     var previousScale = networkState.Scale;
-                    for (int i = 0; i < 3; i++)
+                    // Precompute if it is considered always dirty.
+                    var alwaysDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
+                    // Use direct field assignment as opposed to indexing to avoid bounds checking.
+                    if (alwaysDirty || Mathf.Abs(scale.x - previousScale.x) >= ScaleThreshold)
                     {
-                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState)
-                        {
-                            isScaleDirty = true;
-                            networkState.Scale[i] = scale[i];
-                            flagStates.SetHasScale((Axis)i, i == 0 ? SyncScaleX : i == 1 ? SyncScaleY : SyncScaleZ);
-                        }
+                        isScaleDirty = true;
+                        networkState.Scale.x = scale.x;
+                        flagStates.SetHasScale(Axis.X, SyncScaleX);
+                    }
+
+                    if (alwaysDirty || Mathf.Abs(scale.y - previousScale.y) >= ScaleThreshold)
+                    {
+                        isScaleDirty = true;
+                        networkState.Scale.y = scale.y;
+                        flagStates.SetHasScale(Axis.Y, SyncScaleY);
+                    }
+
+                    if (alwaysDirty || Mathf.Abs(scale.z - previousScale.z) >= ScaleThreshold)
+                    {
+                        isScaleDirty = true;
+                        networkState.Scale.z = scale.z;
+                        flagStates.SetHasScale(Axis.Z, SyncScaleZ);
                     }
                 }
             }
@@ -2594,7 +2598,7 @@ namespace Unity.Netcode.Components
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 // Let the parent handle the updating of this to keep the two synchronized
-                if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+                if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame)
                 {
                     return;
                 }
@@ -2663,29 +2667,43 @@ namespace Unity.Netcode.Components
 #endif
             var networkState = m_LocalAuthoritativeNetworkState;
             var flagStates = m_LocalAuthoritativeNetworkState.FlagStates;
+            // Cached since each is used more than once below.
+            var syncAllPosition = SyncPositionX && SyncPositionY && SyncPositionZ;
+            var syncAllRotation = SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ;
+            var syncAllScale = SyncScaleX && SyncScaleY && SyncScaleZ;
+
             // The m_InternalCurrentPosition, m_InternalCurrentRotation, and m_InternalCurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
+            // Optimization: When every axis of a given property is synchronized there is no reason to eat the cost of transform reads per axis.
             var adjustedPosition = m_InternalCurrentPosition;
-            var currentPosition = GetSpaceRelativePosition();
-            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosition.x;
-            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosition.y;
-            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosition.z;
+            if (!syncAllPosition)
+            {
+                var currentPosition = GetSpaceRelativePosition();
+                adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosition.x;
+                adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosition.y;
+                adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosition.z;
+            }
 
             var adjustedRotation = m_InternalCurrentRotation;
             var adjustedRotAngles = adjustedRotation.eulerAngles;
-            var currentRotation = GetSpaceRelativeRotation().eulerAngles;
-            adjustedRotAngles.x = SyncRotAngleX ? adjustedRotAngles.x : currentRotation.x;
-            adjustedRotAngles.y = SyncRotAngleY ? adjustedRotAngles.y : currentRotation.y;
-            adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
-            adjustedRotation.eulerAngles = adjustedRotAngles;
-
+            if (!syncAllRotation)
+            {
+                var currentRotation = GetSpaceRelativeRotation().eulerAngles;
+                adjustedRotAngles.x = SyncRotAngleX ? adjustedRotAngles.x : currentRotation.x;
+                adjustedRotAngles.y = SyncRotAngleY ? adjustedRotAngles.y : currentRotation.y;
+                adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
+                adjustedRotation.eulerAngles = adjustedRotAngles;
+            }
 
             var adjustedScale = m_InternalCurrentScale;
-            var currentScale = GetScale();
-            adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
-            adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
-            adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
+            if (!syncAllScale)
+            {
+                var currentScale = GetScale();
+                adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
+                adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
+                adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
+            }
 
             // Only if SwitchTransformSpaceWhenParented is not enabled should
             // non-authority instances preserve the current state's local space
@@ -2815,7 +2833,7 @@ namespace Unity.Netcode.Components
                 // Update our current position if it changed or we are interpolating
                 if (flagStates.HasPositionChange || Interpolate)
                 {
-                    if (SyncPositionX && SyncPositionY && SyncPositionZ)
+                    if (syncAllPosition)
                     {
                         m_InternalCurrentPosition = adjustedPosition;
                     }
@@ -2834,7 +2852,7 @@ namespace Unity.Netcode.Components
                     m_NetworkRigidbodyInternal.MovePosition(m_InternalCurrentPosition);
                     if (LogMotion)
                     {
-                        Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}][Interpolate: {networkState.UseInterpolation}][TransPos: {transform.position}][RBPos: {m_NetworkRigidbodyInternal.GetPosition()}][CurrentPos: {m_InternalCurrentPosition}");
+                        Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}][Interpolate: {networkState.FlagStates.UseInterpolation}][TransPos: {transform.position}][RBPos: {m_NetworkRigidbodyInternal.GetPosition()}][CurrentPos: {m_InternalCurrentPosition}");
                     }
 
                 }
@@ -2856,9 +2874,9 @@ namespace Unity.Netcode.Components
             if (SynchronizeRotation)
             {
                 // Update our current rotation if it changed or we are interpolating
-                if (networkState.HasRotAngleChange || Interpolate)
+                if (flagStates.HasRotAngleChange || Interpolate)
                 {
-                    if ((SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ) || UseQuaternionSynchronization)
+                    if (syncAllRotation || UseQuaternionSynchronization)
                     {
                         m_InternalCurrentRotation = adjustedRotation;
                     }
@@ -2900,7 +2918,7 @@ namespace Unity.Netcode.Components
                 // Update our current scale if it changed or we are interpolating
                 if (flagStates.HasScaleChange || Interpolate)
                 {
-                    if (SyncScaleX && SyncScaleY && SyncScaleZ)
+                    if (syncAllScale)
                     {
                         m_InternalCurrentScale = adjustedScale;
                     }
@@ -2926,7 +2944,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         private void ApplyTeleportingState(NetworkTransformState newState)
         {
-            if (!newState.IsTeleportingNextFrame)
+            if (!newState.FlagStates.IsTeleportingNextFrame)
             {
                 return;
             }
@@ -2937,7 +2955,7 @@ namespace Unity.Netcode.Components
             var currentEulerAngles = currentRotation.eulerAngles;
             var currentScale = CachedTransform.localScale;
 
-            var isSynchronization = newState.IsSynchronizing;
+            var isSynchronization = newState.FlagStates.IsSynchronizing;
             var flagStates = newState.FlagStates;
 
             // Clear all interpolators
@@ -3109,7 +3127,7 @@ namespace Unity.Netcode.Components
                 if (Interpolate)
                 {
                     m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
-                    m_RotationInterpolator.InLocalSpace = newState.InLocalSpace;
+                    m_RotationInterpolator.InLocalSpace = newState.FlagStates.InLocalSpace;
                     m_RotationInterpolator.ResetTo(CachedTransform.parent, currentRotation, sentTime);
                 }
             }
@@ -3153,13 +3171,13 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState = newState;
             if (flagStates.IsTeleportingNextFrame)
             {
-                LastTickSync = m_LocalAuthoritativeNetworkState.GetNetworkTick();
+                LastTickSync = m_LocalAuthoritativeNetworkState.NetworkTick;
                 ApplyTeleportingState(m_LocalAuthoritativeNetworkState);
                 return;
             }
             else if (flagStates.IsSynchronizing)
             {
-                LastTickSync = m_LocalAuthoritativeNetworkState.GetNetworkTick();
+                LastTickSync = m_LocalAuthoritativeNetworkState.NetworkTick;
             }
 
             var sentTime = newState.SentTime;
@@ -3950,7 +3968,7 @@ namespace Unity.Netcode.Components
                 m_PositionInterpolator.InLocalSpace = InLocalSpace;
                 m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
 
-                if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                if (LastTickSync == m_LocalAuthoritativeNetworkState.NetworkTick)
                 {
                     m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
                     m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, m_CachedNetworkManager.ServerTime.Time);
@@ -3981,7 +3999,7 @@ namespace Unity.Netcode.Components
                 m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                 m_RotationInterpolator.InLocalSpace = InLocalSpace;
                 m_RotationInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
-                if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                if (LastTickSync == m_LocalAuthoritativeNetworkState.NetworkTick)
                 {
                     m_InternalCurrentRotation = GetSpaceRelativeRotation();
                     m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
@@ -4256,8 +4274,48 @@ namespace Unity.Netcode.Components
         }
 #endif
 
-        // Non-Authority
-        private void UpdateInterpolation()
+        /// <summary>
+        /// Represents the commonly shared interpolation values that are identical for every <see cref="NetworkTransform"/>
+        /// and is updated per frame.
+        /// </summary>
+        /// <remarks>
+        /// These are calculated once per update stage by <see cref="RefreshInterpolationFrameData"/> as opposed
+        /// to being recalculated by each instance. Both the base and the "one additional tick" variants are
+        /// pre-calculated because owner authoritative instances owned by another client add a tick to account
+        /// for the 2xRTT relay time.
+        /// </remarks>
+        internal struct InterpolationFrameData
+        {
+            internal double CurrentTime;
+            internal float DeltaTime;
+            internal float FixedDeltaTime;
+            // Smooth dampening and extrapolation specific:
+            // We clamp between the tick rate frequency and the tick latency x tick rate frequency
+            internal double MinDeltaTime;
+            internal bool IsServer;
+            // Only true if the network topology selected for the session permits the additional owner authority tick.
+            internal bool OwnerAuthorityTickOffsetAllowed;
+            // Tick latency (ticks ago) used to process state updates in the queue.
+            internal double TickLatencyAsTime;
+            // The maximum time we will lerp between values. If the time exceeds this due to extreme latency then
+            // the value's interpolation rate will be accelerated to reach the goal and continue interpolating.
+            internal double MaxDeltaTime;
+            // Combines the two values above, with any additional owner authority tick applied.
+            internal double TickLatencyAsTimeExtraTick;
+            internal double MaxDeltaTimeExtraTick;
+            // Legacy lerp render times for a "ticks ago" of 1 and 2 (each plus InterpolationBufferTickOffset).
+            internal double LegacyRenderTime;
+            internal double LegacyRenderTimeExtraTick;
+        }
+
+        /// <summary>
+        /// Refreshes the <see cref="InterpolationFrameData"/>.
+        /// </summary>
+        /// <remarks>
+        /// Invoked once per update stage (authority and rigid body motion relative), prior to updating
+        /// <see cref="NetworkManager"/> registered instances.
+        /// </remarks>
+        internal static void RefreshInterpolationFrameData(NetworkManager networkManager)
         {
             // Use the local time because:
             // Client-Server:
@@ -4265,48 +4323,65 @@ namespace Unity.Netcode.Components
             // Local time on clients takes latency into consideration.
             // Distributed authority:
             // Local time is used by the authority.
-            // Local time on non-authority takes latency into consid]eration.
-            var timeSystem = m_CachedNetworkManager.LocalTime;
-            var currentTime = timeSystem.Time;
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
-#else
-            var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
-#endif
+            // Local time on non-authority takes latency into consideration.
+            var timeSystem = networkManager.LocalTime;
+            var realTimeProvider = networkManager.RealTimeProvider;
+            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
+
             // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
             // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
             // updates are received.
-            var tickLatency = Mathf.Max(1, m_CachedNetworkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset);
+            var tickLatency = Mathf.Max(1, networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset);
+            var isServer = networkManager.IsServer;
 
-            // If using an owner authoritative motion model
-            if (!IsServerAuthoritative())
+            networkManager.TransformInterpolationFrameData = new InterpolationFrameData()
             {
-                // and if we are in a client-server topology (including DAHost)
-                if (!m_CachedNetworkManager.DistributedAuthorityMode ||
-                    (m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.CMBServiceConnection))
-                {
-                    // If this instance belongs to another client (i.e. not the server/host), then add 1 to our tick latency.
-                    if (!m_CachedNetworkManager.IsServer && !NetworkObject.IsOwnedByServer)
-                    {
-                        // Account for the 2xRTT with owner authoritative
-                        tickLatency += 1;
-                    }
-                }
-            }
+                CurrentTime = timeSystem.Time,
+                DeltaTime = realTimeProvider.DeltaTime,
+                FixedDeltaTime = realTimeProvider.FixedDeltaTime,
+                MinDeltaTime = minDeltaTime,
+                IsServer = isServer,
+                // The additional owner authority tick only applies within a client-server topology (including
+                // DAHost) and only on instances that are not the server/host.
+                OwnerAuthorityTickOffsetAllowed = !isServer && (!networkManager.DistributedAuthorityMode || !networkManager.CMBServiceConnection),
+                TickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time,
+                MaxDeltaTime = tickLatency * minDeltaTime,
+                TickLatencyAsTimeExtraTick = timeSystem.TimeTicksAgo(tickLatency + 1).Time,
+                MaxDeltaTimeExtraTick = (tickLatency + 1) * minDeltaTime,
+                // Since InterpolationBufferTickOffset defaults to zero, this should not impact existing projects but
+                // still provides users with the ability to tweak their ticks ago time.
+                LegacyRenderTime = timeSystem.TimeTicksAgo(1 + InterpolationBufferTickOffset).Time,
+                LegacyRenderTimeExtraTick = timeSystem.TimeTicksAgo(2 + InterpolationBufferTickOffset).Time,
+            };
+        }
+
+        /// <summary>
+        /// Only updated by non-authority instances.
+        /// </summary>
+        private void UpdateInterpolation()
+        {
+            // Get the InterpolationFrameData for this frame
+            var frameData = m_CachedNetworkManager.TransformInterpolationFrameData;
+            var currentTime = frameData.CurrentTime;
+            var minDeltaTime = frameData.MinDeltaTime;
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            var cachedDeltaTime = m_UseRigidbodyForMotion ? frameData.FixedDeltaTime : frameData.DeltaTime;
+#else
+            var cachedDeltaTime = frameData.DeltaTime;
+#endif
+            // IsServerAuthoritative is virtual, so resolve it once and reuse it below.
+            var isServerAuthoritative = IsServerAuthoritative();
+
+            // If using an owner authoritative motion model and this instance belongs to another client, then
+            // account for the 2xRTT relay through the host or server by adding 1 to our tick latency.
+            var useExtraTick = !isServerAuthoritative && frameData.OwnerAuthorityTickOffsetAllowed && !NetworkObject.IsOwnedByServer;
+
+            var tickLatencyAsTime = useExtraTick ? frameData.TickLatencyAsTimeExtraTick : frameData.TickLatencyAsTime;
+            var maxDeltaTime = useExtraTick ? frameData.MaxDeltaTimeExtraTick : frameData.MaxDeltaTime;
 
             // Note: This is for the legacy lerp type in order to maintain the same end result for any games under development that have tuned their
-            // project's to match the legacy lerp's end result.
-            var cachedRenderTime = 0.0;
-            if (PositionInterpolationType == InterpolationTypes.LegacyLerp || RotationInterpolationType == InterpolationTypes.LegacyLerp || ScaleInterpolationType == InterpolationTypes.LegacyLerp)
-            {
-                // Since InterpolationBufferTickOffset defaults to zero, this should not impact exist projects but still provides users with the ability to tweak
-                // their ticks ago time.
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer ? 2 : 1) + InterpolationBufferTickOffset;
-                cachedRenderTime = timeSystem.TimeTicksAgo(ticksAgo).Time;
-            }
-
-            // Get the tick latency (ticks ago) as time (in the past) to process state updates in the queue.
-            var tickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time;
+            // project's to match the legacy lerp's end result. It is only consumed by the LegacyLerp branches below.
+            var cachedRenderTime = !isServerAuthoritative && !frameData.IsServer ? frameData.LegacyRenderTimeExtraTick : frameData.LegacyRenderTime;
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             // If using rigid body for motion, then we need to increment
@@ -4318,15 +4393,6 @@ namespace Unity.Netcode.Components
                 currentTime += m_FixedTimeFrameDelta;
             }
 #endif
-
-            // Smooth dampening and extrapolation specific:
-            // We clamp between the tick rate frequency and the tick latency x tick rate frequency
-            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
-
-            // Maximum delta time is the maximum time we will lerp between values. If the time exceeds this due to extreme
-            // latency then the value's interpolation rate will be accelerated to reach the goal and continue interpolating
-            // the next state updates.
-            var maxDeltaTime = tickLatency * minDeltaTime;
 
             // Now only update the interpolators for the portions of the transform being synchronized
             if (SynchronizePosition)

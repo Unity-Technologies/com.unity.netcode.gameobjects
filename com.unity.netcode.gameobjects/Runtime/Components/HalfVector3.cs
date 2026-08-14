@@ -96,16 +96,19 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVector3()
         {
-            Vector3 fullPrecision = Vector3.zero;
-            Vector3 fullConversion = math.float3(Axis);
-            for (int i = 0; i < Length; i++)
-            {
-                if (AxisToSynchronize[i])
-                {
-                    fullPrecision[i] = fullConversion[i];
-                }
-            }
-            return fullPrecision;
+            return ToFloat3(Axis, AxisToSynchronize);
+        }
+
+        /// <summary>
+        /// The <see cref="float3"/> based implementation of <see cref="ToVector3"/>.
+        /// </summary>
+        /// <remarks>
+        /// This is a job safe method to be used in place of <see cref="ToVector3"/>.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ToFloat3(half3 axis, bool3 axisToSynchronize)
+        {
+            return math.select(float3.zero, math.float3(axis), axisToSynchronize);
         }
 
         /// <summary>
@@ -115,14 +118,23 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateFrom(ref Vector3 vector3)
         {
-            var half3Full = math.half3(vector3);
-            for (int i = 0; i < Length; i++)
-            {
-                if (AxisToSynchronize[i])
-                {
-                    Axis[i] = half3Full[i];
-                }
-            }
+            Axis = UpdatedAxis(Axis, math.float3(vector3), AxisToSynchronize);
+        }
+
+        /// <summary>
+        /// The <see cref="half3"/> based implementation of <see cref="UpdateFrom(ref Vector3)"/>.
+        /// </summary>
+        /// <remarks>
+        /// This is a job safe method to be used in place of <see cref="UpdateFrom(ref Vector3)"/>.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static half3 UpdatedAxis(half3 axis, float3 value, bool3 axisToSynchronize)
+        {
+            var updated = math.half3(value);
+            axis.x = axisToSynchronize.x ? updated.x : axis.x;
+            axis.y = axisToSynchronize.y ? updated.y : axis.y;
+            axis.z = axisToSynchronize.z ? updated.z : axis.z;
+            return axis;
         }
 
         /// <summary>

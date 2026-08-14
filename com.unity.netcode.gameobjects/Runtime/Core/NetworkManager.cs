@@ -300,6 +300,13 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// This contains all of the interpolation related properties used by each non-authoritative
+        /// <see cref="NetworkTransform"/> instance on the non-authority side, but recalculated once
+        /// per update stage as opposed to once per <see cref="NetworkTransform"/>.
+        /// </summary>
+        internal NetworkTransform.InterpolationFrameData TransformInterpolationFrameData;
+
         internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
@@ -402,6 +409,12 @@ namespace Unity.Netcode
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 case NetworkUpdateStage.FixedUpdate:
                     {
+                        // Only refresh if there are NetworkTransforms to be updated
+                        if (NetworkTransformFixedUpdate.Count > 0)
+                        {
+                            NetworkTransform.RefreshInterpolationFrameData(this);
+                        }
+
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
                         {
                             // if not active or not spawned then skip
@@ -442,6 +455,12 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.PreLateUpdate:
                     {
+                        // Only refresh if there are NetworkTransforms to be updated
+                        if (NetworkTransformUpdate.Count > 0)
+                        {
+                            NetworkTransform.RefreshInterpolationFrameData(this);
+                        }
+                        
                         // Non-physics based non-authority NetworkTransforms update their states after all other components
                         foreach (var networkObjectEntry in NetworkTransformUpdate)
                         {

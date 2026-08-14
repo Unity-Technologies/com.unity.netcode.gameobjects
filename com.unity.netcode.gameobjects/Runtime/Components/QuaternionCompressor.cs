@@ -1,10 +1,12 @@
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// The Smallest Three Quaternion Compressor Implementation
+    /// (Job friendly version)
     /// </summary>
     /// <remarks>
     /// Explanation of why "The smallest three":
@@ -50,20 +52,47 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint CompressQuaternion(ref Quaternion quaternion)
         {
+            return Compress(new float4(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+        }
+
+        /// <summary>
+        /// Decompress an unsigned integer into a <see cref="Quaternion"/>.
+        /// </summary>
+        /// <param name="quaternion">quaternion to store the decompressed values within</param>
+        /// <param name="compressed">the compressed quaternion</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DecompressQuaternion(ref Quaternion quaternion, uint compressed)
+        {
+            Decompress(out var decompressed, compressed);
+            quaternion.x = decompressed.x;
+            quaternion.y = decompressed.y;
+            quaternion.z = decompressed.z;
+            quaternion.w = decompressed.w;
+        }
+
+        /// <summary>
+        /// The <see cref="float4"/> based implementation of <see cref="CompressQuaternion(ref Quaternion)"/>.
+        /// </summary>
+        /// <remarks>
+        /// This is a job safe method to be used in place of <see cref="CompressQuaternion(ref Quaternion)"/>.
+        /// </remarks>
+        /// <param name="quaternion">the quaternion, as a <see cref="float4"/>, to be compressed</param>
+        /// <returns>the quaternion compressed as an unsigned integer</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint Compress(in float4 quaternion)
+        {
             // Store off the absolute value for each Quaternion element
-            var quatAbsValue0 = Mathf.Abs(quaternion[0]);
-            var quatAbsValue1 = Mathf.Abs(quaternion[1]);
-            var quatAbsValue2 = Mathf.Abs(quaternion[2]);
-            var quatAbsValue3 = Mathf.Abs(quaternion[3]);
+            var quatAbsValues = math.abs(quaternion);
 
             // Get the largest element value of the quaternion to know what the remaining "Smallest Three" values are
-            var quatMax = Mathf.Max(quatAbsValue0, quatAbsValue1, quatAbsValue2, quatAbsValue3);
+            var quatMax = math.cmax(quatAbsValues);
 
             // Find the index of the largest element, so we can skip that element while compressing and decompressing
-            var indexToSkip = (ushort)(quatAbsValue0 == quatMax ? 0 : quatAbsValue1 == quatMax ? 1 : quatAbsValue2 == quatMax ? 2 : 3);
+            var indexToSkip = (ushort)(quatAbsValues.x == quatMax ? 0 : quatAbsValues.y == quatMax ? 1 : quatAbsValues.z == quatMax ? 2 : 3);
 
             // Get the sign of the largest element which is all that is needed when calculating the sum of squares of a normalized quaternion.
-            var quatMaxSign = (quaternion[indexToSkip] < 0 ? k_True : k_False);
+            var maxValue = indexToSkip == 0 ? quaternion.x : indexToSkip == 1 ? quaternion.y : indexToSkip == 2 ? quaternion.z : quaternion.w;
+            var quatMaxSign = maxValue < 0 ? k_True : k_False;
 
             // Start with the index to skip which will be shifted to the highest two bits
             var compressed = (uint)indexToSkip;
@@ -71,24 +100,45 @@ namespace Unity.Netcode
             // Step 1: If we are on the index to skip, preserve the current compressed value, otherwise proceed to step 2 and 3
             // Step 2: Get the sign of the element we are processing. If it is not the same as the largest value's sign bit then we set the bit
             // Step 3: Get the compressed and encoded value by multiplying the absolute value of the current element by k_CompressionEncodingMask and round that result up
-            compressed = 0 != indexToSkip ? (compressed << 10) | (uint)((quaternion[0] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEncodingMask * quatAbsValue0) : compressed;
+            compressed = 0 != indexToSkip ? EncodeElement(compressed, quaternion.x, quatAbsValues.x, quatMaxSign) : compressed;
             // Repeat the 3 steps for the remaining elements
-            compressed = 1 != indexToSkip ? (compressed << 10) | (uint)((quaternion[1] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEncodingMask * quatAbsValue1) : compressed;
-            compressed = 2 != indexToSkip ? (compressed << 10) | (uint)((quaternion[2] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEncodingMask * quatAbsValue2) : compressed;
-            compressed = 3 != indexToSkip ? (compressed << 10) | (uint)((quaternion[3] < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEncodingMask * quatAbsValue3) : compressed;
+            compressed = 1 != indexToSkip ? EncodeElement(compressed, quaternion.y, quatAbsValues.y, quatMaxSign) : compressed;
+            compressed = 2 != indexToSkip ? EncodeElement(compressed, quaternion.z, quatAbsValues.z, quatMaxSign) : compressed;
+            compressed = 3 != indexToSkip ? EncodeElement(compressed, quaternion.w, quatAbsValues.w, quatMaxSign) : compressed;
 
             // Return the compress quaternion
             return compressed;
         }
 
         /// <summary>
-        /// Decompress a compressed quaternion
+        /// The ecoding algorithm broken down to its fundamental, easier to understand, elements.
         /// </summary>
-        /// <param name="quaternion">quaternion to store the decompressed values within</param>
+        /// <param name="compressed">The current compressed value.</param>
+        /// <param name="value">The value to be compressed into the compressed value.</param>
+        /// <param name="absValue">The absolute value of the value to be compressed.</param>
+        /// <param name="quatMaxSign">The sign of the largest value that is calculated upon decompression.</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint EncodeElement(uint compressed, float value, float absValue, ushort quatMaxSign)
+        {
+            return (compressed << 10)
+                | (uint)((value < 0 ? k_True : k_False) != quatMaxSign ? k_True : k_False) << k_ShiftNegativeBit
+                | (ushort)math.round(k_CompressionEncodingMask * absValue);
+        }
+
+        /// <summary>
+        /// The <see cref="float4"/> based implementation of <see cref="DecompressQuaternion(ref Quaternion, uint)"/>.
+        /// </summary>
+        /// <remarks>
+        /// This is a job safe method to be used in place of <see cref="DecompressQuaternion(ref Quaternion, uint)"/>.
+        /// </remarks>
+        /// <param name="quaternion">the decompressed quaternion as a <see cref="float4"/></param>
         /// <param name="compressed">the compressed quaternion</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DecompressQuaternion(ref Quaternion quaternion, uint compressed)
+        internal static void Decompress(out float4 quaternion, uint compressed)
         {
+            quaternion = float4.zero;
+
             // Get the last two bits for the index to skip (0-3)
             var indexToSkip = (int)(compressed >> 30);
 
@@ -101,13 +151,40 @@ namespace Unity.Netcode
                     continue;
                 }
                 // Check the negative bit and multiply that result with the decompressed and decoded value
-                quaternion[i] = ((compressed & k_NegShortBit) > 0 ? -1.0f : 1.0f) * ((compressed & k_PrecisionMask) * k_DecompressionDecodingMask);
-                sumOfSquaredMagnitudes += quaternion[i] * quaternion[i];
+                var value = ((compressed & k_NegShortBit) > 0 ? -1.0f : 1.0f) * ((compressed & k_PrecisionMask) * k_DecompressionDecodingMask);
+                SetAxis(ref quaternion, i, value);
+                sumOfSquaredMagnitudes += value * value;
                 compressed = compressed >> 10;
             }
             // Since a normalized quaternion's magnitude is 1.0f, we subtract the sum of the squared smallest three from the unit value and take
-            // the square root of the difference to find the final largest value
-            quaternion[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes);
+            // the square root of the difference to find the final largest value.
+            SetAxis(ref quaternion, indexToSkip, math.sqrt(1.0f - sumOfSquaredMagnitudes));
+        }
+
+        /// <summary>
+        /// Sets the value of the value directly as opposed to indexing into the array to avoid bounds checking cost.
+        /// </summary>
+        /// <param name="decompressed">The current decompressed quaternion.</param>
+        /// <param name="index">The index of the decompressed quaternion to be set.</param>
+        /// <param name="value">The axis value to apply to the decompressed quaternion.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetAxis(ref float4 decompressed, int index, float value)
+        {
+            switch (index)
+            {
+                case 0:
+                    decompressed.x = value;
+                    break;
+                case 1:
+                    decompressed.y = value;
+                    break;
+                case 2:
+                    decompressed.z = value;
+                    break;
+                default:
+                    decompressed.w = value;
+                    break;
+            }
         }
     }
 }
