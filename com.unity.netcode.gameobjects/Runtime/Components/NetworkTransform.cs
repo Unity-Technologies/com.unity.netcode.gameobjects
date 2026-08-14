@@ -16,7 +16,7 @@ namespace Unity.Netcode.Components
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Network Transform")]
     [HelpURL(HelpUrls.NetworkTransform)]
-    public class NetworkTransform : NetworkBehaviour
+    public partial class NetworkTransform : NetworkBehaviour
     {
 #if UNITY_EDITOR
         internal virtual bool HideInterpolateValue => false;
@@ -1759,6 +1759,17 @@ namespace Unity.Netcode.Components
             return m_InternalCurrentScale;
         }
 
+        /// <summary>
+        /// When <see cref="TransformSyncModes.Batched"/> mode, this is the instance's index within <see cref="NetworkTransformStateManager"/>.<br />
+        /// It is -1 when it is not registered.
+        /// registered.
+        /// </summary>
+        /// <remarks>
+        /// Cached here (as opposed to using a lookup table) so registering and deregistering is O(1). The
+        /// manager keeps this up to date as instances are swapped between slots.
+        /// </remarks>
+        internal int StateManagerIndex = -1;
+
         // Used by both authoritative and non-authoritative instances.
         // This represents the most recent local authoritative state.
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
@@ -2010,6 +2021,67 @@ namespace Unity.Netcode.Components
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, synchronize, forceState: settingState))
             {
+                CommitDetectedState(synchronize);
+            }
+        }
+
+        /// <summary>
+        /// Main Thread:
+        /// Prepares all state that that is not already provided for a batched delta check.
+        /// </summary>
+        internal void PrepareBatchedDeltaEntry(ref TransformDeltaEntry entry)
+        {
+            entry.Config = GetTransformDeltaConfig();
+            entry.TransformHasParent = transform.parent != null;
+            entry.HalfPositionState = m_HalfPositionState;
+            entry.IsDirty = false;
+            // ForceState is set by the main thread, tick relative, and is cleared once applied.
+
+            var flagStates = entry.State.FlagStates;
+            entry.Sample = default;
+
+            // Same conditions the per instance path uses, both of which need a lookup a job cannot perform.
+            if (flagStates.IsTeleportingNextFrame || entry.ForceState || flagStates.IsParented)
+            {
+                entry.Sample.HasParentNetworkObject = HasParentNetworkObject();
+                entry.Sample.LossyScale = CachedTransform.lossyScale;
+            }
+        }
+
+        /// <summary>
+        /// Applies the batched delta check result and sends the state update when one was detected.
+        /// </summary>
+        internal void ApplyBatchedDeltaEntry(ref TransformDeltaEntry entry)
+        {
+            m_LocalAuthoritativeNetworkState = entry.State;
+            m_HalfPositionState = entry.HalfPositionState;
+            ApplyTransformDeltaConfig(entry.Config);
+            entry.ForceState = false;
+
+            if (entry.IsDirty || m_LocalAuthoritativeNetworkState.ExplicitSet)
+            {
+                CommitDetectedState(false);
+                // CommitDetectedState mutates the state (it clears the teleport and explicit set flags and
+                // records the old state), so the entry has to pick those changes back up.
+                entry.State = m_LocalAuthoritativeNetworkState;
+                entry.HalfPositionState = m_HalfPositionState;
+            }
+
+            // The follow up work can raise these again for the next tick.
+            entry.Config.DeltaSynch = m_DeltaSynch;
+            entry.Config.NextTickSync = m_NextTickSync;
+        }
+
+        /// <summary>
+        /// Sends any detected state updates for the frame.
+        /// </summary>
+        /// <remarks>
+        /// This was pulled out of <see cref="TryCommitTransform"/> to make it per instance or batched compatible.
+        /// </remarks>
+        /// <param name="synchronize">Whether this state update is an initial synchronization.</param>
+        private void CommitDetectedState(bool synchronize)
+        {
+            {
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
                 {
@@ -2129,83 +2201,114 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
+        /// Authority:
+        /// Gets the instance's configuration for a delta check.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private TransformDeltaConfig GetTransformDeltaConfig()
+        {
+            return new TransformDeltaConfig()
+            {
+                PositionThreshold = PositionThreshold,
+                RotAngleThreshold = RotAngleThreshold,
+                ScaleThreshold = ScaleThreshold,
+                SyncPositionX = SyncPositionX,
+                SyncPositionY = SyncPositionY,
+                SyncPositionZ = SyncPositionZ,
+                SyncRotAngleX = SyncRotAngleX,
+                SyncRotAngleY = SyncRotAngleY,
+                SyncRotAngleZ = SyncRotAngleZ,
+                SyncScaleX = SyncScaleX,
+                SyncScaleY = SyncScaleY,
+                SyncScaleZ = SyncScaleZ,
+                UseQuaternionSynchronization = UseQuaternionSynchronization,
+                UseQuaternionCompression = UseQuaternionCompression,
+                UseHalfFloatPrecision = UseHalfFloatPrecision,
+                SlerpPosition = SlerpPosition,
+                Interpolate = Interpolate,
+                UseUnreliableDeltas = UseUnreliableDeltas,
+                SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented,
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                UseRigidbodyForMotion = m_UseRigidbodyForMotion,
+#else
+                UseRigidbodyForMotion = false,
+#endif
+                InLocalSpace = InLocalSpace,
+                CurrentTick = CurrentTick,
+                CachedTickRate = m_CachedTickRate,
+                HalfFloatTargetTickOwnership = m_HalfFloatTargetTickOwnership,
+                NextTickSync = m_NextTickSync,
+                DeltaSynch = m_DeltaSynch,
+                Enabled = enabled,
+            };
+        }
+
+        /// <summary>
+        /// Applies anything the delta check updated back onto this instance.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ApplyTransformDeltaConfig(in TransformDeltaConfig config)
+        {
+            InLocalSpace = config.InLocalSpace;
+            m_NextTickSync = config.NextTickSync;
+            m_DeltaSynch = config.DeltaSynch;
+        }
+
+        /// <summary>
+        /// Determines whether the associated <see cref="NetworkObject"/> should be treated as parented.
+        /// </summary>
+        /// <remarks>
+        /// Needs a component lookup, so it is resolved here and handed to the delta check as a value. Only
+        /// relevant while synchronizing, teleporting, or forcing a full state update.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasParentNetworkObject()
+        {
+            // This all has to do with complex nested hierarchies and how it impacts scale
+            // when set for the first time or teleporting and depends upon whether the
+            // NetworkObject is parented (or "de-parented") at the same time any scale
+            // values are applied.
+            // If the NetworkObject belonging to this NetworkTransform instance has a parent
+            // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
+            if (NetworkObject.transform.parent == null)
+            {
+                return false;
+            }
+
+            var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+
+            // In-scene placed NetworkObjects parented under a GameObject with no
+            // NetworkObject preserve their lossyScale when synchronizing.
+            if (parentNetworkObject == null && NetworkObject.InScenePlaced)
+            {
+                return true;
+            }
+
+            // Or if the relative NetworkObject has a parent NetworkObject
+            return parentNetworkObject != null;
+        }
+
+        /// <summary>
+        /// Applies the transform to the <see cref="NetworkTransformState"/>.
+        /// </summary>
+        /// <remarks>
+        /// Splits out to be job friendly.
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CheckForStateChange(ref NetworkTransformState networkState, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
+            var config = GetTransformDeltaConfig();
             var flagStates = networkState.FlagStates;
 
-            // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
-            // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
-            // assigned tick slot (m_TickSync).
-            // More about m_DeltaSynch:
-            // If we have not sent any deltas since our last frame synch, then this will prevent us from sending
-            // frame synch's when the object is at rest. If this is false and a state update is detected and sent,
-            // then it will be set to true and each subsequent tick will do this check to determine if it should
-            // send a full frame synch.
-            var isAxisSync = false;
-            // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
-            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
-            {
-                // Increment to the next frame synch tick position for this instance
-                m_NextTickSync += m_CachedTickRate;
-                // If we are teleporting, we do not need to send a frame synch for this tick slot
-                // as a "frame synch" really is effectively just a teleport.
-                isAxisSync = !flagStates.IsTeleportingNextFrame;
-                // Reset our delta synch trigger so we don't send another frame synch until we
-                // send at least 1 unreliable state update after this fame synch or teleport
-                m_DeltaSynch = false;
-            }
-
-            // This is used to determine if we need to send the state update reliably (if we are doing an axial sync)
-            flagStates.UnreliableFrameSync = isAxisSync;
-
-            var isTeleportingAndNotSynchronizing = flagStates.IsTeleportingNextFrame && !isSynchronization;
-            var isDirty = false;
-            var isPositionDirty = isTeleportingAndNotSynchronizing ? flagStates.HasPositionChange : false;
-            var isRotationDirty = isTeleportingAndNotSynchronizing ? flagStates.HasRotAngleChange : false;
-            var isScaleDirty = isTeleportingAndNotSynchronizing ? flagStates.HasScaleChange : false;
-
-            flagStates.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
-
-
-
-            // All of the checks below, up to the delta position checking portion, are to determine if the
-            // authority changed a property during runtime that requires a full synchronizing.
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            if ((InLocalSpace != flagStates.InLocalSpace || isSynchronization) && !m_UseRigidbodyForMotion)
-#else
-            if (InLocalSpace != flagStates.InLocalSpace)
-#endif
-            {
-                // When SwitchTransformSpaceWhenParented is set we automatically set our local space based on whether
-                // we are parented or not.
-                flagStates.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
-                if (SwitchTransformSpaceWhenParented)
-                {
-                    InLocalSpace = flagStates.InLocalSpace;
-                }
-                isDirty = true;
-
-                // If we are already teleporting preserve the teleport flag.
-                // If we don't have SwitchTransformSpaceWhenParented set or we are synchronizing,
-                // then set the teleport flag.
-                flagStates.IsTeleportingNextFrame |= !SwitchTransformSpaceWhenParented || isSynchronization;
-
-                // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
-                // If interpolation is enabled, then any non-authority instance will update any pending
-                // buffered values to the correct world or local space values.
-                forceState = SwitchTransformSpaceWhenParented;
-            }
-
+            // Resolve which transform space is being compared before sampling, otherwise the wrong set of
+            // values would be read.
+            var transformSpaceChanged = ResolveTransformSpace(ref config, ref flagStates, transform.parent != null, isSynchronization, ref forceState);
+            networkState.FlagStates = flagStates;
+            InLocalSpace = config.InLocalSpace;
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? CachedTransform.localPosition : CachedTransform.position;
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? CachedTransform.localRotation : CachedTransform.rotation;
-
-            var positionThreshold = Vector3.one * PositionThreshold;
-            var rotationThreshold = Vector3.one * RotAngleThreshold;
 
             // NSS: Disabling this for the time being
             // TODO: Determine if we actually need this and if not remove this from NetworkRigidBodyBase
@@ -2217,355 +2320,46 @@ namespace Unity.Netcode.Components
 #else
             var position = InLocalSpace ? CachedTransform.localPosition : CachedTransform.position;
             var rotation = InLocalSpace ? CachedTransform.localRotation : CachedTransform.rotation;
-            var positionThreshold = Vector3.one * PositionThreshold;
-            var rotationThreshold = Vector3.one * RotAngleThreshold;
 #endif
-            var rotAngles = rotation.eulerAngles;
-            var scale = CachedTransform.localScale;
-            flagStates.IsSynchronizing = isSynchronization;
-
-            // Check for parenting when synchronizing and/or teleporting
-            if (isSynchronization || flagStates.IsTeleportingNextFrame || forceState)
+            var sample = new TransformSample()
             {
-                // This all has to do with complex nested hierarchies and how it impacts scale
-                // when set for the first time or teleporting and depends upon whether the
-                // NetworkObject is parented (or "de-parented") at the same time any scale
-                // values are applied.
-                var hasParentNetworkObject = false;
+                Position = position,
+                Rotation = rotation,
+                RotAngles = rotation.eulerAngles,
+                Scale = CachedTransform.localScale,
+            };
 
-                // If the NetworkObject belonging to this NetworkTransform instance has a parent
-                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
-                if (NetworkObject.transform.parent != null)
-                {
-                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
-
-                    // In-scene placed NetworkObjects parented under a GameObject with no
-                    // NetworkObject preserve their lossyScale when synchronizing.
-                    if (parentNetworkObject == null && NetworkObject.InScenePlaced)
-                    {
-                        hasParentNetworkObject = true;
-                    }
-                    else
-                    {
-                        // Or if the relative NetworkObject has a parent NetworkObject
-                        hasParentNetworkObject = parentNetworkObject != null;
-                    }
-                }
-
-                flagStates.IsParented = hasParentNetworkObject;
+            // Only resolved when it can actually be consumed, since both of these are lookups.
+            if (isSynchronization || networkState.FlagStates.IsTeleportingNextFrame || forceState)
+            {
+                sample.HasParentNetworkObject = HasParentNetworkObject();
+                sample.LossyScale = CachedTransform.lossyScale;
+            }
+            else if (networkState.FlagStates.IsParented)
+            {
+                // IsParented can still be set from a previous state update while none of the conditions above
+                // are met, and the delta check itself can raise the teleport flag after this point (a change to
+                // any of the interpolation or precision settings does so). Both together are what makes the
+                // lossy scale get written, so it has to be sampled here as well.
+                sample.LossyScale = CachedTransform.lossyScale;
             }
 
-            if (Interpolate != flagStates.UseInterpolation)
+            if (isSynchronization)
             {
-                flagStates.UseInterpolation = Interpolate;
-                isDirty = true;
-                // When we change from interpolating to not interpolating (or vice versa) we need to synchronize/reset everything
-                flagStates.IsTeleportingNextFrame = true;
+                sample.ShouldSynchronizeHalfFloat = ShouldSynchronizeHalfFloat(targetClientId);
+                sample.UseHalfDeltaConvertedBack = NetworkObject.IsOwnedByServer || IsServerAuthoritative();
             }
 
-            if (UseQuaternionSynchronization != flagStates.QuaternionSync)
+            var isDirty = CheckForStateChange(ref networkState, ref m_HalfPositionState, ref config, sample, isSynchronization, forceState, transformSpaceChanged);
+
+            ApplyTransformDeltaConfig(config);
+
+            if (config.LogSynchronizationEntry)
             {
-                flagStates.QuaternionSync = UseQuaternionSynchronization;
-                isDirty = true;
-                flagStates.IsTeleportingNextFrame = true;
+                // Add log entry for this update relative to the client being synchronized
+                AddLogEntry(ref networkState, targetClientId, true);
             }
 
-            if (UseQuaternionCompression != flagStates.QuaternionCompression)
-            {
-                flagStates.QuaternionCompression = UseQuaternionCompression;
-                isDirty = true;
-                flagStates.IsTeleportingNextFrame = true;
-            }
-
-            if (UseHalfFloatPrecision != flagStates.UseHalfFloatPrecision)
-            {
-                flagStates.UseHalfFloatPrecision = UseHalfFloatPrecision;
-                isDirty = true;
-                flagStates.IsTeleportingNextFrame = true;
-            }
-
-            if (SlerpPosition != flagStates.UsePositionSlerp)
-            {
-                flagStates.UsePositionSlerp = SlerpPosition;
-                isDirty = true;
-                flagStates.IsTeleportingNextFrame = true;
-            }
-
-            if (UseUnreliableDeltas != flagStates.UseUnreliableDeltas)
-            {
-                flagStates.UseUnreliableDeltas = UseUnreliableDeltas;
-                isDirty = true;
-                flagStates.IsTeleportingNextFrame = true;
-            }
-
-            // Begin delta checks against last sent state update
-            if (!UseHalfFloatPrecision)
-            {
-                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.PositionX = position.x;
-                    flagStates.SetHasPosition(Axis.X, true);
-                    isPositionDirty = true;
-                }
-
-                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.PositionY = position.y;
-                    flagStates.SetHasPosition(Axis.Y, true);
-                    isPositionDirty = true;
-                }
-
-                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.PositionZ = position.z;
-                    flagStates.SetHasPosition(Axis.Z, true);
-                    isPositionDirty = true;
-                }
-            }
-            else if (SynchronizePosition)
-            {
-                // If we are teleporting then we can skip the delta threshold check
-                isPositionDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
-                if (m_HalfFloatTargetTickOwnership > CurrentTick)
-                {
-                    isPositionDirty = true;
-                }
-
-                // For NetworkDeltaPosition, if any axial value is dirty then we always send a full update.
-                // This uses a direct field approach to avoid bounds checking costs.
-                if (!isPositionDirty)
-                {
-                    var previousPosition = m_HalfPositionState.PreviousPosition;
-                    isPositionDirty = (SyncPositionX && Math.Abs(position.x - previousPosition.x) >= positionThreshold.x)
-                        || (SyncPositionY && Math.Abs(position.y - previousPosition.y) >= positionThreshold.y)
-                        || (SyncPositionZ && Math.Abs(position.z - previousPosition.z) >= positionThreshold.z);
-                }
-
-                // If the position is dirty or we are teleporting (which includes synchronization)
-                // then determine what parts of the NetworkDeltaPosition should be updated
-                if (isPositionDirty)
-                {
-                    // If we are not synchronizing the transform state for the first time
-                    if (!isSynchronization)
-                    {
-                        // With global teleporting (broadcast to all non-authority instances)
-                        // we re-initialize authority's NetworkDeltaPosition and synchronize all
-                        // non-authority instances with the new full precision position
-                        if (flagStates.IsTeleportingNextFrame)
-                        {
-                            m_HalfPositionState = new NetworkDeltaPosition(position, networkState.NetworkTick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
-                            networkState.CurrentPosition = position;
-                        }
-                        else // Otherwise, just synchronize the delta position value
-                        {
-                            m_HalfPositionState.HalfVector3.AxisToSynchronize = math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ);
-                            m_HalfPositionState.UpdateFrom(ref position, networkState.NetworkTick);
-                        }
-
-                        networkState.NetworkDeltaPosition = m_HalfPositionState;
-
-                        // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position
-                        if ((m_HalfFloatTargetTickOwnership > CurrentTick || isAxisSync) && !flagStates.IsTeleportingNextFrame)
-                        {
-                            flagStates.SynchronizeBaseHalfFloat = true;
-                        }
-                        else
-                        {
-                            flagStates.SynchronizeBaseHalfFloat = UseUnreliableDeltas ? m_HalfPositionState.CollapsedDeltaIntoBase : false;
-                        }
-                    }
-                    else // If synchronizing is set, then use the current full position value on the server side
-                    {
-                        if (ShouldSynchronizeHalfFloat(targetClientId))
-                        {
-                            // If we have a NetworkDeltaPosition that has a state applied, then we want to determine
-                            // what needs to be synchronized. For owner authoritative mode, the server side
-                            // will have no valid state yet.
-                            if (m_HalfPositionState.NetworkTick > 0)
-                            {
-                                // Always synchronize the base position and the ushort values of the
-                                // current m_HalfPositionState
-                                networkState.CurrentPosition = m_HalfPositionState.CurrentBasePosition;
-                                networkState.NetworkDeltaPosition = m_HalfPositionState;
-                                // If the server is the owner, in both server and owner authoritative modes,
-                                // or we are running in server authoritative mode, then we use the
-                                // HalfDeltaConvertedBack value as the delta position
-                                if (NetworkObject.IsOwnedByServer || IsServerAuthoritative())
-                                {
-                                    networkState.DeltaPosition = m_HalfPositionState.HalfDeltaConvertedBack;
-                                }
-                                else
-                                {
-                                    // Otherwise, we are in owner authoritative mode and the server's NetworkDeltaPosition
-                                    // state is "non-authoritative" relative so we use the DeltaPosition.
-                                    networkState.DeltaPosition = m_HalfPositionState.DeltaPosition;
-                                }
-                            }
-                            else // Reset everything and just send the current position
-                            {
-                                networkState.NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
-                                networkState.DeltaPosition = Vector3.zero;
-                                networkState.CurrentPosition = position;
-                            }
-                        }
-                        else
-                        {
-                            networkState.NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
-                            networkState.CurrentPosition = position;
-                        }
-                        // Add log entry for this update relative to the client being synchronized
-                        AddLogEntry(ref networkState, targetClientId, true);
-                    }
-                    flagStates.HasPositionX = SyncPositionX;
-                    flagStates.HasPositionY = SyncPositionY;
-                    flagStates.HasPositionZ = SyncPositionZ;
-                    flagStates.HasPositionChange = SyncPositionX || SyncPositionY || SyncPositionZ;
-                }
-            }
-
-            if (!UseQuaternionSynchronization)
-            {
-                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.RotAngleX = rotAngles.x;
-                    flagStates.SetHasRotation(Axis.X, true);
-                    isRotationDirty = true;
-                }
-
-                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.RotAngleY = rotAngles.y;
-                    flagStates.SetHasRotation(Axis.Y, true);
-                    isRotationDirty = true;
-                }
-
-                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                {
-                    networkState.RotAngleZ = rotAngles.z;
-                    flagStates.SetHasRotation(Axis.Z, true);
-                    isRotationDirty = true;
-                }
-            }
-            else if (SynchronizeRotation)
-            {
-                // If we are teleporting then we can skip the delta threshold check
-                isRotationDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
-                // For quaternion synchronization, if one angle is dirty we send a full update
-                if (!isRotationDirty)
-                {
-                    var previousRotation = networkState.Rotation.eulerAngles;
-                    isRotationDirty = Mathf.Abs(Mathf.DeltaAngle(previousRotation.x, rotAngles.x)) >= rotationThreshold.x
-                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.y, rotAngles.y)) >= rotationThreshold.y
-                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.z, rotAngles.z)) >= rotationThreshold.z;
-                }
-                if (isRotationDirty)
-                {
-                    networkState.Rotation = rotation;
-                    flagStates.MarkChanged(AxialType.Rotation, true);
-                }
-            }
-
-            // For scale, we need to check for parenting when synchronizing and/or teleporting (synchronization is always teleporting)
-            if (flagStates.IsTeleportingNextFrame)
-            {
-                // If we are synchronizing and the associated NetworkObject has a parent then we want to send the
-                // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not guaranteed
-                if (flagStates.IsParented)
-                {
-                    networkState.LossyScale = CachedTransform.lossyScale;
-                }
-            }
-
-            // Checking scale deltas when not synchronizing
-            if (!isSynchronization)
-            {
-                if (!UseHalfFloatPrecision)
-                {
-                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                    {
-                        networkState.ScaleX = scale.x;
-                        flagStates.SetHasScale(Axis.X, true);
-                        isScaleDirty = true;
-                    }
-
-                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                    {
-                        networkState.ScaleY = scale.y;
-                        flagStates.SetHasScale(Axis.Y, true);
-                        isScaleDirty = true;
-                    }
-
-                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
-                    {
-                        networkState.ScaleZ = scale.z;
-                        flagStates.SetHasScale(Axis.Z, true);
-                        isScaleDirty = true;
-                    }
-                }
-                else if (SynchronizeScale)
-                {
-                    var previousScale = networkState.Scale;
-                    // Precompute if it is considered always dirty.
-                    var alwaysDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
-                    // Use direct field assignment as opposed to indexing to avoid bounds checking.
-                    if (alwaysDirty || Mathf.Abs(scale.x - previousScale.x) >= ScaleThreshold)
-                    {
-                        isScaleDirty = true;
-                        networkState.Scale.x = scale.x;
-                        flagStates.SetHasScale(Axis.X, SyncScaleX);
-                    }
-
-                    if (alwaysDirty || Mathf.Abs(scale.y - previousScale.y) >= ScaleThreshold)
-                    {
-                        isScaleDirty = true;
-                        networkState.Scale.y = scale.y;
-                        flagStates.SetHasScale(Axis.Y, SyncScaleY);
-                    }
-
-                    if (alwaysDirty || Mathf.Abs(scale.z - previousScale.z) >= ScaleThreshold)
-                    {
-                        isScaleDirty = true;
-                        networkState.Scale.z = scale.z;
-                        flagStates.SetHasScale(Axis.Z, SyncScaleZ);
-                    }
-                }
-            }
-            // Just apply the full local scale when synchronizing
-            else if (SynchronizeScale)
-            {
-                var localScale = CachedTransform.localScale;
-                if (!UseHalfFloatPrecision)
-                {
-
-                    networkState.ScaleX = localScale.x;
-                    networkState.ScaleY = localScale.y;
-                    networkState.ScaleZ = localScale.z;
-                }
-                else
-                {
-                    networkState.Scale = localScale;
-                }
-                flagStates.MarkChanged(AxialType.Scale, true);
-                isScaleDirty = true;
-            }
-            isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
-
-            if (isDirty)
-            {
-                // Some integration/unit tests disable the NetworkTransform and there is no
-                // NetworkManager
-                if (enabled)
-                {
-                    // We use the NetworkTickSystem version since ServerTime is set when updating ticks
-                    networkState.NetworkTick = CurrentTick;
-                }
-            }
-
-            // Mark the state dirty for the next network tick update to clear out the bitset values
-            flagStates.IsDirty |= isDirty;
-
-            // Apply any flag state changes
-            networkState.FlagStates = flagStates;
             return isDirty;
         }
 
@@ -3678,7 +3472,52 @@ namespace Unity.Netcode.Components
             }
 
             DeregisterForTickUpdate();
+            DeregisterFromBatchedStateTracking();
             CanCommitToTransform = false;
+        }
+
+        /// <summary>
+        /// Adds this instance to the <see cref="NetworkTransformStateManager"/> when the session is using <see cref="TransformSyncModes.Batched"/>.
+        /// </summary>
+        private void RegisterForBatchedStateTracking()
+        {
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.NetworkConfig.TransformSyncMode != TransformSyncModes.Batched)
+            {
+                return;
+            }
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            // A rigidbody driven instance reads its position and rotation from the rigidbody, which a job
+            // cannot do, so it stays on the per instance path.
+            if (m_UseRigidbodyForMotion)
+            {
+                return;
+            }
+#endif
+            // A nested instance is force ticked by its parent through TickSyncChildren, which would double up
+            // with the batched check, so it also stays on the per instance path.
+            if (IsNested)
+            {
+                return;
+            }
+
+            m_CachedNetworkManager.TransformStateManager.Register(this);
+        }
+
+        /// <summary>
+        /// Removes this instance from the <see cref="NetworkTransformStateManager"/>.
+        /// </summary>
+        /// <remarks>
+        /// Not conditional on the current <see cref="TransformSyncModes"/>: if this instance was registered it
+        /// has to be removed regardless, and deregistering something that was never registered is a no-op.
+        /// </remarks>
+        private void DeregisterFromBatchedStateTracking()
+        {
+            if (m_CachedNetworkManager == null)
+            {
+                return;
+            }
+            m_CachedNetworkManager.TransformStateManager.Deregister(this);
         }
 
         /// <inheritdoc/>
@@ -3825,6 +3664,7 @@ namespace Unity.Netcode.Components
                 m_LastStateTargetPosition = currentPosition;
 
                 RegisterForTickUpdate();
+                RegisterForBatchedStateTracking();
 
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
@@ -3845,6 +3685,9 @@ namespace Unity.Netcode.Components
                 m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate();
+                // This instance is no longer an authority (this also covers a change of ownership since
+                // InternalInitialization runs again each time ownership changes).
+                DeregisterFromBatchedStateTracking();
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_InternalCurrentPosition = currentPosition;
                 m_LastStateTargetPosition = currentPosition;
@@ -4852,9 +4695,18 @@ namespace Unity.Netcode.Components
                     Remove();
                     return;
                 }
+                if (m_NetworkManager.NetworkConfig.TransformSyncMode == TransformSyncModes.Batched)
+                {
+                    // Batched: every registered instance is checked in parallel and anything that came back
+                    // dirty sends its state update afterwards. Instances that could not be registered (a
+                    // rigidbody driven one, for example) still tick individually below.
+                    m_NetworkManager.TransformStateManager.RunDeltaCheck();
+                }
+
                 foreach (var networkTransform in NetworkTransforms)
                 {
-                    if (networkTransform.IsSpawned)
+                    // Anything registered for the batched delta check was already handled above.
+                    if (networkTransform.IsSpawned && networkTransform.StateManagerIndex < 0)
                     {
                         networkTransform.OnNetworkTick();
                     }

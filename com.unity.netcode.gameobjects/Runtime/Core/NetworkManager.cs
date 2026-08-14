@@ -307,6 +307,11 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkTransform.InterpolationFrameData TransformInterpolationFrameData;
 
+        /// <summary>
+        /// The manager for native <see cref="NetworkTransform"/> state used by <see cref="TransformSyncModes.Batched"/>.
+        /// </summary>
+        internal NetworkTransformStateManager TransformStateManager = new NetworkTransformStateManager();
+
         internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
@@ -1891,6 +1896,12 @@ namespace Unity.Netcode
             // Clean up the internal prefabs data
             NetworkConfig?.Prefabs?.Shutdown();
             PrefabHandler.Shutdown();
+
+            // Release any native NetworkTransform state and replace the manager so a subsequent session starts
+            // from a clean one. Dispose clears the cached index on anything still registered, so a despawn
+            // that arrives after this point deregisters against the new manager as a no-op.
+            TransformStateManager?.Dispose();
+            TransformStateManager = new NetworkTransformStateManager();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes

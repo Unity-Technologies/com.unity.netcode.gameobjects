@@ -35,6 +35,16 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         [SerializeField]
         public bool GenerateDefaultNetworkPrefabs = true;
 
+        /// <summary>
+        /// The project wide <see cref="TransformSyncModes"/> that is applied to <see cref="NetworkConfig.TransformSyncMode"/>.
+        /// </summary>
+        /// <remarks>
+        /// The two modes are not wire compatible with one another, so this is authored once for the project as
+        /// opposed to per <see cref="NetworkManager"/>.
+        /// </remarks>
+        [SerializeField]
+        public TransformSyncModes TransformSyncMode = TransformSyncModes.PerInstance;
+
         internal void SaveSettings()
         {
             Save(true);

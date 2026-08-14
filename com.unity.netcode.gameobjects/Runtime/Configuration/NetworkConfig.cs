@@ -8,6 +8,35 @@ using UnityEngine.Serialization;
 namespace Unity.Netcode
 {
     /// <summary>
+    /// The synchronization modes for <see cref="Components.NetworkTransform"/> instances that determines
+    /// whether transform state changes and synchronization are handled per instance or in a parallel job
+    /// and sent via a single message (i.e. batched NetworkTransform).
+    /// </summary>
+    /// <remarks>
+    /// This is a session wide setting located under Project Settings -&gt; Multiplayer -&gt;Netcode for GameObjects. <br />
+    /// The two modes can not be cross pollinated on a per instance basis. As such, it is a per session global setting
+    /// for every <see cref="Components.NetworkTransform"></see> component instance.
+    /// </remarks>
+    public enum TransformSyncModes
+    {
+        /// <summary>
+        /// Each <see cref="Components.NetworkTransform"/> detects its own changes on the network tick and
+        /// sends them as an individual message. This is the original, legacy, approach.
+        /// </summary>
+        PerInstance,
+
+        /// <summary>
+        /// Changes for all <see cref="Components.NetworkTransform"/> instances are detected within a job and
+        /// sent as a single batched message per tick.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Components.NetworkTransform.UseUnreliableDeltas"/> does not apply in this mode. Delivery
+        /// is determined per state update as opposed to per component.
+        /// </remarks>
+        Batched,
+    }
+
+    /// <summary>
     /// The configuration object used to start server, client and hosts
     /// </summary>
     [Serializable]
@@ -45,6 +74,11 @@ namespace Unity.Netcode
         [SerializeField]
         public NetworkPrefabs Prefabs = new NetworkPrefabs();
 
+        /// <summary>
+        /// A global setting, per session, that determines how <see cref="Components.NetworkTransform"/> instances detect and synchronize their state.
+        /// </summary>
+        [SerializeField]
+        internal TransformSyncModes TransformSyncMode = TransformSyncModes.PerInstance;
 
         /// <summary>
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
@@ -354,6 +388,9 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(EnableSceneManagement);
                 writer.WriteValueSafe(EnsureNetworkVariableLengthSafety);
                 writer.WriteValueSafe(RpcHashSize);
+                // The two transform synchronization modes are not compatible and this needs to be part
+                // of the hash check during the initial connection request.
+                writer.WriteValueSafe((byte)TransformSyncMode);
 
                 if (cache)
                 {
