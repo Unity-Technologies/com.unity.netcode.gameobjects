@@ -266,12 +266,42 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// <see cref="BufferedLinearInterpolator{T}.ResetTo"/>.
         /// </summary>
+        /// <remarks>
+        /// The managed implementation seeds a baseline measurement here, stamped with the caller's
+        /// <paramref name="serverTime"/>. This one deliberately does not, because that baseline becomes an
+        /// ordering floor that the measurements which follow it cannot clear.<br />
+        /// <br />
+        /// Callers pass <c>NetworkManager.ServerTime.Time</c>, the local current time, while incoming
+        /// measurements are stamped with the tick they were authored on
+        /// (<see cref="NetworkTransform.NetworkTransformState.SentTime"/>), which is always at least a tick
+        /// older. Once the baseline is consumed it becomes <see cref="NativeInterpolatorState.Target"/>, and
+        /// both of the guards that admit a measurement compare against it:
+        /// <see cref="AddMeasurement"/> requires a stamp newer than
+        /// <see cref="NativeInterpolatorState.LastMeasurementAddedTime"/>, and
+        /// <see cref="TryConsumeFromBuffer"/> requires one newer than <c>Target.TimeSent</c>. An instance that
+        /// resets part way through a session therefore rejects everything the authority sends next, and the
+        /// rejection is permanent: with a target already reached and a non empty buffer,
+        /// <see cref="Update"/> neither interpolates nor takes the stale target reset, so elapsed time alone
+        /// never recovers it.<br />
+        /// <br />
+        /// In practice this only reaches an instance that just stopped being the authority, which in a client
+        /// server topology is only ever the server. Leaving the buffer empty puts the interpolator in exactly
+        /// the state a freshly spawned one is in: the value is still held (<see cref="Reset"/> seeds all three
+        /// of the in flight values), the first measurement to arrive is taken unconditionally because
+        /// <see cref="NativeInterpolatorState.BufferCounter"/> is zero, and it is consumed against render time
+        /// alone. Seeding at spawn is unaffected — the baseline stamp there is one tick ahead of the first
+        /// measurement, so the interval the first measurement is interpolated over is the tick length either
+        /// way.
+        /// </remarks>
+        /// <param name="serverTime">
+        /// Retained for signature parity with <see cref="BufferedLinearInterpolator{T}.ResetTo"/>. Not stored,
+        /// for the reason above.
+        /// </param>
         internal static void ResetTo(ref NativeInterpolatorState state, ref NativeArray<BufferedItemNative> items, float4 targetValue, double serverTime)
         {
             Clear(ref state);
             state.RateOfChange = float4.zero;
             Reset(ref state, targetValue);
-            AddMeasurement(ref state, ref items, targetValue, serverTime);
         }
 
         /// <summary>

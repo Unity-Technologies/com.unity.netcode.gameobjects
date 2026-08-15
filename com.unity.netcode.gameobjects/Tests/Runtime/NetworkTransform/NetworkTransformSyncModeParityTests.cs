@@ -177,7 +177,39 @@ namespace Unity.Netcode.RuntimeTests
             authority.transform.position = target;
 
             yield return WaitForConditionOrTimeOut(() => AllObserversMatch(serverSide, target, observers));
-            AssertOnTimeout($"[{m_SyncMode}][{m_AuthorityMode}] Not every observer reached {target}!");
+            AssertOnTimeout($"[{m_SyncMode}][{m_AuthorityMode}] Not every observer reached {target}!\n{DescribeObservers(serverSide, target, observers)}");
+        }
+
+        /// <summary>
+        /// Reports where each instance actually is, so a convergence failure identifies which instance was
+        /// left behind rather than only that one was.
+        /// </summary>
+        private string DescribeObservers(NetworkObject serverSide, Vector3 expectedPosition, IReadOnlyList<NetworkManager> observers)
+        {
+            var builder = new System.Text.StringBuilder();
+            builder.AppendLine($"  expected {expectedPosition}, owner is client {serverSide.OwnerClientId}");
+            foreach (var manager in observers)
+            {
+                var role = manager.IsServer ? "server" : $"client-{manager.LocalClientId}";
+                if (!manager.SpawnManager.SpawnedObjects.TryGetValue(serverSide.NetworkObjectId, out var clone))
+                {
+                    builder.AppendLine($"  {role}: object not spawned");
+                    continue;
+                }
+
+                var networkTransform = clone.GetComponent<NetworkTransform>();
+                var matches = Approximately(clone.transform.position, expectedPosition) ? "OK " : "BAD";
+                // The two indices discriminate between "never registered for the batched interpolation" and
+                // "registered but the results are not being applied".
+                builder.AppendLine($"  {role}: {matches} pos={clone.transform.position} owner={clone.OwnerClientId} " +
+                    $"canCommit={networkTransform.CanCommitToTransform} isOwner={clone.IsOwner} " +
+                    $"stateIdx={networkTransform.StateManagerIndex} interpIdx={networkTransform.InterpolatorIndex}");
+                if (networkTransform.InterpolatorIndex >= 0)
+                {
+                    builder.AppendLine($"      interp: {manager.TransformStateManager.DescribePositionInterpolator(networkTransform.InterpolatorIndex)}");
+                }
+            }
+            return builder.ToString();
         }
 
         /// <summary>

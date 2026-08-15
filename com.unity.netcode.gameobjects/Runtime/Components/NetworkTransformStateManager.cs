@@ -464,6 +464,34 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Diagnostics for an instance's position interpolator: how many measurements are buffered, whether it
+        /// has a target, and what the job last produced.
+        /// </summary>
+        /// <remarks>
+        /// Separates "no state is arriving" from "state is arriving but not being advanced or applied", which
+        /// are otherwise indistinguishable from the outside.
+        /// </remarks>
+        internal string DescribePositionInterpolator(int index)
+        {
+            if (index < 0 || !m_Created || index >= InterpolationEntries.Length)
+            {
+                return "not registered";
+            }
+            var entry = InterpolationEntries[index];
+            var position = entry.Position;
+            var items = BufferedItems.AsArray();
+            var oldest = position.BufferCount > 0
+                ? items[position.BufferOffset + position.BufferHead].TimeSent.ToString("F4")
+                : "none";
+            return $"buffered={position.BufferCount} hasTarget={position.HasTarget} " +
+                $"target={(position.HasTarget ? position.Target.Item.xyz.ToString() : "none")} " +
+                $"targetStamp={(position.HasTarget ? position.Target.TimeSent.ToString("F4") : "none")} " +
+                $"oldestStamp={oldest} " +
+                $"current={position.CurrentValue.xyz} result={entry.InterpolatedPosition.xyz} " +
+                $"received={position.BufferCounter} syncPos={entry.SynchronizePosition}";
+        }
+
+        /// <summary>
         /// The native equivalent of <see cref="BufferedLinearInterpolator{T}.GetInterpolatedValue"/>.
         /// </summary>
         internal float4 GetInterpolatedValue(int index, InterpolatorTarget target)

@@ -276,7 +276,24 @@ namespace Unity.Netcode
         {
             // Clear the interpolator
             Clear();
-            InternalReset(parent, targetValue, serverTime);
+
+            // The baseline measurement is deliberately not seeded here. Callers stamp it with
+            // NetworkManager.ServerTime.Time (the local current time) while the measurements that follow are
+            // stamped with the tick they were authored on (NetworkTransformState.SentTime), which is always at
+            // least a tick older. Seeding the baseline therefore establishes an ordering floor that later
+            // measurements cannot clear: AddMeasurement drops anything not newer than m_LastMeasurementAddedTime,
+            // and TryConsumeFromBuffer drops anything not newer than InterpolateState.Target.TimeSent.
+            //
+            // This only reaches an instance that resets part way through a session, which in practice means one
+            // that just stopped being the authority (in a client server topology, only ever the server). Such an
+            // instance would otherwise reject everything the new authority sends until a measurement happens to
+            // be authored on a later tick than the reset, and if motion has already stopped that never arrives.
+            //
+            // Clear() has left the buffer empty with a zeroed m_LastMeasurementAddedTime, and InternalReset seeds
+            // CurrentValue/NextValue/PreviousValue below, so the value is still held. That is exactly the state a
+            // freshly spawned interpolator is in: the first measurement to arrive is taken unconditionally
+            // because m_BufferCount is zero, and it is consumed against render time alone.
+            InternalReset(parent, targetValue, serverTime, false);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

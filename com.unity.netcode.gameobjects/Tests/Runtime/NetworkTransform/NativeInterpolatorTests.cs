@@ -333,5 +333,106 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(count, native.Target.Item.x, "The newest measurement was not the one interpolated towards!");
             Assert.IsTrue(math.all(math.isfinite(value)), "Interpolated value was not finite!");
         }
+
+        /// <summary>
+        /// An instance that stops being the authority part way through a session resets its interpolator with
+        /// the local current time, while the measurements that follow are stamped with the tick they were
+        /// authored on. Those stamps are older, so both of the interpolator's ordering guards reject them and
+        /// the instance never converges onto anything the new authority sends.
+        /// </summary>
+        /// <remarks>
+        /// This is the shape of an ownership transfer away from the local instance, which in a client server
+        /// topology only ever happens to the server. It is reproduced here rather than only through
+        /// <c>NetworkTransformSyncModeParityTests.OwnershipChangeKeepsReplicating</c> because the deadlock is
+        /// entirely internal to the interpolator: once the buffered measurements are all older than the reset
+        /// baseline, no amount of elapsed time recovers it.
+        /// </remarks>
+        [Test]
+        public void ResetPartWayThroughSessionStillAcceptsOlderStampedMeasurements([Values] bool useManaged)
+        {
+            const float maxInterpolationTime = 0.1f;
+            const float deltaTime = 1.0f / 60.0f;
+            const double tickLatency = 2.0 * k_MinDeltaTime;
+
+            // The session has been running for a while when authority is lost.
+            const int transitionTick = 60;
+            var transitionTime = transitionTick * k_MinDeltaTime;
+
+            var held = new float4(2.0f, 2.0f, 2.0f, 0.0f);
+            var target = new float4(-4.0f, 5.0f, 3.0f, 0.0f);
+
+            var managed = new BufferedLinearInterpolatorVector3()
+            {
+                IsSlerp = false,
+                LerpSmoothEnabled = false,
+                MaximumInterpolationTime = maxInterpolationTime,
+            };
+            var native = CreateState(InterpolatorValueKind.Vector3, false, false, maxInterpolationTime);
+
+            // ResetInterpolatedStateToCurrentAuthoritativeState stamps the baseline with ServerTime.Time.
+            if (useManaged)
+            {
+                managed.ResetTo(new Vector3(held.x, held.y, held.z), transitionTime);
+            }
+            else
+            {
+                NativeInterpolator.ResetTo(ref native, ref m_Items, held, transitionTime);
+            }
+
+            // The new authority's first states were authored on ticks at or before the transition, so their
+            // NetworkTransformState.SentTime is not newer than the baseline's stamp.
+            var sentTicks = new[] { transitionTick - 1, transitionTick };
+
+            var time = transitionTime;
+            var pending = 0;
+
+            // Long enough that nothing is still merely waiting on render time to catch up.
+            const int frames = 600;
+            for (int frame = 1; frame <= frames; frame++)
+            {
+                time += deltaTime;
+
+                while (pending < sentTicks.Length && frame > pending * 4)
+                {
+                    var sentTime = sentTicks[pending] * k_MinDeltaTime;
+                    if (useManaged)
+                    {
+                        managed.AddMeasurement(new Vector3(target.x, target.y, target.z), sentTime);
+                    }
+                    else
+                    {
+                        NativeInterpolator.AddMeasurement(ref native, ref m_Items, target, sentTime);
+                    }
+                    pending++;
+                }
+
+                var renderTime = time - tickLatency;
+                if (useManaged)
+                {
+                    managed.Update(deltaTime, renderTime, k_MinDeltaTime, tickLatency, true);
+                }
+                else
+                {
+                    NativeInterpolator.Update(ref native, ref m_Items, deltaTime, renderTime, k_MinDeltaTime, tickLatency, true);
+                }
+            }
+
+            var label = useManaged ? "managed" : "native";
+            if (useManaged)
+            {
+                var result = managed.GetInterpolatedValue();
+                Assert.LessOrEqual(Vector3.Distance(result, new Vector3(target.x, target.y, target.z)), k_SettledTolerance,
+                    $"[{label}] interpolator never converged onto the measurements sent after the reset! " +
+                    $"expected={target.xyz} actual={result}");
+            }
+            else
+            {
+                Assert.LessOrEqual(math.distance(native.CurrentValue.xyz, target.xyz), k_SettledTolerance,
+                    $"[{label}] interpolator never converged onto the measurements sent after the reset! " +
+                    $"expected={target.xyz} actual={native.CurrentValue.xyz} " +
+                    $"buffered={native.BufferCount} hasTarget={native.HasTarget} " +
+                    $"targetStamp={native.Target.TimeSent} received={native.BufferCounter}");
+            }
+        }
     }
 }
