@@ -2235,7 +2235,12 @@ namespace Unity.Netcode.Components
                 // Send the state update. A registered instance contributes to this tick's batch instead of
                 // sending on its own; the state is captured now because the flags below are cleared
                 // immediately afterwards.
-                if (StateManagerIndex >= 0 && !m_CachedNetworkManager.DistributedAuthorityMode)
+                //
+                // Only the server can batch: the batch is assembled per observing client and sent directly,
+                // where a client authority has to send to the server and be relayed. Registration is not
+                // gated on this, so a client authority still gets its delta detected in the job and only the
+                // send falls back to the per instance message.
+                if (StateManagerIndex >= 0 && m_CachedNetworkManager.IsServer && !m_CachedNetworkManager.DistributedAuthorityMode)
                 {
                     m_LocalAuthoritativeNetworkState.UpdateReliability();
                     m_CachedNetworkManager.TransformStateManager.QueueForBatch(this, m_LocalAuthoritativeNetworkState);
@@ -3901,15 +3906,11 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // The batch is assembled per observing client and sent directly, which only the server can do. An
-            // owner authoritative instance owned by a client has to send to the server and be relayed from
-            // there, and the batch has no relay: that is the same forwarding problem as distributed authority
-            // and is deferred with it. Such instances stay on the per instance path, which already relays.
-            if (!m_CachedNetworkManager.IsServer)
-            {
-                return;
-            }
-
+            // Deliberately not gated on being the server. Detecting the delta in a job only reads this
+            // instance's transform, so a client that owns an owner authoritative instance benefits from it
+            // just as much. Only the sending differs: assembling a batch per observing client is something
+            // only the server can do, so CommitDetectedState routes a non-server authority to the per
+            // instance message, which the server already relays.
             m_CachedNetworkManager.TransformStateManager.Register(this);
         }
 
