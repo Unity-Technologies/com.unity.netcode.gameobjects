@@ -2325,7 +2325,7 @@ namespace Unity.Netcode.Components
             {
                 Position = position,
                 Rotation = rotation,
-                RotAngles = rotation.eulerAngles,
+                RotAngles = NetworkTransformMath.EulerAngles(rotation),
                 Scale = CachedTransform.localScale,
             };
 

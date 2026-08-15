@@ -336,21 +336,21 @@ namespace Unity.Netcode.Components
             // Begin delta checks against last sent state update
             if (!config.UseHalfFloatPrecision)
             {
-                if (config.SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncPositionX && (math.abs(networkState.PositionX - position.x) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionX = position.x;
                     flagStates.SetHasPosition(Axis.X, true);
                     isPositionDirty = true;
                 }
 
-                if (config.SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncPositionY && (math.abs(networkState.PositionY - position.y) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionY = position.y;
                     flagStates.SetHasPosition(Axis.Y, true);
                     isPositionDirty = true;
                 }
 
-                if (config.SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncPositionZ && (math.abs(networkState.PositionZ - position.z) >= positionThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionZ = position.z;
                     flagStates.SetHasPosition(Axis.Z, true);
@@ -372,9 +372,9 @@ namespace Unity.Netcode.Components
                 if (!isPositionDirty)
                 {
                     var previousPosition = halfPositionState.PreviousPosition;
-                    isPositionDirty = (config.SyncPositionX && Mathf.Abs(position.x - previousPosition.x) >= positionThreshold)
-                        || (config.SyncPositionY && Mathf.Abs(position.y - previousPosition.y) >= positionThreshold)
-                        || (config.SyncPositionZ && Mathf.Abs(position.z - previousPosition.z) >= positionThreshold);
+                    isPositionDirty = (config.SyncPositionX && math.abs(position.x - previousPosition.x) >= positionThreshold)
+                        || (config.SyncPositionY && math.abs(position.y - previousPosition.y) >= positionThreshold)
+                        || (config.SyncPositionZ && math.abs(position.z - previousPosition.z) >= positionThreshold);
                 }
 
                 // If the position is dirty or we are teleporting (which includes synchronization)
@@ -464,21 +464,21 @@ namespace Unity.Netcode.Components
 
             if (!config.UseQuaternionSynchronization)
             {
-                if (config.SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncRotAngleX && (math.abs(NetworkTransformMath.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleX = rotAngles.x;
                     flagStates.SetHasRotation(Axis.X, true);
                     isRotationDirty = true;
                 }
 
-                if (config.SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncRotAngleY && (math.abs(NetworkTransformMath.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleY = rotAngles.y;
                     flagStates.SetHasRotation(Axis.Y, true);
                     isRotationDirty = true;
                 }
 
-                if (config.SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                if (config.SyncRotAngleZ && (math.abs(NetworkTransformMath.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleZ = rotAngles.z;
                     flagStates.SetHasRotation(Axis.Z, true);
@@ -492,10 +492,12 @@ namespace Unity.Netcode.Components
                 // For quaternion synchronization, if one angle is dirty we send a full update
                 if (!isRotationDirty)
                 {
-                    var previousRotation = networkState.Rotation.eulerAngles;
-                    isRotationDirty = Mathf.Abs(Mathf.DeltaAngle(previousRotation.x, rotAngles.x)) >= rotationThreshold
-                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.y, rotAngles.y)) >= rotationThreshold
-                        || Mathf.Abs(Mathf.DeltaAngle(previousRotation.z, rotAngles.z)) >= rotationThreshold;
+                    // Uses the ported conversion so this stays free of engine bindings. Verified against
+                    // Quaternion.eulerAngles by NetworkTransformMathTests.
+                    var previousRotation = NetworkTransformMath.EulerAngles(networkState.Rotation);
+                    isRotationDirty = math.abs(NetworkTransformMath.DeltaAngle(previousRotation.x, rotAngles.x)) >= rotationThreshold
+                        || math.abs(NetworkTransformMath.DeltaAngle(previousRotation.y, rotAngles.y)) >= rotationThreshold
+                        || math.abs(NetworkTransformMath.DeltaAngle(previousRotation.z, rotAngles.z)) >= rotationThreshold;
                 }
                 if (isRotationDirty)
                 {
@@ -520,21 +522,21 @@ namespace Unity.Netcode.Components
             {
                 if (!config.UseHalfFloatPrecision)
                 {
-                    if (config.SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (config.SyncScaleX && (math.abs(networkState.ScaleX - scale.x) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleX = scale.x;
                         flagStates.SetHasScale(Axis.X, true);
                         isScaleDirty = true;
                     }
 
-                    if (config.SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (config.SyncScaleY && (math.abs(networkState.ScaleY - scale.y) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleY = scale.y;
                         flagStates.SetHasScale(Axis.Y, true);
                         isScaleDirty = true;
                     }
 
-                    if (config.SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
+                    if (config.SyncScaleZ && (math.abs(networkState.ScaleZ - scale.z) >= config.ScaleThreshold || flagStates.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleZ = scale.z;
                         flagStates.SetHasScale(Axis.Z, true);
@@ -547,21 +549,21 @@ namespace Unity.Netcode.Components
                     // Precompute if it is considered always dirty.
                     var alwaysDirty = flagStates.IsTeleportingNextFrame || isAxisSync || forceState;
                     // Use direct field assignment as opposed to indexing to avoid bounds checking.
-                    if (alwaysDirty || Mathf.Abs(scale.x - previousScale.x) >= config.ScaleThreshold)
+                    if (alwaysDirty || math.abs(scale.x - previousScale.x) >= config.ScaleThreshold)
                     {
                         isScaleDirty = true;
                         networkState.Scale.x = scale.x;
                         flagStates.SetHasScale(Axis.X, config.SyncScaleX);
                     }
 
-                    if (alwaysDirty || Mathf.Abs(scale.y - previousScale.y) >= config.ScaleThreshold)
+                    if (alwaysDirty || math.abs(scale.y - previousScale.y) >= config.ScaleThreshold)
                     {
                         isScaleDirty = true;
                         networkState.Scale.y = scale.y;
                         flagStates.SetHasScale(Axis.Y, config.SyncScaleY);
                     }
 
-                    if (alwaysDirty || Mathf.Abs(scale.z - previousScale.z) >= config.ScaleThreshold)
+                    if (alwaysDirty || math.abs(scale.z - previousScale.z) >= config.ScaleThreshold)
                     {
                         isScaleDirty = true;
                         networkState.Scale.z = scale.z;

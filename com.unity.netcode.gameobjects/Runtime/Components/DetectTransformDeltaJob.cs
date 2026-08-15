@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Collections;
 using UnityEngine.Jobs;
 using static Unity.Netcode.Components.NetworkTransform;
@@ -16,6 +17,7 @@ namespace Unity.Netcode.Components
     /// write hazard: nothing in this job touches a transform other than the one at its own index, and nothing
     /// writes to a transform at all.
     /// </remarks>
+    [BurstCompile]
     internal struct DetectTransformDeltaJob : IJobParallelForTransform
     {
         /// <summary>
@@ -43,7 +45,7 @@ namespace Unity.Netcode.Components
             var rotation = entry.Config.InLocalSpace ? transform.localRotation : transform.rotation;
             entry.Sample.Position = entry.Config.InLocalSpace ? transform.localPosition : transform.position;
             entry.Sample.Rotation = rotation;
-            entry.Sample.RotAngles = rotation.eulerAngles;
+            entry.Sample.RotAngles = NetworkTransformMath.EulerAngles(rotation);
             entry.Sample.Scale = transform.localScale;
 
             entry.IsDirty = CheckForStateChange(ref entry.State, ref entry.HalfPositionState, ref entry.Config,
