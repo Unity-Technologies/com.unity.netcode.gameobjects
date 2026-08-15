@@ -420,6 +420,10 @@ namespace Unity.Netcode
                             NetworkTransform.RefreshInterpolationFrameData(this);
                         }
 
+                        // Advance every registered non-authority interpolator in parallel, before the
+                        // instances below read the results and apply them to their transforms.
+                        TransformStateManager.RunInterpolation();
+
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
                         {
                             // if not active or not spawned then skip
@@ -465,6 +469,10 @@ namespace Unity.Netcode
                         {
                             NetworkTransform.RefreshInterpolationFrameData(this);
                         }
+
+                        // Advance every registered non-authority interpolator in parallel, before the
+                        // instances below read the results and apply them to their transforms.
+                        TransformStateManager.RunInterpolation();
                         
                         // Non-physics based non-authority NetworkTransforms update their states after all other components
                         foreach (var networkObjectEntry in NetworkTransformUpdate)

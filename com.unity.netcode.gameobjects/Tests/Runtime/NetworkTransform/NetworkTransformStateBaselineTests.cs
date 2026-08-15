@@ -55,6 +55,8 @@ namespace Unity.Netcode.RuntimeTests
             "HalfFloat.ScaleOnly|12|254AC316",
             "HalfFloat.EulerRotation|12|F769BA44",
             "UnreliableDeltas.FrameSync|19|81628843",
+            "UnreliableDeltas.SynchronizeBaseHalfFloat|30|0DF74758",
+            "UnreliableDeltas.PlainDelta|12|7B1C8307",
             "SwitchTransformSpaceWhenParented|19|DD37211C",
         };
 
@@ -282,6 +284,28 @@ namespace Unity.Netcode.RuntimeTests
                 return f;
             });
 
+            // The only combination where the delivery reliability is actually derived rather than short
+            // circuited: unreliable deltas enabled, not teleporting, not synchronizing, no frame sync, but the
+            // half float base position is being synchronized. Every other case above has UseUnreliableDeltas
+            // off, which forces reliable delivery before any of the other conditions are consulted.
+            AddCase(cases, "UnreliableDeltas.SynchronizeBaseHalfFloat", f =>
+            {
+                f.MarkChanged(AxialType.Position, true);
+                f.UseUnreliableDeltas = true;
+                f.UseHalfFloatPrecision = true;
+                f.SynchronizeBaseHalfFloat = true;
+                return f;
+            });
+
+            // The same shape with the base synchronization off, so the pair brackets the condition.
+            AddCase(cases, "UnreliableDeltas.PlainDelta", f =>
+            {
+                f.MarkChanged(AxialType.Position, true);
+                f.UseUnreliableDeltas = true;
+                f.UseHalfFloatPrecision = true;
+                return f;
+            });
+
             AddCase(cases, "SwitchTransformSpaceWhenParented", f =>
             {
                 f.MarkChanged(AxialType.Position, true);
@@ -319,6 +343,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private static byte[] Serialize(NetworkTransformState state)
         {
+            // Resolving the delivery reliability used to happen inside NetworkSerialize. It now happens before
+            // writing, because the batched synchronization mode uses the result to pick which of its two per
+            // tick messages a state belongs to. Every send path calls this first, so the baseline does too;
+            // without it these signatures would move for a reason that has nothing to do with the wire format.
+            state.UpdateReliability();
+
             var writer = new FastBufferWriter(1024, Allocator.Temp);
             try
             {
