@@ -227,10 +227,16 @@ unified_test_platforms:
 # The other jobs' "Unity.Netcode.RuntimeTests.*" works because it is also a valid regex - it just
 # happens to read like a glob.
 #
-# The match is against the NUnit *full* test name, which includes fixture arguments. That covers both
-# the dedicated unified fixtures (UnifiedNetworkTransformTest) and any shared fixture parameterized
-# with HostOrServer.UnifiedHost / UnifiedServer, e.g. "NetworkTransformTests(UnifiedHost,...)".
-unified_test_filter: ".*Unified.*"
+# The match is against the NUnit *full* test name, which includes both fixture and method arguments.
+#
+# DO NOT widen this to ".*Unified.*". "Unified" appearing in a test name does NOT mean that test was
+# deliberately converted to run against hybrid prefabs. HostOrServer gained UnifiedServer/UnifiedHost
+# members under UNIFIED_NETCODE, and NUnit expands a bare [Values] on an enum parameter (and
+# enum-typed fixture constructors) to every member. So with N4E installed, much of the existing suite
+# silently grows unified cases - e.g. NetworkVariableTests(Default).AllNetworkVariableTypes(UnifiedHost),
+# which nobody wrote. ".*Unified.*" selected 138 tests, 84 of which failed, against the 1 test this
+# job exists to validate. Deciding which of those should pass, and how they opt in, is Goal-2.
+unified_test_filter: ".*UnifiedNetworkTransformTest.*"
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
