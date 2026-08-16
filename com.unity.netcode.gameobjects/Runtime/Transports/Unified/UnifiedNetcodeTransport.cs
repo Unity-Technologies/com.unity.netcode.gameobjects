@@ -124,10 +124,18 @@ namespace Unity.Netcode.Unified
     [UpdateBefore(typeof(RpcSystem))]
     internal partial class UnifiedNetcodeUpdateSystem : SystemBase
     {
-        public void OnCreate(ref SystemState state)
+        // Note: this must be the parameterless ComponentSystemBase.OnCreate override, not the
+        // ISystem-style OnCreate(ref SystemState). With the ISystem signature this is just a new
+        // method that Entities never calls, so neither RequireForUpdate takes effect and OnUpdate
+        // runs from the very first world tick - which is before StartClient/StartServer have
+        // assigned Transport and NetworkManager below, and therefore a NullReferenceException.
+        // CreateSingleWorldHost calls AppendWorldToCurrentPlayerLoop, so the world can tick in the
+        // window between world creation and the transport being started.
+        protected override void OnCreate()
         {
-            state.RequireForUpdate<RpcCollection>();
-            state.RequireForUpdate<NetworkId>();
+            RequireForUpdate<RpcCollection>();
+            RequireForUpdate<NetworkId>();
+            base.OnCreate();
         }
 
         public UnifiedNetcodeTransport Transport;
@@ -155,6 +163,14 @@ namespace Unity.Netcode.Unified
 
         protected override void OnUpdate()
         {
+            // Belt and braces alongside the RequireForUpdate gating in OnCreate: these are only
+            // assigned once the transport is started but the world can already be in the player loop
+            // before that happens. Exit early under this scenario.
+            if (NetworkManager == null || Transport == null)
+            {
+                return;
+            }
+
             NetworkManager.MessageManager.ProcessSendQueues();
 
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
