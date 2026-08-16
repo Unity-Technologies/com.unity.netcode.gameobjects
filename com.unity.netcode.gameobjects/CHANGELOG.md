@@ -6,20 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.13.2] - 2026-08-16
 
-### Added
-
-
-### Changed
-
-
-
-
-### Deprecated
-
-
-### Removed
 
 
 ### Fixed
@@ -27,12 +15,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
-
-
-### Security
-
-
-### Obsolete
 
 
 ## [2.13.1] - 2026-07-19
