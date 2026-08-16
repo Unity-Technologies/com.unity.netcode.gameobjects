@@ -90,6 +90,13 @@ pr_code_changes_checks:
     # Note that our daily tests will anyway run both test configurations in "minimal supported" and "trunk" configurations
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
+
+    # Run the unified (NGO + N4E) tests. Unlike every other job here this one runs on a pinned Unity
+    # alpha (unified_editors in project.metafile) rather than a supported editor, because it needs an
+    # editor that bundles a com.unity.netcode with the unified API. Expect it to need a pin bump
+    # whenever N4E lands breaking changes in trunk. See .yamato/unified-tests.yml.
+    - .yamato/_run-all.yml#run_all_unified_tests
+
     # Run code coverage test (PRs use the pinned "safe" trunk)
     - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_{{ pinnedTrunk }}
   triggers:
@@ -118,6 +125,21 @@ pr_code_changes_checks:
 
 
 
+
+
+# Unified (NGO + N4E) validation, on demand.
+# The unified tests run automatically as part of pr_code_changes_checks and develop_nightly (same as
+# the CMB service tests do). This job only exists so they can also be kicked off by commenting
+# "/ci unified", for PRs that pr_code_changes_checks does not cover (drafts, doc-only changes, or
+# branches targeting something other than develop / develop-3.x.x / release).
+unified_pr_checks:
+  name: Unified (NGO + N4E) checks [on demand]
+  dependencies:
+    - .yamato/_run-all.yml#run_all_unified_tests
+  triggers:
+    expression: |-
+      pull_request.comment eq "unified"
+    cancel_old_ci: true
 
 
 # Run all tests on nightly basis.
@@ -156,6 +178,8 @@ develop_nightly:
     # Run Runtime tests against cmb service on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_trunk
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_default
+    # Run the unified (NGO + N4E) tests on their own pinned editor (see .yamato/unified-tests.yml)
+    - .yamato/_run-all.yml#run_all_unified_tests
     # Build player for webgl platform on trunk and default editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_{{ validation_editors.default }}
