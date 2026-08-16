@@ -220,10 +220,17 @@ unified_test_platforms:
       flavor: b1.large
 
 # Restricts the unified job to unified-only tests so nothing else runs on the alpha editor.
-# The pattern matches on the NUnit full test name, which covers both the dedicated unified fixtures
-# (UnifiedNetworkTransformTest) and any shared fixture parameterized with
-# HostOrServer.UnifiedHost / HostOrServer.UnifiedServer, e.g. "NetworkTransformTests(UnifiedHost,...)".
-unified_test_filter: "*Unified*"
+#
+# This is a REGULAR EXPRESSION, not a glob. UTR passes it to the editor as -testFilter, which ends up
+# in UnityEngine.TestRunner's FullNameFilter -> NUnit ValueMatchFilter -> new Regex(pattern).IsMatch().
+# A glob-style "*Unified*" throws "Quantifier {x,y} following nothing" and fails the whole run.
+# The other jobs' "Unity.Netcode.RuntimeTests.*" works because it is also a valid regex - it just
+# happens to read like a glob.
+#
+# The match is against the NUnit *full* test name, which includes fixture arguments. That covers both
+# the dedicated unified fixtures (UnifiedNetworkTransformTest) and any shared fixture parameterized
+# with HostOrServer.UnifiedHost / UnifiedServer, e.g. "NetworkTransformTests(UnifiedHost,...)".
+unified_test_filter: ".*Unified.*"
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
