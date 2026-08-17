@@ -59,6 +59,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
         public IEnumerator TestSerializeNull()
         {
             yield return SpawnTestPrefabInstance(true);
