@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4126)
+- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4128)
 
 
 ### Deprecated
@@ -24,7 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4126)
+- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4128)
 
 
 ### Security
