@@ -1,6 +1,6 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -15,111 +15,120 @@ namespace Unity.Netcode.RuntimeTests
     /// Destroying a newly spawned NetworkObject instance works
     /// Removing a INetworkPrefabInstanceHandler is removed and can be verified (very last check)
     /// </summary>
-    internal class NetworkPrefabHandlerTests
+    internal class NetworkPrefabHandlerTests : NetcodeIntegrationTest
     {
-        [OneTimeSetUp]
-        public void OneTimeSetup()
+        protected override int NumberOfClients => 0;
+
+        protected override void OnOneTimeSetup()
         {
             // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            base.OnOneTimeSetup();
         }
 
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
-        private uint m_ObjectId = 1;
-        private GameObject MakeValidNetworkPrefab()
+        private uint m_ObjectId = 0;
+
+        private bool m_CanStart;
+
+        protected override bool CanStartServerAndClients()
         {
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_ObjectId.ToString());
-            NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(validPrefab);
-            m_ObjectId++;
-            return validPrefab.gameObject;
+            return m_CanStart;
         }
 
-
+        private GameObject MakeValidNetworkPrefab()
+        {
+            m_ObjectId++;
+            return CreateNetworkObjectPrefab(k_TestPrefabObjectName + m_ObjectId.ToString());
+        }
 
         /// <summary>
         /// Tests the NetwokConfig NetworkPrefabsList initialization during NetworkManager's Init method to make sure that
         /// it will still initialize but remove the invalid prefabs
         /// </summary>
-        [Test]
-        public void NetworkConfigInvalidNetworkPrefabTest()
+        [UnityTest]
+        public IEnumerator NetworkConfigInvalidNetworkPrefabTest()
         {
+            var authority = GetAuthorityNetworkManager();
 
             // Add null entry
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(null);
+            authority.NetworkConfig.Prefabs.Add(null);
 
             // Add a NetworkPrefab with no prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab());
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab());
 
             // Add a NetworkPrefab override with an invalid hash
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 0 });
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 0 });
 
             // Add a NetworkPrefab override with a valid hash but an invalid target prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
 
             // Add a NetworkPrefab override with a valid hash to override but an invalid target prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
 
             // Add a NetworkPrefab override with an invalid source prefab to override
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = null });
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = null });
 
-            // Add a NetworkPrefab override with a valid source prefab to override but an invalid target prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = MakeValidNetworkPrefab(), OverridingTargetPrefab = null });
+            // Create a valid network prefab "asset".
+            var validPrefabAsset = MakeValidNetworkPrefab().GetComponent<NetworkObject>();
 
-            // Add a valid prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = MakeValidNetworkPrefab() });
+            // Add a NetworkPrefab override with a valid source prefab to override but an invalid target prefab.
+            authority.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = validPrefabAsset.gameObject, OverridingTargetPrefab = null });
 
-            // Add a NetworkPrefab override with a valid hash and valid target prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 11111111, OverridingTargetPrefab = MakeValidNetworkPrefab() });
+            var validPrefabForSourceHash = MakeValidNetworkPrefab().GetComponent<NetworkObject>();
+            // This would be the scenario that a hash would be used (typically when scene management is disabled)
+            validPrefabForSourceHash.InScenePlaced = true;
 
-            // Add a NetworkPrefab override with a valid prefab and valid target prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = MakeValidNetworkPrefab(), OverridingTargetPrefab = MakeValidNetworkPrefab() });
+            var networkPrefab = authority.NetworkConfig.Prefabs.GetLastRegisteredPrefab();
+            networkPrefab.SourceHashToOverride = validPrefabForSourceHash.GlobalObjectIdHash;
+            networkPrefab.OverridingTargetPrefab = validPrefabAsset.gameObject;
+            networkPrefab.Override = NetworkPrefabOverride.Hash;
+            Assert.True(authority.NetworkConfig.Prefabs.AssignPrefabAtIndex(authority.NetworkConfig.Prefabs.Prefabs.Count - 1, networkPrefab), $"Failed to assign network prefab!");
 
-            var exceptionOccurred = false;
-            try
-            {
-                NetworkManagerHelper.NetworkManagerObject.StartHost();
-            }
-            catch
-            {
-                exceptionOccurred = true;
-            }
+            var sourcePrefab = MakeValidNetworkPrefab();
+            networkPrefab = authority.NetworkConfig.Prefabs.GetLastRegisteredPrefab();
+            var index = authority.NetworkConfig.Prefabs.Prefabs.Count - 1;
+            var targetPrefab = MakeValidNetworkPrefab();
+            networkPrefab.Prefab = sourcePrefab;
+            networkPrefab.SourcePrefabToOverride = sourcePrefab;
+            networkPrefab.OverridingTargetPrefab = targetPrefab;
+            Assert.True(authority.NetworkConfig.Prefabs.AssignPrefabAtIndex(index, networkPrefab), $"Failed to assign network prefab!");
 
-            Assert.False(exceptionOccurred);
+            m_CanStart = true;
+            yield return StartServerAndClients();
 
             // In the end we should only have 3 valid registered network prefabs
-            Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Count == 3);
+            Assert.AreEqual(5, authority.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Count);
         }
 
-        private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
-        [Test]
-        public void NetworkPrefabHandlerClass([Values] NetworkTopologyTypes topologyType)
+        [UnityTest]
+        public IEnumerator NetworkPrefabHandlerClass([Values] NetworkTopologyTypes topologyType)
         {
-            var networkConfig = new NetworkConfig()
-            {
-                NetworkTopology = topologyType,
-            };
+            var authority = GetAuthorityNetworkManager();
+            authority.NetworkConfig.NetworkTopology = topologyType;
+            var baseObject = MakeValidNetworkPrefab().GetComponent<NetworkObject>();
 
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _, networkConfig: networkConfig));
-            var testPrefabObjectName = k_PrefabObjectName;
+            m_CanStart = true;
+            yield return StartServerAndClients();
 
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
-            NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
+            var testPrefabObjectName = k_TestPrefabObjectName;
 
-            var networkPrefabHandler = new NetworkPrefabHandler();
-            var networkPrefabInstanceHandler = new NetworkPrefabInstanceHandler(baseObject);
+            var networkPrefabHandler = authority.PrefabHandler;
+            var prefabHandlerObject = new GameObject();
+            var networkPrefabInstanceHandler = prefabHandlerObject.AddComponent<NetworkPrefabInstanceHandler>();
+            networkPrefabInstanceHandler.Initialize(authority, baseObject);
 
             var prefabPosition = new Vector3(1.0f, 5.0f, 3.0f);
             var prefabRotation = new Quaternion(1.0f, 0.5f, 0.4f, 0.1f);
 
             //Register via GameObject
-            var gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.gameObject, networkPrefabInstanceHandler);
+            var gameObjectRegistered = authority.PrefabHandler.ContainsHandler(baseObject);
 
             //Test result of registering via GameObject reference
             Assert.True(gameObjectRegistered);
 
-            var spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
+            var spawnedObject = authority.PrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
@@ -131,11 +140,11 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(prefabPosition == spawnedObject.transform.position);
             Assert.True(prefabRotation == spawnedObject.transform.rotation);
 
-            networkPrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
-            networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
+            authority.PrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
+            authority.PrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             //Register via NetworkObject
-            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject, networkPrefabInstanceHandler);
+            gameObjectRegistered = authority.PrefabHandler.AddHandler(baseObject, networkPrefabInstanceHandler);
 
             //Test result of registering via NetworkObject reference
             Assert.True(gameObjectRegistered);
@@ -144,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
             prefabPosition = new Vector3(2.0f, 1.0f, 5.0f);
             prefabRotation = new Quaternion(4.0f, 1.5f, 5.4f, 5.1f);
 
-            spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
+            spawnedObject = authority.PrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
@@ -156,11 +165,11 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(prefabPosition == spawnedObject.transform.position);
             Assert.True(prefabRotation == spawnedObject.transform.rotation);
 
-            networkPrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
-            networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
+            authority.PrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
+            authority.PrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             //Register via GlobalObjectIdHash
-            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefabInstanceHandler);
+            gameObjectRegistered = authority.PrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefabInstanceHandler);
 
             //Test result of registering via GlobalObjectIdHash reference
             Assert.True(gameObjectRegistered);
@@ -169,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
             prefabPosition = new Vector3(6.0f, 4.0f, 1.0f);
             prefabRotation = new Quaternion(3f, 2f, 4f, 1f);
 
-            spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
+            spawnedObject = authority.PrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
@@ -181,59 +190,49 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(prefabPosition == spawnedObject.transform.position);
             Assert.True(prefabRotation == spawnedObject.transform.rotation);
 
-            networkPrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
-            networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
+            authority.PrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
+            authority.PrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             // Register a handler that throws an exception
             var networkPrefabExceptionThrower = new NetworkPrefabExceptionThrower();
-            gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject, networkPrefabExceptionThrower);
+            gameObjectRegistered = authority.PrefabHandler.AddHandler(baseObject, networkPrefabExceptionThrower);
             //Test result of registering exception handler
             Assert.True(gameObjectRegistered);
 
             LogAssert.Expect(LogType.Exception, "Exception: exception while instantiating");
-            spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
+            spawnedObject = authority.PrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             // No object should have been spawned, but test should have continued
             Assert.Null(spawnedObject);
 
-            networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
+            authority.PrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
             Assert.False(networkPrefabInstanceHandler.StillHasInstances());
+
+            UnityEngine.Object.Destroy(prefabHandlerObject);
         }
 
-        [SetUp]
-        public void Setup()
+        protected override IEnumerator OnTearDown()
         {
-            //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _, NetworkManagerHelper.NetworkManagerOperatingMode.None);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //Stop, shutdown, and destroy
-            NetworkManagerHelper.ShutdownNetworkManager();
-            var networkObjects = FindObjects.ByType<NetworkObject>();
-            var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
-            foreach (var networkObject in networkObjectsList)
-            {
-                UnityEngine.Object.DestroyImmediate(networkObject);
-            }
+            m_CanStart = false;
+            return base.OnTearDown();
         }
     }
 
     /// <summary>
     /// The Prefab instance handler to use for this test
     /// </summary>
-    internal class NetworkPrefabInstanceHandler : INetworkPrefabInstanceHandler
+    internal class NetworkPrefabInstanceHandler : MonoBehaviour, INetworkPrefabInstanceHandler
     {
         private NetworkObject m_NetworkObject;
 
         private List<NetworkObject> m_Instances;
 
+        private NetworkManager m_NetworkManager;
+
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
-            var networkObjectInstance = UnityEngine.Object.Instantiate(m_NetworkObject.gameObject).GetComponent<NetworkObject>();
+            var networkObjectInstance = Instantiate(m_NetworkObject.gameObject).GetComponent<NetworkObject>();
             networkObjectInstance.transform.SetPositionAndRotation(position, rotation);
             m_Instances.Add(networkObjectInstance);
             return networkObjectInstance;
@@ -241,28 +240,40 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Destroy(NetworkObject networkObject)
         {
-            var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
-            Assert.True(instancesContainsNetworkObject);
-            m_Instances.Remove(networkObject);
-            UnityEngine.Object.Destroy(networkObject.gameObject);
+            if (m_Instances == null || m_Instances.Count > 0)
+            {
+                var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
+                Assert.True(instancesContainsNetworkObject);
+                m_Instances.Remove(networkObject);
+                Destroy(networkObject.gameObject);
+            }
         }
 
         public bool StillHasInstances()
         {
-            return (m_Instances.Count > 0);
+            return m_Instances.Count > 0;
         }
 
-        public NetworkPrefabInstanceHandler(NetworkObject networkObject)
+        private void OnDestroy()
         {
+            m_NetworkManager?.PrefabHandler.RemoveHandler(m_NetworkObject);
+            m_Instances.Clear();
+            m_Instances = null;
+        }
+
+        public void Initialize(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            m_NetworkManager = networkManager;
             m_NetworkObject = networkObject;
             m_Instances = new List<NetworkObject>();
+            networkManager.PrefabHandler.AddHandler(networkObject, this);
         }
     }
 
     /// <summary>
     /// Causes an exception during client connection
     /// </summary>
-    internal class NetworkPrefabExceptionThrower : INetworkPrefabInstanceHandler
+    internal class NetworkPrefabExceptionThrower : MonoBehaviour, INetworkPrefabInstanceHandler
     {
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
@@ -271,7 +282,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Destroy(NetworkObject networkObject)
         {
-            UnityEngine.Object.Destroy(networkObject.gameObject);
+            Destroy(networkObject.gameObject);
         }
     }
 }

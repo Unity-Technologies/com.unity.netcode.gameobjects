@@ -251,9 +251,17 @@ namespace Unity.Netcode.RuntimeTests
             m_EnsureLengthSafety = serialization == Serialization.EnsureLengthSafety;
         }
 
+        private bool m_CanStart = false;
+
         protected override bool CanStartServerAndClients()
         {
-            return false;
+            return m_CanStart;
+        }
+
+        protected override void OnInlineSetup()
+        {
+            m_CanStart = false;
+            base.OnInlineSetup();
         }
 
         protected override void OnOneTimeSetup()
@@ -344,21 +352,30 @@ namespace Unity.Netcode.RuntimeTests
         [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
         public void AllNetworkVariableTypes([Values] HostOrServer useHost)
         {
-            // Create, instantiate, and host
-            // This would normally go in Setup, but since every other test but this one
-            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
-            //  for now we put this within this one test until we migrate it to MIH
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost == HostOrServer.Host ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
+            var prefabToSpawn = CreateNetworkObjectPrefab("NetVarTest");
+            prefabToSpawn.AddComponent<NetworkVariableTestComponent>();
 
-            Assert.IsTrue(server.IsHost == (useHost == HostOrServer.Host), $"{nameof(useHost)} does not match the server.IsHost value!");
+            m_CanStart = true;
+            StartServerAndClientsWithTimeTravel();
+            var authority = GetAuthorityNetworkManager();
 
-            Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
+            // Shutdown the other clients
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager == authority)
+                {
+                    continue;
+                }
+                StopOneClientWithTimeTravel(networkManager);
+            }
 
-            var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);
+            var instance = SpawnObject(prefabToSpawn, authority);
+            var networkVariableTestComponent = instance.GetComponent<NetworkVariableTestComponent>();
 
-            NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
+            Assert.IsTrue(networkVariableTestComponent.IsSpawned, $"Failed to spawn {instance.name}!");
 
             // Start Testing
+            networkVariableTestComponent.InitializeTest();
             networkVariableTestComponent.EnableTesting = true;
 
             var success = WaitForConditionOrTimeOutWithTimeTravel(() => true == networkVariableTestComponent.IsTestComplete());
@@ -370,13 +387,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(networkVariableTestComponent.DidAllValuesChange());
             networkVariableTestComponent.AssertAllValuesAreCorrect();
 
-            // Disable this once we are done.
-            networkVariableTestComponent.gameObject.SetActive(false);
-
-            // This would normally go in Teardown, but since every other test but this one
-            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
-            //  for now we put this within this one test until we migrate it to MIH
-            NetworkManagerHelper.ShutdownNetworkManager();
+            // Stop the authority NetworkManager instance
+            StopOneClientWithTimeTravel(authority);
         }
 
         [Test]
@@ -1789,7 +1801,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public unsafe T RandGenBytes<T>(System.Random rand) where T : unmanaged
         {
-            var t = new T();
+            var t = default(T);
             T* tPtr = &t;
             var s = new Span<byte>(tPtr, sizeof(T));
             rand.NextBytes(s);
