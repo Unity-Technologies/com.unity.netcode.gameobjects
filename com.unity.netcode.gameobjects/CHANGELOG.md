@@ -13,22 +13,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often.
+
 - All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
   - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
   - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
   - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
   - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
 
-
-
 ### Deprecated
-
 
 ### Removed
 
-
 ### Fixed
 
+- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them.
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
