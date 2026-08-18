@@ -519,7 +519,7 @@ namespace Unity.Netcode.Transports.UTP
                 sendQueueCapacity: m_MaxPacketQueueSize,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
                 heartbeatTimeoutMS: m_HeartbeatTimeoutMS);
-            
+
             // Disable PMTU discovery if using DA, leave it at its default otherwise.
             if (OnCurrentTopology() == NetworkTopologyTypes.DistributedAuthority)
             {
