@@ -31,10 +31,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [2.13.2] - 2026-08-16
 
-
-
 ### Fixed
 
+- Issue where in a distributed authority session changing a NetworkVariable prior to changing ownership in the same call-stack would result in the NetworkVariable not being synchronized. (#4107)
+- Resolved GC allocations in some hot paths. (#4119)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
