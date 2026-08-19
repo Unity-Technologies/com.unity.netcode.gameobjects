@@ -29,8 +29,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#TBD)
-- Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#TBD)
+- Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#4132)
+- Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#4132)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
