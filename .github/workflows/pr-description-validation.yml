@@ -34,7 +34,7 @@ jobs:
             // This should be automations where we don't care that much about the description format
             const skipUserPatterns = [
               /^unity-renovate/,
-              /(^|-)svc(-|$)/
+              /svc/
             ];
 
             // If PR author matches the skip list, exit early
