@@ -98,6 +98,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149597", "Unexpected owner write-permission error logged on CoreCLR")]
         public IEnumerator OwnerPermissionTest()
         {
             // create 3 objects
