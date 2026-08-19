@@ -1,6 +1,19 @@
 # https://internaldocs.unity.com/yamato_continuous_integration/usage/templating/
+# The list below contains an easily extendable list of projects to build and test against our latest package changes
+# The parameters specify
+#   - GithubRepo --> project repo location to clone from.
+#   - defaultBranch --> default sample branch to use (you can modify it via job variable but that should suggest what's the default repo branch). Remember that package is being used from branch that you trigger the job on.
+#   - manifestPath --> path to manifest.json file in the sample repo so we can replace package entry.
+#   - projectPath --> path to the project root folder. Depends on projects sometimes it's the root of the repo, sometimes it's a subfolder.
+#   - localPackageName --> name of the package we want to replace in the manifest.json (TODO: it should be a list to support multiple packages in future)
+#   - localPackagePath --> path to the local package inside our repo which we want to use to replace the package entry in manifest.json
+#   - remove --> (optional) relative folder path to remove from the cloned repo root (e.g., "Packages/"). This prevents Unity from using local packages that should come from registry instead. This is the case only for DOTS related projects
+#   - minUnityVersion --> minimal Unity version that the samples supports. Used as a suggestion when triggering the build as to which Unity version to use.
 
-NetcodeProjects:
+# Constants
+ClonedProjectRoot: C:/ClonedProject
+
+BuildProjects:
     # Note that we are using internal Unity repo. This means that we may test with newest changes that are not yet released to our users (there are also public versions)
     # The parameters specify repo location, default branch to use (since you can modify it via job variable), path to manifest.json file so we can replace package entry and path to the project root folder since it differs between projects
     # Note that for BossRoom 'main' branch supports NGOv1.X and 'develop' branch supports NGOv2.X
@@ -10,13 +23,38 @@ NetcodeProjects:
         defaultBranch: ngo-playtest-update
         manifestPath: Packages/manifest.json
         projectPath: '.'
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.0.52f1
     Asteroids:
         GithubRepo: "https://github.cds.internal.unity3d.com/unity/Asteroids-CMB-NGO-Sample.git"
         defaultBranch: main
         manifestPath: Packages/manifest.json
         projectPath: '.'
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.2.9f1
     SocialHub:
         GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize.git"
         defaultBranch: main
         manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
         projectPath: 'Basic/DistributedAuthoritySocialHub'
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.0.24f1
+    NGOtemplate:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/com.unity.template.multiplayer.ngo.git"
+        defaultBranch: main-unity-6
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.0.33f1
+    StarterKits:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/StarterKits-GameplayNGO.git"
+        defaultBranch: main
+        manifestPath: StarterKits/Packages/manifest.json
+        projectPath: StarterKits/
+        localPackageName: com.unity.netcode.gameobjects
+        localPackagePath: com.unity.netcode.gameobjects/
+        minUnityVersion: 6000.3.2f1

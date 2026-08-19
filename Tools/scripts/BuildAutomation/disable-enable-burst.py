@@ -1,120 +1,95 @@
-﻿# An example usage would be "- python Tools/CI/Netcode/BuildAutomations/disable-enable-burst.py --project-path {{ project.path }} --platform WebGL"
-# This file aims to modify BurstAotSettings file which should be present under ProjectSettings folder.
-# Note that this requires Burst package to be installed as well as you need to specify the platform for which you are building since there are different settings for each. (this is taken from environment variable)
-# This script is not overriding existing settings file but completely replacing it
+﻿"""
+Script to enable or disable Burst compilation for Unity projects.
+Modifies BurstAotSettings files located under the ProjectSettings folder.
+
+Note:
+- Burst package must be installed.
+- Platform is specified via PLATFORM_WIN64_MAC_ANDROID env var.
+- The script replaces the settings file entirely.
+"""
 
 import argparse
 import json
 import os
 
-# Function that parses arguments of the script
-def parse_args():
-    global args
-    parser = argparse.ArgumentParser(description="Enable or disable Burst compilation and specify Unity project details.")
+PLATFORM_MAP = {
+    'win64': 'StandaloneWindows',
+    'mac': 'StandaloneOSX',
+    'android': 'Android'
+}
 
-    # Add the mutually exclusive group for --disable-burst and --enable-burst
+DEFAULT_BURST_CONFIG = {
+    'Version': 4,
+    'EnableBurstCompilation': True,
+    'EnableOptimisations': True,
+    'EnableSafetyChecks': False,
+    'EnableDebugInAllBuilds': False,
+    'CpuMinTargetX32': 0,
+    'CpuMaxTargetX32': 0,
+    'CpuMinTargetX64': 0,
+    'CpuMaxTargetX64': 0,
+    'CpuTargetsX32': 6,
+    'CpuTargetsX64': 72,
+    'OptimizeFor': 0
+}
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Enable or disable Burst compilation")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--disable-burst', action='store_true', help='Disable Burst compilation.')
     group.add_argument('--enable-burst', action='store_true', help='Enable Burst compilation.')
+    parser.add_argument('--project-path', required=True, help='Project location')
+    return parser.parse_args()
 
-    # Add additional arguments
-    parser.add_argument('--project-path', required=True, help='Specify the location of the Unity project.')
-
-    args = parser.parse_args()
-
-
-# This function creates a new burst settings file with default values. Notice that this should almost always not be used since assumption is that in our case we have projects with Burst preinstalled
-# For the "default" values I used values from NetcodeSamples project in DOTS-monorepo
-def create_config(settings_path):
-    config_name = os.path.join(settings_path, 'BurstAotSettings_{}.json'.format(resolve_target()))
-    monobehaviour = {
-        'Version': 4,
-        'EnableBurstCompilation': True,
-        'EnableOptimisations': True,
-        'EnableSafetyChecks': False,
-        'EnableDebugInAllBuilds': False,
-        'CpuMinTargetX32': 0,
-        'CpuMaxTargetX32': 0,
-        'CpuMinTargetX64': 0,
-        'CpuMaxTargetX64': 0,
-        'CpuTargetsX32': 6,
-        'CpuTargetsX64': 72,
-        'OptimizeFor': 0
-    }
-
-    data = {'MonoBehaviour': monobehaviour}
-    with open(config_name, 'w', encoding='UTF-8', newline='\n') as f:
-        json.dump(data, f)
-    return config_name
-
-
-# Burst has specific files for each platform, so we need to resolve the target platform to get the correct settings file.
-# Note that this jobs uses environment variables to pass parameters to the script.
 def resolve_target():
-    # Get the platform value from the environment variable
-    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID').lower()
+    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID', '').lower()
+    target = PLATFORM_MAP.get(platform_key)
+    if not target:
+        raise ValueError(f"Unsupported platform: {platform_key}. Supported: {list(PLATFORM_MAP.keys())}")
+    return target
 
-    resolved_target = platform_key
-    if 'win64' == platform_key:
-        resolved_target = 'StandaloneWindows'
-    elif 'mac' == platform_key:
-        resolved_target = 'StandaloneOSX'
-    elif 'android' == platform_key:
-        resolved_target = 'Android'
-    else:
-        raise ValueError("Unsupported platform: {}".format(platform) + "Check if you are passing correct argument for one of the supported platforms: StandaloneWindows or StandaloneLinux")
+def create_config(settings_path, target):
+    config_path = os.path.join(settings_path, f"BurstAotSettings_{target}.json")
+    with open(config_path, 'w', encoding='UTF-8', newline='\n') as f:
+        json.dump({'MonoBehaviour': DEFAULT_BURST_CONFIG}, f)
+    return config_path
 
-    return resolved_target
+def get_or_create_burst_config(project_path):
+    settings_path = os.path.join(project_path, 'ProjectSettings')
+    os.makedirs(settings_path, exist_ok=True)
 
+    target = resolve_target()
+    prefix = f"BurstAotSettings_{target}"
+    configs = [os.path.join(settings_path, f) for f in os.listdir(settings_path)
+               if f.startswith(prefix) and f.endswith('.json')]
 
-# This function either returns existing burst settings or creates new if a file was not found
-def get_or_create_burst_AOT_config():
-    settings_path = os.path.join(args.project_path, 'ProjectSettings')
-    if not os.path.isdir(settings_path):
-        os.mkdir(settings_path)
-    config_names = [os.path.join(settings_path, filename) for filename in os.listdir(settings_path) if filename.startswith("BurstAotSettings_{}".format(resolve_target()))]
-    if not config_names:
-        return [create_config(settings_path)]
-    return config_names
+    return configs if configs else [create_config(settings_path, target)]
 
-
-# Function that sets the AOT status in the burst settings file (essentially enables or disables burst compilation)
-def set_burst_AOT(config_file, status):
-    config = None
-    with open(config_file, 'r') as f:
+def set_burst_status(config_file, enabled):
+    with open(config_file, 'r', encoding='utf-8') as f:
         config = json.load(f)
 
-    assert config is not None, 'AOT settings not found; did the burst-enabled build finish successfully?'
+    if not config or 'MonoBehaviour' not in config:
+        raise AssertionError('AOT settings not found')
 
-    config['MonoBehaviour']['EnableBurstCompilation'] = status
+    config['MonoBehaviour']['EnableBurstCompilation'] = enabled
     with open(config_file, 'w', encoding='UTF-8', newline='\n') as f:
-        json.dump(config, f)
-
+        json.dump(config, f, indent=2)
 
 def main():
-    parse_args()
-    config_names = get_or_create_burst_AOT_config()
+    args = parse_args()
+    configs = get_or_create_burst_config(args.project_path)
+    platform = os.environ.get('PLATFORM_WIN64_MAC_ANDROID', 'unknown').lower()
 
-    platform_key = os.environ.get('PLATFORM_WIN64_MAC_ANDROID').lower()
     print(f"Burst compilation script: Unity project path is {args.project_path}")
-    print(f"Burst compilation script: Target platform is {platform_key}")
+    print(f"Burst compilation script: Target platform is {platform}")
 
-    if args.disable_burst:
-        print('BURST COMPILATION: DISABLED')
+    status = args.enable_burst
+    status_text = "ENABLED" if status else "DISABLED"
+    print(f'BURST COMPILATION: {status_text}')
 
-        for config_name in config_names:
-            set_burst_AOT(config_name, False)
-
-    elif args.enable_burst:
-        print('BURST COMPILATION: ENABLED')
-
-        for config_name in config_names:
-            set_burst_AOT(config_name, True)
-
-    else:
-        sys.exit('BURST COMPILATION: unexpected value: {}'.format(args.enable_burst))
-
-
+    for config_file in configs:
+        set_burst_status(config_file, status)
 
 if __name__ == '__main__':
     main()
