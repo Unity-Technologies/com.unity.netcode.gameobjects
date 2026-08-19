@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where non-authority `NetworkTransform` instances derived their interpolation time from the local clock instead of the server clock that state updates are stamped on, which starved the interpolator and reduced interpolation to snapping between state updates. (#TBD)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned a time derived from the local clock, which did not match the time the interpolators actually use. (#TBD)
 
 ### Security
 

@@ -4230,14 +4230,27 @@ namespace Unity.Netcode.Components
         // Non-Authority
         private void UpdateInterpolation()
         {
-            // Use the local time because:
-            // Client-Server:
-            // Local time is server time on a host or server.
-            // Local time on clients takes latency into consideration.
-            // Distributed authority:
-            // Local time is used by the authority.
-            // Local time on non-authority takes latency into consid]eration.
-            var timeSystem = m_CachedNetworkManager.LocalTime;
+            // Use the server time, because that is the clock the measurements being interpolated between are
+            // stamped on: a state's SentTime is derived from its NetworkTick, which is a server tick.
+            //
+            // Deriving the render time from LocalTime instead mixes two clocks. LocalTime leads ServerTime by
+            // roughly the tick latency, so subtracting the tick latency from it lands the render time back at
+            // (approximately) ServerTime rather than behind it. "Approximately" is the problem: the lead is
+            // fractional while the subtraction is a whole number of ticks, and a state's SentTime is floored to
+            // a tick boundary on top of that. The render time therefore ends up at or slightly ahead of the
+            // newest state that can exist, leaving the interpolator with nothing to interpolate towards. A
+            // measured session had the render time ahead of ServerTime on 100% of frames, with the interpolator
+            // never holding more than one measurement.
+            //
+            // Measuring from ServerTime instead makes the offset the whole tick latency rather than whatever is
+            // left of it, which is self correcting: as the round trip time grows, NetworkTimeSystem.TickLatency
+            // grows and the render time moves further back with it.
+            //
+            // Note this is a no-op on a host or server, where LocalTime and ServerTime are the same.
+            // TODO-JIRA-TICKET:
+            // Confirm the distributed authority case. Authority instances interpolate nothing, so this should
+            // not reach them, but ServerTime's meaning under a CMB service session should be verified.
+            var timeSystem = m_CachedNetworkManager.ServerTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
@@ -4701,7 +4714,7 @@ namespace Unity.Netcode.Components
         {
             if (networkManager.IsListening)
             {
-                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
+                return (float)networkManager.ServerTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
             }
             return 0f;
         }
