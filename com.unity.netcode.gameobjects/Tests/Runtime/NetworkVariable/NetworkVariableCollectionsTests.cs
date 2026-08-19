@@ -22,6 +22,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+    [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149591", "NGO multi-instance test sessions fail to start/connect or time out on CoreCLR")]
     internal class NetworkVariableCollectionsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
