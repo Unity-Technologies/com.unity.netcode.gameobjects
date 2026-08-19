@@ -209,12 +209,23 @@ namespace Unity.Netcode
         internal bool LerpSmoothEnabled;
 
         /// <summary>
-        /// Determines how much smoothing will be applied to the 2nd lerp when using the <see cref="Update(float, double, double)"/> (i.e. lerping and not smooth dampening).
+        /// The frame rate that <see cref="MaximumInterpolationTime"/> is relative to when lerp smoothing.
+        /// </summary>
+        private const float k_LerpSmoothReferenceFrameRate = 60.0f;
+
+        /// <summary>
+        /// Keeps a <see cref="MaximumInterpolationTime"/> of 1.0f from retaining the entire delta each frame,
+        /// which would stop the value from ever advancing towards the target.
+        /// </summary>
+        private const float k_MaximumLerpSmoothRetention = 0.99f;
+
+        /// <summary>
+        /// Determines how much smoothing will be applied to the 2nd lerp.
         /// </summary>
         /// <remarks>
-        /// There's two factors affecting interpolation: <br />
-        /// - Buffering: Which can be adjusted in set in the <see cref="NetworkManager.NetworkTimeSystem"/>.<br />
-        /// - Interpolation time: The divisor applied to delta time where the quotient is used as the lerp time.
+        /// Higher values are smoother, lower values are more precise. The amount of smoothing applied is
+        /// frame rate independent.<br />
+        /// Buffering also affects interpolation and can be adjusted via <see cref="NetworkManager.NetworkTimeSystem"/>.
         /// </remarks>
         [Range(0.016f, 1.0f)]
         public float MaximumInterpolationTime = 0.1f;
@@ -421,6 +432,22 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Calculates the frame rate independent lerp smoothing "t" for the current frame.
+        /// </summary>
+        /// <remarks>
+        /// Raising the retained portion to the number of reference frames elapsed makes the smoothing rate
+        /// a function of elapsed time rather than of how often this is called.
+        /// </remarks>
+        /// <param name="deltaTime">The last frame time.</param>
+        /// <returns>The lerp smoothing time to apply for this frame.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetLerpSmoothTime(float deltaTime)
+        {
+            var retained = Mathf.Clamp(MaximumInterpolationTime, 0.0f, k_MaximumLerpSmoothRetention);
+            return 1.0f - Mathf.Pow(retained, deltaTime * k_LerpSmoothReferenceFrameRate);
+        }
+
+        /// <summary>
         /// Interpolation Update to use when smooth dampening is enabled on a <see cref="Components.NetworkTransform"/>.
         /// </summary>
         /// <remarks>
@@ -459,7 +486,7 @@ namespace Unity.Netcode
                     if (LerpSmoothEnabled)
                     {
                         // Apply the smooth lerp to the target to help smooth the final value.
-                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.NextValue, Mathf.Clamp(1.0f - MaximumInterpolationTime, 0.0f, 1.0f));
+                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.NextValue, GetLerpSmoothTime(deltaTime));
                     }
                     else
                     {
