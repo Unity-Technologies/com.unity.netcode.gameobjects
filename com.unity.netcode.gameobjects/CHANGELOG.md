@@ -24,8 +24,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where non-authority `NetworkTransform` instances derived their interpolation time from the local clock instead of the server clock that state updates are stamped on, which starved the interpolator and reduced interpolation to snapping between state updates. (#TBD)
-- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned a time derived from the local clock, which did not match the time the interpolators actually use. (#TBD)
+- Issue where `NetworkTransform` interpolated towards a point in time taken from the local clock rather than the server clock that state updates are stamped on, which starved the interpolator on clients and reduced interpolation to snapping between state updates. (#4133)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned a time based on the local clock instead of the server clock used for interpolation. (#4133)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
