@@ -47,6 +47,11 @@
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
+        },
+        {
+            "name": "com.unity.test-framework",
+            "expression": "1.7.0",
+            "define": "UNITY_TEST_FRAMEWORK_1_7_OR_NEWER"
         }
     ],
     "noEngineReferences": false
