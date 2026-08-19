@@ -27,7 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them.
+- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4129)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
