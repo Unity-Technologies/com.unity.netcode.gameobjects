@@ -94,6 +94,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149591", "NGO multi-instance test sessions fail to start/connect or time out on CoreCLR")]
         public IEnumerator NetworkObjectDeserializationFailure()
         {
             m_CurrentLogLevel = LogLevel.Nothing;
@@ -277,6 +278,7 @@ namespace Unity.Netcode.RuntimeTests
         /// will still be initialized properly
         /// </summary>
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149591", "NGO multi-instance test sessions fail to start/connect or time out on CoreCLR")]
         public IEnumerator NetworkBehaviourSynchronization()
         {
             var authority = GetAuthorityNetworkManager();
@@ -319,6 +321,7 @@ namespace Unity.Netcode.RuntimeTests
         /// A basic validation for the NetworkBehaviour.OnSynchronize method
         /// </summary>
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149591", "NGO multi-instance test sessions fail to start/connect or time out on CoreCLR")]
         public IEnumerator NetworkBehaviourOnSynchronize()
         {
             var authority = GetAuthorityNetworkManager();
