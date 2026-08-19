@@ -128,10 +128,8 @@ pr_code_changes_checks:
 
 
 # Unified (NGO + N4E) validation, on demand.
-# The unified tests run automatically as part of pr_code_changes_checks and develop_nightly (same as
-# the CMB service tests do). This job only exists so they can also be kicked off by commenting
-# "/ci unified", for PRs that pr_code_changes_checks does not cover (drafts, doc-only changes, or
-# branches targeting something other than develop / develop-3.x.x / release).
+# This job allows the Unified tests to be kicked off by commenting "/ci unified". 
+# This is useful for PRs where pr_code_changes_checks doesn't trigger.
 unified_pr_checks:
   name: Unified (NGO + N4E) checks [on demand]
   dependencies:
