@@ -19,26 +19,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
   - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
 
-
-
 ### Deprecated
-
 
 ### Removed
 
-
 ### Fixed
 
+- Issue where non-authority `NetworkTransform` instances derived their interpolation time from the local clock instead of the server clock that state updates are stamped on, which starved the interpolator and reduced interpolation to snapping between state updates. (#TBD)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned a time derived from the local clock, which did not match the time the interpolators actually use. (#TBD)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
 
-
 ### Security
 
-
 ### Obsolete
-
 
 ## [2.13.1] - 2026-07-19
 
