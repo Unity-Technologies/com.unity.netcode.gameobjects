@@ -51,7 +51,7 @@ def main():
         # Extract the version, providing a default if not found
         local_package_version = local_package_data.get('version', 'N/A')
 
-        print(f"--> Verified local '{args.package-name}' version is: {local_package_version}")
+        print(f"--> Verified local '{args.package_name}' version is: {local_package_version}")
 
     except FileNotFoundError:
         print(f"Warning: Could not find package.json at '{local_package_json_path}'")
