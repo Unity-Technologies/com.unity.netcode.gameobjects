@@ -13,19 +13,10 @@ namespace Unity.Netcode.RuntimeTests
     /// clock that the state updates it is interpolating between are stamped on.
     /// </summary>
     /// <remarks>
-    /// A <see cref="NetworkTransform"/> state's SentTime is derived from its NetworkTick, which is a server
-    /// tick, so the render time has to be measured from ServerTime. Measuring it from LocalTime mixes two
-    /// clocks: LocalTime leads ServerTime, so subtracting the tick latency from LocalTime lands the render time
-    /// back at approximately ServerTime rather than a whole tick latency behind it. The interpolator is then
-    /// asked to render a point in time at (or ahead of) the newest state that can possibly exist, so it has
-    /// nothing left to interpolate towards.
-    ///
-    /// What this test measures is how far behind ServerTime the state currently being interpolated towards was
-    /// sent. Because the target is selected against the render time, this has to be at least the tick latency:
-    /// the render time is ServerTime minus the tick latency, and only states sent at or before the render time
-    /// are eligible. Deriving the render time from LocalTime instead eats into that margin by however far the
-    /// two clocks are apart, and can push the target past ServerTime entirely (a negative value below, meaning
-    /// the interpolator is chasing a state that the server clock says has not happened yet).
+    /// Measures how far behind ServerTime the state being interpolated towards was sent. The render time is
+    /// ServerTime minus the tick latency and only states sent at or before it are eligible, so that measurement
+    /// can never be less than the tick latency. Deriving the render time from LocalTime eats into that margin by
+    /// however far the two clocks are apart, and can push the target past ServerTime entirely.
     /// </remarks>
     [TestFixture(HostOrServer.Host, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, NetworkTransform.InterpolationTypes.SmoothDampening)]
@@ -33,12 +24,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-        // How far LocalTime is pushed ahead of ServerTime, in ticks. An in-process integration test has
-        // effectively no round trip time and the separation between the two clocks is
-        // (half RTT + LocalBufferSec + ServerBufferSec), so without widening the local buffer the two clocks
-        // sit close enough together that which one is used barely shows. This is deliberately large enough to
-        // exceed NetworkTimeSystem's hard reset threshold (0.2s) so the offset snaps rather than converging at
-        // the default adjustment ratio of 0.01s per second, which would take over ten seconds.
+        // How far LocalTime is pushed ahead of ServerTime, in ticks. An in-process test has no round trip time
+        // to separate the two clocks, and this is large enough to exceed NetworkTimeSystem's hard reset
+        // threshold so the offset snaps instead of converging at its default adjustment ratio.
         private const int k_LocalBufferTicks = 12;
 
         // The separation the clocks must actually reach before any measurement is taken.
@@ -47,11 +35,10 @@ namespace Unity.Netcode.RuntimeTests
         // Ticks of authority motion after the clocks have separated, so the interpolator reaches steady state.
         private const int k_WarmUpTicks = 20;
 
-        // The number of rendered frames sampled once the warm up has completed.
         private const int k_SampledFrames = 90;
 
-        // The distance the authority moves each tick. Large enough that every tick produces a state update
-        // rather than being filtered out by the position threshold.
+        // Far enough each tick that every tick produces a state update rather than being filtered out by the
+        // position threshold.
         private const float k_DistancePerTick = 1.37f;
 
         private readonly NetworkTransform.InterpolationTypes m_InterpolationType;
@@ -223,9 +210,7 @@ namespace Unity.Netcode.RuntimeTests
                 var meanBuffered = totalBuffered[instance] / (float)samples[instance];
                 var tickLatency = networkManager.NetworkTimeSystem.TickLatency;
 
-                // Only states sent at or before the render time are eligible to be interpolated towards, and the
-                // render time is the server clock minus the tick latency, so the target can never be newer than
-                // that. Anything less means the render time was taken from a clock that runs ahead of the one
+                // Anything less than the tick latency means the render time came from a clock that leads the one
                 // the states are stamped on.
                 Assert.GreaterOrEqual(meanTargetLagTicks, tickLatency,
                     $"[{m_InterpolationType}] {instance.name} was interpolating towards a state sent " +

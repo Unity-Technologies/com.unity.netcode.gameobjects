@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-
 ### Changed
 
 - All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants

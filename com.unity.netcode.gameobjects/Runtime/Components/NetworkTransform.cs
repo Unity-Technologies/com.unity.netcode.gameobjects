@@ -4259,26 +4259,12 @@ namespace Unity.Netcode.Components
         // Non-Authority
         private void UpdateInterpolation()
         {
-            // Use the server time, because that is the clock the measurements being interpolated between are
-            // stamped on: a state's SentTime is derived from its NetworkTick, which is a server tick.
-            //
-            // Deriving the render time from LocalTime instead mixes two clocks. LocalTime leads ServerTime by
-            // roughly the tick latency, so subtracting the tick latency from it lands the render time back at
-            // (approximately) ServerTime rather than behind it. "Approximately" is the problem: the lead is
-            // fractional while the subtraction is a whole number of ticks, and a state's SentTime is floored to
-            // a tick boundary on top of that. The render time therefore ends up at or slightly ahead of the
-            // newest state that can exist, leaving the interpolator with nothing to interpolate towards. A
-            // measured session had the render time ahead of ServerTime on 100% of frames, with the interpolator
-            // never holding more than one measurement.
-            //
-            // Measuring from ServerTime instead makes the offset the whole tick latency rather than whatever is
-            // left of it, which is self correcting: as the round trip time grows, NetworkTimeSystem.TickLatency
-            // grows and the render time moves further back with it.
-            //
-            // Note this is a no-op on a host or server, where LocalTime and ServerTime are the same.
-            // TODO-JIRA-TICKET:
-            // Confirm the distributed authority case. Authority instances interpolate nothing, so this should
-            // not reach them, but ServerTime's meaning under a CMB service session should be verified.
+            // Use the server time, since that is the clock the states being interpolated between are stamped on
+            // (a state's SentTime is derived from its NetworkTick). Deriving the render time from LocalTime
+            // subtracts the tick latency from a clock that already leads ServerTime by roughly that much, which
+            // leaves the render time at or ahead of the newest state that can exist and starves the interpolator.
+            // Measuring from ServerTime is also self correcting, as the tick latency grows with the round trip
+            // time. This is a no-op on a host or server, where both clocks are the same.
             var timeSystem = m_CachedNetworkManager.ServerTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
