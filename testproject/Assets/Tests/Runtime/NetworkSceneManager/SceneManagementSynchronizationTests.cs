@@ -57,7 +57,7 @@ namespace TestProject.RuntimeTests
                 {
                     predicate(expectedEvent);
                 }
-                catch(Exception failure)
+                catch (Exception failure)
                 {
                     Debug.LogException(failure);
                 }
