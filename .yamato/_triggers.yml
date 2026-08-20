@@ -90,11 +90,6 @@ pr_code_changes_checks:
     # Note that our daily tests will anyway run both test configurations in "minimal supported" and "trunk" configurations
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
-
-    # Run the unified (NGO + N4E) tests. Unlike every other job here this one runs on a pinned Unity
-    # alpha (unified_editors in project.metafile) rather than a supported editor, because it needs an
-    # editor that bundles a com.unity.netcode with the unified API. Expect it to need a pin bump
-    # whenever N4E lands breaking changes in trunk. See .yamato/unified-tests.yml.
     - .yamato/_run-all.yml#run_all_unified_tests
 
     # Run code coverage test (PRs use the pinned "safe" trunk)
