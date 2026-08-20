@@ -242,7 +242,7 @@ namespace TestProject.RuntimeTests
 
         private static void ValidateConnectionEventsAreEqual(ExpectedEvent expectedEvent, ConnectionEventData eventData)
         {
-            Assert.That(expectedEvent.IsSceneEvent, Is.False, $"Received unexpected connection event {eventData.EventType} at index {s_NumEventsProcessed}. Expected scene event: {expectedEvent.SceneEvent.SceneEventType}");
+            Assert.That(expectedEvent.IsSceneEvent, Is.False, $"Received unexpected connection event {eventData.EventType} at index {s_NumEventsProcessed}. Expected scene event: {expectedEvent.ConnectionEvent.EventType}");
             AssertField(expectedEvent.ConnectionEvent.EventType, eventData.EventType, nameof(eventData.EventType), eventData.EventType);
             AssertField(expectedEvent.ConnectionEvent.ClientId, eventData.ClientId, nameof(eventData.ClientId), eventData.EventType);
 
