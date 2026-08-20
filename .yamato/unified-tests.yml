@@ -2,47 +2,17 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job validates NGO running against Netcode for Entities (N4E) through the unified API.
-  # A "hybrid prefab" is an NGO prefab (NetworkObject at the root) that also carries a GhostObject.
-  # When one or more hybrid prefabs are in the NetworkManager's prefab list, NGO hands transform
-  # synchronization to N4E's snapshot system and tunnels its own batched messages over
-  # UnifiedNetcodeTransport (N4E's out-of-band RPC) instead of using a NetworkTransport such as UTP.
-  # UnifiedNetworkTransformTest is the validation test that this path works end to end.
-
-# WHY THIS JOB IS SEPARATE FROM EVERY OTHER JOB------------------------------------------
-  # 1. It needs an editor that bundles a com.unity.netcode with the unified API. That editor
-  #    (unified_editors.default in project.metafile) is not one of the validation_editors, and NGO
-  #    still has to keep building and testing against editors that have no unified API at all.
-  # 2. It needs com.unity.netcode in the testproject so that the UNIFIED_NETCODE define is set
-  #    (see the versionDefines in Unity.Netcode.Runtime.asmdef). The committed
-  #    testproject/Packages/manifest.json deliberately does NOT reference it, so this job swaps in
-  #    testproject/Packages/manifest-unified.json instead.
-  # 3. It is wired into pr_code_changes_checks and develop_nightly the same way the CMB service tests
-  #    are, so it runs automatically on PRs targeting develop / develop-3.x.x / release. Be aware that
-  #    this makes an unsupported alpha editor part of the PR gate: when N4E lands breaking changes in
-  #    trunk this job goes red and the pin has to be bumped to unblock PRs.
-  #    _triggers.yml also has unified_pr_checks, so it can be kicked off with "/ci unified" on PRs
-  #    that pr_code_changes_checks does not cover.
+  # The NGO job that runs unified netcode hybrid prefab based integration tests.
 
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops:
     # 1. For all unified test platforms (currently Ubuntu only, see project.metafile)
     # 2. For all unified editors (currently a single pinned alpha, see project.metafile)
 
-# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
-  # This job runs in Editor context only (no player builds required), like project-tests.yml.
-  # Only playmode is run: every unified test is an integration test and there are no unified EditMode tests.
-  # The run is restricted to unified tests via unified_test_filter so that nothing else is exercised
-  # on the alpha editor. Non-unified tests are covered by the regular jobs on the supported editors.
-  # packages-lock.json is removed because the committed lock was resolved against a much older editor
-  # and its builtin package versions do not exist in the unified editor.
-
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # TODO: the manifest swap means testproject/Packages/manifest-unified.json has to be kept in sync
   #       with manifest.json by hand. Revisit once N4E is a hard dependency of NGO and one manifest
   #       can cover both cases.
-  # TODO: unified_test_filter is a test-name pattern. Replacing it with an NUnit category (for
-  #       example [Category("Unified")]) would be less fragile once more fixtures gain unified variants.
 
 #------------------------------------------------------------------------------------
 
@@ -58,21 +28,28 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
+
+  variables:
+    # When UNIFIED_TESTS is set, only integration tests that opt in via overriding NetcodeIntegrationTest.UseUnifiedTests and returning true will run during this job.
+    # NetcodeIntegrationTest.UseUnifiedTests defaults to returning false (for now) making this an opt-in mode.
+    # Note: If USE_CMB_SERVICE is set along with UNIFIED_TESTS, then UNIFIED_TESTS is ignored until distributed authority is supported.   
+    UNIFIED_TESTS: "true"
+
   commands:
-    # Swap in the manifest that pulls in com.unity.netcode (N4E). This is what causes UNIFIED_NETCODE
-    # to be defined and therefore what makes the unified tests compile at all.
+    # Swap in the manifest that has the unified packages and versions required.
+    # Without the N4E package, UNIFIED_NETCODE is undefined and the unified API excluded.
     - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
-    # The committed lock was resolved against a supported editor, not the unified alpha.
+    # Remove the committed lock as it is configured for 6000.6 which does not contain the unified API required.
     - rm -f {{ project.path }}/Packages/packages-lock.json
 
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor # Installing basic editor for tests execution
-    - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --testfilter="{{ unified_test_filter }}" --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
+    - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
+    - .yamato/_run-all.yml#run_quick_checks
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

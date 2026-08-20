@@ -24,6 +24,8 @@ namespace TestProject.RuntimeTests
         {
             // This does not need to be tested against a CMB Server
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            // Excluding from unified tests. If deemed needed, update test, then  remove.
+            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
         }
 
         [UnitySetUp]

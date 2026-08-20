@@ -215,6 +215,52 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Gets the UNIFIED_TESTS environment variable or returns "false" if it does not exist
+        /// </summary>
+        /// <returns><see cref="string"/></returns>
+        internal static string GetUnifiedTestsEnvironmentVariable()
+        {
+#if UNIFIED_TESTS
+            return "true";
+#else
+            return Environment.GetEnvironmentVariable("UNIFIED_TESTS") ?? "false";
+#endif
+        }
+
+        /// <summary>
+        /// Determines whether this is a unified (NGO + N4E) hybrid prefab test run.
+        /// </summary>
+        /// <remarks>
+        /// A CMB service run always wins: distributed authority is not compatible with hybrid prefab
+        /// spawning, so the two can never be the same run.
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        internal static bool UnifiedTestRun()
+        {
+            if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool useCmbService) ? useCmbService : false)
+            {
+                return false;
+            }
+            return bool.TryParse(GetUnifiedTestsEnvironmentVariable(), out bool isTrue) ? isTrue : false;
+        }
+
+        internal static readonly string IgnoredForUnifiedTestsReason = "[Unified Test Run] Skipping non-hybrid prefab test.";
+        internal static readonly string IgnoredWithoutUnifiedTestsReason = "[Non-Unified Test Run] Skipping hybrid prefab test.";
+        internal static readonly string NotOptedInForUnifiedTestsReason = "[Unified Test Run] Skipping hybrid prefab test that has not opted in via UseUnifiedTests.";
+
+        /// <summary>
+        /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
+        /// test if running a unified (NGO + N4E) hybrid prefab test pass.
+        /// </summary>
+        internal static void IgnoreIfUnifiedTestsEnvironmentVariableSet()
+        {
+            if (UnifiedTestRun())
+            {
+                Assert.Ignore(IgnoredForUnifiedTestsReason);
+            }
+        }
+
         private static readonly string k_TransportHost = GetAddressToBind();
         private static readonly ushort k_TransportPort = GetPortToBind();
 

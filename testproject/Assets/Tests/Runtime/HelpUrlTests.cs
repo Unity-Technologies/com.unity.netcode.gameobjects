@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Unity.Netcode.Runtime;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -21,6 +22,16 @@ namespace TestProject.RuntimeTests
         private static readonly HttpClient k_HttpClient = new();
 
         private bool m_VerboseLogging = false;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+
+            // Excluding from unified tests. If deemed needed, update test, then  remove.
+            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
+        }
 
         [UnityTest]
         public IEnumerator ValidateUrlsAreValid()
