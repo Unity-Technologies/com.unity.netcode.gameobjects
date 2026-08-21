@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
@@ -24,6 +25,7 @@ namespace TestProject.RuntimeTests
 
         private struct ExpectedEvent
         {
+            public bool IsSceneEvent;
             public SceneEvent SceneEvent;
             public ConnectionEventData ConnectionEvent;
         }
@@ -51,13 +53,19 @@ namespace TestProject.RuntimeTests
             if (m_ExpectedEventQueue.Count > 0)
             {
                 var expectedEvent = m_ExpectedEventQueue.Dequeue();
-                predicate(expectedEvent);
+                try
+                {
+                    predicate(expectedEvent);
+                }
+                catch (Exception failure)
+                {
+                    Debug.LogException(failure);
+                }
             }
             else
             {
                 Assert.Fail($"Received unexpected event at index {s_NumEventsProcessed}: {eventType}");
             }
-
             s_NumEventsProcessed++;
         }
 
@@ -100,42 +108,30 @@ namespace TestProject.RuntimeTests
             var expectedClientId = GetNonAuthorityNetworkManager().LocalClientId + 1;
 
             // Setup expected events
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new SceneEvent()
             {
-                SceneEvent = new SceneEvent()
-                {
-                    SceneEventType = SceneEventType.Synchronize,
-                    ClientId = expectedClientId
-                },
+                SceneEventType = SceneEventType.Synchronize,
+                ClientId = expectedClientId
             });
 
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new SceneEvent()
             {
-                SceneEvent = new SceneEvent()
-                {
-                    SceneEventType = SceneEventType.SynchronizeComplete,
-                    ClientId = expectedClientId,
-                },
+                SceneEventType = SceneEventType.SynchronizeComplete,
+                ClientId = expectedClientId,
             });
 
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new ConnectionEventData()
             {
-                ConnectionEvent = new ConnectionEventData()
-                {
-                    EventType = ConnectionEvent.ClientConnected,
-                    ClientId = expectedClientId,
-                }
+                EventType = ConnectionEvent.ClientConnected,
+                ClientId = expectedClientId,
             });
 
             if (m_UseHost)
             {
-                m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+                AddExpectedEvent(new ConnectionEventData()
                 {
-                    ConnectionEvent = new ConnectionEventData()
-                    {
-                        EventType = ConnectionEvent.PeerConnected,
-                        ClientId = expectedClientId,
-                    }
+                    EventType = ConnectionEvent.PeerConnected,
+                    ClientId = expectedClientId,
                 });
             }
 
@@ -158,31 +154,22 @@ namespace TestProject.RuntimeTests
             var expectedPeerClientIds = m_UseHost ? new[] { authorityId, peerClientId } : new[] { peerClientId };
 
             // Setup expected events
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new SceneEvent()
             {
-                SceneEvent = new SceneEvent()
-                {
-                    SceneEventType = SceneEventType.Synchronize,
-                    ClientId = expectedClientId,
-                },
+                SceneEventType = SceneEventType.Synchronize,
+                ClientId = expectedClientId,
             });
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new ConnectionEventData()
             {
-                ConnectionEvent = new ConnectionEventData()
-                {
-                    EventType = ConnectionEvent.ClientConnected,
-                    ClientId = expectedClientId,
-                    PeerClientIds = new NativeArray<ulong>(expectedPeerClientIds.ToArray(), Allocator.Persistent),
-                }
+                EventType = ConnectionEvent.ClientConnected,
+                ClientId = expectedClientId,
+                PeerClientIds = new NativeArray<ulong>(expectedPeerClientIds.ToArray(), Allocator.Persistent),
             });
 
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            AddExpectedEvent(new SceneEvent()
             {
-                SceneEvent = new SceneEvent()
-                {
-                    SceneEventType = SceneEventType.SynchronizeComplete,
-                    ClientId = expectedClientId,
-                },
+                SceneEventType = SceneEventType.SynchronizeComplete,
+                ClientId = expectedClientId,
             });
 
             Assert.Null(m_ManagerToTest, "m_ManagerToTest should be null as we should be testing newly created client");
@@ -203,27 +190,22 @@ namespace TestProject.RuntimeTests
             var nonAuthority = GetNonAuthorityNetworkManager();
             var expectedClientId = nonAuthority.LocalClientId + 1;
             SetManagerToTest(nonAuthority);
+
             // Setup expected events
+            AddExpectedEvent(new ConnectionEventData()
+            {
+                EventType = ConnectionEvent.PeerConnected,
+                ClientId = expectedClientId,
+            });
+
             if (m_UseCmbService)
             {
-                m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+                AddExpectedEvent(new SceneEvent()
                 {
-                    SceneEvent = new SceneEvent()
-                    {
-                        SceneEventType = SceneEventType.SynchronizeComplete,
-                        ClientId = expectedClientId,
-                    },
+                    SceneEventType = SceneEventType.SynchronizeComplete,
+                    ClientId = expectedClientId,
                 });
             }
-
-            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
-            {
-                ConnectionEvent = new ConnectionEventData()
-                {
-                    EventType = ConnectionEvent.PeerConnected,
-                    ClientId = expectedClientId,
-                }
-            });
 
             //////////////////////////////////////////
             // Testing event notifications
@@ -233,16 +215,34 @@ namespace TestProject.RuntimeTests
             Assert.IsEmpty(m_ExpectedEventQueue, "Not all expected callbacks were received");
         }
 
+        private void AddExpectedEvent(SceneEvent expectedEvent)
+        {
+            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            {
+                IsSceneEvent = true,
+                SceneEvent = expectedEvent,
+            });
+        }
+
+        private void AddExpectedEvent(ConnectionEventData expectedEvent)
+        {
+            m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+            {
+                IsSceneEvent = false,
+                ConnectionEvent = expectedEvent,
+            });
+        }
+
         private static void ValidateSceneEventsAreEqual(ExpectedEvent expectedEvent, SceneEvent sceneEvent)
         {
-            Assert.NotNull(expectedEvent.SceneEvent, $"Received unexpected scene event {sceneEvent.SceneEventType} at index {s_NumEventsProcessed}");
+            Assert.That(expectedEvent.IsSceneEvent, Is.True, $"Received unexpected scene event {sceneEvent.SceneEventType} at index {s_NumEventsProcessed}. Expected connection event: {expectedEvent.ConnectionEvent.EventType}");
             AssertField(expectedEvent.SceneEvent.SceneEventType, sceneEvent.SceneEventType, nameof(sceneEvent.SceneEventType), sceneEvent.SceneEventType);
             AssertField(expectedEvent.SceneEvent.ClientId, sceneEvent.ClientId, nameof(sceneEvent.ClientId), sceneEvent.SceneEventType);
         }
 
         private static void ValidateConnectionEventsAreEqual(ExpectedEvent expectedEvent, ConnectionEventData eventData)
         {
-            Assert.NotNull(expectedEvent.ConnectionEvent, $"Received unexpected connection event {eventData.EventType} at index {s_NumEventsProcessed}");
+            Assert.That(expectedEvent.IsSceneEvent, Is.False, $"Received unexpected connection event {eventData.EventType} at index {s_NumEventsProcessed}. Expected scene event: {expectedEvent.ConnectionEvent.EventType}");
             AssertField(expectedEvent.ConnectionEvent.EventType, eventData.EventType, nameof(eventData.EventType), eventData.EventType);
             AssertField(expectedEvent.ConnectionEvent.ClientId, eventData.ClientId, nameof(eventData.ClientId), eventData.EventType);
 
