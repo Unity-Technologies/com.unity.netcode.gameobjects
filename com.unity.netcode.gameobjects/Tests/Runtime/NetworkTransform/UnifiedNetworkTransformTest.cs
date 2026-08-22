@@ -1,5 +1,6 @@
 #if UNIFIED_NETCODE
 using System.Collections;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -52,38 +53,45 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
+        private bool ValidatePosition(StringBuilder errorLog)
+        {
+            var authorityPosition = m_AuthorityInstanceTransform.position;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var instancePosition = client.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].transform.position;
+                if (!Approximately(authorityPosition, instancePosition))
+                {
+                    errorLog.AppendLine($"[Client-{client.LocalClientId}] Clone instance position {GetVector3Values(instancePosition)} " +
+                        $"does not equal the authority's {GetVector3Values(authorityPosition)}");
+                }
+            }
+            return errorLog.Length == 0;
+        }
+
+        private Transform m_AuthorityInstanceTransform;
+
         [UnityTest]
         public IEnumerator BasicMovementTest()
         {
             var authority = GetAuthorityNetworkManager();
             m_Instance = SpawnObject(m_Prefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
-
-            // Wait 5 seconds so we will dump any deferred messages if it failed on clients
-            // when checking to see if it spawned or not on the clients next.
-            // Enable this to debug deferred
-            //yield return new WaitForSeconds(5);
+            m_AuthorityInstanceTransform = m_Instance.transform;
 
             yield return WaitForSpawnedOnAllOrTimeOut(m_Instance);
             AssertOnTimeout($"Failed to spawn {m_Instance.name} on all clients!");
 
             VerboseDebug("All clients spawned instance!");
 
+            yield return WaitForConditionOrTimeOut(ValidatePosition);
+            AssertOnTimeout($"A client failed to synchronize the position on the initial spawn!");
+
             var originalPos = authority.LocalClient.PlayerObject.transform.position;
             var newPos = originalPos + new Vector3(1, 1, 1);
 
             m_Instance.transform.position = newPos;
 
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                Assert.IsTrue(Approximately(originalPos, s_GlobalNetworkObjects[client.LocalClientId][m_Instance.NetworkObjectId].transform.position));
-            }
-
-            yield return new WaitForSeconds(1);
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                Assert.IsTrue(Approximately(newPos, s_GlobalNetworkObjects[client.LocalClientId][m_Instance.NetworkObjectId].transform.position));
-            }
+            yield return WaitForConditionOrTimeOut(ValidatePosition);
+            AssertOnTimeout($"A client failed to synchronize the changed position: {GetVector3Values(newPos)}!");
             VerboseDebug("Test Passed!");
         }
     }
