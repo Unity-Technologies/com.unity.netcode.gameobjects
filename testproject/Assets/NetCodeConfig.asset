@@ -18,7 +18,7 @@ MonoBehaviour:
   ClientServerTickRate:
     SimulationTickRate: 30
     PredictedFixedStepSimulationTickRatio: 1
-    NetworkTickRate: 0
+    NetworkTickRate: 30
     MaxSimulationStepsPerFrame: 1
     MaxSimulationStepBatchSize: 4
     TargetFrameRateMode: 0
@@ -27,8 +27,8 @@ MonoBehaviour:
     m_ClampPartialTicksThreshold: 5
     HandshakeApprovalTimeoutMS: 5000
   ClientTickRate:
-    InterpolationTimeNetTicks: 2
-    InterpolationTimeMS: 0
+    InterpolationTimeNetTicks: 0
+    InterpolationTimeMS: 50
     MaxExtrapolationTimeSimTicks: 20
     ForcedInputLatencyTicks: 0
     MaxPredictAheadTimeMS: 500
@@ -38,18 +38,19 @@ MonoBehaviour:
     NumAdditionalCommandsToSend: 2
     MaxPredictionStepBatchSizeRepeatedTick: 0
     MaxPredictionStepBatchSizeFirstTimeTick: 0
+    AlwaysRollbackAllPredictedGhosts: 0
     PredictionLoopUpdateMode: 0
     InterpolationDelayJitterScale: 1.25
-    InterpolationDelayMaxDeltaTicksFraction: 0.1
+    InterpolationDelayMaxDeltaTicksFraction: 0.15
     InterpolationDelayCorrectionFraction: 0.1
-    InterpolationTimeScaleMin: 0.85
-    InterpolationTimeScaleMax: 1.1
+    InterpolationTimeScaleMin: 0.9
+    InterpolationTimeScaleMax: 1.33
     CommandAgeCorrectionFraction: 0.1
     PredictionTimeScaleMin: 0.9
     PredictionTimeScaleMax: 1.1
   GhostSendSystemData:
-    DefaultSnapshotPacketSize: 0
-    PercentReservedForDespawnMessages: 0.33
+    DefaultSnapshotPacketSize: 15000
+    PercentReservedForDespawnMessages: 0.2
     MinSendImportance: 0
     MinDistanceScaledSendImportance: 0
     MaxIterateChunks: 0
@@ -62,15 +63,20 @@ MonoBehaviour:
     CleanupConnectionStatePerTick: 1
     m_FirstSendImportanceMultiplier: 1
     m_IrrelevantImportanceDownScale: 1
-    m_TempStreamSize: 8192
+    m_TempStreamSize: 4192
     m_UseCustomSerializer: 0
   ConnectTimeoutMS: 1000
   MaxConnectAttempts: 60
   DisconnectTimeoutMS: 30000
   HeartbeatTimeoutMS: 500
   ReconnectionTimeoutMS: 2000
-  ClientSendQueueCapacity: 64
-  ClientReceiveQueueCapacity: 64
+  ClientSendQueueCapacity: 128
+  ClientReceiveQueueCapacity: 128
   ServerSendQueueCapacity: 512
   ServerReceiveQueueCapacity: 512
   MaxMessageSize: 1400
+  TracingConfig:
+    TracingMemoryLimitMb: 2048
+    FuzzyFactor: 0.0001
+    IgnoreDTDiffs: 0
+    IgnorePartialTicks: 0
