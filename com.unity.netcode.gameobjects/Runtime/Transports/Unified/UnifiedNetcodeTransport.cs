@@ -124,10 +124,11 @@ namespace Unity.Netcode.Unified
     [UpdateBefore(typeof(RpcSystem))]
     internal partial class UnifiedNetcodeUpdateSystem : SystemBase
     {
-        public void OnCreate(ref SystemState state)
+        protected override void OnCreate()
         {
-            state.RequireForUpdate<RpcCollection>();
-            state.RequireForUpdate<NetworkId>();
+            RequireForUpdate<RpcCollection>();
+            RequireForUpdate<NetworkId>();
+            base.OnCreate();
         }
 
         public UnifiedNetcodeTransport Transport;
@@ -155,6 +156,11 @@ namespace Unity.Netcode.Unified
 
         protected override void OnUpdate()
         {
+            if (NetworkManager == null || Transport == null)
+            {
+                return;
+            }
+
             NetworkManager.MessageManager.ProcessSendQueues();
 
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);

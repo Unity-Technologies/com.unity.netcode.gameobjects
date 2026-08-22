@@ -3968,6 +3968,17 @@ namespace Unity.Netcode
 
         private void InitGhost()
         {
+            // Note: If hybrid prefabs are created prior to any NetworkManager instances,
+            // then the next line throws and exception. This avoids that issue.
+            // We might come up with some global way to verify if we are running integration
+            // tests and add additional logic within to determine if we should log an error
+            // or not.
+            if (NetworkManager == null)
+            {
+                return;
+            }
+
+
             if (!NetworkManager.IsListening)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
