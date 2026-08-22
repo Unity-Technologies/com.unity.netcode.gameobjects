@@ -2722,7 +2722,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // N4E's rate managers reassign that singleton on every world update, so by the time a test body runs
             // it points at whichever world updated last - typically a client world - and the spawn is rejected with
             // "You can only spawn a ghost on a server or during prediction on a client."
-            // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues assigning this.
+            // TODO-UNIFIED: NetCode.Netcode.Instance is a singleton and might cause issues assigning this.
             if (prefabNetworkObject.HasGhost)
             {
                 NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;

@@ -91,7 +91,6 @@ pr_code_changes_checks:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/_run-all.yml#run_all_unified_tests
-
     # Run code coverage test (PRs use the pinned "safe" trunk)
     - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_{{ pinnedTrunk }}
   triggers:
