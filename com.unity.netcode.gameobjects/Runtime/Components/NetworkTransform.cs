@@ -4700,7 +4700,10 @@ namespace Unity.Netcode.Components
         {
             if (networkManager.IsListening)
             {
-                return (float)networkManager.ServerTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
+                // The number of ticks the interpolators run behind, as a duration. This is not a point in time:
+                // it does not grow as the session runs.
+                var ticksBehind = networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset;
+                return (float)(ticksBehind * networkManager.ServerTime.FixedDeltaTimeAsDouble);
             }
             return 0f;
         }
