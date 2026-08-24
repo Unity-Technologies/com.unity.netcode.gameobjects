@@ -8,6 +8,7 @@ using Unity.NetCode.Editor;
 #endif
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -16,6 +17,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkObject), true)]
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkObjectEditor : UnityEditor.Editor
     {
         private const NetworkObject.OwnershipStatus k_AllOwnershipFlags = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
@@ -224,6 +226,7 @@ namespace Unity.Netcode.GameObjects.Editor
     // enum flags is resolved
 #if BYPASS_DEFAULT_ENUM_DRAWER && MULTIPLAYER_SERVICES_SDK_INSTALLED
     [CustomPropertyDrawer(typeof(NetworkObject.OwnershipStatus))]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkObjectOwnership : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
