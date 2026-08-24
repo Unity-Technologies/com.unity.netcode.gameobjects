@@ -113,13 +113,17 @@ try {
 
     if (Test-Path $logFile) { Remove-Item -Force $logFile }
 
+    # Start-Process joins -ArgumentList into one command line without quoting the individual values,
+    # and ProcessStartInfo.ArgumentList does not exist on the .NET Framework that Windows PowerShell
+    # runs on - so quote the two paths here or a checkout under "C:\Users\Jane Doe\..." splits at the
+    # space and Unity receives an invalid -projectPath/-logFile.
     $unityArgs = @(
         '-batchmode', '-nographics', '-quit',
         '-accept-apiupdate',
         '-ignoreCompilerErrors',
         '-burst-disable-compilation',
-        '-projectPath', $projectPath,
-        '-logFile', $logFile
+        '-projectPath', "`"$projectPath`"",
+        '-logFile', "`"$logFile`""
     )
 
     Write-Host 'Running the editor (this imports the project and runs the API updater)...'
