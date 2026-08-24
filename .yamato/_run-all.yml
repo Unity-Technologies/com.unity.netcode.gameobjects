@@ -444,3 +444,17 @@ run_all_project_tests_cmb_service_default:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
+
+
+# Runs the NGO 2.x -> 3.x editor script upgrade validation (see api-updater-test.yml)
+# Manual only today. Add this to develop_nightly or develop_weekly_trunk in _triggers.yml to schedule it.
+run_all_api_updater_tests:
+  name: Run All API Updater Tests
+  dependencies:
+{% for platform in test_platforms.desktop -%}
+{% if platform.name == "win" -%}
+{% for editor in validation_editors.default -%}
+    - .yamato/api-updater-test.yml#api_updater_test_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}

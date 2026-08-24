@@ -134,6 +134,22 @@ unified_pr_checks:
     cancel_old_ci: true
 
 
+# NGO 2.x -> 3.x editor script upgrade validation, on demand.
+# This job allows the API updater test to be kicked off by commenting "/ci apiupdater".
+# It is deliberately not part of the PR gate: what it protects only changes when a public editor type
+# is added, moved or removed, so paying a full editor import on every PR is not worth it.
+# To put it on a schedule, add .yamato/_run-all.yml#run_all_api_updater_tests to develop_nightly or
+# develop_weekly_trunk below.
+api_updater_pr_checks:
+  name: API Updater checks [on demand]
+  dependencies:
+    - .yamato/_run-all.yml#run_all_api_updater_tests
+  triggers:
+    expression: |-
+      pull_request.comment eq "apiupdater"
+    cancel_old_ci: true
+
+
 # Run all tests on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
 # Those tests are all running on trunk and the default editor (since it's daily and running all of them would add a lot of overhead)
