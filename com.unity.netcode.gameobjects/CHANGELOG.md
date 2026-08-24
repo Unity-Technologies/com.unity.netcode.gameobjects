@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added automatic `NetCodeConfig` configuration for hybrid mode. When Netcode for Entities is installed and a registered network prefab has a `GhostObject`, the settings hybrid mode requires are corrected automatically and the Netcode for Entities tick rates are driven from `NetworkConfig.TickRate`. The recommended snapshot, interpolation and transport values are applied once, and can be restored from Project Settings > Multiplayer > Netcode for GameObjects.
+
 
 ### Changed
 
@@ -32,6 +34,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
+- Issue where the hybrid mode `NetCodeConfig` validation messages were not interpolated and did not check that automatic bootstrapping was disabled.
 
 
 ### Security

@@ -1412,13 +1412,18 @@ namespace Unity.Netcode
         {
             if (NetCodeConfig.Global == null)
             {
-                Log.Error(new Context(LogLevel.Error, "You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            if (HybridNetcodeDefaults.IsMissingRequired(NetCodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, "You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetCodeConfig)} is not valid for hybrid mode: {reason}.").AddTag("Unified"));
                 return false;
+            }
+            // Not fatal, but the two timelines diverging is rarely intentional and is hard to spot from behaviour alone.
+            if (NetCodeConfig.Global.ClientServerTickRate.SimulationTickRate != NetworkConfig.TickRate)
+            {
+                Log.Warning(new Context(LogLevel.Normal, $"{nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} is {NetworkConfig.TickRate} but the {nameof(NetCodeConfig)} simulates at {NetCodeConfig.Global.ClientServerTickRate.SimulationTickRate}. Ghost transform updates will not land on the same interval as the rest of Netcode for GameObjects.").AddTag("Unified"));
             }
             return true;
         }
