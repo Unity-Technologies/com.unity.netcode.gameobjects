@@ -12,8 +12,8 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// Measurement harness (not a pass/fail behaviour test) used to size
-    /// <see cref="NetCode.GhostSendSystemData.DefaultSnapshotPacketSize"/> for hybrid (NGO + N4E) mode.
+    /// Measurement harness (not a pass/fail behaviour test) used to determine bandwidth consumption based
+    /// on the <see cref="NetCode.GhostSendSystemData.DefaultSnapshotPacketSize"/> when running in hybrid mode.
     /// Spawns N hybrid ghosts, keeps every one of them dirty on every tick, and reads the N4E client-side
     /// snapshot metrics singleton for a fixed sample window. Results are emitted as "PKTSZ|" log lines.
     /// </summary>

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Unity.Netcode.EditorTests
 {
     /// <summary>
-    /// Guards the NetCodeConfig values NGO applies in hybrid mode, and the reasoning behind the non-obvious ones.
+    /// Validates the NetCodeConfig values NGO applies in hybrid mode.
     /// </summary>
     internal class HybridNetcodeDefaultsTests
     {
@@ -84,12 +84,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         /// <summary>
-        /// The reason the millisecond form is used rather than <see cref="ClientTickRate.InterpolationTimeNetTicks"/>.
+        /// Why the millisecond form is used rather than <see cref="ClientTickRate.InterpolationTimeNetTicks"/>.
         /// </summary>
         /// <remarks>
         /// Netcode for Entities rounds the millisecond value up to whole network ticks, so it holds at least the
-        /// configured wall clock buffer at any tick rate. Two net ticks does not: it is 66.7ms at 30Hz but only 33.3ms
-        /// at 60Hz, and 33.3ms is the buffer the 2000 instance stress test stuttered at.
+        /// configured wall clock buffer at any tick rate.
         /// </remarks>
         /// <param name="tickRate">The tick rate to resolve the buffer against.</param>
         [TestCase(30u)]

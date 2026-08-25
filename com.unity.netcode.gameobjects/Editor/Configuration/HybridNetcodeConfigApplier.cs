@@ -6,21 +6,19 @@ using UnityEngine;
 namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
     /// <summary>
-    /// Keeps the project's <see cref="NetCodeConfig"/> aligned with what NGO needs whenever the project is running in
-    /// hybrid mode (Netcode for Entities installed, and at least one registered network prefab carrying a ghost).
+    /// Keeps the project's <see cref="NetCodeConfig"/> aligned with NGO needs whenever the project is running in
+    /// hybrid mode (N4E installed and at least one registered NGO network prefab has a GhostObject component).
     /// </summary>
     /// <remarks>
-    /// This never creates a <see cref="NetCodeConfig"/>. Netcode for Entities already creates one unconditionally from
-    /// its own <see cref="InitializeOnLoadMethodAttribute"/>, and creating a second lands the project in N4E's
-    /// multiple-config error path. We find the one N4E settled on and correct it.
+    /// This does not create <see cref="NetCodeConfig"/>. This finds the one N4E created and modifies it.
     /// </remarks>
     internal static class HybridNetcodeConfigApplier
     {
         [InitializeOnLoadMethod]
         private static void OnApplicationStart()
         {
-            // N4E creates and assigns the global config from its own InitializeOnLoadMethod. Cross-assembly ordering
-            // between the two is not a documented contract, so defer rather than racing it.
+            // Cross-assembly ordering between the two is not a documented contract.
+            // Defer rather than racing it.
             EditorApplication.delayCall += OnDelayCall;
         }
 
@@ -31,12 +29,13 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         }
 
         /// <summary>
-        /// Corrects the global <see cref="NetCodeConfig"/> for hybrid mode, if this is a hybrid project.
+        /// Adjusts <see cref="NetCodeConfig"/> for NGO hybrid mode.
         /// </summary>
         /// <param name="applyRecommended">
-        /// When true, re-applies the full tuned set even if this project has already had it applied once. Driven by the
-        /// button in Project Settings. When false, the tuned values are only written the first time, so that a user's
-        /// own edits are not repeatedly overwritten.
+        /// Driven by the button in Project Settings:
+        /// - When true: it re-applies the full tuned set even if this project has already had it applied once.
+        /// - When false: default NGO settings are only written once, the first time they are applied. From that
+        /// point forward, the user's edits are not overwritten.
         /// </param>
         internal static void Apply(bool applyRecommended)
         {
@@ -91,7 +90,6 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         /// <summary>
         /// True when any <see cref="NetworkManager"/> in the project has a registered prefab carrying a ghost.
         /// </summary>
-        /// <returns>Whether this project is configured for hybrid mode.</returns>
         internal static bool IsHybridProject()
         {
             foreach (var networkManager in Resources.FindObjectsOfTypeAll<NetworkManager>())
@@ -140,7 +138,7 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         /// <summary>
         /// Resolves the config N4E considers global, falling back to a project scan when N4E has not assigned one yet.
         /// </summary>
-        /// <returns>The config to correct, or null when none exists yet.</returns>
+        /// <returns>The config to adjust or null if no config exists.</returns>
         internal static NetCodeConfig ResolveGlobalConfig()
         {
             if (NetCodeConfig.Global != null)
@@ -153,7 +151,9 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         }
 
         /// <summary>
-        /// The tick rate N4E should be driven at. NGO owns this, so it comes from <see cref="NetworkConfig.TickRate"/>.
+        /// Returns either the current N4E tick rate or the NGO <see cref="NetworkConfig.TickRate"/>.
+        /// If no NetworkManager is found yet, it returns N4E's tick rate.
+        /// If a NetworkManager is found, then it returns NGO's tick rate.
         /// </summary>
         /// <param name="config">The config, used as the fallback when no NetworkManager can be found.</param>
         /// <returns>The tick rate to write into the config.</returns>

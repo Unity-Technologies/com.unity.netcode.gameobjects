@@ -215,8 +215,8 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
 
 #if UNIFIED_NETCODE
         /// <summary>
-        /// Surfaces the state of the project's NetCodeConfig, and offers a way back to the NGO defaults for anyone who
-        /// has since changed them.
+        /// Displays the current state of the project's NetCodeConfig and offers a way to reset back to the
+        /// NGO default values for anyone who has since changed them.
         /// </summary>
         /// <param name="settings">The project settings holding the applied-defaults marker.</param>
         private static void DrawHybridSettings(NetcodeForGameObjectsProjectSettings settings)
