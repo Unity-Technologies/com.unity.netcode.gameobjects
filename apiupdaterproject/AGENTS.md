@@ -17,6 +17,11 @@ what it is and how to run it; this file covers why it is built this way and what
   `develop-2.0.0`, which is released and cannot change. It only needs extending if a public editor
   type is relocated again within 3.x.
 * CI runs it on demand only — comment `/ci apiupdater` on a PR. See `.yamato/api-updater-test.yml`.
+* **Opening this project locally mutates it.** Unity rewrites `ProjectVersion.txt` to whatever editor
+  opened it, and the package manager can add builtin modules to `Packages/manifest.json` that only
+  exist in that editor — `com.unity.modules.smartstrings` from a 6000.7 alpha broke the 6000.6 CI job
+  exactly this way. Check `git diff` on those two files before committing, and keep the manifest to
+  modules that exist in the editor the job downloads (`validation_editors.default`).
 * Verified beyond this project: a real sample project upgraded 7 of its own scripts automatically,
   including a `NetcodeEditorBase<T>` subclass.
 

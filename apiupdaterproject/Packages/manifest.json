@@ -4,7 +4,6 @@
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.physics": "1.0.0",
-    "com.unity.modules.physics2d": "1.0.0",
-    "com.unity.modules.smartstrings": "1.0.0"
+    "com.unity.modules.physics2d": "1.0.0"
   }
 }
