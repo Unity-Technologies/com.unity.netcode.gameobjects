@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using Unity.NetCode;
 using Unity.Netcode.GameObjects.Editor.Configuration;
+using UnityEditor;
 using UnityEngine;
 
 namespace Unity.Netcode.EditorTests
@@ -24,6 +25,17 @@ namespace Unity.Netcode.EditorTests
         public void TearDown()
         {
             Object.DestroyImmediate(m_Config);
+        }
+
+        /// <summary>
+        /// A config that already matches reports no change, which is why the applier records the version marker
+        /// independently of whether anything was written.
+        /// </summary>
+        [Test]
+        public void ApplyRecommendedReportsNoChangeWhenConfigAlreadyMatches()
+        {
+            Assert.IsTrue(HybridNetcodeDefaults.ApplyRecommended(m_Config, 30u), "Expected the first apply to report a change.");
+            Assert.IsFalse(HybridNetcodeDefaults.ApplyRecommended(m_Config, 30u), "Applying an already matching config should report no change.");
         }
 
         [Test]
@@ -64,6 +76,29 @@ namespace Unity.Netcode.EditorTests
             Assert.AreEqual((int)tickRate, m_Config.ClientServerTickRate.NetworkTickRate, "NetworkTickRate must track SimulationTickRate; the interpolation buffer depends on it.");
 
             Assert.IsFalse(HybridNetcodeDefaults.ApplyTickRate(m_Config, tickRate));
+        }
+
+        /// <summary>
+        /// The one-shot can run before the hybrid <see cref="NetworkManager"/>'s scene is open, in which case it writes
+        /// N4E's tick rate rather than NGO's. Opening that scene runs a tick rate only pass, which has to correct the
+        /// rate without disturbing the tuned values.
+        /// </summary>
+        [Test]
+        public void TickRateOnlyPassCorrectsTheRateAndLeavesTheTunedValuesAlone()
+        {
+            const int n4eTickRate = 60;
+            const uint ngoTickRate = 30;
+
+            HybridNetcodeDefaults.ApplyRecommended(m_Config, n4eTickRate);
+            Assume.That(m_Config.ClientServerTickRate.SimulationTickRate, Is.EqualTo(n4eTickRate), "The one-shot should have written N4E's tick rate.");
+
+            Assert.IsTrue(HybridNetcodeDefaults.ApplyTickRate(m_Config, ngoTickRate));
+
+            Assert.AreEqual((int)ngoTickRate, m_Config.ClientServerTickRate.SimulationTickRate);
+            Assert.AreEqual((int)ngoTickRate, m_Config.ClientServerTickRate.NetworkTickRate);
+            Assert.AreEqual(HybridNetcodeDefaults.SnapshotPacketSize, m_Config.GhostSendSystemData.DefaultSnapshotPacketSize, "A tick rate pass must not disturb the tuned values.");
+            Assert.AreEqual(HybridNetcodeDefaults.InterpolationTimeMS, m_Config.ClientTickRate.InterpolationTimeMS);
+            Assert.AreEqual(HybridNetcodeDefaults.InterpolationTimeScaleMax, m_Config.ClientTickRate.InterpolationTimeScaleMax);
         }
 
         [Test]
@@ -141,6 +176,62 @@ namespace Unity.Netcode.EditorTests
             }
             finally
             {
+                Object.DestroyImmediate(prefabsList);
+                Object.DestroyImmediate(prefabObject);
+                Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        /// <summary>
+        /// Once the one-shot has been recorded, every later pass still drives the tick rate from the hybrid
+        /// <see cref="NetworkManager"/>. This is what corrects the rate when the manager's scene opens after the
+        /// defaults were already applied.
+        /// </summary>
+        [Test]
+        public void ApplyDrivesTheTickRateAfterTheOneShotHasBeenRecorded()
+        {
+            const uint managerTickRate = 45;
+
+            var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
+            Assume.That(config, Is.Not.Null, "This project has no NetCodeConfig to adjust.");
+            Assume.That(HybridNetcodeConfigApplier.IsHybridProject(), Is.False, "Another loaded NetworkManager already registers a ghost prefab.");
+
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var restoreVersion = settings.HybridDefaultsVersion;
+            var restoreSimulation = config.ClientServerTickRate.SimulationTickRate;
+            var restoreNetwork = config.ClientServerTickRate.NetworkTickRate;
+
+            var managerObject = new GameObject(nameof(ApplyDrivesTheTickRateAfterTheOneShotHasBeenRecorded));
+            var prefabObject = new GameObject("GhostPrefab");
+            var prefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            try
+            {
+                var networkManager = managerObject.AddComponent<NetworkManager>();
+                networkManager.NetworkConfig = new NetworkConfig { TickRate = managerTickRate, };
+                prefabObject.AddComponent<NetworkObject>().HasGhost = true;
+                prefabsList.Add(new NetworkPrefab { Prefab = prefabObject });
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(prefabsList);
+
+                // Past the one-shot, so this exercises the required plus tick rate path rather than ApplyRecommended.
+                settings.HybridDefaultsVersion = HybridNetcodeDefaults.Version;
+                config.ClientServerTickRate.SimulationTickRate = 60;
+                config.ClientServerTickRate.NetworkTickRate = 60;
+
+                HybridNetcodeConfigApplier.Apply(false);
+
+                Assert.AreEqual((int)managerTickRate, config.ClientServerTickRate.SimulationTickRate, "The tick rate should have been driven from the hybrid NetworkManager.");
+                Assert.AreEqual((int)managerTickRate, config.ClientServerTickRate.NetworkTickRate);
+            }
+            finally
+            {
+                config.ClientServerTickRate.SimulationTickRate = restoreSimulation;
+                config.ClientServerTickRate.NetworkTickRate = restoreNetwork;
+                EditorUtility.SetDirty(config);
+                AssetDatabase.SaveAssetIfDirty(config);
+
+                settings.HybridDefaultsVersion = restoreVersion;
+                settings.SaveSettings();
+
                 Object.DestroyImmediate(prefabsList);
                 Object.DestroyImmediate(prefabObject);
                 Object.DestroyImmediate(managerObject);
