@@ -19,8 +19,9 @@
   # develop_nightly or develop_weekly_trunk in _triggers.yml.
 
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # Windows only, and not looped over test_platforms: run-upgrade-test.ps1 is PowerShell and uses
-  # robocopy to purge Library (paths there exceed MAX_PATH, which Remove-Item cannot delete).
+  # Runs on the default platform (Ubuntu) like every other basic job. run_upgrade_test.py is Python, so
+  # there is no platform constraint - the earlier PowerShell version forced a Windows agent because it
+  # needed robocopy to purge Library past MAX_PATH.
   # A single editor is enough - the job is asserting on the editor's API updater, not on NGO
   # behaviour across editor versions. Widen to validation_editors.all if that stops being true.
 
@@ -30,11 +31,11 @@
   # and needs no package-pack dependency.
   # The script restores the 2.x sources when it finishes, so the checkout is left unmodified and the
   # job is safe to re-run on the same agent.
-  # -Clean purges Library first: the assertion is meaningless against a warm Library that already
+  # --clean purges Library first: the assertion is meaningless against a warm Library that already
   # holds rewritten sources from a previous run.
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # The expected type list in run-upgrade-test.ps1 is inline and hand-written. That is fine because
+  # The expected type list in run_upgrade_test.py is inline and hand-written. That is fine because
   # its input is frozen: it enumerates the 2.x public editor API, and develop-2.0.0 is released.
   # TODO: the list does not extend itself. A later relocation within 3.x, or a back port into 2.x,
   #       has to be added by hand or this job silently stops covering it. Deriving the list from the
@@ -42,8 +43,7 @@
 
 #------------------------------------------------------------------------------------
 
-{% for platform in test_platforms.desktop -%}
-{% if platform.name == "win" -%}
+{% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
 api_updater_test_{{ platform.name }}_{{ editor }}:
   name : API Updater Test - NGO 2.x editor scripts upgrade [{{ platform.name }}, {{ editor }}]
@@ -53,7 +53,7 @@ api_updater_test_{{ platform.name }}_{{ editor }}:
     flavor: {{ platform.flavor }}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor # Installing basic editor for the import
-    - powershell -NoProfile -ExecutionPolicy Bypass -File apiupdaterproject/run-upgrade-test.ps1 -UnityExe .Editor/Editor/Unity.exe -Clean
+    - python apiupdaterproject/run_upgrade_test.py --unity .Editor/Editor/Unity --clean
   artifacts:
     logs:
       paths:
@@ -61,5 +61,4 @@ api_updater_test_{{ platform.name }}_{{ editor }}:
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
 {% endfor -%}
-{% endif -%}
 {% endfor -%}

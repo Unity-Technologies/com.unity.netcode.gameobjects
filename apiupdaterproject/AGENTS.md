@@ -13,7 +13,7 @@ what it is and how to run it; this file covers why it is built this way and what
   `com.unity.netcode.gameobjects/Editor/**`. This project only consumes them.
 * **Do not "fix" the sources under `Assets/Editor`.** They are deliberately written against the 2.x
   API and are the input to the test. A helpful cleanup there silently guts it.
-* The expected-type list in the run scripts is frozen: it enumerates the public editor API of
+* The expected-type list in `run_upgrade_test.py` is frozen: it enumerates the public editor API of
   `develop-2.0.0`, which is released and cannot change. It only needs extending if a public editor
   type is relocated again within 3.x.
 * CI runs it on demand only — comment `/ci apiupdater` on a PR. See `.yamato/api-updater-test.yml`.

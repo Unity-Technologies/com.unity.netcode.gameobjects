@@ -451,10 +451,8 @@ run_all_project_tests_cmb_service_default:
 run_all_api_updater_tests:
   name: Run All API Updater Tests
   dependencies:
-{% for platform in test_platforms.desktop -%}
-{% if platform.name == "win" -%}
+{% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
     - .yamato/api-updater-test.yml#api_updater_test_{{ platform.name }}_{{ editor }}
 {% endfor -%}
-{% endif -%}
 {% endfor -%}

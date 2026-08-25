@@ -39,35 +39,28 @@ resolved transport version.
 
 ## Running it locally
 
-The script imports the project in batch mode with `-accept-apiupdate`, then asserts that every 2.x
-type reference under `Assets/Editor` was rewritten and that none survived. It restores the 2.x
-sources when it finishes, so it can be re-run.
+`run_upgrade_test.py` imports the project in batch mode with `-accept-apiupdate`, then asserts that
+every 2.x type reference under `Assets/Editor` was rewritten and that none survived. It restores the
+2.x sources when it finishes, so it can be re-run. Windows, macOS and Linux.
+
+```sh
+python run_upgrade_test.py --unity <editor> --clean --keep-updated-sources
+```
 
 | Option | |
 | --- | --- |
-| editor path | Omit it if `UNITY_EDITOR_PATH` is set, or if the hub has the version named in `ProjectSettings/ProjectVersion.txt`. |
-| keep updated sources | Leaves the rewritten sources in place so `git diff` shows exactly what the updater produced. |
-| clean | Purges `Library` and `Temp` first for a cold import. |
+| `--unity` | Omit it if `UNITY_EDITOR_PATH` is set, or if the hub has the version named in `ProjectSettings/ProjectVersion.txt`. |
+| `--clean` | Purges `Library` and `Temp` first for a cold import. |
+| `--keep-updated-sources` | Leaves the rewritten sources in place so `git diff` shows exactly what the updater produced. |
 
-### Windows
+Default hub locations, if you need to pass `--unity` explicitly — note that on macOS the binary is
+inside the `.app` bundle rather than beside it:
 
-```powershell
-.\run-upgrade-test.ps1 -UnityExe "C:\Program Files\Unity\Hub\Editor\<version>\Editor\Unity.exe" -KeepUpdatedSources -Clean
-```
-
-### macOS
-
-The editor binary lives inside the `.app` bundle, not next to it.
-
-```sh
-./run-upgrade-test.sh --unity "/Applications/Unity/Hub/Editor/<version>/Unity.app/Contents/MacOS/Unity" --keep-updated-sources --clean
-```
-
-### Linux
-
-```sh
-./run-upgrade-test.sh --unity "$HOME/Unity/Hub/Editor/<version>/Editor/Unity" --keep-updated-sources --clean
-```
+| | |
+| --- | --- |
+| Windows | `C:\Program Files\Unity\Hub\Editor\<version>\Editor\Unity.exe` |
+| macOS | `/Applications/Unity/Hub/Editor/<version>/Unity.app/Contents/MacOS/Unity` |
+| Linux | `$HOME/Unity/Hub/Editor/<version>/Editor/Unity` |
 
 
 ## How the migration works
