@@ -433,7 +433,7 @@ namespace Unity.Netcode
         /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
         /// <param name="lerp">Determines whether to use smooth dampening or lerp interpolation type.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool lerp)
+        public T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool lerp)
         {
             TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime);
             // Only begin interpolation when there is a start and end point
