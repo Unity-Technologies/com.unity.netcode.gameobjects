@@ -45,21 +45,45 @@ EXPECTED_TYPES = [
 ]
 
 
+def find_editor_binary(path):
+    """
+    Accepts either the editor binary itself or an install root, and returns the binary.
+
+    Layouts differ: unity-downloader-cli puts the Linux binary at <root>/Unity, the Hub puts it at
+    <root>/Editor/Unity, and on macOS it is inside the .app bundle. Taking a root and searching means
+    a caller never has to know which one they have.
+    """
+    if os.path.isfile(path):
+        return path
+    if not os.path.isdir(path):
+        return None
+
+    for relative in ('Unity', 'Unity.exe',
+                     os.path.join('Editor', 'Unity'), os.path.join('Editor', 'Unity.exe'),
+                     os.path.join('Unity.app', 'Contents', 'MacOS', 'Unity')):
+        candidate = os.path.join(path, relative)
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
 def resolve_unity(explicit):
     """
     Returns the editor binary to run: the explicit path, else UNITY_EDITOR_PATH, else the default hub
-    install matching ProjectSettings/ProjectVersion.txt.
+    install matching ProjectSettings/ProjectVersion.txt. Each may name a binary or an install root.
     """
     if explicit:
-        if not os.path.exists(explicit):
+        found = find_editor_binary(explicit)
+        if not found:
             sys.exit(f"Editor not found: {explicit}")
-        return explicit
+        return found
 
     from_env = os.environ.get('UNITY_EDITOR_PATH')
     if from_env:
-        if not os.path.exists(from_env):
-            sys.exit(f"UNITY_EDITOR_PATH does not exist: {from_env}")
-        return from_env
+        found = find_editor_binary(from_env)
+        if not found:
+            sys.exit(f"UNITY_EDITOR_PATH does not name an editor: {from_env}")
+        return found
 
     version_file = os.path.join(PROJECT_PATH, 'ProjectSettings', 'ProjectVersion.txt')
     version = None
@@ -81,8 +105,9 @@ def resolve_unity(explicit):
     else:
         candidate = os.path.join(os.path.expanduser('~'), 'Unity', 'Hub', 'Editor', version, 'Editor', 'Unity')
 
-    if os.path.exists(candidate):
-        return candidate
+    found = find_editor_binary(candidate)
+    if found:
+        return found
     sys.exit(f"No editor found for {version} at {candidate}. Pass --unity or set UNITY_EDITOR_PATH.")
 
 
