@@ -1238,8 +1238,9 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
         /// the interpolated result at a rate determined by <see cref="PositionMaxInterpolationTime"/>.<br />
-        /// This is frame rate independent for all <see cref="InterpolationTypes"/>, but the same value will not
-        /// produce the same result under <see cref="InterpolationTypes.LegacyLerp"/> as it does under the others.
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool PositionLerpSmoothing = true;
         private bool m_PreviousPositionLerpSmoothing;
@@ -1262,8 +1263,9 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
         /// the interpolated result at a rate determined by <see cref="RotationMaxInterpolationTime"/>.<br />
-        /// This is frame rate independent for all <see cref="InterpolationTypes"/>, but the same value will not
-        /// produce the same result under <see cref="InterpolationTypes.LegacyLerp"/> as it does under the others.
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool RotationLerpSmoothing = true;
         private bool m_PreviousRotationLerpSmoothing;
@@ -1286,8 +1288,9 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
         /// the interpolated result at a rate determined by <see cref="ScaleMaxInterpolationTime"/>.<br />
-        /// This is frame rate independent for all <see cref="InterpolationTypes"/>, but the same value will not
-        /// produce the same result under <see cref="InterpolationTypes.LegacyLerp"/> as it does under the others.
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool ScaleLerpSmoothing = true;
         private bool m_PreviousScaleLerpSmoothing;

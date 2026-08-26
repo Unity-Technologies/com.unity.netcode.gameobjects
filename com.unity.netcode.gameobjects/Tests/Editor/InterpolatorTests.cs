@@ -382,6 +382,22 @@ namespace Unity.Netcode.EditorTests
                 $"{atTwoFortyFps} at 240fps. The smoothing rate is scaling with the frame rate.");
         }
 
+        /// <summary>
+        /// Only 1.0f is substituted for, so settings below it keep their own smoothing rate and a heavier
+        /// setting stays smoother than a lighter one.
+        /// </summary>
+        [Test]
+        public void LerpSmoothingPreservesSettingsBelowTheMaximum()
+        {
+            // 0.99f is the retention substituted for 1.0f, so clamping to it would collapse these two.
+            var lighter = RunLerpSmoothing(0.99f, 1.0f / 60.0f, true);
+            var heavier = RunLerpSmoothing(0.995f, 1.0f / 60.0f, true);
+
+            Assert.That(heavier, Is.LessThan(lighter),
+                $"0.995 converged to {heavier} and 0.99 to {lighter} over the same motion. A higher maximum " +
+                "interpolation time has to retain more of the previous value, so it cannot converge first.");
+        }
+
         #endregion
     }
 }

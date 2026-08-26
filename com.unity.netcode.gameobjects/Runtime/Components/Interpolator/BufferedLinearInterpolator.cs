@@ -443,7 +443,11 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float GetLerpSmoothTime(float deltaTime)
         {
-            var retained = Mathf.Clamp(MaximumInterpolationTime, 0.0f, k_MaximumLerpSmoothRetention);
+            var retained = Mathf.Clamp01(MaximumInterpolationTime);
+            if (retained >= 1.0f)
+            {
+                retained = k_MaximumLerpSmoothRetention;
+            }
             return 1.0f - Mathf.Pow(retained, deltaTime * k_LerpSmoothReferenceFrameRate);
         }
 
