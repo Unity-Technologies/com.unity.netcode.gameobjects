@@ -1,7 +1,6 @@
-// The same 2.x API reached through the reference forms the updater has to handle separately from a
-// plain `using` + simple name: fully qualified names, a namespace alias, a type alias, a base type
-// and a typeof. Do not "fix" this file - it is the input to the upgrade test.
-#pragma warning disable 169 // field is never used
+// Update only if new public editor API is added to NGO v2.x.x.
+// It is used to validate the upgrade test. See ../../README.md.
+#pragma warning disable 169 // Ignore field is never used warnings
 
 using System;
 using Cfg = Unity.Netcode.Editor.Configuration;

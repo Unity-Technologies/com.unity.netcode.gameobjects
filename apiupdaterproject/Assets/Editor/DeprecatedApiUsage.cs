@@ -1,7 +1,6 @@
-// NGO 2.x-era editor code. Every type reference below must be rewritten by Unity's API updater to
-// its `Unity.Netcode.GameObjects.Editor` equivalent. Do not "fix" this file - it is the input to
-// the upgrade test. See ../../README.md.
-#pragma warning disable 169 // field is never used
+// Update only if new public editor API is added to NGO v2.x.x.
+// It is used to validate the upgrade test. See ../../README.md.
+#pragma warning disable 169 // Ignore field is never used warnings
 
 using ApiUpdaterProject;
 using Unity.Netcode.Editor;

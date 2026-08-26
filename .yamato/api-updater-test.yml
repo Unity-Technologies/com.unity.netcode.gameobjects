@@ -1,4 +1,4 @@
-{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
+{% metadata_file .yamato/project.metafile %}
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
@@ -10,20 +10,6 @@
   # -accept-apiupdate and asserts that every 2.x type reference was rewritten and none survived.
   # See apiupdaterproject/README.md.
 
-# WHY THIS JOB IS MANUAL ONLY-----------------------------------------------------------
-  # It is deliberately not wired into pr_minimal_required_checks or pr_code_changes_checks. The thing
-  # it protects only changes when a public editor type is added, moved or removed, so paying a full
-  # editor import on every PR is not worth it. Kick it off with "/ci apiupdater" in a PR comment
-  # (see api_updater_pr_checks in _triggers.yml), or from the Yamato UI.
-  # If it should also run on a schedule, add .yamato/_run-all.yml#run_all_api_updater_tests to
-  # develop_nightly or develop_weekly_trunk in _triggers.yml.
-
-# CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # Runs on the default platform (Ubuntu) like every other basic job. run_upgrade_test.py is Python, so
-  # there is no platform constraint - the earlier PowerShell version forced a Windows agent because it
-  # needed robocopy to purge Library past MAX_PATH.
-  # A single editor is enough - the job is asserting on the editor's API updater, not on NGO
-  # behaviour across editor versions. Widen to validation_editors.all if that stops being true.
 
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # apiupdaterproject/Packages/manifest.json references the package by relative path
@@ -33,15 +19,6 @@
   # job is safe to re-run on the same agent.
   # --clean purges Library first: the assertion is meaningless against a warm Library that already
   # holds rewritten sources from a previous run.
-
-# QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # The expected type list in run_upgrade_test.py is inline and hand-written. That is fine because
-  # its input is frozen: it enumerates the 2.x public editor API, and develop-2.0.0 is released.
-  # TODO: the list does not extend itself. A later relocation within 3.x, or a back port into 2.x,
-  #       has to be added by hand or this job silently stops covering it. Deriving the list from the
-  #       [MovedFrom] attributes in the package source would close that.
-
-#------------------------------------------------------------------------------------
 
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
