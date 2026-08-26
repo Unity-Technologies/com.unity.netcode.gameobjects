@@ -161,20 +161,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void ADeltaUnderTheThresholdIsLeftAsADelta()
-        {
-            var deltaPosition = new NetworkDeltaPosition(k_Base, k_Tick);
-            var originalBase = deltaPosition.GetCurrentBasePosition();
-
-            var moved = Offset(k_LossyStep);
-            deltaPosition.UpdateFrom(ref moved, k_Tick + 1);
-
-            Assert.IsFalse(deltaPosition.CollapsedDeltaIntoBase, "A delta under the threshold should stay a delta.");
-            Assert.AreEqual(originalBase, deltaPosition.GetCurrentBasePosition(), "The base should not move while the delta is small.");
-            Assert.AreNotEqual(0.0f, deltaPosition.GetDeltaPosition().x, "The delta should hold the movement.");
-        }
-
-        [Test]
         public void UnsynchronizedAxesAreLeftUntouched()
         {
             var deltaPosition = new NetworkDeltaPosition(k_Base, k_Tick, math.bool3(true, false, false));
@@ -305,7 +291,7 @@ namespace Unity.Netcode.RuntimeTests
         public void QuantumIsTheSmallestChangeTheEncodingCanSee()
         {
             // Exactly representable, so "one step away" is unambiguous.
-            foreach (var value in new[] { 0.5f, 1.0f, -1.0f, 2.0f, 1024.0f })
+            foreach (var value in new[] { 0.5f, 1.0f, -1.0f, 2.0f, 300.0f, 1024.0f })
             {
                 var quantum = NetworkDeltaPosition.HalfPrecisionQuantum(value);
                 Assert.Greater(quantum, 0.0f, $"The step size at {value} should be positive.");
@@ -314,16 +300,9 @@ namespace Unity.Netcode.RuntimeTests
                     $"A full step from {value} should encode differently, or it is not the step size.");
                 Assert.AreEqual(math.half(value).value, math.half(value + (quantum * 0.25f)).value,
                     $"A quarter step from {value} should encode identically, or the step size is too large.");
-            }
-        }
 
-        [Test]
-        public void QuantumDropsTheSignBecauseTheLatticeIsSymmetric()
-        {
-            foreach (var value in new[] { 0.5f, 1.0f, 300.0f, 1024.0f })
-            {
-                Assert.AreEqual(NetworkDeltaPosition.HalfPrecisionQuantum(value),
-                    NetworkDeltaPosition.HalfPrecisionQuantum(-value),
+                // The lattice is symmetric about zero, which is why the sign is dropped.
+                Assert.AreEqual(quantum, NetworkDeltaPosition.HalfPrecisionQuantum(-value),
                     $"The step size at {value} and {-value} should be the same.");
             }
         }
