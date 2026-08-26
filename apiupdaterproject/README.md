@@ -34,8 +34,6 @@ auto-referencing assembly like `Assembly-CSharp-Editor` CS0433-ambiguous. The ty
 incidental to what is being measured, so a local `MonoBehaviour` keeps the test independent of the
 resolved transport version.
 
-**Do not "fix" the sources under `Assets/Editor`.** They are deliberately written against the 2.x API
-— they are the input to the test.
 
 ## Running it locally
 
