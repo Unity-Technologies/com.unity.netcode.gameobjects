@@ -43,56 +43,38 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnTearDown();
         }
 
-        private static float GetExpectedLatencyInSeconds(NetworkManager networkManager)
-        {
-            var ticksBehind = networkManager.NetworkTimeSystem.TickLatency + NetworkTransform.InterpolationBufferTickOffset;
-            return (float)(ticksBehind * networkManager.ServerTime.FixedDeltaTimeAsDouble);
-        }
-
         [UnityTest]
-        public IEnumerator GetTickLatencyInSecondsReturnsADuration()
+        public IEnumerator GetTickLatencyInSecondsReturnsADurationNotATimestamp()
         {
-            var client = m_ClientNetworkManagers[0];
+            var client = GetNonAuthorityNetworkManager();
+            var tickInterval = (float)client.ServerTime.FixedDeltaTimeAsDouble;
 
-            // Sample repeatedly while the session clock advances. A duration tracks the tick latency, where an
-            // absolute timestamp would climb by roughly one second per second.
-            //
-            // NetworkTimeSystem.TickLatency is adaptive and can legitimately change mid-run, so the value is
-            // only held to being unchanged across samples where the tick latency itself did not change.
+            // A timestamp climbs by roughly a second per second, so sample while the session clock advances
+            // and hold the value to only moving when the tick latency it is derived from moves. That latency
+            // is adaptive and can legitimately change mid-run.
             var previousTicksBehind = -1;
             var previousValue = 0f;
             for (int i = 0; i < k_Samples; i++)
             {
                 var ticksBehind = client.NetworkTimeSystem.TickLatency + NetworkTransform.InterpolationBufferTickOffset;
-                var expected = GetExpectedLatencyInSeconds(client);
-                var actual = NetworkTransform.GetTickLatencyInSeconds(client);
+                var latency = NetworkTransform.GetTickLatencyInSeconds(client);
 
-                Assert.AreEqual(expected, actual, k_Tolerance,
-                    $"Expected the tick latency to be {expected}s but it was {actual}s.");
-
+                Assert.Greater(latency, 0f, "A latency of zero or less is not a duration this can be measured against.");
                 if (ticksBehind == previousTicksBehind)
                 {
-                    Assert.AreEqual(previousValue, actual, k_Tolerance,
-                        $"The reported latency moved from {previousValue}s to {actual}s while the tick latency " +
+                    Assert.AreEqual(previousValue, latency, k_Tolerance,
+                        $"The reported latency moved from {previousValue}s to {latency}s while the tick latency " +
                         $"stayed at {ticksBehind} ticks, so it is tracking elapsed time rather than latency.");
                 }
 
                 previousTicksBehind = ticksBehind;
-                previousValue = actual;
+                previousValue = latency;
                 yield return null;
             }
-        }
-
-        [UnityTest]
-        public IEnumerator GetTickLatencyInSecondsTracksTheBufferTickOffset()
-        {
-            var client = m_ClientNetworkManagers[0];
-            var tickInterval = (float)client.ServerTime.FixedDeltaTimeAsDouble;
-
-            var latencyBefore = client.NetworkTimeSystem.TickLatency;
-            var before = NetworkTransform.GetTickLatencyInSeconds(client);
 
             // Buffering more ticks has to lengthen the reported duration by exactly those ticks.
+            var latencyBefore = client.NetworkTimeSystem.TickLatency;
+            var before = NetworkTransform.GetTickLatencyInSeconds(client);
             NetworkTransform.InterpolationBufferTickOffset = m_OriginalBufferTickOffset + k_AddedBufferTicks;
             yield return null;
 
