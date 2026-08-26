@@ -14,9 +14,6 @@ namespace Unity.Netcode.RuntimeTests
     /// Both tests move the authority in one direction only and require the non-authority instance to follow
     /// without ever moving backwards. Interpolation cannot overshoot, so any movement opposite to the direction
     /// the authority moved came from how the position was encoded.
-    /// <br /><br />
-    /// These do not use the time travel harness because the behavior only appears over multiple real state update
-    /// and interpolation cycles.
     /// </remarks>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
@@ -61,12 +58,6 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkTransformHalfFloatPrecisionTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
-        }
-
-        // TODO: [CmbServiceTests] Validate this against the service once half float precision is covered there.
-        protected override bool UseCMBService()
-        {
-            return false;
         }
 
         protected override void OnServerAndClientsCreated()
