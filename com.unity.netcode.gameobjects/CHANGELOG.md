@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4145)
+
 
 ### Security
 
