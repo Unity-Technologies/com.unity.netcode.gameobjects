@@ -5,7 +5,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// A <see cref="IProcessSceneWithReport"/> that sets the <see cref

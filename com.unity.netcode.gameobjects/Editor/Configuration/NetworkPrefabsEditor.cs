@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -9,6 +10,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkPrefabsList), true)]
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkPrefabsEditor : UnityEditor.Editor
     {
         private ReorderableList m_NetworkPrefabsList;

@@ -116,11 +116,6 @@ pr_code_changes_checks:
     cancel_old_ci: true
 
 
-
-
-
-
-
 # Unified (NGO + N4E) validation, on demand.
 # This job allows the Unified tests to be kicked off by commenting "/ci unified". 
 # This is useful for PRs where pr_code_changes_checks doesn't trigger.
@@ -131,6 +126,18 @@ unified_pr_checks:
   triggers:
     expression: |-
       pull_request.comment eq "unified"
+    cancel_old_ci: true
+
+
+# NGO 2.x -> 3.x on demand editor script upgrade validation.
+# This job allows the API updater test to be kicked off by commenting "/ci apiupdater".
+api_updater_pr_checks:
+  name: API Updater checks [on demand]
+  dependencies:
+    - .yamato/_run-all.yml#run_all_api_updater_tests
+  triggers:
+    expression: |-
+      pull_request.comment eq "apiupdater"
     cancel_old_ci: true
 
 
