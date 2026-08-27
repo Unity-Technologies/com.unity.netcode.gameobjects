@@ -9,6 +9,7 @@ using UnityEngine;
 #if UNITY_6000_5_OR_NEWER
 using UnityEngine.Assemblies;
 #endif
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -18,6 +19,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkManagerEditor : NetcodeEditorBase<NetworkManager>
     {
         private static GUIStyle s_CenteredWordWrappedLabelStyle;

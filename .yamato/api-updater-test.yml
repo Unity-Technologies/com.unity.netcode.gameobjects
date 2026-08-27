@@ -1,0 +1,41 @@
+{% metadata_file .yamato/project.metafile %}
+---
+
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job validates the NGO 2.x -> 3.x upgrade path for editor scripts.
+  # NGO 3.0 renamed the editor assembly and its namespaces (Unity.Netcode.Editor ->
+  # Unity.Netcode.GameObjects.Editor), and every relocated public type carries a [MovedFrom] so that
+  # Unity's API updater rewrites a 2.x project's editor scripts automatically on upgrade.
+  # apiupdaterproject holds editor code written against the 2.x API; the job imports it with
+  # -accept-apiupdate and asserts that every 2.x type reference was rewritten and none survived.
+  # See apiupdaterproject/README.md.
+
+
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # apiupdaterproject/Packages/manifest.json references the package by relative path
+  # (file:../../com.unity.netcode.gameobjects), so the job tests the package as it sits in the repo
+  # and needs no package-pack dependency.
+  # The script restores the 2.x sources when it finishes, so the checkout is left unmodified and the
+  # job is safe to re-run on the same agent.
+  # --clean purges Library first: the assertion is meaningless against a warm Library that already
+  # holds rewritten sources from a previous run.
+
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
+api_updater_test_{{ platform.name }}_{{ editor }}:
+  name : API Updater Test - NGO 2.x editor scripts upgrade [{{ platform.name }}, {{ editor }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor # Installing basic editor for the import
+    - python apiupdaterproject/run_upgrade_test.py --unity .Editor --clean
+  artifacts:
+    logs:
+      paths:
+        - "apiupdaterproject/upgrade-test.log"
+  dependencies:
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
+{% endfor -%}
+{% endfor -%}
