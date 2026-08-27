@@ -4,14 +4,14 @@ using Unity.Mathematics;
 using Unity.Netcode.Components;
 using UnityEngine;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     /// <summary>
     /// Branch coverage for <see cref="NetworkDeltaPosition"/>'s encoding math.
     /// </summary>
     /// <remarks>
-    /// Separate from <see cref="NetworkTransformHalfFloatPrecisionTests"/> because none of this needs a
-    /// session, and that fixture would run it twice over two topologies.
+    /// Separate from NetworkTransformHalfFloatPrecisionTests because none of this needs a session, and
+    /// that fixture would run it twice over two topologies.
     /// <br /><br />
     /// A value that is exactly representable as a half float carries no rounding loss, so a test built on
     /// one cannot observe the behavior checked here and will pass against broken code. Keep the constants
@@ -291,7 +291,9 @@ namespace Unity.Netcode.RuntimeTests
         public void QuantumIsTheSmallestChangeTheEncodingCanSee()
         {
             // Exactly representable, so "one step away" is unambiguous.
-            foreach (var value in new[] { 0.5f, 1.0f, -1.0f, 2.0f, 300.0f, 1024.0f })
+            var values = new[] { 0.5f, 1.0f, -1.0f, 2.0f, 300.0f, 1024.0f };
+
+            foreach (var value in values)
             {
                 var quantum = NetworkDeltaPosition.HalfPrecisionQuantum(value);
                 Assert.Greater(quantum, 0.0f, $"The step size at {value} should be positive.");
@@ -307,17 +309,23 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        [TestCase(65504.0f, TestName = "QuantumIsGuarded_AtLargestFiniteHalf")]
-        [TestCase(-65504.0f, TestName = "QuantumIsGuarded_AtNegativeLargestFiniteHalf")]
-        [TestCase(70000.0f, TestName = "QuantumIsGuarded_WhenRoundingToInfinity")]
-        [TestCase(float.PositiveInfinity, TestName = "QuantumIsGuarded_AtPositiveInfinity")]
-        [TestCase(float.NegativeInfinity, TestName = "QuantumIsGuarded_AtNegativeInfinity")]
-        [TestCase(float.NaN, TestName = "QuantumIsGuarded_AtNaN")]
-        public void QuantumIsGuardedAtTheTopOfTheRange(float value)
+        [Test]
+        public void QuantumIsGuardedAtTheTopOfTheRange()
         {
-            Assert.AreEqual(NetworkDeltaPosition.MaxDeltaBeforeAdjustment,
-                NetworkDeltaPosition.HalfPrecisionQuantum(value),
-                $"{value} is at or past the largest finite half float and should fall back to the maximum delta.");
+            // 70000f is the finite one: the conversion itself rounds to infinity, which reaches the guard
+            // by a different path than handing it an infinity outright.
+            var values = new[]
+            {
+                65504.0f, -65504.0f, 70000.0f,
+                float.PositiveInfinity, float.NegativeInfinity, float.NaN,
+            };
+
+            foreach (var value in values)
+            {
+                Assert.AreEqual(NetworkDeltaPosition.MaxDeltaBeforeAdjustment,
+                    NetworkDeltaPosition.HalfPrecisionQuantum(value),
+                    $"{value} is at or past the largest finite half float and should fall back to the maximum delta.");
+            }
         }
 
         [Test]
