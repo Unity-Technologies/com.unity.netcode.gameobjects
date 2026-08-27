@@ -5,230 +5,241 @@ using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// Drives a continuous world space motion on the authority and samples the resulting world
+    /// space position on the non-authority.
+    /// </summary>
+    /// <remarks>
+    /// The moving instance is parented to an object held at <see cref="TransformInterpolationTests.ParentPosition"/>,
+    /// so the local and world space representations of the same point differ by ~1000 units. A
+    /// non-authority that applies a local space value as a world space value (or the reverse) lands
+    /// roughly that far from where it belongs, which is what the sampling below looks for.
+    /// </remarks>
     internal class TransformInterpolationObject : NetworkTransform
     {
-        public static bool TestComplete = false;
-        // Set the minimum threshold which we will use as our margin of error
-#if UNITY_EDITOR
-        public const float MinThreshold = 0.00555555f;
-#else
-        // Add additional room for error on console tests
-        public const float MinThreshold = 0.009999f;
-#endif
+        // The motion is a sine wave, which keeps the authority's position continuous. A
+        // discontinuous motion (i.e. a saw tooth) cannot be told apart from an interpolation fault,
+        // since both show up on the non-authority as a large single frame delta.
+        public const float Amplitude = 1.0f;
+        public const float MotionPeriod = 2.0f;
 
-        private const int k_TargetLocalSpaceToggles = 10;
+        // How far outside of the motion's band the non-authority is allowed to sit. Budget:
+        // - PositionThreshold, since the authority suppresses updates until it has moved that far.
+        // - Interpolation lag, as the non-authority renders several ticks behind the authority and
+        //   so trails it by up to (peak speed * that time), the peak speed of the motion above
+        //   being Amplitude * 2*pi / MotionPeriod.
+        // - A hitched frame under CI load, which adds another frame of trailing distance.
+        // A world/local space fault puts the instance ~1000 units out, so this stays three orders
+        // of magnitude below a real failure.
+        public const float PositionTolerance = 0.25f;
 
-        public bool CheckPosition;
+        // Deliberately not a factor of MotionPeriod, so the transitions land on a different point
+        // of the motion each time instead of repeatedly hitting the same phase.
+        private const float k_ToggleInterval = 0.35f;
+
         public bool IsMoving;
         public bool IsFixed;
+        public bool CheckPosition;
 
-        private float m_FrameRateFractional;
-        private bool m_CurrentLocalSpace;
+        public int LocalSpaceToggles;
+        public float MinimumSampled;
+        public float MaximumSampled;
+        public float WorstDeviation;
+        public int SamplesTaken;
 
-        private int m_LocalSpaceToggles;
-        private int m_LastFrameCount;
-
-        public bool ReachedTargetLocalSpaceTransitionCount()
-        {
-            TestComplete = m_LocalSpaceToggles >= k_TargetLocalSpaceToggles;
-            return TestComplete;
-        }
-
-        protected override void OnInitialize(ref NetworkTransformState replicatedState)
-        {
-            m_LocalSpaceToggles = 0;
-            m_FrameRateFractional = 1.0f / Application.targetFrameRate;
-            PositionThreshold = MinThreshold;
-            SetMaxInterpolationBound(1.0f);
-            base.OnInitialize(ref replicatedState);
-        }
-
-        private int m_StartFrameCount;
+        private bool m_IsToggling;
+        private double m_MotionStartTime;
+        private double m_NextToggleTime;
 
         public void StartMoving()
         {
-            m_StartFrameCount = Time.frameCount;
+            m_MotionStartTime = NetworkManager.LocalTime.Time;
             IsMoving = true;
         }
 
-        public void StopMoving()
+        /// <summary>
+        /// Kept separate from <see cref="StartMoving"/> so that no transition happens while the
+        /// non-authority is still converging on the motion.
+        /// </summary>
+        public void StartToggling()
         {
-            IsMoving = false;
+            m_NextToggleTime = NetworkManager.LocalTime.Time + k_ToggleInterval;
+            m_IsToggling = true;
         }
 
-        private const int k_MaxThresholdFailures = 4;
-        private int m_ExceededThresholdCount;
+        public void StartSampling()
+        {
+            MinimumSampled = float.MaxValue;
+            MaximumSampled = float.MinValue;
+            WorstDeviation = 0.0f;
+            SamplesTaken = 0;
+            CheckPosition = true;
+        }
 
+        /// <summary>
+        /// Invoked by <see cref="NetworkManager"/> during <see cref="NetworkUpdateStage.PreLateUpdate"/>
+        /// and only for non-authority instances, so the interpolated position for this frame has
+        /// already been applied by the time the sampling below runs.
+        /// </summary>
         public override void OnUpdate()
         {
             base.OnUpdate();
 
-
-            // Check the position of the nested object on the client
-            if (CheckPosition)
-            {
-                if (transform.position.y < -MinThreshold || transform.position.y > Application.targetFrameRate + MinThreshold)
-                {
-                    // Temporary work around for this test.
-                    // Really, this test needs to be completely re-written.
-                    m_ExceededThresholdCount++;
-                    // If we haven't corrected ourselves within the maximum number of updates then throw an error.
-                    if (m_ExceededThresholdCount > k_MaxThresholdFailures)
-                    {
-                        Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0. Current threshold is [+/- {MinThreshold}].");
-                    }
-                }
-                else
-                {
-                    // If corrected, then reset our count
-                    m_ExceededThresholdCount = 0;
-                }
-            }
-        }
-
-        private void Update()
-        {
-            base.OnUpdate();
-
-            if (!IsSpawned || !CanCommitToTransform || TestComplete)
+            if (!CheckPosition)
             {
                 return;
             }
 
+            var positionY = transform.position.y;
+            MinimumSampled = Mathf.Min(MinimumSampled, positionY);
+            MaximumSampled = Mathf.Max(MaximumSampled, positionY);
+            WorstDeviation = Mathf.Max(WorstDeviation, Mathf.Abs(positionY) - Amplitude);
+            SamplesTaken++;
+        }
 
-            // Move the nested object on the server
-            if (IsMoving)
+        /// <summary>
+        /// Authority side motion. Authority instances are excluded from the update loop's
+        /// NetworkTransform registration, so this cannot live in <see cref="OnUpdate"/>.
+        /// </summary>
+        /// <remarks>
+        /// Never invoke <see cref="OnUpdate"/> from here. It advances the interpolators by
+        /// <see cref="Time.deltaTime"/>, which the update loop already does once per frame for a
+        /// non-authority instance.
+        /// </remarks>
+        private void Update()
+        {
+            if (!IsSpawned || !CanCommitToTransform)
             {
-                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
-
-                if (m_LastFrameCount == Time.frameCount)
-                {
-                    Debug.Log($"Detected duplicate frame update count {Time.frameCount}. Ignoring this update.");
-                    return;
-                }
-
-                m_LastFrameCount = Time.frameCount;
-
-                // Leaving this here for reference.
-                // If a system is running at a slower frame rate than expected, then the below code could toggle
-                // the local to world space value at a higher frequency which might not provide enough updates to
-                // handle interpolating between the transitions.
-                //var y = Time.realtimeSinceStartup % 10.0f;
-                //// change the space between local and global every second
-                //GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
-
-                // Reduce the total frame count down to the frame rate
-                var y = (Time.frameCount - m_StartFrameCount) % Application.targetFrameRate;
-
-                // change the space between local and global every time we hit the expected number of frames
-                // (or every second if running at the target frame rate)
-                InLocalSpace = y == 0 ? !InLocalSpace : InLocalSpace;
-
-                if (m_CurrentLocalSpace != InLocalSpace)
-                {
-                    m_LocalSpaceToggles++;
-                    m_CurrentLocalSpace = InLocalSpace;
-                }
-
-                transform.position = new Vector3(0.0f, (y * m_FrameRateFractional), 0.0f);
+                return;
             }
 
-            // On the server, make sure to keep the parent object at a fixed position
             if (IsFixed)
             {
-                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
-                transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
+                transform.position = TransformInterpolationTests.ParentPosition;
+                return;
             }
+
+            if (!IsMoving)
+            {
+                return;
+            }
+
+            var localTime = NetworkManager.LocalTime.Time;
+
+            if (m_IsToggling && localTime >= m_NextToggleTime)
+            {
+                InLocalSpace = !InLocalSpace;
+                LocalSpaceToggles++;
+                m_NextToggleTime += k_ToggleInterval;
+            }
+
+            var elapsed = (float)(localTime - m_MotionStartTime);
+            transform.position = new Vector3(0.0f, Amplitude * Mathf.Sin(elapsed * 2.0f * Mathf.PI / MotionPeriod), 0.0f);
         }
     }
 
-    internal class TransformInterpolationTests : NetcodeIntegrationTest
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.DAHost)]
+    internal class TransformInterpolationTests : IntegrationTestWithApproximation
     {
+        internal static readonly Vector3 ParentPosition = new Vector3(1000.0f, 1000.0f, 1000.0f);
+
+        private const int k_TargetLocalSpaceToggles = 10;
+
+        // The non-authority has to cover most of the motion's range for the samples to mean
+        // anything. An instance that stopped updating sits at a single value and would otherwise
+        // satisfy every bounds check in the test.
+        private const float k_MinimumRangeCovered = 0.5f;
+
         protected override int NumberOfClients => 1;
 
         private GameObject m_PrefabToSpawn;
 
-        private NetworkObject m_SpawnedAsNetworkObject;
-        private NetworkObject m_SpawnedObjectOnClient;
+        private TransformInterpolationObject m_AuthorityParent;
+        private TransformInterpolationObject m_AuthorityChild;
+        private TransformInterpolationObject m_NonAuthorityChild;
 
-        private NetworkObject m_BaseAsNetworkObject;
-        private NetworkObject m_BaseOnClient;
-
+        public TransformInterpolationTests(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+        }
 
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("InterpTestObject");
-            var networkTransform = m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
+            m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
         }
 
-        private IEnumerator RefreshNetworkObjects()
+        private IEnumerator SpawnAndParent()
         {
-            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
+            m_AuthorityParent = SpawnObject(m_PrefabToSpawn, authority).GetComponent<TransformInterpolationObject>();
+            m_AuthorityChild = SpawnObject(m_PrefabToSpawn, authority).GetComponent<TransformInterpolationObject>();
+
+            var parentId = m_AuthorityParent.NetworkObject.NetworkObjectId;
+            var childId = m_AuthorityChild.NetworkObject.NetworkObjectId;
+            var clientId = nonAuthority.LocalClientId;
+
             yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(clientId) &&
-            s_GlobalNetworkObjects[clientId].ContainsKey(m_BaseAsNetworkObject.NetworkObjectId) &&
-            s_GlobalNetworkObjects[clientId].ContainsKey(m_SpawnedAsNetworkObject.NetworkObjectId));
+                s_GlobalNetworkObjects[clientId].ContainsKey(parentId) &&
+                s_GlobalNetworkObjects[clientId].ContainsKey(childId));
+            AssertOnTimeout($"Timed out waiting for the non-authority to spawn both {nameof(NetworkObject)}s!");
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_SpawnedAsNetworkObject.NetworkObjectId}");
+            m_NonAuthorityChild = s_GlobalNetworkObjects[clientId][childId].GetComponent<TransformInterpolationObject>();
 
-            m_BaseOnClient = s_GlobalNetworkObjects[clientId][m_BaseAsNetworkObject.NetworkObjectId];
-            // make sure the objects are set with the right network manager
-            m_BaseOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            Assert.True(m_AuthorityChild.NetworkObject.TrySetParent(m_AuthorityParent.NetworkObject), "Failed to parent the moving instance!");
 
-            m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_SpawnedAsNetworkObject.NetworkObjectId];
-            // make sure the objects are set with the right network manager
-            m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            yield return WaitForConditionOrTimeOut(() => m_NonAuthorityChild.transform.parent != null);
+            AssertOnTimeout("Timed out waiting for the non-authority instance to be parented!");
         }
 
         [UnityTest]
         public IEnumerator TransformInterpolationTest()
         {
-            TransformInterpolationObject.TestComplete = false;
-            // create an object
-            var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
-            var baseObject = Object.Instantiate(m_PrefabToSpawn);
-            baseObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
-            baseObject.GetComponent<NetworkObject>().Spawn();
+            yield return SpawnAndParent();
 
-            m_SpawnedAsNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            m_SpawnedAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_AuthorityParent.IsFixed = true;
 
-            m_BaseAsNetworkObject = baseObject.GetComponent<NetworkObject>();
-            m_BaseAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            // The child's world space position only means anything once the parent has settled on
+            // both instances, since the non-authority reconstructs it through its own parent.
+            var nonAuthorityParent = m_NonAuthorityChild.transform.parent;
+            yield return WaitForConditionOrTimeOut(() => Approximately(m_AuthorityParent.transform.position, ParentPosition) &&
+                Approximately(nonAuthorityParent.position, ParentPosition));
+            AssertOnTimeout($"Timed out waiting for the parent instances to settle at {ParentPosition}!");
 
-            m_SpawnedAsNetworkObject.TrySetParent(baseObject);
+            m_AuthorityChild.StartMoving();
 
-            m_SpawnedAsNetworkObject.Spawn();
+            // The child rides its parent out at ~1000 until the motion starts, so wait for the
+            // non-authority to close that distance before sampling. Its approach to the first
+            // authoritative position is not what this test measures.
+            yield return WaitForConditionOrTimeOut(() => Mathf.Abs(m_NonAuthorityChild.transform.position.y) <= TransformInterpolationObject.Amplitude);
+            AssertOnTimeout("Timed out waiting for the non-authority instance to converge on the authority's motion!");
 
-            yield return RefreshNetworkObjects();
+            m_NonAuthorityChild.StartSampling();
+            m_AuthorityChild.StartToggling();
 
-            m_SpawnedAsNetworkObject.TrySetParent(baseObject);
-            var spawnedObjectNetworkTransform = spawnedObject.GetComponent<TransformInterpolationObject>();
-            baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
-            spawnedObject.GetComponent<TransformInterpolationObject>().StartMoving();
-
-            const float maxPlacementError = 0.01f;
-
-            // Wait for the base object to place itself on both instances
-            while (m_BaseOnClient.transform.position.y < 1000 - maxPlacementError ||
-                   m_BaseOnClient.transform.position.y > 1000 + maxPlacementError ||
-                   baseObject.transform.position.y < 1000 - maxPlacementError ||
-                   baseObject.transform.position.y > 1000 + maxPlacementError)
-            {
-                yield return new WaitForSeconds(0.01f);
-            }
-
-            m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
-
-            // Test that interpolation works correctly for ~10 seconds or 10 local to world space transitions while moving
-            // Increasing this duration gives you the opportunity to go check in the Editor how the objects are setup
-            // and how they move
             var timeOutHelper = new TimeoutFrameCountHelper(10);
-            yield return WaitForConditionOrTimeOut(spawnedObjectNetworkTransform.ReachedTargetLocalSpaceTransitionCount, timeOutHelper);
-            VerboseDebug($"[TransformInterpolationTest] Wait condition reached or timed out. Frame Count ({timeOutHelper.GetFrameCount()}) | Time Elapsed ({timeOutHelper.GetTimeElapsed()})");
-            AssertOnTimeout($"Failed to reach desired local to world space transitions in the given time!", timeOutHelper);
+            yield return WaitForConditionOrTimeOut(() => m_AuthorityChild.LocalSpaceToggles >= k_TargetLocalSpaceToggles, timeOutHelper);
+            m_NonAuthorityChild.CheckPosition = false;
+            AssertOnTimeout($"Failed to reach {k_TargetLocalSpaceToggles} local to world space transitions in the given time!", timeOutHelper);
+
+            VerboseDebug($"[{nameof(TransformInterpolationTest)}] Toggles ({m_AuthorityChild.LocalSpaceToggles}) | Samples ({m_NonAuthorityChild.SamplesTaken}) | " +
+                $"Range ({m_NonAuthorityChild.MinimumSampled} to {m_NonAuthorityChild.MaximumSampled}) | Worst deviation ({m_NonAuthorityChild.WorstDeviation}) | " +
+                $"Frames ({timeOutHelper.GetFrameCount()}) | Elapsed ({timeOutHelper.GetTimeElapsed()})");
+
+            Assert.Greater(m_NonAuthorityChild.SamplesTaken, 0, "The non-authority instance was never updated!");
+
+            Assert.LessOrEqual(m_NonAuthorityChild.WorstDeviation, TransformInterpolationObject.PositionTolerance,
+                $"The non-authority instance left the expected world space band of [+/- {TransformInterpolationObject.Amplitude}] by " +
+                $"{m_NonAuthorityChild.WorstDeviation}, which exceeds the tolerance of {TransformInterpolationObject.PositionTolerance}. " +
+                $"Sampled range was {m_NonAuthorityChild.MinimumSampled} to {m_NonAuthorityChild.MaximumSampled}.");
+
+            var rangeCovered = (m_NonAuthorityChild.MaximumSampled - m_NonAuthorityChild.MinimumSampled) / (2.0f * TransformInterpolationObject.Amplitude);
+            Assert.GreaterOrEqual(rangeCovered, k_MinimumRangeCovered,
+                $"The non-authority instance only covered {rangeCovered:P0} of the authority's motion, so it was not tracking it.");
         }
     }
 }
