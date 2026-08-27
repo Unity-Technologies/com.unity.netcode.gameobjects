@@ -16,22 +16,14 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [IgnoreIfServiceEnviromentVariableSet]
+    [IgnoreIfUnifiedTestsEnvironmentVariableSet]
     internal class HelpUrlTests
     {
         private const string k_PackageName = "com.unity.netcode.gameobjects";
         private static readonly HttpClient k_HttpClient = new();
 
         private bool m_VerboseLogging = false;
-
-        [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            // This test does not need to run against the Rust server.
-            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
-
-            // Excluding from unified tests. If deemed needed, update test, then  remove.
-            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
-        }
 
         [UnityTest]
         public IEnumerator ValidateUrlsAreValid()
