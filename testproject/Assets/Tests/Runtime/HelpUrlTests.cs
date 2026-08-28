@@ -16,7 +16,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [IgnoreIfServiceEnviromentVariableSet]
+    [IgnoreIfServiceEnvironmentVariableSet]
     [IgnoreIfUnifiedTestsEnvironmentVariableSet]
     internal class HelpUrlTests
     {
