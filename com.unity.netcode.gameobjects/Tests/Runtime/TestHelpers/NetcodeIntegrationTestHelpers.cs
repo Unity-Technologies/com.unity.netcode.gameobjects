@@ -542,7 +542,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
 
                 // The server already registers every scene loaded prior to startup, so only add the test runner scene if it is not already there.
-            networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.TryAdd(scene.handle, scene.handle);
+                networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.TryAdd(scene.handle, scene.handle);
             }
         }
 
