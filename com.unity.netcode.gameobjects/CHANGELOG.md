@@ -27,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4146)
 - Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4129)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
