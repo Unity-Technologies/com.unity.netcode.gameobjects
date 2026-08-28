@@ -2179,9 +2179,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void PrepareBatchedDeltaEntry(ref TransformDeltaEntry entry)
         {
-            // The per instance path runs this from OnUpdateAuthoritativeState, which a registered instance
-            // never reaches, so it runs here instead. Without it a batched instance silently skips the
-            // teleport that re-enabling an axis can require.
+            // Both of these run from OnUpdateAuthoritativeState on the per instance path, which a registered
+            // instance never reaches. Without the clear the change flags only accumulate, and without the
+            // axis check a batched instance silently skips the teleport that re-enabling an axis requires.
+            ClearStateForNextTick();
             AxisChangedDeltaPositionCheck();
 
             // The entry is what the job reads, and anything the main thread set between ticks (a Teleport or
@@ -3609,26 +3610,45 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Clears the previous tick's change flags so the next delta check starts from a clean bitset.
+        /// </summary>
+        /// <remarks>
+        /// Skipped while an explicit set or a teleport is pending, since both carry state the next update
+        /// still has to send.<br /><br />
+        /// Both synchronization modes have to run this and neither can borrow the other's call: the per
+        /// instance path runs it from <see cref="OnUpdateAuthoritativeState"/>, which a registered instance
+        /// never reaches, and the batched path from <see cref="PrepareBatchedDeltaEntry"/>. Without it the
+        /// bitset only ever accumulates, so an axial group that changed once keeps its change flag for the
+        /// life of the instance and is serialized on every state update from then on.
+        /// </remarks>
+        private void ClearStateForNextTick()
+        {
+            if (m_LocalAuthoritativeNetworkState.ExplicitSet
+                || !m_LocalAuthoritativeNetworkState.FlagStates.IsDirty
+                || m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+            {
+                return;
+            }
+
+            m_LocalAuthoritativeNetworkState.FlagStates.ClearForNextTick();
+            if (TrackStateUpdateId)
+            {
+                m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = true;
+                m_LocalAuthoritativeNetworkState.StateId++;
+            }
+            else
+            {
+                m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = false;
+            }
+        }
+
+        /// <summary>
         /// Called by authority to check for deltas and update non-authoritative instances
         /// if any are found.
         /// </summary>
         internal void OnUpdateAuthoritativeState(bool settingState = false)
         {
-            // If our replicated state is not dirty and our local authority state is dirty, clear it.
-            if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.FlagStates.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
-            {
-                // Now clear our bitset and prepare for next network tick state update
-                m_LocalAuthoritativeNetworkState.FlagStates.ClearForNextTick();
-                if (TrackStateUpdateId)
-                {
-                    m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = true;
-                    m_LocalAuthoritativeNetworkState.StateId++;
-                }
-                else
-                {
-                    m_LocalAuthoritativeNetworkState.FlagStates.TrackByStateId = false;
-                }
-            }
+            ClearStateForNextTick();
 
             AxisChangedDeltaPositionCheck();
 
