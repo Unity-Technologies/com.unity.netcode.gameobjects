@@ -34,7 +34,10 @@ namespace Unity.Netcode.Components
 
             var entry = Entries[index];
             var flagStates = entry.State.FlagStates;
-            var forceState = entry.ForceState;
+            // Only ResolveTransformSpace can raise this on the batched path: every caller that forces a
+            // full state update ticks a nested instance, and a nested instance is never registered for
+            // batching.
+            var forceState = false;
 
             // Resolve the transform space before sampling, otherwise the wrong set of values gets compared.
             var transformSpaceChanged = ResolveTransformSpace(ref entry.Config, ref flagStates, entry.TransformHasParent, false, ref forceState);

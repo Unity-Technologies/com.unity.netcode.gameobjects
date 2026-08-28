@@ -33,6 +33,7 @@ namespace Unity.Netcode.RuntimeTests
         private readonly NetworkTransform.AuthorityModes m_AuthorityMode;
 
         private GameObject m_MoverPrefab;
+        private GameObject m_HalfFloatMoverPrefab;
         private readonly List<NetworkObject> m_SpawnedMovers = new List<NetworkObject>();
 
         public NetworkTransformSyncModeParityTests(TransformSyncModes syncMode, NetworkTransform.AuthorityModes authorityMode)
@@ -46,12 +47,44 @@ namespace Unity.Netcode.RuntimeTests
             return m_SyncMode;
         }
 
+        /// <summary>
+        /// Records whether any state update it received carried the teleport flag.
+        /// </summary>
+        /// <remarks>
+        /// Convergence alone does not distinguish a teleport from a delta, because interpolation reaches the
+        /// same place either way. The flag is the only observable difference, so the tests that care about a
+        /// teleport assert on this rather than on where the object ended up.
+        /// </remarks>
+        internal class ParityMover : NetworkTransform
+        {
+            internal bool ReceivedTeleport;
+
+            internal void ClearReceived()
+            {
+                ReceivedTeleport = false;
+            }
+
+            protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
+            {
+                ReceivedTeleport |= newState.IsTeleportingNextFrame;
+                base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
+            }
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_MoverPrefab = CreateNetworkObjectPrefab("ParityMover");
-            var networkTransform = m_MoverPrefab.AddComponent<NetworkTransform>();
+            var networkTransform = m_MoverPrefab.AddComponent<ParityMover>();
             networkTransform.AuthorityMode = m_AuthorityMode;
             networkTransform.Interpolate = true;
+
+            // Half float position is a separate prefab rather than a setting flipped after spawning, because
+            // the delta position baseline is established during synchronization.
+            m_HalfFloatMoverPrefab = CreateNetworkObjectPrefab("HalfFloatParityMover");
+            var halfFloatTransform = m_HalfFloatMoverPrefab.AddComponent<ParityMover>();
+            halfFloatTransform.AuthorityMode = m_AuthorityMode;
+            halfFloatTransform.Interpolate = true;
+            halfFloatTransform.UseHalfFloatPrecision = true;
 
             base.OnServerAndClientsCreated();
         }
@@ -65,9 +98,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Spawns an instance owned by the given client, or by the server when no owner is given.
         /// </summary>
-        private NetworkObject SpawnMover(ulong ownerClientId = NetworkManager.ServerClientId)
+        private NetworkObject SpawnMover(ulong ownerClientId = NetworkManager.ServerClientId, GameObject prefab = null)
         {
-            var instance = Object.Instantiate(m_MoverPrefab);
+            var instance = Object.Instantiate(prefab != null ? prefab : m_MoverPrefab);
             var networkObject = instance.GetComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             networkObject.SpawnWithOwnership(ownerClientId);
@@ -286,12 +319,35 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Every non-authority instance that can see the object, other than the authority itself.
+        /// </summary>
+        private List<ParityMover> GetNonAuthorityMovers(NetworkObject serverSide)
+        {
+            var authority = GetMotionAuthorityInstance(serverSide);
+            var movers = new List<ParityMover>();
+            foreach (var manager in m_NetworkManagers)
+            {
+                if (!manager.SpawnManager.SpawnedObjects.TryGetValue(serverSide.NetworkObjectId, out var clone))
+                {
+                    continue;
+                }
+                var mover = clone.GetComponent<ParityMover>();
+                if (mover != authority)
+                {
+                    movers.Add(mover);
+                }
+            }
+            return movers;
+        }
+
+        /// <summary>
         /// A teleport has to arrive as a teleport rather than being interpolated towards.
         /// </summary>
         /// <remarks>
         /// Teleports take a different route through both the delta check and the interpolator reset paths,
         /// and the batched path captures the state before the teleport flag is cleared. Capturing it at the
-        /// wrong point turns a teleport into an ordinary delta, which is only visible as a long glide.
+        /// wrong point turns a teleport into an ordinary delta, which converges to the same place and is only
+        /// visible as a long glide, so the flag is asserted rather than the destination.
         /// </remarks>
         [UnityTest]
         public IEnumerator TeleportArrivesAsATeleport()
@@ -300,12 +356,82 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => AllObserversMatch(mover, mover.transform.position, m_NetworkManagers));
             AssertOnTimeout("Initial spawn did not reach every client!");
 
+            // The spawn synchronization is itself a teleport, so the recorders start from the state that
+            // follows it rather than from the state at spawn.
+            var observers = GetNonAuthorityMovers(mover);
+            foreach (var observer in observers)
+            {
+                observer.ClearReceived();
+            }
+
             var authority = GetMotionAuthorityInstance(mover);
             var target = new Vector3(120.0f, 45.0f, -85.0f);
             authority.SetState(target, null, null, false);
 
             yield return WaitForConditionOrTimeOut(() => AllObserversMatch(mover, target, m_NetworkManagers));
             AssertOnTimeout($"Teleport to {target} did not reach every client!");
+
+            foreach (var observer in observers)
+            {
+                Assert.IsTrue(observer.ReceivedTeleport,
+                    $"[{m_SyncMode}][{m_AuthorityMode}] Client-{observer.NetworkManager.LocalClientId} reached {target} " +
+                    "without ever receiving a state flagged as a teleport, so it glided there instead of snapping!");
+            }
+        }
+
+        /// <summary>
+        /// Re-enabling an axis that drifted while it was off has to arrive as a teleport.
+        /// </summary>
+        /// <remarks>
+        /// While an axis is disabled the authority keeps moving but stops sending that axis, so the half
+        /// float delta it would resume from is stale by more than the delta can represent. The check that
+        /// catches this ran from the per instance tick only, which a batched instance never reaches, and it
+        /// assigned rather than accumulated its per axis result, so an X trigger was discarded whenever Z was
+        /// also re-enabled and in range. Both axes are moved and re-enabled here for that reason.
+        /// </remarks>
+        [UnityTest]
+        public IEnumerator ReEnablingADriftedAxisTeleports()
+        {
+            var mover = SpawnMover(prefab: m_HalfFloatMoverPrefab);
+            yield return WaitForConditionOrTimeOut(() => MotionAuthorityIsEstablished(mover));
+            AssertOnTimeout("The motion authority instance never gained authority!");
+
+            yield return MoveAndConverge(mover, new Vector3(1.0f, 1.0f, 1.0f), m_NetworkManagers);
+            var authority = (ParityMover)GetMotionAuthorityInstance(mover);
+
+            // X and Z stop being sent, and Y keeps moving so that position updates keep flowing. The axis
+            // registration the delta position holds is only rewritten on a tick where the position is dirty,
+            // so without the Y motion the authority would never record that X and Z went quiet.
+            authority.SyncPositionX = false;
+            authority.SyncPositionZ = false;
+            for (int i = 0; i < 6; i++)
+            {
+                var position = authority.transform.position;
+                authority.transform.position = new Vector3(position.x + 100.0f, position.y + 0.25f, position.z);
+                yield return s_DefaultWaitForTick;
+            }
+
+            var observers = GetNonAuthorityMovers(mover);
+            foreach (var observer in observers)
+            {
+                observer.ClearReceived();
+            }
+
+            // Z is re-enabled alongside X and has not moved, so its in-range result used to overwrite the
+            // out-of-range one X produced.
+            authority.SyncPositionX = true;
+            authority.SyncPositionZ = true;
+
+            var target = authority.transform.position;
+            yield return WaitForConditionOrTimeOut(() => AllObserversMatch(mover, target, m_NetworkManagers));
+            AssertOnTimeout($"[{m_SyncMode}][{m_AuthorityMode}] Re-enabled axes never converged on {target}!\n{DescribeObservers(mover, target, m_NetworkManagers)}");
+
+            foreach (var observer in observers)
+            {
+                Assert.IsTrue(observer.ReceivedTeleport,
+                    $"[{m_SyncMode}][{m_AuthorityMode}] Client-{observer.NetworkManager.LocalClientId} resumed the drifted axis " +
+                    "without a teleport, so it resumed from a half float delta that can no longer represent the distance!");
+            }
         }
 
         /// <summary>

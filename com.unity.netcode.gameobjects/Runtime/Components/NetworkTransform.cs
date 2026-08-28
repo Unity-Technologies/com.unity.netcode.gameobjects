@@ -2179,17 +2179,27 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void PrepareBatchedDeltaEntry(ref TransformDeltaEntry entry)
         {
+            // The per instance path runs this from OnUpdateAuthoritativeState, which a registered instance
+            // never reaches, so it runs here instead. Without it a batched instance silently skips the
+            // teleport that re-enabling an axis can require.
+            AxisChangedDeltaPositionCheck();
+
+            // The entry is what the job reads, and anything the main thread set between ticks (a Teleport or
+            // a SetState raising the teleport and explicit set flags) is on m_LocalAuthoritativeNetworkState.
+            // Seeding from it here is a no-op when nothing changed, since ApplyBatchedDeltaEntry writes the
+            // two back into step. Without it a teleport converges as an ordinary delta.
+            entry.State = m_LocalAuthoritativeNetworkState;
+
             entry.Config = GetTransformDeltaConfig();
             entry.TransformHasParent = transform.parent != null;
             entry.HalfPositionState = m_HalfPositionState;
             entry.IsDirty = false;
-            // ForceState is set by the main thread, tick relative, and is cleared once applied.
 
             var flagStates = entry.State.FlagStates;
             entry.Sample = default;
 
             // Same conditions the per instance path uses, both of which need a lookup a job cannot perform.
-            if (flagStates.IsTeleportingNextFrame || entry.ForceState || flagStates.IsParented)
+            if (flagStates.IsTeleportingNextFrame || flagStates.IsParented)
             {
                 entry.Sample.HasParentNetworkObject = HasParentNetworkObject();
                 entry.Sample.LossyScale = CachedTransform.lossyScale;
@@ -2204,7 +2214,6 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState = entry.State;
             m_HalfPositionState = entry.HalfPositionState;
             ApplyTransformDeltaConfig(entry.Config);
-            entry.ForceState = false;
 
             if (entry.IsDirty || m_LocalAuthoritativeNetworkState.ExplicitSet)
             {
@@ -3578,20 +3587,23 @@ namespace Unity.Netcode.Components
                     // Only if the synchronization of an axis is turned on do we need to
                     // check if a teleport is required due to the delta from the last known
                     // to the currently known axis value exceeds MaxDeltaBeforeAdjustment.
+                    // Accumulated across the axes: any one of them being out of range is enough, and an
+                    // axis that is in range must not clear what an earlier one found.
                     if (SyncPositionX && SyncPositionX != synAxis.x)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.x - positionState.x) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport |= Mathf.Abs(relativePosition.x - positionState.x) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
                     if (SyncPositionY && SyncPositionY != synAxis.y)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.y - positionState.y) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport |= Mathf.Abs(relativePosition.y - positionState.y) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
                     if (SyncPositionZ && SyncPositionZ != synAxis.z)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.z - positionState.z) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport |= Mathf.Abs(relativePosition.z - positionState.z) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
-                    // If needed, force a teleport as the delta is outside of the valid delta boundary
-                    m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame = needsToTeleport;
+                    // If needed, force a teleport as the delta is outside of the valid delta boundary. Or-ed
+                    // in rather than assigned, so a teleport already pending for this tick survives.
+                    m_LocalAuthoritativeNetworkState.FlagStates.IsTeleportingNextFrame |= needsToTeleport;
                 }
             }
         }

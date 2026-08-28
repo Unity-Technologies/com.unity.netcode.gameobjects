@@ -149,11 +149,6 @@ namespace Unity.Netcode.Components
             internal bool TransformHasParent;
 
             /// <summary>
-            /// Set by the main thread when a full state update is being forced for this instance.
-            /// </summary>
-            internal bool ForceState;
-
-            /// <summary>
             /// Result. Set by the job when there is a state update to send.
             /// </summary>
             internal bool IsDirty;
