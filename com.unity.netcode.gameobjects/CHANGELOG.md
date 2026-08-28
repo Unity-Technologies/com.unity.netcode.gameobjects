@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where `NetworkTransform` interpolated towards a point in time taken from the local clock rather than the server clock that state updates are stamped on, which starved the interpolator on clients and reduced interpolation to snapping between state updates. (#4133)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned an absolute network timestamp that grew for as long as the session ran, rather than the tick latency as a duration in seconds that it is documented to return. (#4133)
 - Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#4130)
 - Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#4130)
 
