@@ -131,15 +131,19 @@ namespace Unity.Netcode.EditorTests
             var lossOnArrival = deltaPosition.PrecisionLossDelta;
             Assert.AreNotEqual(0.0f, lossOnArrival.x, "The arrival conversion has to leave rounding loss behind.");
 
+            var currentTick = k_Tick + 2;
+            var maxTick = k_Tick + 5;
+
             // Folding the loss back in while stationary is what made resting objects jitter.
-            for (var tick = k_Tick + 2; tick <= k_Tick + 5; tick++)
+            while (currentTick <= maxTick)
             {
-                deltaPosition.UpdateFrom(ref arrived, tick);
+                deltaPosition.UpdateFrom(ref arrived, currentTick);
 
                 Assert.AreEqual(encodedOnArrival, Encoded(deltaPosition),
-                    $"The transmitted delta changed on tick {tick} while the position did not move.");
+                    $"The transmitted delta changed on tick {currentTick} while the position did not move.");
                 Assert.AreEqual(lossOnArrival, deltaPosition.PrecisionLossDelta,
-                    $"The carried loss should be untouched on tick {tick} so it still applies once movement resumes.");
+                    $"The carried loss should be untouched on tick {currentTick} so it still applies once movement resumes.");
+                currentTick++;
             }
         }
 
