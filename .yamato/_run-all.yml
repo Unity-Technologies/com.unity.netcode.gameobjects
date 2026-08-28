@@ -368,6 +368,21 @@ run_all_project_tests_console_standalone_default:
 {% endfor -%}
 
 
+# Runs all unified (NGO + N4E) tests
+# These run on their own pinned editor (unified_editors) rather than the validation_editors, because
+# they need an editor that bundles a com.unity.netcode with the unified API. See unified-tests.yml.
+run_all_unified_tests:
+  name: Run All Unified Tests
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in unified_test_platforms -%}
+{% for editor in unified_editors.default -%}
+    - .yamato/unified-tests.yml#unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+
 # Runs all CMB service tests
 run_all_project_tests_cmb_service:
   name: Run All CMB Service Tests
@@ -427,5 +442,16 @@ run_all_project_tests_cmb_service_default:
 {% for backend in scripting_backends -%}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.default }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+
+# Runs the NGO 2.x -> 3.x editor script upgrade validation (see api-updater-test.yml)
+run_all_api_updater_tests:
+  name: Run All API Updater Tests
+  dependencies:
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
+    - .yamato/api-updater-test.yml#api_updater_test_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}

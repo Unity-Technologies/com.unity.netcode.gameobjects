@@ -90,6 +90,7 @@ pr_code_changes_checks:
     # Note that our daily tests will anyway run both test configurations in "minimal supported" and "trunk" configurations
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
+    - .yamato/_run-all.yml#run_all_unified_tests
     # Run code coverage test (PRs use the pinned "safe" trunk)
     - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_{{ pinnedTrunk }}
   triggers:
@@ -115,9 +116,29 @@ pr_code_changes_checks:
     cancel_old_ci: true
 
 
+# Unified (NGO + N4E) validation, on demand.
+# This job allows the Unified tests to be kicked off by commenting "/ci unified". 
+# This is useful for PRs where pr_code_changes_checks doesn't trigger.
+unified_pr_checks:
+  name: Unified (NGO + N4E) checks [on demand]
+  dependencies:
+    - .yamato/_run-all.yml#run_all_unified_tests
+  triggers:
+    expression: |-
+      pull_request.comment eq "unified"
+    cancel_old_ci: true
 
 
-
+# NGO 2.x -> 3.x on demand editor script upgrade validation.
+# This job allows the API updater test to be kicked off by commenting "/ci apiupdater".
+api_updater_pr_checks:
+  name: API Updater checks [on demand]
+  dependencies:
+    - .yamato/_run-all.yml#run_all_api_updater_tests
+  triggers:
+    expression: |-
+      pull_request.comment eq "apiupdater"
+    cancel_old_ci: true
 
 
 # Run all tests on nightly basis.
@@ -156,6 +177,8 @@ develop_nightly:
     # Run Runtime tests against cmb service on trunk and default editors
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_trunk
     - .yamato/_run-all.yml#run_all_project_tests_cmb_service_default
+    # Run the unified (NGO + N4E) tests on their own pinned editor (see .yamato/unified-tests.yml)
+    - .yamato/_run-all.yml#run_all_unified_tests
     # Build player for webgl platform on trunk and default editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_{{ validation_editors.default }}

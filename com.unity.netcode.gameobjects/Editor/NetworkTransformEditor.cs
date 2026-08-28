@@ -3,6 +3,7 @@ using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -11,6 +12,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkTransform), true)]
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkTransformEditor : NetcodeEditorBase<NetworkTransform>
     {
         private SerializedProperty m_SwitchTransformSpaceWhenParented;

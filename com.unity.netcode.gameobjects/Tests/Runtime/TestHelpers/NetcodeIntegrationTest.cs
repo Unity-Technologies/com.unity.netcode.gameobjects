@@ -2454,13 +2454,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // - Then set it back to active.
             gameObject.SetActive(false);
             var adapter = gameObject.AddComponent<GhostObject>();
-            // Mark the reference as post processing to avoid registering this instance automatically.
-            GhostPrefabReference.s_IsPostProcessing = true;
-            adapter.prefabReference = ScriptableObject.CreateInstance<GhostPrefabReference>();
-            adapter.prefabReference.name = "GhostPrefabReference";
-            adapter.prefabReference.Prefab = gameObject;
 
-            GhostPrefabReference.s_IsPostProcessing = false;
+            // Initialize it as a prefab
+            adapter.InitializeAsPrefab();
 
             // TODO: This might be part of the CreateHybridPrefab parameters
             // For now, just use normal interpolation until we get integration
@@ -2628,6 +2624,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
         {
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
+#if UNIFIED_NETCODE
+            // This has to happen *before* Instantiate, not after. The hybrid prefab is active, so the clone's
+            // GhostObject.Awake runs synchronously inside Object.Instantiate below. The clone is not a prefab
+            // (its prefabReference.Prefab points at the prefab, not at itself), so Awake acquires an entity
+            // reference, which resolves the world to spawn into from the Netcode.Instance.m_ActiveWorld singleton.
+            // N4E's rate managers reassign that singleton on every world update, so by the time a test body runs
+            // it points at whichever world updated last - typically a client world - and the spawn is rejected with
+            // "You can only spawn a ghost on a server or during prediction on a client."
+            // TODO-UNIFIED: NetCode.Netcode.Instance is a singleton and might cause issues assigning this.
+            if (prefabNetworkObject.HasGhost)
+            {
+                NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+            }
+#endif
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
             SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);

@@ -1,6 +1,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -15,6 +16,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </remarks>
     /// <typeparam name="TT">The base <see cref="MonoBehaviour"/> derived component type</typeparam>
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public partial class NetcodeEditorBase<TT> : UnityEditor.Editor where TT : MonoBehaviour
     {
         private const int k_IndentOffset = 15;
