@@ -120,6 +120,35 @@ namespace Unity.Netcode.Components
         private const float k_ApproximateLowPrecision = 0.000001f;
         private const float k_ApproximateHighPrecision = 1E-10f;
         private const double k_SmallValue = 9.999999439624929E-11;
+
+        /// <summary>
+        /// The frame rate that <see cref="NativeInterpolatorState.MaximumInterpolationTime"/> is relative to when lerp smoothing.
+        /// </summary>
+        private const float k_LerpSmoothReferenceFrameRate = 60.0f;
+
+        /// <summary>
+        /// Keeps a <see cref="NativeInterpolatorState.MaximumInterpolationTime"/> of 1.0f from retaining the entire delta
+        /// each frame, which would stop the value from ever advancing towards the target.
+        /// </summary>
+        private const float k_MaximumLerpSmoothRetention = 0.99f;
+
+        /// <summary>
+        /// Calculates the frame rate independent lerp smoothing "t" for the current frame.
+        /// </summary>
+        /// <remarks>
+        /// Raising the retained portion to the number of reference frames elapsed makes the smoothing rate
+        /// a function of elapsed time rather than of how often this is called.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float GetLerpSmoothTime(in NativeInterpolatorState state, float deltaTime)
+        {
+            var retained = math.saturate(state.MaximumInterpolationTime);
+            if (retained >= 1.0f)
+            {
+                retained = k_MaximumLerpSmoothRetention;
+            }
+            return 1.0f - math.pow(retained, deltaTime * k_LerpSmoothReferenceFrameRate);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float GetPrecision(in NativeInterpolatorState state)
@@ -607,8 +636,7 @@ namespace Unity.Netcode.Components
 
                     if (state.LerpSmoothEnabled)
                     {
-                        state.CurrentValue = Interpolate(state, state.CurrentValue, state.NextValue,
-                            math.clamp(1.0f - state.MaximumInterpolationTime, 0.0f, 1.0f));
+                        state.CurrentValue = Interpolate(state, state.CurrentValue, state.NextValue, GetLerpSmoothTime(state, deltaTime));
                     }
                     else
                     {

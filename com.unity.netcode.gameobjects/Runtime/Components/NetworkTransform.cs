@@ -1153,7 +1153,7 @@ namespace Unity.Netcode.Components
             /// Uses a 1 to 2 phase interpolation approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase lerps from the previous state update value to the next state update value.</description></item>
-            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of 1.0 minus the respective maximum interpolation time.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a frame rate independent rate determined by the respective maximum interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
@@ -1173,7 +1173,7 @@ namespace Unity.Netcode.Components
             /// Uses a 1 to 2 phase smooth dampening approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase smooth dampens towards the current tick state update being processed by the accumulated delta time relative to the time to target.</description></item>
-            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a frame rate independent rate determined by the respective maximum interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
@@ -1253,7 +1253,11 @@ namespace Unity.Netcode.Components
         /// Controls position interpolation smoothing.
         /// </summary>
         /// <remarks>
-        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="PositionMaxInterpolationTime"/>.
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
+        /// the interpolated result at a rate determined by <see cref="PositionMaxInterpolationTime"/>.<br />
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool PositionLerpSmoothing = true;
         private bool m_PreviousPositionLerpSmoothing;
@@ -1274,7 +1278,11 @@ namespace Unity.Netcode.Components
         /// Controls rotation interpolation smoothing.
         /// </summary>
         /// <remarks>
-        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="RotationMaxInterpolationTime"/>.
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
+        /// the interpolated result at a rate determined by <see cref="RotationMaxInterpolationTime"/>.<br />
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool RotationLerpSmoothing = true;
         private bool m_PreviousRotationLerpSmoothing;
@@ -1295,7 +1303,11 @@ namespace Unity.Netcode.Components
         /// Controls scale interpolation smoothing.
         /// </summary>
         /// <remarks>
-        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="ScaleMaxInterpolationTime"/>.
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass towards
+        /// the interpolated result at a rate determined by <see cref="ScaleMaxInterpolationTime"/>.<br />
+        /// This smoothing pass is frame rate independent under <see cref="InterpolationTypes.Lerp"/> and
+        /// <see cref="InterpolationTypes.SmoothDampening"/>. <see cref="InterpolationTypes.LegacyLerp"/> keeps its
+        /// original frame rate dependent smoothing, so the same value does not produce the same result there.
         /// </remarks>
         public bool ScaleLerpSmoothing = true;
         private bool m_PreviousScaleLerpSmoothing;
