@@ -4587,17 +4587,16 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal static void RefreshInterpolationFrameData(NetworkManager networkManager)
         {
-            // Use the local time because:
-            // Client-Server:
-            // Local time is server time on a host or server.
-            // Local time on clients takes latency into consideration.
-            // Distributed authority:
-            // Local time is used by the authority.
-            // Local time on non-authority takes latency into consideration.
-            var timeSystem = networkManager.LocalTime;
-            var realTimeProvider = networkManager.RealTimeProvider;
-            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
-
+            // Use the server time, since that is the clock the states being interpolated between are stamped on
+            // (a state's SentTime is derived from its NetworkTick). Deriving the render time from LocalTime
+            // subtracts the tick latency from a clock that already leads ServerTime by roughly that much, which
+            // leaves the render time at or ahead of the newest state that can exist and starves the interpolator.
+            // Measuring from ServerTime is also self correcting, as the tick latency grows with the round trip
+            // time. This is a no-op on a host or server, where both clocks are the same.
+            var timeSystem = networkManager.ServerTime;
+            var realTimeProvider = networkManager.RealTimeProvider;
+            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
+
             // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
             // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
             // updates are received.
@@ -5071,7 +5070,10 @@ namespace Unity.Netcode.Components
         {
             if (networkManager.IsListening)
             {
-                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
+                // The number of ticks the interpolators run behind, as a duration. This is not a point in time:
+                // it does not grow as the session runs.
+                var ticksBehind = networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset;
+                return (float)(ticksBehind * networkManager.ServerTime.FixedDeltaTimeAsDouble);
             }
             return 0f;
         }
