@@ -4625,10 +4625,10 @@ namespace Unity.Netcode.Components
             // leaves the render time at or ahead of the newest state that can exist and starves the interpolator.
             // Measuring from ServerTime is also self correcting, as the tick latency grows with the round trip
             // time. This is a no-op on a host or server, where both clocks are the same.
-            var timeSystem = networkManager.ServerTime;
-            var realTimeProvider = networkManager.RealTimeProvider;
-            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
-
+            var timeSystem = networkManager.ServerTime;
+            var realTimeProvider = networkManager.RealTimeProvider;
+            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
+
             // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
             // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
             // updates are received.
@@ -5162,7 +5162,7 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
-                // 
+                //
                 if (m_NetworkManager.NetworkConfig.ActiveTransformSyncMode == TransformSyncModes.Batched)
                 {
                     // Batched: every registered instance is checked in parallel and anything that comes back

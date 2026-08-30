@@ -14,7 +14,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <remarks>
     /// The two modes can not be cross pollinated on a per instance basis. As such, it is a per session setting
-    /// that applies to every <see cref="Components.NetworkTransform"></see> component instance.
+    /// that applies to every <see cref="Components.NetworkTransform"/> component instance.
     /// </remarks>
     public enum TransformSyncModes
     {
