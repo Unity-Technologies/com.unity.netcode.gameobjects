@@ -4,6 +4,7 @@ using System.Reflection;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
@@ -12,6 +13,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkBehaviourEditor : UnityEditor.Editor
     {
         private bool m_Initialized;

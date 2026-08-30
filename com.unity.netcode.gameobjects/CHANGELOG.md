@@ -27,6 +27,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4146)
+- Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
+- Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
+- Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
+
 
 ### Security
 

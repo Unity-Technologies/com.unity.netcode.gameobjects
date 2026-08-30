@@ -4,12 +4,14 @@ using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// Internal use. Hides the script field for the given component.
     /// </summary>
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class HiddenScriptEditor : UnityEditor.Editor
     {
         private static readonly string[] k_HiddenFields = { "m_Script" };
@@ -31,6 +33,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// Internal use. Hides the script field for UnityTransport.
     /// </summary>
     [CustomEditor(typeof(UnityTransport), true)]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class UnityTransportEditor : HiddenScriptEditor
     {
         private static readonly string[] k_HiddenFields = { "m_Script", "ConnectionData" };
@@ -148,6 +151,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// Internal use. Hides the script field for NetworkAnimator.
     /// </summary>
     [CustomEditor(typeof(NetworkAnimator), true)]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkAnimatorEditor : HiddenScriptEditor
     {
 
@@ -159,6 +163,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// Internal use. Hides the script field for NetworkRigidbody.
     /// </summary>
     [CustomEditor(typeof(NetworkRigidbody), true)]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkRigidbodyEditor : HiddenScriptEditor
     {
 
@@ -170,6 +175,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// Internal use. Hides the script field for NetworkRigidbody2D.
     /// </summary>
     [CustomEditor(typeof(NetworkRigidbody2D), true)]
+    [MovedFrom(true, "Unity.Netcode.Editor", "Unity.Netcode.Editor", null)]
     public class NetworkRigidbody2DEditor : HiddenScriptEditor
     {
 
