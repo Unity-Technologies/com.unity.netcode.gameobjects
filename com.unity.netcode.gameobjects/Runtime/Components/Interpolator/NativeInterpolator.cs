@@ -296,37 +296,13 @@ namespace Unity.Netcode.Components
         /// <see cref="BufferedLinearInterpolator{T}.ResetTo"/>.
         /// </summary>
         /// <remarks>
-        /// The managed implementation seeds a baseline measurement here, stamped with the caller's
-        /// <paramref name="serverTime"/>. This one deliberately does not, because that baseline becomes an
-        /// ordering floor that the measurements which follow it cannot clear.<br />
-        /// <br />
-        /// Callers pass <c>NetworkManager.ServerTime.Time</c>, the local current time, while incoming
-        /// measurements are stamped with the tick they were authored on
-        /// (<see cref="NetworkTransform.NetworkTransformState.SentTime"/>), which is always at least a tick
-        /// older. Once the baseline is consumed it becomes <see cref="NativeInterpolatorState.Target"/>, and
-        /// both of the guards that admit a measurement compare against it:
-        /// <see cref="AddMeasurement"/> requires a stamp newer than
-        /// <see cref="NativeInterpolatorState.LastMeasurementAddedTime"/>, and
-        /// <see cref="TryConsumeFromBuffer"/> requires one newer than <c>Target.TimeSent</c>. An instance that
-        /// resets part way through a session therefore rejects everything the authority sends next, and the
-        /// rejection is permanent: with a target already reached and a non empty buffer,
-        /// <see cref="Update"/> neither interpolates nor takes the stale target reset, so elapsed time alone
-        /// never recovers it.<br />
-        /// <br />
-        /// In practice this only reaches an instance that just stopped being the authority, which in a client
-        /// server topology is only ever the server. Leaving the buffer empty puts the interpolator in exactly
-        /// the state a freshly spawned one is in: the value is still held (<see cref="Reset"/> seeds all three
-        /// of the in flight values), the first measurement to arrive is taken unconditionally because
-        /// <see cref="NativeInterpolatorState.BufferCounter"/> is zero, and it is consumed against render time
-        /// alone. Seeding at spawn is unaffected — the baseline stamp there is one tick ahead of the first
-        /// measurement, so the interval the first measurement is interpolated over is the tick length either
-        /// way.
+        /// Clears the buffer and holds <paramref name="targetValue"/> as the current value.<br />
+        /// No baseline measurement is recorded, which is what the managed implementation does as well. See
+        /// <see cref="BufferedLinearInterpolator{T}.ResetTo(T, double)"/> for why.<br />
+        /// This leaves the interpolator in the state a freshly spawned one is in, so the next measurement to
+        /// arrive is taken unconditionally.
         /// </remarks>
-        /// <param name="serverTime">
-        /// Retained for signature parity with <see cref="BufferedLinearInterpolator{T}.ResetTo"/>. Not stored,
-        /// for the reason above.
-        /// </param>
-        internal static void ResetTo(ref NativeInterpolatorState state, ref NativeArray<BufferedItemNative> items, float4 targetValue, double serverTime)
+        internal static void ResetTo(ref NativeInterpolatorState state, ref NativeArray<BufferedItemNative> items, float4 targetValue)
         {
             Clear(ref state);
             state.RateOfChange = float4.zero;
@@ -394,20 +370,17 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Re-expresses every buffered measurement, and the values currently in flight, in a different space.
+        /// Re-expresses the buffered measurements and the in flight values in a different transform space.
         /// </summary>
         /// <remarks>
-        /// Invoked when the instance is reparented, which is the only thing that changes the space its
-        /// measurements are interpreted in. Converting the whole buffer at that moment keeps everything in one
-        /// space, which is what allows the interpolation job to have no knowledge of parents at all.<br />
-        /// <br />
-        /// The managed interpolator instead tags each measurement with the parent it arrived under and
-        /// converts lazily as the queue drains past the boundary. The net effect is the same transition; doing
-        /// it here means one conversion at a known instant, using both parents' poses as they are at that
-        /// instant, rather than a conversion per buffered item using poses sampled as each is consumed.
+        /// Invoked when the instance is reparented. Reparenting is the only thing that changes the
+        /// transform space for its measurements.<br />
+        /// Converting everything at that point is what keeps the interpolation job free of any parent
+        /// knowledge.<br />
+        /// The managed interpolator converts lazily as its queue drains instead. Both reach the same result.
         /// </remarks>
-        /// <param name="pointTransform">Converts a position from the old space to the new one.</param>
-        /// <param name="rotationTransform">Converts a rotation from the old space to the new one.</param>
+        /// <param name="pointTransform">Converts a position from the old transform space to the new one.</param>
+        /// <param name="rotationTransform">Converts a rotation from the old transform space to the new one.</param>
         internal static void ConvertSpace(ref NativeInterpolatorState state, ref NativeArray<BufferedItemNative> items, in float4x4 pointTransform, in quaternion rotationTransform)
         {
             for (int i = 0; i < state.BufferCount; i++)

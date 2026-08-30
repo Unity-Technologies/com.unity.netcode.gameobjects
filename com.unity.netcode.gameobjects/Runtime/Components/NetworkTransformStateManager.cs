@@ -7,19 +7,22 @@ using UnityEngine.Jobs;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// When using <see cref="TransformSyncModes.Batched"/> mode, this manages the jobs to detect changes in
-    /// or apply changes to the transform assigned to each <see cref="NetworkTransform"/> instance.
+    /// Manages the jobs that detect and apply <see cref="NetworkTransform"/> state changes when using
+    /// <see cref="TransformSyncModes.Batched"/> mode.
     /// </summary>
     /// <remarks>
-    /// One instance per <see cref="NetworkManager"/>. It is created the first time an instance registers and
-    /// is disposed when the <see cref="NetworkManager"/> shuts down, so a project running in
-    /// <see cref="TransformSyncModes.PerInstance"/> never allocates any of this.<br /><br />
-    /// The collections it owns are parallel: index <c>i</c> of each refers to the same
-    /// <see cref="NetworkTransform"/>. They are only ever mutated through <see cref="Register"/> and
-    /// <see cref="Deregister"/>, both of which apply the same swap back to every collection, so they cannot
-    /// drift apart. Each registered instance caches its own index in
-    /// <see cref="NetworkTransform.StateManagerIndex"/>, which makes deregistration O(1) and removes the need
-    /// for a lookup table.
+    /// One instance per <see cref="NetworkManager"/>, disposed and replaced when the
+    /// <see cref="NetworkManager"/> shuts down.<br />
+    /// A project configured to use <see cref="TransformSyncModes.PerInstance"/> mode never registers anything,
+    /// so the native collections are never allocated.<br />
+    /// The collections run in parallel as two sets, one for the authority instances and one for the
+    /// non-authority instances. The same index within a set refers to the same
+    /// <see cref="NetworkTransform"/>.<br />
+    /// A set changes only in its own register and deregister methods, which apply the same swap back to every
+    /// collection in that set to keep the indices lined up.<br />
+    /// Each instance remembers its own index, <see cref="NetworkTransform.StateManagerIndex"/> for the
+    /// authority set and <see cref="NetworkTransform.InterpolatorIndex"/> for the other, so removing one does
+    /// not have to search for it.
     /// </remarks>
     internal class NetworkTransformStateManager : IDisposable
     {
@@ -44,11 +47,9 @@ namespace Unity.Netcode.Components
         /// The maximum number of measurements an interpolator instance's buffer can hold.
         /// </summary>
         /// <remarks>
-        /// The managed interpolator's queue is unbounded and only bounded in practice by
-        /// <see cref="NativeInterpolator.BufferCountLimit"/>, which is the point at which it gives up and
-        /// teleports. In practice a queue never holds more than the tick latency plus a couple of entries, so
-        /// this is sized for that with headroom rather than for the panic threshold. Overflow drops the oldest
-        /// measurement, which is the same value the interpolator would have consumed and discarded next.
+        /// A buffer never holds more than the tick latency plus a couple of entries, so this is sized for that
+        /// with headroom. Overflow drops the oldest measurement, which is the one the interpolator would have
+        /// consumed and discarded next.
         /// </remarks>
         private const int k_InterpolatorBufferCapacity = 32;
 
@@ -85,8 +86,8 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Managed only:
         /// Unlike the native collections, it is available without anything having registered.
-        /// A handle is assigned to every synchronized instance, whether or not that instance is eligible for
-        /// batched jobs or not now.
+        /// In batched mode a handle is assigned to every synchronized instance, whether or not that instance
+        /// is eligible for the delta job.
         /// </remarks>
         internal readonly TransformHandleAllocator Handles = new TransformHandleAllocator();
 
@@ -212,9 +213,8 @@ namespace Unity.Netcode.Components
         /// Advances the interpolators for every registered non-authority instance.
         /// </summary>
         /// <remarks>
-        /// Invoked once per update stage in place of each instance interpolating itself. Only the buffer
-        /// consumption and interpolation math run within the job; the results are applied to the transforms on
-        /// the main thread afterwards by each instance's normal apply path.
+        /// Invoked once per update stage in place of each instance interpolating itself. See
+        /// <see cref="InterpolateTransformJob"/> for what the job does and does not do.
         /// </remarks>
         internal void RunInterpolation()
         {
@@ -283,9 +283,10 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Only the server registers instances for batching, so a non-server should never have anything
-            // queued. Kept as a safety net rather than an assumption: silently dropping is still better than
-            // a client attempting a send it cannot address, but it should not be reachable.
+            // Only a client-server session queues anything. CommitDetectedState gates queuing on being the
+            // server and not in distributed authority mode, so a distributed authority session sends every
+            // state update per instance instead. Kept as a safety net: dropping is better than a client
+            // attempting a send it cannot address.
             if (networkManager.ShutdownInProgress || !networkManager.IsServer)
             {
                 m_PendingBatch.Clear();
@@ -339,8 +340,7 @@ namespace Unity.Netcode.Components
         /// Writes the queued state updates the given client observes.
         /// </summary>
         /// <remarks>
-        /// The count is backfilled once the entries are written, since it is not known until the observer
-        /// filtering has run.
+        /// The count is backfilled once the entries are written.
         /// </remarks>
         internal void WriteBatch(FastBufferWriter writer, ulong targetClientId)
         {
@@ -372,7 +372,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Which of an instance's three interpolators an operation applies to.
+        /// Identifies which of an instance's three interpolators an operation targets.
         /// </summary>
         internal enum InterpolatorTarget
         {
@@ -406,22 +406,22 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The native equivalent of <see cref="BufferedLinearInterpolator{T}.ResetTo(T, double)"/>.
         /// </summary>
-        internal void ResetTo(int index, InterpolatorTarget target, float4 value, double time)
+        internal void ResetTo(int index, InterpolatorTarget target, float4 value)
         {
             var entry = InterpolationEntries[index];
             var items = BufferedItems.AsArray();
             switch (target)
             {
                 case InterpolatorTarget.Position:
-                    NativeInterpolator.ResetTo(ref entry.Position, ref items, value, time);
+                    NativeInterpolator.ResetTo(ref entry.Position, ref items, value);
                     entry.InterpolatedPosition = value;
                     break;
                 case InterpolatorTarget.Rotation:
-                    NativeInterpolator.ResetTo(ref entry.Rotation, ref items, value, time);
+                    NativeInterpolator.ResetTo(ref entry.Rotation, ref items, value);
                     entry.InterpolatedRotation = value;
                     break;
                 default:
-                    NativeInterpolator.ResetTo(ref entry.Scale, ref items, value, time);
+                    NativeInterpolator.ResetTo(ref entry.Scale, ref items, value);
                     entry.InterpolatedScale = value;
                     break;
             }
@@ -441,7 +441,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Re-expresses an instance's buffered measurements and in flight values in a different space.
+        /// Re-expresses an instance's buffered measurements and in flight values in a different transform space.
         /// </summary>
         /// <remarks>
         /// Scale is deliberately not converted: it is a local scale, so it is already parent relative and
@@ -456,7 +456,7 @@ namespace Unity.Netcode.Components
             NativeInterpolator.ConvertSpace(ref entry.Rotation, ref items, pointTransform, rotationTransform);
 
             // The most recently produced results are converted as well, otherwise the value applied on the
-            // frame of the reparent would still be in the old space.
+            // frame of the reparent would still be in the old transform space.
             entry.InterpolatedPosition = new float4(math.transform(pointTransform, entry.InterpolatedPosition.xyz), 0.0f);
             entry.InterpolatedRotation = math.mul(rotationTransform, new quaternion(entry.InterpolatedRotation)).value;
 
@@ -539,7 +539,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Authority Only: <br />
-        /// Deregisers a <see cref="NetworkTransform"/> instance from having its transform deltas tracked.
+        /// Deregisters a <see cref="NetworkTransform"/> instance from having its transform deltas tracked.
         /// </summary>
         /// <remarks>
         /// Invoked on despawn, destroy, and whenever an instance stops being an authority.
@@ -580,7 +580,7 @@ namespace Unity.Netcode.Components
         /// parallel, and anything that came back dirty then sends its state update on the main thread in the
         /// same order it would have otherwise.<br /><br />
         /// The job is completed within this call as opposed to being left in flight: the state update has to
-        /// be sent on the tick it was detected on, so there is nothing to overlap with. 
+        /// be sent on the tick it was detected on, so there is no other work to overlap.
         /// </remarks>
         internal void RunDeltaCheck()
         {

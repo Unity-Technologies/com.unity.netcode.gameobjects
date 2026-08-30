@@ -52,15 +52,15 @@ namespace Unity.Netcode.Components
 
     /// <summary>
     /// Non-Authority Only:
-    /// Advances the interpolators for every registered non-authority <see cref="NetworkTransform"/> in
-    /// parallel.
+    /// Handles interpolation for every registered non-authority <see cref="NetworkTransform"/> in
+    /// a parallel job.
     /// </summary>
     /// <remarks>
-    /// This performs the buffer consumption and the interpolation math only. Applying the results to the
-    /// transforms stays on the main thread for now (keeps this free of any hierarchy write order of operation complexities).<br />
-    /// <br />
-    /// Also, note that each entry owns its own slice of <see cref="BufferedItems"/> which assures no two indices address the same
-    /// items and that the whole array can be written without aliasing (pointing to the same thing).
+    /// This performs the buffer consumption and interpolation between two state updates only.<br />
+    /// Applying the results to the transforms stays on the main thread, which keeps this job free
+    /// of hierarchy write ordering.<br />
+    /// Each entry owns its own slice of <see cref="BufferedItems"/>, so no two indices address the same items.<br />
+    /// The whole array can be written without aliasing (access is to a distinct, independent memory region).
     /// </remarks>
     [BurstCompile]
     internal struct InterpolateTransformJob : IJobParallelFor

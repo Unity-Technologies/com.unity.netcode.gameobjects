@@ -1789,11 +1789,11 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// When <see cref="TransformSyncModes.Batched"/> mode, this is the instance's index within <see cref="NetworkTransformStateManager"/>.<br />
         /// It is -1 when it is not registered.
-        /// registered.
         /// </summary>
         /// <remarks>
-        /// Cached here (as opposed to using a lookup table) so registering and deregistering is O(1). The
-        /// manager keeps this up to date as instances are swapped between slots.
+        /// Cached here as opposed to using a lookup table, so registering and deregistering do not have to
+        /// search for the instance.<br />
+        /// The manager keeps this up to date as instances are swapped between slots.
         /// </remarks>
         internal int StateManagerIndex = -1;
 
@@ -2605,7 +2605,7 @@ namespace Unity.Netcode.Components
                     var value = new float4(position.x, position.y, position.z, 0.0f);
                     if (resetInterpolator)
                     {
-                        m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Position, value, time);
+                        m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Position, value);
                     }
                     else
                     {
@@ -2638,7 +2638,7 @@ namespace Unity.Netcode.Components
                 var value = new float4(rotation.x, rotation.y, rotation.z, rotation.w);
                 if (resetInterpolator)
                 {
-                    m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Rotation, value, time);
+                    m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Rotation, value);
                 }
                 else
                 {
@@ -2670,7 +2670,7 @@ namespace Unity.Netcode.Components
                 var value = new float4(scale.x, scale.y, scale.z, 0.0f);
                 if (resetInterpolator)
                 {
-                    m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Scale, value, time);
+                    m_CachedNetworkManager.TransformStateManager.ResetTo(InterpolatorIndex, NetworkTransformStateManager.InterpolatorTarget.Scale, value);
                 }
                 else
                 {

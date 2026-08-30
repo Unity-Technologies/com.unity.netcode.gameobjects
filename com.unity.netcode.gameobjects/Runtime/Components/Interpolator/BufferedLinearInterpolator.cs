@@ -274,7 +274,8 @@ namespace Unity.Netcode
         /// Resets the current interpolator to the target value.
         /// </summary>
         /// <remarks>
-        /// This is used when first synchronizing/initializing and when telporting an object.
+        /// This is used when first synchronizing/initializing and when teleporting an object.<br />
+        /// <paramref name="serverTime"/> is not used. Mark this obsolete and deprecate it at a later date.
         /// </remarks>
         /// <param name="targetValue">The target value to reset the interpolator to</param>
         /// <param name="serverTime">The current server time</param>

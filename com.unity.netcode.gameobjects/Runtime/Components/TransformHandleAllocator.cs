@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A compressed/bandwidth-friendly identifer allocation system that is used when <see cref="TransformSyncModes.Batched"/>
+    /// A compressed/bandwidth-friendly identifier allocation system that is used when <see cref="TransformSyncModes.Batched"/>
     /// mode is set. This helps to reduce the identifier from a bitpacked ulong and uint down to a ushort.
     /// </summary>
     /// <remarks>
@@ -13,9 +13,8 @@ namespace Unity.Netcode.Components
     /// ranges between one to two bytes for the lifetime of a session.<br />
     /// <br />
     /// Only the instance writing synchronization data (the server, or the session owner in a distributed
-    /// authority topology) allocates. Everyone else is told the handle at spawn. That is deliberate: allocating
-    /// on the owner would reassign the handle on every change of ownership, and the identity has to outlive
-    /// ownership.<br />
+    /// authority topology) allocates. Everyone else is told the handle at spawn. Allocating on the owner would
+    /// reassign the handle on every ownership change, and the identity has to outlive ownership.<br />
     /// <br />
     /// Freed handles are not re-issued immediately.<br />
     /// An unreliable state update naming a handle can still be in flight when the instance it referred to despawns,

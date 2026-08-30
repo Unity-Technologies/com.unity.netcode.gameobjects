@@ -33,6 +33,12 @@ namespace Unity.Netcode
         /// is determined per state update as opposed to per component.
         /// </remarks>
         Batched,
+        // TODO-FixMe:
+        // BEFORE-6000.7
+        // Batching applies to a client-server session only. A distributed authority session sends every state
+        // update per instance regardless of this setting. Get this working for DA mode. DA mode still benefits
+        // from most of the bandwidth optimizations, but doesn't benefit completely as batched mode needs some
+        // Rust server adjustments.
     }
 
     /// <summary>

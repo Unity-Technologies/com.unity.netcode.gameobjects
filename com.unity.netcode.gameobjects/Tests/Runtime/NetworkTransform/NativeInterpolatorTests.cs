@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var start = PositionAt(0);
             managed.ResetTo(start, 0.0);
-            NativeInterpolator.ResetTo(ref native, ref m_Items, new float4(start.x, start.y, start.z, 0.0f), 0.0);
+            NativeInterpolator.ResetTo(ref native, ref m_Items, new float4(start.x, start.y, start.z, 0.0f));
 
             var worstError = 0.0f;
             var worstDetail = string.Empty;
@@ -204,7 +204,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var start = RotationAt(0);
             managed.ResetTo(start, 0.0);
-            NativeInterpolator.ResetTo(ref native, ref m_Items, new float4(start.x, start.y, start.z, start.w), 0.0);
+            NativeInterpolator.ResetTo(ref native, ref m_Items, new float4(start.x, start.y, start.z, start.w));
 
             var worstError = 0.0f;
             var worstDetail = string.Empty;
@@ -317,7 +317,7 @@ namespace Unity.Netcode.RuntimeTests
         public void BufferOverflowKeepsNewestMeasurement()
         {
             var native = CreateState(InterpolatorValueKind.Vector3, false, false, 0.1f);
-            NativeInterpolator.ResetTo(ref native, ref m_Items, float4.zero, 0.0);
+            NativeInterpolator.ResetTo(ref native, ref m_Items, float4.zero);
 
             // More measurements than the buffer can hold, without tripping the teleport threshold.
             const int count = NativeInterpolator.BufferCountLimit - 1;
@@ -335,16 +335,18 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// An instance that stops being the authority part way through a session resets its interpolator with
-        /// the local current time, while the measurements that follow are stamped with the tick they were
-        /// authored on. Those stamps are older, so both of the interpolator's ordering guards reject them and
-        /// the instance never converges onto anything the new authority sends.
+        /// An instance that stops being the authority part way through a session resets its interpolator, and
+        /// the measurements that follow are stamped with the tick they were authored on.<br />
+        /// Those stamps are older than the reset, so a seeded baseline would leave both ordering guards
+        /// rejecting them. Neither implementation seeds one, and this holds them to that.
         /// </summary>
         /// <remarks>
-        /// This is the shape of an ownership transfer away from the local instance, which in a client server
-        /// topology only ever happens to the server. It is reproduced here rather than only through
-        /// <c>NetworkTransformSyncModeParityTests.OwnershipChangeKeepsReplicating</c> because the deadlock is
-        /// entirely internal to the interpolator: once the buffered measurements are all older than the reset
+        /// This is the shape of an ownership transfer away from the local instance. It happens to the server
+        /// under a server authoritative motion model and to the previous owner under an owner authoritative
+        /// one.<br />
+        /// It is reproduced here rather than only through
+        /// <c>NetworkTransformSyncModeParityTests.OwnershipChangeKeepsReplicating</c> because the failure is
+        /// entirely internal to the interpolator. Once the buffered measurements are all older than a seeded
         /// baseline, no amount of elapsed time recovers it.
         /// </remarks>
         [Test]
@@ -376,7 +378,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
-                NativeInterpolator.ResetTo(ref native, ref m_Items, held, transitionTime);
+                NativeInterpolator.ResetTo(ref native, ref m_Items, held);
             }
 
             // The new authority's first states were authored on ticks at or before the transition, so their

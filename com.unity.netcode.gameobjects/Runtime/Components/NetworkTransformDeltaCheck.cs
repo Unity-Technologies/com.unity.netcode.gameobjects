@@ -11,9 +11,8 @@ namespace Unity.Netcode.Components
         /// Everything <see cref="CheckForStateChange"/> needs from the instance it is checking.
         /// </summary>
         /// <remarks>
-        /// This creates the abstraction layer between <see cref="NetworkTransform"/> itself and the configuration
-        /// of the <see cref="NetworkTransform"/> in order to assure the delta check can be run both on the main
-        /// thread and from within a job.<br />
+        /// Separates the delta check from <see cref="NetworkTransform"/> itself, which is what lets it run both
+        /// on the main thread and from within a job.<br />
         /// A few members are read/write: the check can change the transform space it operates in and it
         /// advances the axial frame synchronization bookkeeping, both of which have to make it back to the
         /// instance.
@@ -54,7 +53,8 @@ namespace Unity.Netcode.Components
             internal int HalfFloatTargetTickOwnership;
 
             /// <summary>
-            /// Read/write. The tick slot this instance next sends an axial frame synchronization on.
+            /// Read/write. The next tick to send an axial frame synchronization, if a delta has been sent
+            /// since the last one.
             /// </summary>
             internal int NextTickSync;
 
@@ -156,12 +156,12 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Abstraction Layer Method:
-        /// Resolves which transform space the delta check operates in.
+        /// Resolves the transform space for both per-instance and batched mode delta checks.
         /// </summary>
         /// <remarks>
         /// Runs before the transform is sampled because it determines whether the local or the world values
         /// are the ones being compared. Kept separate (as opposed to being folded into
-        /// <see cref="CheckForStateChange"/>) so that neither caller has to sample both spaces.
+        /// <see cref="CheckForStateChange"/>) so that neither caller has to sample both transform spaces.
         /// </remarks>
         /// <param name="config">The instance configuration. <see cref="TransformDeltaConfig.InLocalSpace"/> may be updated.</param>
         /// <param name="flagStates">The state flags being updated.</param>

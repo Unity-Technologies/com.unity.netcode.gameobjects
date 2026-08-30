@@ -456,11 +456,10 @@ namespace Unity.Netcode.RuntimeTests
         /// <see cref="FlagStates.ReliableSequenced"/>.
         /// </summary>
         /// <remarks>
-        /// <see cref="NetworkTransformState.NetworkSerialize{T}"/> derives ReliableSequenced while writing
-        /// (forced true unless UseUnreliableDeltas is set, otherwise derived from the teleporting,
-        /// synchronizing, frame sync and collapsed base position flags). The state being written is passed by
-        /// 'in', so that derivation lands on a defensive copy and is only ever observable on the state that
-        /// was read back. Comparing it against the source state would therefore always fail.
+        /// <see cref="NetworkTransformState.UpdateReliability"/> is what derives ReliableSequenced, and
+        /// <see cref="Serialize"/> takes the state by value and calls it on that copy.<br />
+        /// The flag therefore reaches the bytes and the state read back from them, but never the source state
+        /// the case holds. Comparing it against the source would always fail.
         /// </remarks>
         private static void AssertFlagsSurvived(StateCase stateCase, NetworkTransformState deserialized)
         {
