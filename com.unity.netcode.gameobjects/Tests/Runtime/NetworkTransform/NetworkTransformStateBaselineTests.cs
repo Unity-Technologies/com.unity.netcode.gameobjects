@@ -42,10 +42,10 @@ namespace Unity.Netcode.RuntimeTests
             "FullPrecision.Teleport.Parented|30|0167D4EA",
             "FullPrecision.TrackByStateId|23|7109AC47",
             "FullPrecision.InLocalSpace|18|FE97B9BF",
-            "QuaternionSync.Full|22|BBBF5D70",
-            "QuaternionSync.Compressed|10|61D0C0A0",
-            "QuaternionSync.HalfFloat|14|492F1FBC",
-            "QuaternionSync.Teleport|22|603F0025",
+            "QuaternionSync.Full|22|EB89F8E7",
+            "QuaternionSync.Compressed|10|A86AAC6C",
+            "QuaternionSync.HalfFloat|14|2629A22E",
+            "QuaternionSync.Teleport|22|51DF412A",
             "HalfFloat.AllAxes|24|56C94289",
             "HalfFloat.PositionOnly|12|E0EB69C7",
             "HalfFloat.PositionXZ|10|270908C3",
@@ -75,7 +75,11 @@ namespace Unity.Netcode.RuntimeTests
                 RotAngleX = 33.75f,
                 RotAngleY = 190.5f,
                 RotAngleZ = 271.25f,
-                Rotation = Quaternion.Euler(33.75f, 190.5f, 271.25f),
+                // Literal components rather than Quaternion.Euler of the angles above: Euler goes through
+                // native trig, which lands a ULP apart on Linux against Windows, and the uncompressed
+                // quaternion cases put those bytes on the wire verbatim. (1, 2, 2, 4) / 5 is unit length and
+                // has a unique largest component for the smallest three compression path.
+                Rotation = new Quaternion(0.2f, 0.4f, 0.4f, 0.8f),
                 ScaleX = 2.5f,
                 ScaleY = 0.75f,
                 ScaleZ = 4.0f,
