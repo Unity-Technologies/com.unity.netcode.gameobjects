@@ -100,7 +100,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private NetworkObject SpawnMover(ulong ownerClientId = NetworkManager.ServerClientId, GameObject prefab = null)
         {
-            var instance = Object.Instantiate(prefab != null ? prefab : m_MoverPrefab);
+            var instance = Object.Instantiate(prefab ?? m_MoverPrefab);
             var networkObject = instance.GetComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             networkObject.SpawnWithOwnership(ownerClientId);

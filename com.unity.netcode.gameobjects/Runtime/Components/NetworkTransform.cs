@@ -4260,7 +4260,7 @@ namespace Unity.Netcode.Components
             }
 
             // Handle transform space re-parenting transitions for batched transforms.
-            ConvertBatchedInterpolationSpace(m_PositionInterpolator.Parent, parentNetworkObject != null ? parentNetworkObject.transform : null);
+            ConvertBatchedInterpolationSpace(m_PositionInterpolator.Parent, parentNetworkObject?.transform);
 
             InLocalSpace = parentNetworkObject != null;
 
