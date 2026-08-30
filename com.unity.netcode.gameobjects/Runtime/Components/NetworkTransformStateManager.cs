@@ -613,12 +613,16 @@ namespace Unity.Netcode.Components
                 var instance = m_Instances[i];
                 var entry = Entries[i];
                 instance.ApplyBatchedDeltaEntry(ref entry);
-                // The instance may have deregistered while applying, in which case this slot now belongs to a
-                // different instance and must not be written back.
                 if (instance.StateManagerIndex == i)
                 {
                     Entries[i] = entry;
+                    continue;
                 }
+
+                // The instance deregistered while applying, which swapped the last registered instance and
+                // its already completed entry into this slot. Hold the index so that instance is applied on
+                // the tick it was detected on as opposed to being skipped by the increment.
+                i--;
             }
         }
 

@@ -1258,6 +1258,10 @@ namespace Unity.Netcode
             // session UI without a mid-session write splitting a running session across both modes.
             NetworkConfig.ActiveTransformSyncMode = NetworkConfig.TransformSyncMode;
 
+            // The captured mode is part of the connection configuration hash, so drop anything GetConfig
+            // cached before the session started or the server compares connecting clients against it.
+            NetworkConfig.ClearConfigHash();
+
             // Always create a default session config when starting a NetworkManager instance
             if (DistributedAuthorityMode)
             {
