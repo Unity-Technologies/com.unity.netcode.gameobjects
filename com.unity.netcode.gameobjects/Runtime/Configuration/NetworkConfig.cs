@@ -13,9 +13,8 @@ namespace Unity.Netcode
     /// and sent via a single message (i.e. batched NetworkTransform).
     /// </summary>
     /// <remarks>
-    /// This is a session wide setting located under Project Settings -&gt; Multiplayer -&gt;Netcode for GameObjects. <br />
-    /// The two modes can not be cross pollinated on a per instance basis. As such, it is a per session global setting
-    /// for every <see cref="Components.NetworkTransform"></see> component instance.
+    /// The two modes can not be cross pollinated on a per instance basis. As such, it is a per session setting
+    /// that applies to every <see cref="Components.NetworkTransform"></see> component instance.
     /// </remarks>
     public enum TransformSyncModes
     {
@@ -75,10 +74,28 @@ namespace Unity.Netcode
         public NetworkPrefabs Prefabs = new NetworkPrefabs();
 
         /// <summary>
-        /// A global setting, per session, that determines how <see cref="Components.NetworkTransform"/> instances detect and synchronize their state.
+        /// Determines how <see cref="Components.NetworkTransform"/> instances detect and synchronize their state.
         /// </summary>
+        /// <remarks>
+        /// The two modes are not wire compatible, so this is part of the connection configuration hash and every
+        /// peer in a session has to agree on it. Changing it while a session is running has no effect: the value
+        /// is captured into <see cref="ActiveTransformSyncMode"/> when the <see cref="NetworkManager"/> starts and
+        /// the new value applies to the next session.
+        /// </remarks>
+        [Tooltip("Determines how NetworkTransform instances detect and synchronize their state. Batched detects changes for all instances within a job and sends them as a single message per tick. Every peer in a session must use the same mode.")]
         [SerializeField]
-        internal TransformSyncModes TransformSyncMode = TransformSyncModes.PerInstance;
+        public TransformSyncModes TransformSyncMode = TransformSyncModes.PerInstance;
+
+        /// <summary>
+        /// The mode the current session is actually running with, captured from <see cref="TransformSyncMode"/>
+        /// when the <see cref="NetworkManager"/> starts.
+        /// </summary>
+        /// <remarks>
+        /// Everything on the sending and receiving paths reads this and not the authored value, so a mid-session
+        /// write to <see cref="TransformSyncMode"/> cannot leave instances registered under one mode while new
+        /// ones use the other, and cannot shift the connection hash out from under an in progress session.
+        /// </remarks>
+        internal TransformSyncModes ActiveTransformSyncMode;
 
         /// <summary>
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
@@ -389,8 +406,9 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(EnsureNetworkVariableLengthSafety);
                 writer.WriteValueSafe(RpcHashSize);
                 // The two transform synchronization modes are not compatible and this needs to be part
-                // of the hash check during the initial connection request.
-                writer.WriteValueSafe((byte)TransformSyncMode);
+                // of the hash check during the initial connection request. This is the mode the session
+                // started with, so a mid-session edit cannot start rejecting late joiners.
+                writer.WriteValueSafe((byte)ActiveTransformSyncMode);
 
                 if (cache)
                 {

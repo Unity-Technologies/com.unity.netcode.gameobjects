@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
 using Directory = UnityEngine.Windows.Directory;
@@ -133,7 +132,6 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
             var settings = NetcodeForGameObjectsProjectSettings.instance;
             var generateDefaultPrefabs = settings.GenerateDefaultNetworkPrefabs;
             var networkPrefabsPath = settings.TempNetworkPrefabsPath;
-            var transformSyncMode = settings.TransformSyncMode;
 
             EditorGUI.BeginChangeCheck();
 
@@ -194,26 +192,6 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                     networkPrefabsPath,
                     GUILayout.Width(s_MaxLabelWidth + 270));
                 GUILayout.EndVertical();
-
-                GUILayout.BeginVertical("Box");
-                GUILayout.Label("NetworkTransform Synchronization", EditorStyles.boldLabel);
-                transformSyncMode = (TransformSyncModes)EditorGUILayout.EnumPopup(
-                    new GUIContent(
-                        "Synchronization Mode",
-                        "Determines how NetworkTransform instances detect and synchronize their state. " +
-                        "Batched mode detects changes for all instances within a job and sends them as a single message per tick. " +
-                        "This is a global setting for all NetworkTransforms since the two modes are not compatible on a per instance basis."),
-                    transformSyncMode,
-                    GUILayout.Width(s_MaxLabelWidth + 120));
-
-                if (transformSyncMode == TransformSyncModes.Batched)
-                {
-                    EditorGUILayout.HelpBox(
-                        $"{nameof(NetworkTransform.UseUnreliableDeltas)} does not apply in this mode and will no longer be visible when viewing " +
-                        "NetworkTransform in the inspector view. Delivery is determined per state update as opposed to per component.",
-                        MessageType.Info);
-                }
-                GUILayout.EndVertical();
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
             GUILayout.EndVertical();
@@ -224,7 +202,6 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                 NetcodeForGameObjectsEditorSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
                 settings.GenerateDefaultNetworkPrefabs = generateDefaultPrefabs;
                 settings.TempNetworkPrefabsPath = networkPrefabsPath;
-                settings.TransformSyncMode = transformSyncMode;
                 settings.SaveSettings();
             }
         }

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Unity.Netcode.Components;
-using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -220,41 +219,37 @@ namespace Unity.Netcode.GameObjects.Editor
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
 
-            // UseUnreliableDeltas only applies to per instance synchronization mode. Under the batched mode
-            // delivery is determined per state update as opposed to per component, so the property (and
-            // everything it constrains) is hidden. See Project Settings -> Multiplayer -> Netcode for GameObjects.
-            var perInstanceSync = NetcodeForGameObjectsProjectSettings.instance.TransformSyncMode == TransformSyncModes.PerInstance;
-            if (perInstanceSync)
+            // UseUnreliableDeltas only applies to per instance synchronization mode, but the mode is authored on
+            // the NetworkManager that will run this instance, which a prefab cannot know. So it is always drawn
+            // and the runtime ignores it under the batched mode, where delivery is determined per state update
+            // as opposed to per component.
+            // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
+            // precedence.
+            if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
             {
-                // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
-                // precedence.
-                if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
-                {
-                    networkTransform.UseUnreliableDeltas = false;
-                }
-                SetGUIActive(!networkTransform.SwitchTransformSpaceWhenParented);
-                if (networkTransform.SwitchTransformSpaceWhenParented)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
-                    EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.SwitchTransformSpaceWhenParented)}.");
-                    EditorGUILayout.EndHorizontal();
-                }
-                else
-                {
-                    EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
-                }
-
-                SetGUIActive(true);
+                networkTransform.UseUnreliableDeltas = false;
             }
+            SetGUIActive(!networkTransform.SwitchTransformSpaceWhenParented);
+            if (networkTransform.SwitchTransformSpaceWhenParented)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+                EditorGUILayout.LabelField($"Cannot use with {nameof(NetworkTransform.SwitchTransformSpaceWhenParented)}.");
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
+            }
+
+            SetGUIActive(true);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
 
             // SwitchTransformSpaceWhenParented is only constrained by UseUnreliableDeltas while the latter applies.
-            var blockedByUnreliableDeltas = perInstanceSync && networkTransform.UseUnreliableDeltas;
-            SetGUIActive(!blockedByUnreliableDeltas);
-            if (blockedByUnreliableDeltas)
+            SetGUIActive(!networkTransform.UseUnreliableDeltas);
+            if (networkTransform.UseUnreliableDeltas)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
@@ -269,10 +264,7 @@ namespace Unity.Netcode.GameObjects.Editor
             if (m_SwitchTransformSpaceWhenParented.boolValue)
             {
                 m_TickSyncChildren.boolValue = true;
-                if (perInstanceSync)
-                {
-                    networkTransform.UseUnreliableDeltas = false;
-                }
+                networkTransform.UseUnreliableDeltas = false;
             }
             else
             {

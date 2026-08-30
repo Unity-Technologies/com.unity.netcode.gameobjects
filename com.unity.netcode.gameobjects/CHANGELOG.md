@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkConfig.TransformSyncMode`, which determines whether `NetworkTransform` instances detect and synchronize their state individually or as a single batched message per tick. It is set per `NetworkManager` under "Transform Synchronization" in the inspector or from script before a session starts, and the value the session starts with applies for the duration of that session. Every peer in a session has to use the same mode, which the connection configuration hash enforces. (#4123)
+
 ### Changed
 
 - Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4129)

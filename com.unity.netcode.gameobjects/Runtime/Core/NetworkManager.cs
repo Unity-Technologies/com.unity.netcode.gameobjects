@@ -1253,6 +1253,11 @@ namespace Unity.Netcode
 
             UpdateTopology();
 
+            // Capture the transform synchronization mode for the session about to start. Everything downstream
+            // reads the captured value, so a project can expose NetworkConfig.TransformSyncMode in its own pre
+            // session UI without a mid-session write splitting a running session across both modes.
+            NetworkConfig.ActiveTransformSyncMode = NetworkConfig.TransformSyncMode;
+
             // Always create a default session config when starting a NetworkManager instance
             if (DistributedAuthorityMode)
             {

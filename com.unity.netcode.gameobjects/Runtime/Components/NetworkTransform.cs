@@ -1971,7 +1971,7 @@ namespace Unity.Netcode.Components
             // This is the best place to define the handle since it is the first thing that reaches
             // every receiver and is only ever invoked once for the entire duration of the objects spawn
             // life cycle.
-            if (NetworkManager.NetworkConfig.TransformSyncMode == TransformSyncModes.Batched)
+            if (NetworkManager.NetworkConfig.ActiveTransformSyncMode == TransformSyncModes.Batched)
             {
                 if (serializer.IsWriter && TransformHandle == TransformHandleAllocator.InvalidHandle)
                 {
@@ -2403,7 +2403,7 @@ namespace Unity.Netcode.Components
                 // unreliable deltas to compensate for. Forcing this off also retires the axial frame
                 // synchronization: that exists solely to re-send a full set of axes once a second in case an
                 // unreliable delta was lost, which cannot happen here.
-                UseUnreliableDeltas = UseUnreliableDeltas && m_CachedNetworkManager.NetworkConfig.TransformSyncMode != TransformSyncModes.Batched,
+                UseUnreliableDeltas = UseUnreliableDeltas && m_CachedNetworkManager.NetworkConfig.ActiveTransformSyncMode != TransformSyncModes.Batched,
                 SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented,
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 UseRigidbodyForMotion = m_UseRigidbodyForMotion,
@@ -3883,7 +3883,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void RegisterForBatchedInterpolation()
         {
-            if (m_CachedNetworkManager == null || m_CachedNetworkManager.NetworkConfig.TransformSyncMode != TransformSyncModes.Batched)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.NetworkConfig.ActiveTransformSyncMode != TransformSyncModes.Batched)
             {
                 return;
             }
@@ -3916,7 +3916,7 @@ namespace Unity.Netcode.Components
 
         private void RegisterForBatchedStateTracking()
         {
-            if (m_CachedNetworkManager == null || m_CachedNetworkManager.NetworkConfig.TransformSyncMode != TransformSyncModes.Batched)
+            if (m_CachedNetworkManager == null || m_CachedNetworkManager.NetworkConfig.ActiveTransformSyncMode != TransformSyncModes.Batched)
             {
                 return;
             }
@@ -5163,7 +5163,7 @@ namespace Unity.Netcode.Components
                 }
 
                 // 
-                if (m_NetworkManager.NetworkConfig.TransformSyncMode == TransformSyncModes.Batched)
+                if (m_NetworkManager.NetworkConfig.ActiveTransformSyncMode == TransformSyncModes.Batched)
                 {
                     // Batched: every registered instance is checked in parallel and anything that comes back
                     // dirty will add its state update to the outbound batch.
