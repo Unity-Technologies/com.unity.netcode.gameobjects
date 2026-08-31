@@ -22,7 +22,7 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         /// </summary>
         /// <remarks>
         /// TODO-RELEASE: Set this to true before the 6000.7.0 release manifest submission if Netcode for Entities
-        /// ships the unified API as experimental and its scripting defines. 
+        /// ships the unified API as experimental and its scripting defines.
         /// Note: This is deliberately not a const: IDE0035 (remove unreachable code) is an error in this repository, so a
         /// const would fail the standards job as soon as it was set to false.
         /// </remarks>
