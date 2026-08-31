@@ -137,6 +137,15 @@ namespace Unity.Netcode
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private T ReadValue(FastBufferReader reader)
+        {
+            // T is constrained to unmanaged, use default rather than new() to avoid an allocation.
+            var value = default(T);
+            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+            return value;
+        }
+
         /// <inheritdoc cref="NetworkVariable{T}.WriteField"/>
         public override void WriteField(FastBufferWriter writer)
         {
@@ -154,9 +163,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
-                var value = new T();
-                NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
-                m_List.Add(value);
+                m_List.Add(ReadValue(reader));
             }
         }
 
@@ -178,8 +185,7 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            var value = ReadValue(reader);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -188,7 +194,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = m_List.Length - 1,
-                                    Value = m_List[m_List.Length - 1]
+                                    Value = value
                                 });
                             }
 
@@ -198,7 +204,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = m_List.Length - 1,
-                                    Value = m_List[m_List.Length - 1]
+                                    Value = value
                                 });
                                 // Preserve the legacy way of handling this
                                 if (keepDirtyDelta)
@@ -211,8 +217,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             ByteUnpacker.ReadValueBitPacked(reader, out int index);
-                            var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            var value = ReadValue(reader);
 
                             if (index < m_List.Length)
                             {
@@ -230,7 +235,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = index,
-                                    Value = m_List[index]
+                                    Value = value
                                 });
                             }
 
@@ -240,7 +245,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = index,
-                                    Value = m_List[index]
+                                    Value = value
                                 });
                                 // Preserve the legacy way of handling this
                                 if (keepDirtyDelta)
@@ -252,8 +257,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            var value = ReadValue(reader);
                             int index = m_List.IndexOf(value);
                             if (index == -1)
                             {
@@ -323,8 +327,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             ByteUnpacker.ReadValueBitPacked(reader, out int index);
-                            var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            var value = ReadValue(reader);
                             if (index >= m_List.Length)
                             {
                                 throw new Exception("Shouldn't be here, index is higher than list length");

@@ -259,7 +259,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
                     }
                 }
             }
-            value = new T();
+            value = default;
 
             Assert.NotNull(method);
 
@@ -766,8 +766,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
                 {
                     VerifyPositionAndLength(reader, writer.Length);
 
-                    var result = new T();
-                    reader.ReadValueSafe(out result);
+                    reader.ReadValueSafe(out T result);
                     Assert.AreEqual(fixedStringValue, result);
 
                     VerifyCheckBytes(reader, serializedValueSize);
