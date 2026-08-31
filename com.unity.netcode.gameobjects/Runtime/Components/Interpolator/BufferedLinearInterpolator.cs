@@ -275,6 +275,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// This is used when first synchronizing/initializing and when teleporting an object.<br />
+        /// No baseline measurement is recorded.<br />
+        /// A baseline is stamped with the local ServerTime.Time.<br />
+        /// The measurements that follow carry the older tick they were authored on.<br />
+        /// AddMeasurement would drop every one of those.<br />
+        /// The interpolator is left the way a freshly spawned one is instead.<br />
         /// <paramref name="serverTime"/> is not used. Mark this obsolete and deprecate it at a later date.
         /// </remarks>
         /// <param name="targetValue">The target value to reset the interpolator to</param>
@@ -289,22 +294,7 @@ namespace Unity.Netcode
             // Clear the interpolator
             Clear();
 
-            // The baseline measurement is deliberately not seeded here. Callers stamp it with
-            // NetworkManager.ServerTime.Time (the local current time) while the measurements that follow are
-            // stamped with the tick they were authored on (NetworkTransformState.SentTime), which is always at
-            // least a tick older. Seeding the baseline therefore establishes an ordering floor that later
-            // measurements cannot clear: AddMeasurement drops anything not newer than m_LastMeasurementAddedTime,
-            // and TryConsumeFromBuffer drops anything not newer than InterpolateState.Target.TimeSent.
-            //
-            // This only reaches an instance that resets part way through a session, which in practice means one
-            // that just stopped being the authority (in a client server topology, only ever the server). Such an
-            // instance would otherwise reject everything the new authority sends until a measurement happens to
-            // be authored on a later tick than the reset, and if motion has already stopped that never arrives.
-            //
-            // Clear() has left the buffer empty with a zeroed m_LastMeasurementAddedTime, and InternalReset seeds
-            // CurrentValue/NextValue/PreviousValue below, so the value is still held. That is exactly the state a
-            // freshly spawned interpolator is in: the first measurement to arrive is taken unconditionally
-            // because m_BufferCount is zero, and it is consumed against render time alone.
+            // No baseline measurement. See the ResetTo remarks above.
             InternalReset(parent, targetValue, serverTime, false);
         }
 
