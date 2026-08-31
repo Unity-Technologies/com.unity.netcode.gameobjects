@@ -10,8 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added an "Enable the experimental unified netcode API" opt-in under Project Settings > Multiplayer > Netcode for GameObjects, shown when Netcode for Entities is installed. Enabling it writes the `NetCodeConfig` snapshot, interpolation and transport values recommended for hybrid mode, once. They can be changed freely afterwards and restored from the same page.
-- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session with `GhostObject` prefabs is started, so ghost updates land on the same interval as the rest of Netcode for GameObjects.
+- Added additional section under Project Settings > Multiplayer > Netcode for GameObjects, shown when Netcode for Entities is installed and provides users a way to restor back to the recommended settings. (#4144)
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session with `GhostObject` prefabs is started, so ghost updates land on the same (relative) interval as the rest of Netcode for GameObjects. (#4144)
 
 
 ### Changed
@@ -24,21 +24,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
-
 ### Removed
-
 
 ### Fixed
 
 - Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4146)
+- Issue where `NetworkTransform` interpolated towards a point in time taken from the local clock rather than the server clock that state updates are stamped on, which starved the interpolator on clients and reduced interpolation to snapping between state updates. (#4135)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned an absolute network timestamp that grew for as long as the session ran, rather than the tick latency as a duration in seconds that it is documented to return. (#4135)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
 - Issue where the hybrid mode `NetCodeConfig` validation messages were not interpolated and did not check that automatic bootstrapping was disabled.
 
-
 ### Security
-
 
 ### Obsolete
 
