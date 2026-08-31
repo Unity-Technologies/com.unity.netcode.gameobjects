@@ -11,6 +11,7 @@ using Random = UnityEngine.Random;
 namespace Unity.Netcode.RuntimeTests
 {
     [TestFixtureSource(nameof(TestDataSource))]
+    [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
     internal class NetworkVariablePermissionTests : NetcodeIntegrationTest
     {
         public static IEnumerable<TestFixtureData> TestDataSource()
