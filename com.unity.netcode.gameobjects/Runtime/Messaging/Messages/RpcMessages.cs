@@ -83,12 +83,8 @@ namespace Unity.Netcode
             {
                 networkManager.Log.Exception(ex, new Context(LogLevel.Error, "Unhandled RPC exception!").AddNetworkBehaviour(networkBehaviour));
 
-                var methodId = metadata.NetworkRpcMethodId;
-                networkManager.Log.Info(new Context(LogLevel.Developer, "RPC Table Contents").AddCollection(rpcsForBehaviour, entry =>
-                {
-                    var invokePermission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][methodId];
-                    return $"{entry.Key} | {entry.Value.Method.Name} | {invokePermission}";
-                }));
+                var invokePermission = permission;
+                networkManager.Log.Info(new Context(LogLevel.Developer, "RPC Table Contents").AddCollection(rpcsForBehaviour, entry => $"{entry.Key} | {entry.Value.Method.Name} | {invokePermission}"));
             }
         }
     }
