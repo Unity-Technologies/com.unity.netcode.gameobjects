@@ -111,18 +111,15 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
-        # - name: ps5 --> SEE MTT-12118
-        #  type: Unity::VM
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  larger_flavor: b1.xlarge
-        #  standalone: PS5
-        # - name: switch --> TEMPORARILY DISABLED. SEE MTT-12118
-        #   The NintendoSDK on the win10-switch:v4 Bokken image is incomplete for the SDK
-        #   version the newer editor Playback Engines require: 18_3_0 is missing the
-        #   nintendo-switch-support lib the new toolchain links against, and 21_4_3 is missing the
-        #   Tools\Graphics\NvnTools (GraphicsConverter) libraries needed to package textures.
-        #   Neither is fixable from .yamato; re-enable once Package CI ships a complete SDK on the image.
+        # ps5: win10-ps5:v4 defaults SCE_PROSPERO_SDK_DIR to an unsupported SDK, so it is overridden to 13.000 in console-standalone-test.yml.
+        - name: ps5
+          type: Unity::VM
+          image: package-ci/win10-ps5:v4
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: PS5
+        # switch --> DISABLED. SEE MTT-15636 (split from MTT-12118). 6000.x/trunk editors mandate NintendoSDK 22.2.x, but package-ci/win10-switch:v4 currently ships only nintendosdk-en-21_4_0. That fixes texture packaging but the native IL2CPP link then fails (undefined symbol std::__1::__hash_memory, from the 22_02 SwitchPlayer.a). Re-enable once PETS publishes a win10-switch image with nintendosdk-en-22_2_x.
+        # - name: switch
         #   type: Unity::VM
         #   image: package-ci/win10-switch:v4
         #   flavor: b1.large
@@ -147,13 +144,14 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
-        #- name: ps5 --> SEE MTT-12118
-        #  type:  Unity::console::ps5
-        #  image: package-ci/win10-ps5:v4
-        #  flavor: b1.large
-        #  larger_flavor: b1.xlarge
-        #  standalone: PS5
-        # - name: switch --> TEMPORARILY DISABLED. SEE MTT-12118 (incomplete NintendoSDK on win10-switch:v4 image)
+        - name: ps5
+          type: Unity::console::ps5
+          image: package-ci/win10-ps5:v4
+          flavor: b1.large
+          larger_flavor: b1.xlarge
+          standalone: PS5
+        # switch --> DISABLED. SEE MTT-15636 (needs NintendoSDK 22.2.x on the image; see console_build note).
+        # - name: switch
         #   type: Unity::console::switch
         #   image: package-ci/win10-switch:v4
         #   flavor: b1.large
