@@ -9,15 +9,6 @@ namespace Unity.Netcode.GameObjects.EditorTests
     /// <summary>
     /// Branch coverage for <see cref="NetworkDeltaPosition"/>'s encoding math.
     /// </summary>
-    /// <remarks>
-    /// Separate from NetworkTransformHalfFloatPrecisionTests because none of this needs a session, and
-    /// that fixture would run it twice over two topologies.
-    /// <br /><br />
-    /// A value that is exactly representable as a half float carries no rounding loss, so a test built on
-    /// one cannot observe the behavior checked here and will pass against broken code. Keep the constants
-    /// below off the lattice, and derive expected encodings with <see cref="math.half(float)"/> rather than
-    /// writing them out as literals.
-    /// </remarks>
     internal class NetworkDeltaPositionTests
     {
         private const int k_Tick = 100;
