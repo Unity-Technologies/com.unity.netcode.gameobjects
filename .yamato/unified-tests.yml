@@ -39,9 +39,6 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     # Swap in the manifest that has the unified packages and versions required.
     # Without the N4E package, UNIFIED_NETCODE is undefined and the unified API excluded.
     - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
-    # Remove the committed lock as it is configured for 6000.6 which does not contain the unified API required.
-    - rm -f {{ project.path }}/Packages/packages-lock.json
-
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
