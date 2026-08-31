@@ -12,9 +12,8 @@ namespace Unity.Netcode.RuntimeTests
     /// fixed for the duration of a session.
     /// </summary>
     /// <remarks>
-    /// Nothing covered this before: every other fixture reaches the mode through the same assignment the
-    /// harness makes, so a delivery path that never ran would still leave them all green. The two assertions
-    /// here are the ones that fail if it stops arriving, or if it starts arriving in the middle of a session.
+    /// Every other fixture reaches the mode through the same assignment the harness makes, so none of them
+    /// can see a delivery path that never ran.
     /// </remarks>
     // These tests do not need to run against the Rust server, and batching is client-server only.
     [IgnoreIfServiceEnvironmentVariableSet]
@@ -46,9 +45,6 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        /// <summary>
-        /// Spawns an instance and returns the authority side <see cref="NetworkTransform"/>.
-        /// </summary>
         private NetworkTransform SpawnMover()
         {
             var instance = Object.Instantiate(m_MoverPrefab);
@@ -71,10 +67,6 @@ namespace Unity.Netcode.RuntimeTests
         /// The authored mode has to reach every <see cref="NetworkManager"/> and route the instances that
         /// spawn under it.
         /// </summary>
-        /// <remarks>
-        /// This is the one that would have caught the mode being configured but never delivered: the traffic
-        /// stayed per instance while everything reporting on the configuration said otherwise.
-        /// </remarks>
         [UnityTest]
         public IEnumerator AuthoredModeReachesTheRuntime()
         {
@@ -92,12 +84,6 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Writing the mode while a session is running applies to the next session, not this one.
         /// </summary>
-        /// <remarks>
-        /// The field is public so a project can offer it in its own pre-session UI, which means a mid-session
-        /// write has to be inert rather than trusted. Taking effect immediately would leave already spawned
-        /// instances registered under one mode while new ones use the other, and would move the connection
-        /// configuration hash out from under clients still joining.
-        /// </remarks>
         [UnityTest]
         public IEnumerator ModeChangedDuringASessionDoesNotAffectIt()
         {

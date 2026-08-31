@@ -15,11 +15,8 @@ namespace Unity.Netcode.RuntimeTests
     /// configurations that drive its serialization branches.
     /// </summary>
     /// <remarks>
-    /// This exists as the wire format baseline. Any change to how a state is written (whether intentional or
-    /// not) will fail <see cref="NetworkTransformStateSerializationBaseline"/> with the new signatures, which
-    /// makes an unintended wire change impossible to land silently.<br /><br />
-    /// To (re)generate the baseline: run this test, copy the C# array literal it prints on failure into
-    /// <see cref="k_ExpectedSignatures"/>, and verify every changed entry is an intended wire format change.
+    /// To regenerate: run this test, copy the array literal it prints on failure into
+    /// <see cref="k_ExpectedSignatures"/>, and confirm every changed entry is an intended wire format change.
     /// </remarks>
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
@@ -28,9 +25,6 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// One entry per case in <see cref="BuildStateMatrix"/>, formatted as "name|byteLength|fnv1aHash".
         /// </summary>
-        /// <remarks>
-        /// Empty until generated. See the remarks on the class for how to populate it.
-        /// </remarks>
         private static readonly string[] k_ExpectedSignatures =
         {
             "FullPrecision.AllAxes|42|B454AEF3",
@@ -406,8 +400,8 @@ namespace Unity.Netcode.RuntimeTests
         /// Verifies every configuration in the matrix survives a write and read back.
         /// </summary>
         /// <remarks>
-        /// The baseline above proves the bytes did not change. This proves those bytes still round trip, which
-        /// keeps a baseline that was regenerated against a broken serializer from being accepted.
+        /// The baseline proves the bytes did not change. This proves they still round trip, so a baseline
+        /// regenerated against a broken serializer is not silently accepted.
         /// </remarks>
         [Test]
         public void NetworkTransformStateSerializationRoundTrip()
@@ -460,10 +454,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <see cref="FlagStates.ReliableSequenced"/>.
         /// </summary>
         /// <remarks>
-        /// <see cref="NetworkTransformState.UpdateReliability"/> is what derives ReliableSequenced, and
-        /// <see cref="Serialize"/> takes the state by value and calls it on that copy.<br />
-        /// The flag therefore reaches the bytes and the state read back from them, but never the source state
-        /// the case holds. Comparing it against the source would always fail.
+        /// <see cref="NetworkTransformState.UpdateReliability"/> derives ReliableSequenced, and
+        /// <see cref="Serialize"/> takes the state by value and calls it on that copy. The flag reaches the
+        /// bytes and the state read back from them, but never the source state the case holds.
         /// </remarks>
         private static void AssertFlagsSurvived(StateCase stateCase, NetworkTransformState deserialized)
         {

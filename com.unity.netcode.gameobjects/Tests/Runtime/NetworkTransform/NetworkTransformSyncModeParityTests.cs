@@ -13,11 +13,8 @@ namespace Unity.Netcode.RuntimeTests
     /// non-authority instance ends up where the authority is.
     /// </summary>
     /// <remarks>
-    /// The two modes do not share a wire format, a send path, or an interpolator, so nothing structural keeps
-    /// them equivalent. This is the regression net for that: it does not compare bytes (they legitimately
-    /// differ) but compares the observable outcome, which is what has to stay the same.<br /><br />
-    /// The scenarios were chosen from the places where the batched path diverges from the per instance one
-    /// rather than from a general notion of coverage. Each one is documented with what it would catch.
+    /// The two modes share no wire format, no send path, and no interpolator.<br />
+    /// The comparison is the observable outcome rather than the bytes, which legitimately differ.
     /// </remarks>
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
@@ -51,9 +48,8 @@ namespace Unity.Netcode.RuntimeTests
         /// Records whether any state update it received carried the teleport flag.
         /// </summary>
         /// <remarks>
-        /// Convergence alone does not distinguish a teleport from a delta, because interpolation reaches the
-        /// same place either way. The flag is the only observable difference, so the tests that care about a
-        /// teleport assert on this rather than on where the object ended up.
+        /// Interpolation reaches the same position either way, so convergence does not distinguish a teleport
+        /// from a delta. The flag is the only observable difference.
         /// </remarks>
         internal class ParityMover : NetworkTransform
         {
@@ -95,9 +91,6 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnTearDown();
         }
 
-        /// <summary>
-        /// Spawns an instance owned by the given client, or by the server when no owner is given.
-        /// </summary>
         private NetworkObject SpawnMover(ulong ownerClientId = NetworkManager.ServerClientId, GameObject prefab = null)
         {
             var instance = Object.Instantiate(prefab ?? m_MoverPrefab);
@@ -132,10 +125,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Whether the instance that should be driving the transform has actually been told it has authority.
         /// </summary>
         /// <remarks>
-        /// Ownership is applied to the server side <see cref="NetworkObject"/> synchronously, but the owning
-        /// client only learns of it a round trip later. Moving the transform before then is a non-authority
-        /// write: it is discarded by interpolation and nothing is ever sent, which looks exactly like a
-        /// replication failure.
+        /// The server side <see cref="NetworkObject"/> has ownership applied synchronously. The owning client
+        /// only learns of it a round trip later. Moving the transform before then is a non-authority write:
+        /// interpolation discards it and nothing is sent.
         /// </remarks>
         private bool MotionAuthorityIsEstablished(NetworkObject serverSide)
         {
@@ -160,9 +152,6 @@ namespace Unity.Netcode.RuntimeTests
             return null;
         }
 
-        /// <summary>
-        /// Every manager that should be able to see the object agrees with the authority's transform.
-        /// </summary>
         private bool AllObserversMatch(NetworkObject serverSide, Vector3 expectedPosition, IReadOnlyList<NetworkManager> expectedObservers)
         {
             foreach (var manager in expectedObservers)
@@ -198,9 +187,6 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        /// <summary>
-        /// Moves the authority instance and waits for everyone to agree.
-        /// </summary>
         private IEnumerator MoveAndConverge(NetworkObject serverSide, Vector3 target, IReadOnlyList<NetworkManager> observers)
         {
             yield return WaitForConditionOrTimeOut(() => MotionAuthorityIsEstablished(serverSide));
@@ -214,8 +200,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Reports where each instance actually is, so a convergence failure identifies which instance was
-        /// left behind rather than only that one was.
+        /// Reports where each instance actually is, so a convergence failure names the instance left behind.
         /// </summary>
         private string DescribeObservers(NetworkObject serverSide, Vector3 expectedPosition, IReadOnlyList<NetworkManager> observers)
         {
@@ -263,10 +248,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Owner authoritative instances owned by a client.
         /// </summary>
         /// <remarks>
-        /// Batched mode deliberately leaves these on the per instance path, because the batch is assembled per
-        /// observing client and sent directly, which only the server can do. This is here because that
-        /// exclusion is invisible at runtime: get it wrong and the transform simply stops replicating with no
-        /// error, which is exactly what happened before the exclusion was added.
+        /// Batched mode leaves these on the per instance path: the batch is assembled per observing client and
+        /// sent directly, which only the server can do.<br />
+        /// The exclusion is invisible at runtime. Get it wrong and the transform stops replicating with no error.
         /// </remarks>
         [UnityTest]
         public IEnumerator ClientOwnedInstanceStillReplicates()
@@ -283,10 +267,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Two objects where one is hidden from a single client.
         /// </summary>
         /// <remarks>
-        /// The batched message is assembled per client, so this is what proves the observer filtering: the
-        /// hidden object's entry must be absent from that one client's batch while still reaching the others.
-        /// A filtering mistake shows up either as the hidden object appearing, or as the whole batch failing
-        /// to deserialize for that client and every object freezing.
+        /// The batched message is assembled per client, so this is what proves the observer filtering.<br />
+        /// A filtering mistake shows up as the hidden object appearing, or as the whole batch failing to
+        /// deserialize for that client and every object freezing.
         /// </remarks>
         [UnityTest]
         public IEnumerator MixedObserversReceiveOnlyWhatTheyObserve()
@@ -318,9 +301,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return MoveAndConverge(hiddenFromOne, new Vector3(1.0f, 1.0f, 1.0f), m_NetworkManagers);
         }
 
-        /// <summary>
-        /// Every non-authority instance that can see the object, other than the authority itself.
-        /// </summary>
         private List<ParityMover> GetNonAuthorityMovers(NetworkObject serverSide)
         {
             var authority = GetMotionAuthorityInstance(serverSide);
@@ -344,10 +324,10 @@ namespace Unity.Netcode.RuntimeTests
         /// A teleport has to arrive as a teleport rather than being interpolated towards.
         /// </summary>
         /// <remarks>
-        /// Teleports take a different route through both the delta check and the interpolator reset paths,
-        /// and the batched path captures the state before the teleport flag is cleared. Capturing it at the
-        /// wrong point turns a teleport into an ordinary delta, which converges to the same place and is only
-        /// visible as a long glide, so the flag is asserted rather than the destination.
+        /// Teleports take a different route through both the delta check and the interpolator reset paths, and
+        /// the batched path captures the state before the teleport flag is cleared.<br />
+        /// A teleport that arrives as an ordinary delta converges to the same place, so the flag is asserted
+        /// rather than the destination.
         /// </remarks>
         [UnityTest]
         public IEnumerator TeleportArrivesAsATeleport()
@@ -383,11 +363,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Re-enabling an axis that drifted while it was off has to arrive as a teleport.
         /// </summary>
         /// <remarks>
-        /// While an axis is disabled the authority keeps moving but stops sending that axis, so the half
-        /// float delta it would resume from is stale by more than the delta can represent. The check that
-        /// catches this ran from the per instance tick only, which a batched instance never reaches, and it
-        /// assigned rather than accumulated its per axis result, so an X trigger was discarded whenever Z was
-        /// also re-enabled and in range. Both axes are moved and re-enabled here for that reason.
+        /// While an axis is disabled the authority keeps moving but stops sending that axis, so the half float
+        /// delta it would resume from is stale by more than the delta can represent.<br />
+        /// X and Z are moved and re-enabled together because the check accumulates its result per axis.
         /// </remarks>
         [UnityTest]
         public IEnumerator ReEnablingADriftedAxisTeleports()
@@ -417,8 +395,8 @@ namespace Unity.Netcode.RuntimeTests
                 observer.ClearReceived();
             }
 
-            // Z is re-enabled alongside X and has not moved, so its in-range result used to overwrite the
-            // out-of-range one X produced.
+            // Z is re-enabled alongside X and has not moved, so its in-range result must not mask the
+            // out-of-range one X produces.
             authority.SyncPositionX = true;
             authority.SyncPositionZ = true;
 
@@ -439,9 +417,9 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <remarks>
         /// A change of ownership re-runs initialization, which moves an instance between the delta tracking
-        /// and interpolation registrations, and under owner authority it also moves it between the batched
-        /// and per instance send paths. The handle has to survive that, since it is allocated once and is not
-        /// reassigned on ownership change.
+        /// and interpolation registrations. Under owner authority it also moves between the batched and per
+        /// instance send paths.<br />
+        /// The handle has to survive that. It is allocated once and is not reassigned on ownership change.
         /// </remarks>
         [UnityTest]
         public IEnumerator OwnershipChangeKeepsReplicating()
@@ -471,13 +449,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Despawning and respawning, which is what exercises handle release and reuse.
+        /// Despawning and respawning, which exercises handle release and reuse.
         /// </summary>
         /// <remarks>
-        /// Handles are held for several seconds before being reissued so a state update still in flight cannot
-        /// land on whichever instance picks the handle up next. A respawn inside that window therefore has to
-        /// receive a different handle; if it did not, the surviving object and the new one would fight over
-        /// the same address and one would snap to the other's position.
+        /// Handles are held for several seconds before being reissued, so a respawn inside that window has to
+        /// receive a different handle.<br />
+        /// Sharing one would have the surviving object and the new one fight over the same address.
         /// </remarks>
         [UnityTest]
         public IEnumerator DespawnAndRespawnDoNotShareAHandle()

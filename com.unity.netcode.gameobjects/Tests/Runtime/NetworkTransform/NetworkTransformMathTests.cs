@@ -12,12 +12,10 @@ namespace Unity.Netcode.RuntimeTests
     /// Measures how closely <see cref="NetworkTransformMath"/> agrees with the engine math it replaces.
     /// </summary>
     /// <remarks>
-    /// The replacements exist because the engine equivalents are native bindings that Burst cannot compile.
-    /// Some of them are ports of implementations that are managed C# in the engine and are expected to match
-    /// exactly; the rest are mathematically equivalent but cannot be verified as bit identical because the
-    /// engine's operation order is not observable.<br /><br />
-    /// Each test reports the worst disagreement it found, so a failure states the actual measured error rather
-    /// than just that a threshold was crossed.
+    /// The replacements exist because the engine equivalents are native bindings Burst cannot compile.<br />
+    /// Some are ports of engine code that is managed C#, and those are expected to match exactly.<br />
+    /// The rest are mathematically equivalent, and cannot be verified as bit identical because the engine's
+    /// operation order is not observable.
     /// </remarks>
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
@@ -41,10 +39,8 @@ namespace Unity.Netcode.RuntimeTests
         /// over the value ranges used here, but not bit for bit.
         /// </summary>
         /// <remarks>
-        /// The remaining difference is one rounding step, not an algorithmic one: every other ported function
-        /// (including the scalar <see cref="NetworkTransformMath.SmoothDampAngle"/>, which shares this
-        /// arithmetic) matches exactly. Chasing it would mean guessing at how the engine's build contracts
-        /// multiply and add, and a difference this size is far below anything interpolation can express.
+        /// Not worth closing: it would mean guessing at how the engine's build contracts multiply and add, and
+        /// a difference this size is far below anything interpolation can express.
         /// </remarks>
         private const float k_SingleUlpTolerance = 1E-5f;
 

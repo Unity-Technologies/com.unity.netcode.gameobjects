@@ -12,11 +12,9 @@ namespace Unity.Netcode.RuntimeTests
     /// measurement sequences and compares them step for step.
     /// </summary>
     /// <remarks>
-    /// The two exist in parallel: the managed one continues to serve
-    /// <see cref="TransformSyncModes.PerInstance"/> and the native one serves
-    /// <see cref="TransformSyncModes.Batched"/>, because the managed one cannot run inside a job. Unlike the
-    /// delta check, which the two synchronization modes genuinely share, there is nothing structural stopping
-    /// these two from drifting apart. This is what stops it.
+    /// The two exist in parallel: the managed one serves <see cref="TransformSyncModes.PerInstance"/> and the
+    /// native one serves <see cref="TransformSyncModes.Batched"/>, because the managed one cannot run inside a
+    /// job. Nothing structural keeps them from drifting apart.
     /// </remarks>
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
@@ -33,18 +31,14 @@ namespace Unity.Netcode.RuntimeTests
         private const float k_Tolerance = 1E-4f;
 
         /// <summary>
-        /// Allowed while a value is still in motion, for the two paths that are known to be sensitive rather
-        /// than exact.
+        /// Allowed while a value is still in motion, for the two paths that are equivalent rather than exact.
         /// </summary>
         /// <remarks>
-        /// Vector slerp is the one replacement in <see cref="NetworkTransformMath"/> that is equivalent rather
-        /// than exact, so its small per step difference compounds through the interpolator's feedback.
+        /// Vector slerp is the one <see cref="NetworkTransformMath"/> replacement that is equivalent rather
+        /// than exact, so its small per step difference compounds through the interpolator's feedback.<br />
         /// Quaternion smooth dampening converts to euler angles, dampens each angle, and converts back every
-        /// frame; near a gimbal transition a sub thousandth of a degree difference in the conversion is enough
-        /// to select a different (equally valid) euler representative, after which the two dampen toward
-        /// different angles. The managed implementation is just as fragile there, so this is the two diverging
-        /// under a shared weakness rather than one of them being wrong.<br /><br />
-        /// What matters is that neither drifts permanently, which is what the settle phase asserts.
+        /// frame. Near a gimbal transition a sub thousandth of a degree difference selects a different, equally
+        /// valid, euler representative, and the two then dampen toward different angles.
         /// </remarks>
         private const float k_TransientTolerance = 5.0f;
 
@@ -88,9 +82,6 @@ namespace Unity.Netcode.RuntimeTests
             };
         }
 
-        /// <summary>
-        /// A deterministic motion path, so a failure is reproducible.
-        /// </summary>
         private static Vector3 PositionAt(int tick)
         {
             return new Vector3(
@@ -334,19 +325,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// An instance that stops being the authority part way through a session resets its interpolator, and
-        /// the measurements that follow are stamped with the tick they were authored on.<br />
-        /// Those stamps are older than the reset, so a seeded baseline would leave both ordering guards
-        /// rejecting them. Neither implementation seeds one, and this holds them to that.
+        /// An interpolator reset part way through a session still accepts the measurements that follow it.
         /// </summary>
         /// <remarks>
-        /// This is the shape of an ownership transfer away from the local instance. It happens to the server
-        /// under a server authoritative motion model and to the previous owner under an owner authoritative
-        /// one.<br />
-        /// It is reproduced here rather than only through
-        /// <c>NetworkTransformSyncModeParityTests.OwnershipChangeKeepsReplicating</c> because the failure is
-        /// entirely internal to the interpolator. Once the buffered measurements are all older than a seeded
-        /// baseline, no amount of elapsed time recovers it.
+        /// The reset stamps its baseline with the local time, while the measurements that follow carry the
+        /// older tick they were authored on. See
+        /// <see cref="BufferedLinearInterpolator{T}.ResetTo(T, double)"/>.<br />
+        /// This is the shape of an ownership transfer away from the local instance: the server under server
+        /// authority, the previous owner under owner authority.
         /// </remarks>
         [Test]
         public void ResetPartWayThroughSessionStillAcceptsOlderStampedMeasurements([Values] bool useManaged)
