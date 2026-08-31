@@ -10,7 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added automatic `NetCodeConfig` configuration for hybrid mode. When Netcode for Entities is installed and a registered network prefab has a `GhostObject`, the settings hybrid mode requires are corrected automatically and the Netcode for Entities tick rates are driven from `NetworkConfig.TickRate`. The recommended snapshot, interpolation and transport values are applied once, and can be restored from Project Settings > Multiplayer > Netcode for GameObjects.
+- Added an "Enable the experimental unified netcode API" opt-in under Project Settings > Multiplayer > Netcode for GameObjects, shown when Netcode for Entities is installed. Enabling it writes the `NetCodeConfig` snapshot, interpolation and transport values recommended for hybrid mode, once. They can be changed freely afterwards and restored from the same page.
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session with `GhostObject` prefabs is started, so ghost updates land on the same interval as the rest of Netcode for GameObjects.
 
 
 ### Changed

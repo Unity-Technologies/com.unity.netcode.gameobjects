@@ -5,7 +5,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// The <see cref="NetCodeConfig"/> values NGO needs when running in hybrid mode (i.e. Netcode for Entities is
-    /// installed and at least one registered network prefab carries a <see cref="GhostObject"/>).
+    /// installed and a registered network prefab carries a <see cref="GhostObject"/>).
     /// </summary>
     /// <remarks>
     /// This lives in the runtime assembly rather than the editor one because <see cref="NetCodeConfig.HostWorldModeSelection"/>
@@ -19,6 +19,11 @@ namespace Unity.Netcode
         /// Persisted as NetcodeForGameObjectsProjectSettings.HybridDefaultsVersion.
         /// </summary>
         internal const int Version = 1;
+
+        // Mirrors NetworkConfig.TickRate's default. The editor writes the defaults before any NetworkManager is
+        // necessarily loaded, so it has nothing to read the real rate from. NetworkManager re-aligns the config when a
+        // session carrying ghost prefabs starts, which is what makes writing a fixed value here safe.
+        internal const uint DefaultTickRate = 30;
 
         // Tuned against 2000 GenericPhysicsBallNGO instances in the ngo-examples project. A hybrid ghost costs ~4.87
         // bytes per snapshot, so 15000 carries ~3000 of them at the full tick rate. This is a cap and not a cost:

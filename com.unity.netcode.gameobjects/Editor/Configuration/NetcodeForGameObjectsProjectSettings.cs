@@ -39,6 +39,17 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
 
 #if UNIFIED_NETCODE
         /// <summary>
+        /// Whether the user has opted into the experimental unified netcode API.
+        /// </summary>
+        /// <remarks>
+        /// Only consulted while <see cref="HybridNetcodeConfigApplier.RequiresExperimentalOptIn"/> holds. Turning it
+        /// off again hides the hybrid section and leaves the NetCodeConfig exactly as it is; the marker below is what
+        /// keeps turning it back on from overwriting anything.
+        /// </remarks>
+        [SerializeField]
+        public bool EnableUnifiedNetcodeApi;
+
+        /// <summary>
         /// The hybrid mode default values already applied to this project's NetCodeConfig.
         /// </summary>
         /// <remarks>

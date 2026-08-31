@@ -12,6 +12,10 @@ namespace Unity.Netcode.EditorTests
     /// </summary>
     internal class HybridNetcodeDefaultsTests
     {
+        // Stands in for a value the user chose. Anything other than SnapshotPacketSize works; this is far enough from
+        // it that a partial apply cannot look like a pass.
+        private const int k_UserPacketSize = 9000;
+
         private NetCodeConfig m_Config;
 
         [SetUp]
@@ -79,23 +83,23 @@ namespace Unity.Netcode.EditorTests
         }
 
         /// <summary>
-        /// The one-shot can run before the hybrid <see cref="NetworkManager"/>'s scene is open, in which case it writes
-        /// N4E's tick rate rather than NGO's. Opening that scene runs a tick rate only pass, which has to correct the
-        /// rate without disturbing the tuned values.
+        /// The editor one-shot writes <see cref="HybridNetcodeDefaults.DefaultTickRate"/>, so a project running at any
+        /// other rate is corrected by <see cref="NetworkManager"/> at start-up. That pass has to move the rate without
+        /// disturbing the tuned values around it.
         /// </summary>
         [Test]
         public void TickRateOnlyPassCorrectsTheRateAndLeavesTheTunedValuesAlone()
         {
-            const int n4eTickRate = 60;
-            const uint ngoTickRate = 30;
+            const int writtenTickRate = 30;
+            const uint managerTickRate = 60;
 
-            HybridNetcodeDefaults.ApplyRecommended(m_Config, n4eTickRate);
-            Assume.That(m_Config.ClientServerTickRate.SimulationTickRate, Is.EqualTo(n4eTickRate), "The one-shot should have written N4E's tick rate.");
+            HybridNetcodeDefaults.ApplyRecommended(m_Config, writtenTickRate);
+            Assume.That(m_Config.ClientServerTickRate.SimulationTickRate, Is.EqualTo(writtenTickRate), "The one-shot should have written the default tick rate.");
 
-            Assert.IsTrue(HybridNetcodeDefaults.ApplyTickRate(m_Config, ngoTickRate));
+            Assert.IsTrue(HybridNetcodeDefaults.ApplyTickRate(m_Config, managerTickRate));
 
-            Assert.AreEqual((int)ngoTickRate, m_Config.ClientServerTickRate.SimulationTickRate);
-            Assert.AreEqual((int)ngoTickRate, m_Config.ClientServerTickRate.NetworkTickRate);
+            Assert.AreEqual((int)managerTickRate, m_Config.ClientServerTickRate.SimulationTickRate);
+            Assert.AreEqual((int)managerTickRate, m_Config.ClientServerTickRate.NetworkTickRate);
             Assert.AreEqual(HybridNetcodeDefaults.SnapshotPacketSize, m_Config.GhostSendSystemData.DefaultSnapshotPacketSize, "A tick rate pass must not disturb the tuned values.");
             Assert.AreEqual(HybridNetcodeDefaults.InterpolationTimeMS, m_Config.ClientTickRate.InterpolationTimeMS);
             Assert.AreEqual(HybridNetcodeDefaults.InterpolationTimeScaleMax, m_Config.ClientTickRate.InterpolationTimeScaleMax);
@@ -152,90 +156,103 @@ namespace Unity.Netcode.EditorTests
             Assert.Less(bufferMs, HybridNetcodeDefaults.InterpolationTimeMS);
         }
 
+        /// <summary>
+        /// The editor writes <see cref="HybridNetcodeDefaults.DefaultTickRate"/> because it has no
+        /// <see cref="NetworkManager"/> to read the real rate from. If the field default ever moves, this has to move
+        /// with it, or every project that kept the default starts out of sync until its first session.
+        /// </summary>
         [Test]
-        public void IsHybridProjectOnlyDetectsPrefabsCarryingAGhost()
+        public void DefaultTickRateMatchesTheNetworkConfigDefault()
         {
-            Assume.That(HybridNetcodeConfigApplier.IsHybridProject(), Is.False, "Another loaded NetworkManager already registers a ghost prefab.");
+            Assert.AreEqual(new NetworkConfig().TickRate, HybridNetcodeDefaults.DefaultTickRate);
+        }
 
-            var managerObject = new GameObject(nameof(IsHybridProjectOnlyDetectsPrefabsCarryingAGhost));
-            var prefabObject = new GameObject("GhostPrefab");
-            var prefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+        /// <summary>
+        /// Nothing is written until the user opts into the experimental unified netcode API, and opting in is what
+        /// triggers the one and only write.
+        /// </summary>
+        [Test]
+        public void ApplyDefaultsWritesNothingUntilTheUnifiedApiIsEnabled()
+        {
+            Assume.That(HybridNetcodeConfigApplier.RequiresExperimentalOptIn, Is.True, "This project ships the unified API without an opt-in, so there is no gate to exercise.");
+
+            var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
+            Assume.That(config, Is.Not.Null, "This project has no NetCodeConfig to adjust.");
+
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var restoreOptIn = settings.EnableUnifiedNetcodeApi;
+            var restoreVersion = settings.HybridDefaultsVersion;
+            var restoreConfig = EditorJsonUtility.ToJson(config);
             try
             {
-                var networkManager = managerObject.AddComponent<NetworkManager>();
-                networkManager.NetworkConfig = new NetworkConfig();
-                var networkObject = prefabObject.AddComponent<NetworkObject>();
+                settings.EnableUnifiedNetcodeApi = false;
+                settings.HybridDefaultsVersion = 0;
+                config.GhostSendSystemData.DefaultSnapshotPacketSize = k_UserPacketSize;
 
-                prefabsList.Add(new NetworkPrefab { Prefab = prefabObject });
-                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(prefabsList);
+                HybridNetcodeConfigApplier.ApplyDefaults(false);
+                Assert.AreEqual(k_UserPacketSize, config.GhostSendSystemData.DefaultSnapshotPacketSize, "Opting out has to leave the NetCodeConfig exactly as it is.");
+                Assert.AreEqual(0, settings.HybridDefaultsVersion, "Nothing was applied, so nothing should have been recorded.");
 
-                Assert.IsFalse(HybridNetcodeConfigApplier.IsHybridProject(), "A registered prefab without a GhostObject is not hybrid.");
-
-                networkObject.HasGhost = true;
-                Assert.IsTrue(HybridNetcodeConfigApplier.IsHybridProject());
+                settings.EnableUnifiedNetcodeApi = true;
+                HybridNetcodeConfigApplier.ApplyDefaults(false);
+                Assert.AreEqual(HybridNetcodeDefaults.SnapshotPacketSize, config.GhostSendSystemData.DefaultSnapshotPacketSize, "Opting in should have written the defaults.");
+                Assert.AreEqual(HybridNetcodeDefaults.Version, settings.HybridDefaultsVersion);
             }
             finally
             {
-                Object.DestroyImmediate(prefabsList);
-                Object.DestroyImmediate(prefabObject);
-                Object.DestroyImmediate(managerObject);
+                Restore(config, restoreConfig);
+                settings.EnableUnifiedNetcodeApi = restoreOptIn;
+                settings.HybridDefaultsVersion = restoreVersion;
+                settings.SaveSettings();
             }
         }
 
         /// <summary>
-        /// Once the one-shot has been recorded, every later pass still drives the tick rate from the hybrid
-        /// <see cref="NetworkManager"/>. This is what corrects the rate when the manager's scene opens after the
-        /// defaults were already applied.
+        /// Once the marker is recorded nothing writes the config again, which is what keeps a user's own edits from
+        /// being reverted on the next domain reload. Only the Project Settings button overrides it.
         /// </summary>
         [Test]
-        public void ApplyDrivesTheTickRateAfterTheOneShotHasBeenRecorded()
+        public void ApplyDefaultsIsAOneShotUnlessItIsForced()
         {
-            const uint managerTickRate = 45;
-
             var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
             Assume.That(config, Is.Not.Null, "This project has no NetCodeConfig to adjust.");
-            Assume.That(HybridNetcodeConfigApplier.IsHybridProject(), Is.False, "Another loaded NetworkManager already registers a ghost prefab.");
 
             var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var restoreOptIn = settings.EnableUnifiedNetcodeApi;
             var restoreVersion = settings.HybridDefaultsVersion;
-            var restoreSimulation = config.ClientServerTickRate.SimulationTickRate;
-            var restoreNetwork = config.ClientServerTickRate.NetworkTickRate;
-
-            var managerObject = new GameObject(nameof(ApplyDrivesTheTickRateAfterTheOneShotHasBeenRecorded));
-            var prefabObject = new GameObject("GhostPrefab");
-            var prefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            var restoreConfig = EditorJsonUtility.ToJson(config);
             try
             {
-                var networkManager = managerObject.AddComponent<NetworkManager>();
-                networkManager.NetworkConfig = new NetworkConfig { TickRate = managerTickRate, };
-                prefabObject.AddComponent<NetworkObject>().HasGhost = true;
-                prefabsList.Add(new NetworkPrefab { Prefab = prefabObject });
-                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(prefabsList);
-
-                // Past the one-shot, so this exercises the required plus tick rate path rather than ApplyRecommended.
+                settings.EnableUnifiedNetcodeApi = true;
                 settings.HybridDefaultsVersion = HybridNetcodeDefaults.Version;
-                config.ClientServerTickRate.SimulationTickRate = 60;
-                config.ClientServerTickRate.NetworkTickRate = 60;
+                config.GhostSendSystemData.DefaultSnapshotPacketSize = k_UserPacketSize;
 
-                HybridNetcodeConfigApplier.Apply(false);
+                HybridNetcodeConfigApplier.ApplyDefaults(false);
+                Assert.AreEqual(k_UserPacketSize, config.GhostSendSystemData.DefaultSnapshotPacketSize, "A recorded marker has to stop the defaults from being written a second time.");
 
-                Assert.AreEqual((int)managerTickRate, config.ClientServerTickRate.SimulationTickRate, "The tick rate should have been driven from the hybrid NetworkManager.");
-                Assert.AreEqual((int)managerTickRate, config.ClientServerTickRate.NetworkTickRate);
+                HybridNetcodeConfigApplier.ApplyDefaults(true);
+                Assert.AreEqual(HybridNetcodeDefaults.SnapshotPacketSize, config.GhostSendSystemData.DefaultSnapshotPacketSize, "The Project Settings button re-applies regardless of the marker.");
             }
             finally
             {
-                config.ClientServerTickRate.SimulationTickRate = restoreSimulation;
-                config.ClientServerTickRate.NetworkTickRate = restoreNetwork;
-                EditorUtility.SetDirty(config);
-                AssetDatabase.SaveAssetIfDirty(config);
-
+                Restore(config, restoreConfig);
+                settings.EnableUnifiedNetcodeApi = restoreOptIn;
                 settings.HybridDefaultsVersion = restoreVersion;
                 settings.SaveSettings();
-
-                Object.DestroyImmediate(prefabsList);
-                Object.DestroyImmediate(prefabObject);
-                Object.DestroyImmediate(managerObject);
             }
+        }
+
+        /// <summary>
+        /// Puts the project's own NetCodeConfig back the way the test found it. Serialized rather than field by field
+        /// because the applier writes across three nested structures.
+        /// </summary>
+        /// <param name="config">The project config the test mutated.</param>
+        /// <param name="serializedConfig">Its state before the test ran.</param>
+        private static void Restore(NetCodeConfig config, string serializedConfig)
+        {
+            EditorJsonUtility.FromJsonOverwrite(serializedConfig, config);
+            EditorUtility.SetDirty(config);
+            AssetDatabase.SaveAssetIfDirty(config);
         }
     }
 }
