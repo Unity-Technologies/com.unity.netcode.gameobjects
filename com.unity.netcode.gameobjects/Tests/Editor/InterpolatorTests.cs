@@ -301,5 +301,103 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.That(interp, Is.EqualTo(2f));
             // Since there is no extrapolation, the rest of this test was removed.
         }
+
+        #region Lerp Smoothing
+
+        // Deliberately not round numbers, so exactly representable values cannot mask a defect.
+        private const double k_SmoothTickInterval = 1.0d / 30.0d;
+        private const int k_SmoothTickLatency = 2;
+        private const float k_SmoothStartValue = 3.17f;
+        private const float k_SmoothVelocity = 2.3f;
+        private const double k_SmoothMoveDuration = 1.53d;
+        private const double k_SmoothTotalDuration = 2.11d;
+
+        /// <summary>
+        /// Drives the lerp and smooth dampening interpolation path with lerp smoothing enabled, where an
+        /// authority moves at a constant velocity and then holds still while the non-authority renders at
+        /// <paramref name="frameDeltaTime"/>.
+        /// </summary>
+        /// <returns>The interpolated value once <see cref="k_SmoothTotalDuration"/> has elapsed.</returns>
+        private float RunLerpSmoothing(float maximumInterpolationTime, float frameDeltaTime, bool lerp)
+        {
+            var interpolator = new BufferedLinearInterpolatorFloat
+            {
+                MaximumInterpolationTime = maximumInterpolationTime,
+                LerpSmoothEnabled = true,
+            };
+            interpolator.ResetTo(k_SmoothStartValue, 0.0d);
+
+            var restValue = k_SmoothStartValue + (float)(k_SmoothVelocity * k_SmoothMoveDuration);
+            var maxDeltaTime = k_SmoothTickLatency * k_SmoothTickInterval;
+            var nextTick = 1;
+            var currentValue = k_SmoothStartValue;
+
+            for (var time = 0.0d; time < k_SmoothTotalDuration; time += frameDeltaTime)
+            {
+                // Deliver every state update whose send time has already passed.
+                while (nextTick * k_SmoothTickInterval <= time)
+                {
+                    var sentTime = nextTick * k_SmoothTickInterval;
+                    var sentValue = sentTime <= k_SmoothMoveDuration
+                        ? k_SmoothStartValue + (float)(k_SmoothVelocity * sentTime)
+                        : restValue;
+                    interpolator.AddMeasurement(sentValue, sentTime);
+                    nextTick++;
+                }
+
+                currentValue = interpolator.Update(frameDeltaTime, time - maxDeltaTime, k_SmoothTickInterval, maxDeltaTime, lerp);
+            }
+
+            return currentValue;
+        }
+
+        /// <summary>
+        /// Lerp smoothing must still advance the value at 1.0f, the maximum legal value of the
+        /// <see cref="Components.NetworkTransform.PositionMaxInterpolationTime"/> family of fields.
+        /// </summary>
+        [Test]
+        public void LerpSmoothingDoesNotFreezeAtMaximumInterpolationTime([Values] bool lerp)
+        {
+            var result = RunLerpSmoothing(1.0f, 1.0f / 60.0f, lerp);
+
+            Assert.That(result, Is.GreaterThan(k_SmoothStartValue + 1.0f),
+                $"Interpolated value only advanced {result - k_SmoothStartValue} from {k_SmoothStartValue} over " +
+                $"{k_SmoothTotalDuration}s of authority motion. The maximum interpolation time froze the transform.");
+        }
+
+        /// <summary>
+        /// The rate at which lerp smoothing converges must not depend on the frame rate.
+        /// </summary>
+        [Test]
+        public void LerpSmoothingIsFrameRateIndependent()
+        {
+            // Heavier than the default, where the frame rate dependency is measurable.
+            const float maximumInterpolationTime = 0.87f;
+
+            var atThirtyFps = RunLerpSmoothing(maximumInterpolationTime, 1.0f / 30.0f, true);
+            var atTwoFortyFps = RunLerpSmoothing(maximumInterpolationTime, 1.0f / 240.0f, true);
+
+            Assert.That(atThirtyFps, Is.EqualTo(atTwoFortyFps).Within(0.01f),
+                $"The same elapsed time and interpolation settings produced {atThirtyFps} at 30fps but " +
+                $"{atTwoFortyFps} at 240fps. The smoothing rate is scaling with the frame rate.");
+        }
+
+        /// <summary>
+        /// Only 1.0f is substituted for, so settings below it keep their own smoothing rate and a heavier
+        /// setting stays smoother than a lighter one.
+        /// </summary>
+        [Test]
+        public void LerpSmoothingPreservesSettingsBelowTheMaximum()
+        {
+            // 0.99f is the retention substituted for 1.0f, so clamping to it would collapse these two.
+            var lighter = RunLerpSmoothing(0.99f, 1.0f / 60.0f, true);
+            var heavier = RunLerpSmoothing(0.995f, 1.0f / 60.0f, true);
+
+            Assert.That(heavier, Is.LessThan(lighter),
+                $"0.995 converged to {heavier} and 0.99 to {lighter} over the same motion. A higher maximum " +
+                "interpolation time has to retain more of the previous value, so it cannot converge first.");
+        }
+
+        #endregion
     }
 }
