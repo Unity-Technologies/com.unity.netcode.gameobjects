@@ -707,7 +707,7 @@ namespace Unity.Netcode
             }
 #endif
 
-            var val = new T();
+            var val = default(T);
             byte* ptr = ((byte*)&val) + offsetBytes;
             byte* bufferPointer = Handle->BufferPointer + Handle->Position;
             UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);

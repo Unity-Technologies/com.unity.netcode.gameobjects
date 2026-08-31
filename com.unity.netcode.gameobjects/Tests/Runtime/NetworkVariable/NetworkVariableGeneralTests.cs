@@ -140,6 +140,7 @@ namespace Unity.Netcode.RuntimeTests
         /// instances invoke <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
         /// </summary>
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
         public IEnumerator ApplyValueDuringSpawnSequence()
         {
             var authority = GetAuthorityNetworkManager();
