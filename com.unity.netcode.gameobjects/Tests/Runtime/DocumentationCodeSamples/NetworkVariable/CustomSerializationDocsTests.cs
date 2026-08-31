@@ -173,6 +173,7 @@ namespace DocumentationCodeSamples
         }
 
         [UnityTest]
+        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
         public IEnumerator TestHealthCode()
         {
             var authority = GetAuthorityNetworkManager();
