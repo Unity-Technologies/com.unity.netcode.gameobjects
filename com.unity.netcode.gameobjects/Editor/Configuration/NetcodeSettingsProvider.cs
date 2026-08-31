@@ -224,14 +224,13 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         /// <param name="settings">The project settings holding the opt-in flag and the applied-defaults marker.</param>
         private static void DrawHybridSettings(NetcodeForGameObjectsProjectSettings settings)
         {
-            GUILayout.BeginVertical("Box");
-            GUILayout.Label("Hybrid (Netcode for Entities)", EditorStyles.boldLabel);
-
             if (HybridNetcodeConfigApplier.RequiresExperimentalOptIn && !DrawUnifiedNetcodeApiToggle(settings))
             {
-                GUILayout.EndVertical();
                 return;
             }
+
+            GUILayout.BeginVertical("Box");
+            GUILayout.Label("Hybrid (Netcode for Entities)", EditorStyles.boldLabel);
 
             var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
             if (config == null)
