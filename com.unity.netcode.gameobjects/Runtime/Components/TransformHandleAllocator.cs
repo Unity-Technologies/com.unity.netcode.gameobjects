@@ -3,24 +3,17 @@ using System.Collections.Generic;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A compressed/bandwidth-friendly identifier allocation system that is used when <see cref="TransformSyncModes.Batched"/>
-    /// mode is set. This helps to reduce the identifier from a bitpacked ulong and uint down to a ushort.
+    /// Allocates the ushort handles that identify instances in <see cref="TransformSyncModes.Batched"/> mode.
     /// </summary>
     /// <remarks>
-    /// A batched state update identifies its instance by this handle rather than by a
-    /// <see cref="NetworkObject.NetworkObjectId"/> and <see cref="NetworkBehaviour.NetworkBehaviourId"/> pair.
-    /// The pair costs two to four bytes once bit packed and grows as object ids climb, where a "dense handle"
-    /// ranges between one to two bytes for the lifetime of a session.<br />
-    /// <br />
-    /// Only the instance writing synchronization data (the server, or the session owner in a distributed
-    /// authority topology) allocates. Everyone else is told the handle at spawn. Allocating on the owner would
-    /// reassign the handle on every ownership change, and the identity has to outlive ownership.<br />
-    /// <br />
-    /// Freed handles are not re-issued immediately.<br />
-    /// An unreliable state update naming a handle can still be in flight when the instance it referred to despawns,
-    /// and reissuing straight away would let that packet apply to whichever instance picked the handle up next.
-    /// Holding to-be-released handles for <see cref="k_RecycleDelaySeconds"/> has no impact/cost and avoids running
-    /// into this scenario.
+    /// A batched state update names its instance by a handle. The alternative is a
+    /// <see cref="NetworkObject.NetworkObjectId"/> and <see cref="NetworkBehaviour.NetworkBehaviourId"/> pair,
+    /// which costs more once bit packed and grows as object ids climb.<br />
+    /// Only the instance writing synchronization data allocates: the server, or the session owner in a
+    /// distributed authority topology. Everyone else is told the handle at spawn.<br />
+    /// The owner does not allocate. A handle has to outlive ownership changes.<br />
+    /// Freed handles are held for <see cref="k_RecycleDelaySeconds"/> before being reissued. An unreliable
+    /// state update naming a handle can still be in flight when its instance despawns.
     /// </remarks>
     internal class TransformHandleAllocator
     {
