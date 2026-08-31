@@ -4271,14 +4271,13 @@ namespace Unity.Netcode.Components
         // Non-Authority
         private void UpdateInterpolation()
         {
-            // Use the local time because:
-            // Client-Server:
-            // Local time is server time on a host or server.
-            // Local time on clients takes latency into consideration.
-            // Distributed authority:
-            // Local time is used by the authority.
-            // Local time on non-authority takes latency into consid]eration.
-            var timeSystem = m_CachedNetworkManager.LocalTime;
+            // Use the server time, since that is the clock the states being interpolated between are stamped on
+            // (a state's SentTime is derived from its NetworkTick). Deriving the render time from LocalTime
+            // subtracts the tick latency from a clock that already leads ServerTime by roughly that much, which
+            // leaves the render time at or ahead of the newest state that can exist and starves the interpolator.
+            // Measuring from ServerTime is also self correcting, as the tick latency grows with the round trip
+            // time. This is a no-op on a host or server, where both clocks are the same.
+            var timeSystem = m_CachedNetworkManager.ServerTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
@@ -4742,7 +4741,10 @@ namespace Unity.Netcode.Components
         {
             if (networkManager.IsListening)
             {
-                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
+                // The number of ticks the interpolators run behind, as a duration. This is not a point in time:
+                // it does not grow as the session runs.
+                var ticksBehind = networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset;
+                return (float)(ticksBehind * networkManager.ServerTime.FixedDeltaTimeAsDouble);
             }
             return 0f;
         }
