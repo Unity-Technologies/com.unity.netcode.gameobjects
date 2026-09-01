@@ -20,3 +20,13 @@ NetcodeProjects:
         defaultBranch: main
         manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
         projectPath: 'Basic/DistributedAuthoritySocialHub'
+    SmallScale:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/com.unity.template.multiplayer.ngo"
+        defaultBranch: main-unity-6
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+    VRsample:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/com.unity.template.vr-multiplayer"
+        defaultBranch: release/6000.0
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
