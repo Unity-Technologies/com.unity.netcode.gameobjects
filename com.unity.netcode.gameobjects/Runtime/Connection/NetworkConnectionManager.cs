@@ -1026,7 +1026,6 @@ namespace Unity.Netcode
                     if (NetworkManager.SpawnManager.AuthorityLocalSpawn(
                         playerObject,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
-                        sceneObject: false,
                         playerObject: true,
                         ownerClientId,
                         destroyWithScene: false))
@@ -1189,7 +1188,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            networkObject.IsSceneObjectInternal = false;
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
         }

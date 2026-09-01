@@ -347,8 +347,6 @@ namespace Unity.Netcode
                     }
                 }
 
-                IsSceneObjectInternal = true;
-
                 // We go ahead and set this for "typical in-scene placed" usage patterns so this is serialized
                 InScenePlaced = true;
 
@@ -1319,11 +1317,8 @@ namespace Unity.Netcode
         /// This method is marked for deprecation.<br />
         /// Use <see cref="InScenePlaced"/> instead.
         /// </remarks>
-        internal bool? IsSceneObjectInternal { get; set; }
-
         [Obsolete("Use InScenePlaced instead", true)]
-        public bool? IsSceneObject { get => IsSceneObjectInternal; internal set => IsSceneObjectInternal = value; }
-
+        public bool? IsSceneObject { get; internal set; }
 
         /// <summary>
         /// The serialized value.
@@ -1362,7 +1357,6 @@ namespace Unity.Netcode
         [Obsolete("SetSceneObjectStatus is now calculated during the build.", true)]
         public void SetSceneObjectStatus(bool isSceneObject = false)
         {
-            IsSceneObjectInternal = isSceneObject;
         }
 
         /// <summary>
@@ -1988,8 +1982,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            var legacyIsSceneObject = IsSceneObjectInternal.HasValue && IsSceneObjectInternal.Value;
-
             // If the initial state of the GameObject was disabled and InScenePlaced is marked,
             // then spawn it as in-scene placed.
             // Otherwise:
@@ -2006,7 +1998,7 @@ namespace Unity.Netcode
                 InScenePlaced = false;
             }
 
-            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), legacyIsSceneObject, playerObject, ownerClientId, destroyWithScene))
+            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), playerObject, ownerClientId, destroyWithScene))
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {

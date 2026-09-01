@@ -47,9 +47,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                     switch (typeDefinition.Name)
                     {
-                        case nameof(NetworkManager):
-                            ProcessNetworkManager(typeDefinition, compiledAssembly.Defines);
-                            break;
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
@@ -88,38 +85,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             assemblyDefinition.Write(pe, writerParameters);
 
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
-        }
-
-        // TODO: Deprecate...
-        // This is changing accessibility for values that are no longer used, but since our validator runs
-        // after ILPP and sees those values as public, they cannot be removed until a major version change.
-        private void ProcessNetworkManager(TypeDefinition typeDefinition, string[] assemblyDefines)
-        {
-            foreach (var fieldDefinition in typeDefinition.Fields)
-            {
-                if (fieldDefinition.Name == "__rpc_func_table")
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-
-                if (fieldDefinition.Name == "RpcReceiveHandler")
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-
-                if (fieldDefinition.Name == "__rpc_name_table")
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-            }
-
-            foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
-            {
-                if (nestedTypeDefinition.Name == "RpcReceiveHandler")
-                {
-                    nestedTypeDefinition.IsNestedPublic = true;
-                }
-            }
         }
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
