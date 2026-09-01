@@ -61,7 +61,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// The default maximum send queue size
         /// </summary>
-        [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", false)]
+        [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", true)]
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         // Maximum reliable throughput, assuming the full reliable window can be sent on every

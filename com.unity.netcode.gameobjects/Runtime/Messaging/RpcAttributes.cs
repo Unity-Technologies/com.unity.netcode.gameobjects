@@ -62,7 +62,7 @@ namespace Unity.Netcode
             /// <remarks>
             /// Deprecated in favor of <see cref="InvokePermission"/>.
             /// </remarks>
-            [Obsolete("RequireOwnership is deprecated. Please use InvokePermission instead.")]
+            [Obsolete("RequireOwnership is deprecated. Please use InvokePermission instead."), true]
             public bool RequireOwnership;
 
             /// <summary>
