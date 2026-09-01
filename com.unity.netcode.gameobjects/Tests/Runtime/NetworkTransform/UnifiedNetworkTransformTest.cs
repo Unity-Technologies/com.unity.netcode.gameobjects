@@ -40,6 +40,12 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
+        // This is the validation test for the unified API, so it always runs during a unified test pass.
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+
         protected override bool OnSetVerboseDebug()
         {
             return false;

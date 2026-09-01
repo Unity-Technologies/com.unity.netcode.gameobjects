@@ -405,6 +405,107 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return m_UseCmbService;
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Indicates whether the currently running test is using hybrid prefabs via the unified (NGO + N4E) API.
+        /// </summary>
+        /// <remarks>Can only be true if <see cref="UseUnifiedTests"/> returns true.</remarks>
+        protected bool m_UseUnifiedTests { get; private set; }
+
+        private string m_UseUnifiedTestsEnvString = null;
+        private bool m_UseUnifiedTestsEnv;
+
+        /// <summary>
+        /// Will check the environment variable once and then always return the results
+        /// of the first check.
+        /// </summary>
+        /// <remarks>
+        /// This resets its properties during <see cref="OnOneTimeTearDown"/>, so it will
+        /// check the environment variable once per test set.
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        private bool GetUnifiedTestsEnvironmentVariable()
+        {
+            if (!m_UseUnifiedTestsEnv && m_UseUnifiedTestsEnvString == null)
+            {
+                m_UseUnifiedTestsEnvString = NetcodeIntegrationTestHelpers.GetUnifiedTestsEnvironmentVariable();
+                if (bool.TryParse(m_UseUnifiedTestsEnvString.ToLower(), out bool isTrue))
+                {
+                    m_UseUnifiedTestsEnv = isTrue;
+                }
+                else
+                {
+                    Debug.LogWarning($"The UNIFIED_TESTS ({m_UseUnifiedTestsEnvString}) value is an invalid bool string. {nameof(m_UseUnifiedTests)} is being set to false.");
+                    m_UseUnifiedTestsEnv = false;
+                }
+            }
+            // A CMB service run always wins: distributed authority is not compatible with hybrid prefab spawning.
+            return m_UseUnifiedTestsEnv && !GetServiceEnvironmentVariable();
+        }
+
+        /// <summary>
+        /// Indicates whether this test's hybrid prefab cases have been validated against the unified API.
+        /// </summary>
+        /// <remarks>
+        /// Defaults to false, which makes hybrid prefab test cases opt-in. Unified features are brought
+        /// online one feature set at a time, and because NUnit expands an enum parameter to every member
+        /// most <see cref="HostOrServer.UnifiedHost"/> / <see cref="HostOrServer.UnifiedServer"/> cases
+        /// exist without anyone having written them.
+        /// Override to return true once a test's hybrid prefab cases pass.
+        /// </remarks>
+        /// <returns><see cref="true"/> if this test should run its hybrid prefab cases; otherwise it returns <see cref="false"/>.</returns>
+        protected virtual bool UseUnifiedTests()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Ignores the current test case unless it is one the active test pass selects.
+        /// </summary>
+        /// <remarks>Relies on <see cref="Assert.Ignore(string)"/> throwing, so it returns only when the test should run.</remarks>
+        private void ApplyUnifiedTestFilter()
+        {
+            // Hybrid prefab test cases exist on every test that takes a HostOrServer, because NUnit expands
+            // an enum parameter to all of its members. They only run during a unified test pass.
+            if (m_AllPrefabsAsHybrid && !GetUnifiedTestsEnvironmentVariable())
+            {
+                Assert.Ignore(NetcodeIntegrationTestHelpers.IgnoredWithoutUnifiedTestsReason);
+            }
+            // Within a unified test pass a hybrid prefab test case still has to opt in via UseUnifiedTests.
+            if (m_AllPrefabsAsHybrid && !m_UseUnifiedTests)
+            {
+                Assert.Ignore(NetcodeIntegrationTestHelpers.NotOptedInForUnifiedTestsReason);
+            }
+            // Everything that is not a hybrid prefab test case is skipped during a unified test pass. Those
+            // tests have already run on the supported editors, and this pass only validates the unified API.
+            if (!m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())
+            {
+                Assert.Ignore(NetcodeIntegrationTestHelpers.IgnoredForUnifiedTestsReason);
+            }
+        }
+
+        /// <summary>
+        /// Applies the unified test pass filtering for a test that takes its <see cref="HostOrServer"/> as a
+        /// test method parameter rather than as a fixture argument. Call it before starting any instances.
+        /// </summary>
+        /// <remarks>
+        /// The fixture constructor never sees a test method parameter, so <see cref="OneTimeSetup"/> cannot
+        /// filter these cases: it runs once for the whole fixture and the value is not known yet. NUnit still
+        /// expands the enum to every member, so the <see cref="HostOrServer.UnifiedServer"/> and
+        /// <see cref="HostOrServer.UnifiedHost"/> cases are generated whether or not anyone wrote them.
+        /// </remarks>
+        /// <param name="hostOrServer">The <see cref="HostOrServer"/> the test method was invoked with.</param>
+        protected void ApplyUnifiedTestFilter(HostOrServer hostOrServer)
+        {
+            m_AllPrefabsAsHybrid = hostOrServer == HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost;
+            if (m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())
+            {
+                m_UseUnifiedTests = UseUnifiedTests();
+            }
+            ApplyUnifiedTestFilter();
+        }
+#endif
+
         /// <summary>
         /// Override this virtual method to control what kind of <see cref="NetworkTopologyTypes"/> to use.
         /// </summary>
@@ -591,11 +692,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
                 return;
             }
-            else
-            {
-                // Otherwise, continue with the test
-                InternalOnOneTimeSetup();
-            }
+#if UNIFIED_NETCODE
+            // Only For Unified Tests:
+            // Note: this cannot filter a test that takes its HostOrServer as a test method parameter, since
+            // the value is not known until the method runs. Those call ApplyUnifiedTestFilter themselves.
+            ApplyUnifiedTestFilter();
+#endif
+            // Otherwise, continue with the test
+            InternalOnOneTimeSetup();
         }
 
         private void InternalOnOneTimeSetup()
@@ -1806,6 +1910,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = false;
             m_UseCmbServiceEnvString = null;
             m_UseCmbServiceEnv = false;
+#if UNIFIED_NETCODE
+            m_UseUnifiedTestsEnvString = null;
+            m_UseUnifiedTestsEnv = false;
+#endif
         }
 
         /// <summary>
@@ -2726,6 +2834,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
             m_AllPrefabsAsHybrid = (hostOrServer == HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+            // If this is a hybrid prefab test case and the environment variable to run the unified tests
+            // is set, then perform the m_UseUnifiedTests check.
+            if (m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())
+            {
+                m_UseUnifiedTests = UseUnifiedTests();
+            }
 #else
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
 #endif

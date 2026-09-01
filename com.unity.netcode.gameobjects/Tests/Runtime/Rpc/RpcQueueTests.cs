@@ -21,6 +21,8 @@ namespace Unity.Netcode.RuntimeTests
         {
             // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            // Excluding from unified tests. If deemed needed, update test, then  remove.
+            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
             base.OnOneTimeSetup();
         }
 
