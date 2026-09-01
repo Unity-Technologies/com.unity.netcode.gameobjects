@@ -11,7 +11,24 @@ namespace Unity.Netcode.Components
     [Serializable]
     public struct NetworkDeltaPosition : INetworkSerializable
     {
-        internal const float MaxDeltaBeforeAdjustment = 64f;
+        /// <summary>
+        /// How far the delta may grow before it is folded into the base position.
+        /// </summary>
+        /// <remarks>
+        /// This determines the transmitted position resolution, since a half float's step size grows with its
+        /// magnitude. Keeping the delta small keeps that step small: at 2 the coarsest step is roughly 1mm.
+        /// </remarks>
+        internal const float MaxDeltaBeforeAdjustment = 2f;
+
+        /// <summary>
+        /// Masks off a half float's sign bit, leaving its magnitude.
+        /// </summary>
+        internal const ushort HalfMagnitudeMask = 0x7FFF;
+
+        /// <summary>
+        /// The bit pattern of the largest finite half float (65504); anything above it is an infinity or a NaN.
+        /// </summary>
+        internal const ushort LargestFiniteHalfBits = 0x7BFF;
 
         /// <summary>
         /// The HalfVector3 used to synchronize the delta in position
@@ -138,14 +155,30 @@ namespace Unity.Netcode.Components
         {
             CollapsedDeltaIntoBase = false;
             NetworkTick = networkTick;
-            DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
             for (int i = 0; i < HalfVector3.Length; i++)
             {
                 if (HalfVector3.AxisToSynchronize[i])
                 {
+                    var rawDelta = vector3[i] - CurrentBasePosition[i];
+
+                    // Adding the previous rounding loss back in keeps the average position accurate while the
+                    // value is moving, but it also changes the value being sent. Once the value stops moving
+                    // that is all it does, which makes a stationary object appear to oscillate.
+                    var movedSinceLastSend = Mathf.Abs(vector3[i] - PreviousPosition[i]);
+                    var applyPrecisionLoss = movedSinceLastSend >= HalfPrecisionQuantum(rawDelta);
+
+                    DeltaPosition[i] = applyPrecisionLoss ? rawDelta + PrecisionLossDelta[i] : rawDelta;
+
                     HalfVector3.Axis[i] = math.half(DeltaPosition[i]);
                     HalfDeltaConvertedBack[i] = Mathf.HalfToFloat(HalfVector3.Axis[i].value);
-                    PrecisionLossDelta[i] = DeltaPosition[i] - HalfDeltaConvertedBack[i];
+
+                    // Only recompute the carried loss when it was applied. Leaving it alone otherwise is
+                    // what keeps it around to apply once movement resumes.
+                    if (applyPrecisionLoss)
+                    {
+                        PrecisionLossDelta[i] = DeltaPosition[i] - HalfDeltaConvertedBack[i];
+                    }
+
                     if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= MaxDeltaBeforeAdjustment)
                     {
                         CurrentBasePosition[i] += HalfDeltaConvertedBack[i];
@@ -163,6 +196,26 @@ namespace Unity.Netcode.Components
                     PreviousPosition[i] = vector3[i];
                 }
             }
+        }
+
+        /// <summary>
+        /// The smallest change a half float can represent at the magnitude of the value passed in.
+        /// </summary>
+        /// <param name="value">The value to get the step size for.</param>
+        /// <returns>The distance to the next representable half float value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float HalfPrecisionQuantum(float value)
+        {
+            // The step size is symmetric about zero, so the sign is dropped.
+            var magnitude = (ushort)(math.half(value).value & HalfMagnitudeMask);
+
+            // Guard only: stepping past this would give infinity.
+            if (magnitude >= LargestFiniteHalfBits)
+            {
+                return MaxDeltaBeforeAdjustment;
+            }
+
+            return Mathf.HalfToFloat((ushort)(magnitude + 1)) - Mathf.HalfToFloat(magnitude);
         }
 
         /// <summary>
