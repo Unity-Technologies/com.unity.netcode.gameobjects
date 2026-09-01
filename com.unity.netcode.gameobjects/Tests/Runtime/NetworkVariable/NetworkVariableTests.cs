@@ -282,6 +282,11 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private void InitializeServerAndClients(HostOrServer useHost)
         {
+#if UNIFIED_NETCODE
+            // HostOrServer arrives as a test method parameter here, so the base class cannot filter the
+            // hybrid prefab cases NUnit generates from the enum. Do it before anything is started.
+            ApplyUnifiedTestFilter(useHost);
+#endif
             s_ClientNetworkVariableTestInstances.Clear();
             m_PlayerPrefab.AddComponent<NetworkVariableTest>();
 
@@ -352,6 +357,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
         public void AllNetworkVariableTypes([Values] HostOrServer useHost)
         {
+#if UNIFIED_NETCODE
+            // Filter before CreateNetworkObjectPrefab, which routes to CreateHybridPrefab for hybrid cases.
+            ApplyUnifiedTestFilter(useHost);
+#endif
             var prefabToSpawn = CreateNetworkObjectPrefab("NetVarTest");
             prefabToSpawn.AddComponent<NetworkVariableTestComponent>();
 

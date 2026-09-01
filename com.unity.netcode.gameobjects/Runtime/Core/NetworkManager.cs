@@ -1453,12 +1453,12 @@ namespace Unity.Netcode
         {
             if (NetCodeConfig.Global == null)
             {
-                Log.Error(new Context(LogLevel.Error, "You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
             {
-                Log.Error(new Context(LogLevel.Error, "You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             return true;
