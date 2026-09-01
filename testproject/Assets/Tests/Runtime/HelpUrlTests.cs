@@ -10,11 +10,14 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Unity.Netcode.Runtime;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [IgnoreIfServiceEnvironmentVariableSet]
+    [IgnoreIfUnifiedTestsEnvironmentVariableSet]
     internal class HelpUrlTests
     {
         private const string k_PackageName = "com.unity.netcode.gameobjects";

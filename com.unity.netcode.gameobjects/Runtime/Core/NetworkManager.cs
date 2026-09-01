@@ -1417,7 +1417,7 @@ namespace Unity.Netcode
             }
             if (HybridNetcodeDefaults.IsMissingRequired(NetCodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetCodeConfig)} is not valid for hybrid mode: {reason}.").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             return true;

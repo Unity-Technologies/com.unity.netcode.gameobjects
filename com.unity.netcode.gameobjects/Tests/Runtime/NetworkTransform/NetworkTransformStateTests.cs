@@ -12,6 +12,8 @@ namespace Unity.Netcode.RuntimeTests
 {
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
+    // These tests do not exercise hybrid prefabs.
+    [IgnoreIfUnifiedTestsEnvironmentVariableSet]
     internal class NetworkTransformStateTests
     {
         [Test]
@@ -199,6 +201,8 @@ namespace Unity.Netcode.RuntimeTests
 
     // These tests do not need to run against the Rust server.
     [IgnoreIfServiceEnvironmentVariableSet]
+    // These tests do not exercise hybrid prefabs.
+    [IgnoreIfUnifiedTestsEnvironmentVariableSet]
     [TestFixture(TransformSpace.World, Precision.Full, Rotation.Euler)]
     [TestFixture(TransformSpace.World, Precision.Half, Rotation.Euler)]
     [TestFixture(TransformSpace.Local, Precision.Full, Rotation.Euler)]
