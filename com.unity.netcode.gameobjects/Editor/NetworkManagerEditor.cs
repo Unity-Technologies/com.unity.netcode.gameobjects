@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Logging;
 using UnityEditor;
@@ -51,6 +52,7 @@ namespace Unity.Netcode.GameObjects.Editor
         private SerializedProperty m_SpawnTimeOutProperty;
         private SerializedProperty m_RpcHashSizeProperty;
         private SerializedProperty m_LoadSceneTimeOutProperty;
+        private SerializedProperty m_TransformSyncModeProperty;
         private SerializedProperty m_PrefabsList;
 
         private SerializedProperty m_NetworkProfileMetrics;
@@ -138,6 +140,7 @@ namespace Unity.Netcode.GameObjects.Editor
             m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
 #endif
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+            m_TransformSyncModeProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.TransformSyncMode));
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
@@ -183,6 +186,7 @@ namespace Unity.Netcode.GameObjects.Editor
 #endif
 
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+            m_TransformSyncModeProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.TransformSyncMode));
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
@@ -317,6 +321,17 @@ namespace Unity.Netcode.GameObjects.Editor
                         EditorGUILayout.HelpBox("All prefab lists selected are uninitialized. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
                     }
                     EditorGUILayout.PropertyField(m_PrefabsList);
+                }
+
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Transform Synchronization", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_TransformSyncModeProperty, new GUIContent("Mode"));
+                if (m_NetworkManager.NetworkConfig.TransformSyncMode == TransformSyncModes.Batched)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"{nameof(NetworkTransform.UseUnreliableDeltas)} does not apply in this mode. Delivery is determined per state " +
+                        "update as opposed to per component. Every peer in a session has to use the same mode.",
+                        MessageType.Info);
                 }
 
                 EditorGUILayout.Space();

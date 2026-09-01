@@ -218,6 +218,11 @@ namespace Unity.Netcode.GameObjects.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
+
+            // UseUnreliableDeltas only applies to per instance synchronization mode, but the mode is authored on
+            // the NetworkManager that will run this instance, which a prefab cannot know. So it is always drawn
+            // and the runtime ignores it under the batched mode, where delivery is determined per state update
+            // as opposed to per component.
             // If both are set from a previous configuration, then SwitchTransformSpaceWhenParented takes
             // precedence.
             if (networkTransform.UseUnreliableDeltas && networkTransform.SwitchTransformSpaceWhenParented)
@@ -242,6 +247,7 @@ namespace Unity.Netcode.GameObjects.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
 
+            // SwitchTransformSpaceWhenParented is only constrained by UseUnreliableDeltas while the latter applies.
             SetGUIActive(!networkTransform.UseUnreliableDeltas);
             if (networkTransform.UseUnreliableDeltas)
             {

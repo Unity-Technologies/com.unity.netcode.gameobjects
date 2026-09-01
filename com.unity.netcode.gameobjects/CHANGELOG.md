@@ -10,7 +10,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkConfig.TransformSyncMode`, which determines whether `NetworkTransform` instances detect and synchronize their state individually or as a single batched message per tick. It is set per `NetworkManager` under "Transform Synchronization" in the inspector or from script before a session starts, and the value the session starts with applies for the duration of that session. Every peer in a session has to use the same mode, which the connection configuration hash enforces. (#4123)
+
 ### Changed
+
+- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4129)
 
 - All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
   - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
@@ -29,6 +33,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue where `NetworkTransform.GetTickLatencyInSeconds` returned an absolute network timestamp that grew for as long as the session ran, rather than the tick latency as a duration in seconds that it is documented to return. (#4135)
 - Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#4132)
 - Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#4132)
+- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4129)
+- Issue where re-enabling a `NetworkTransform` position axis that had drifted out of half float delta range while it was disabled would not teleport, because the per axis check assigned its result rather than accumulating it and an in-range axis discarded what an out-of-range one had found. (#4123)
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)

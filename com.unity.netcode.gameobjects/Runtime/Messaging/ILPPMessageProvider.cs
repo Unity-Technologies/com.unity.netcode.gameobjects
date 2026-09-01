@@ -42,6 +42,7 @@ namespace Unity.Netcode
         Unnamed = 22,
         AnticipationCounterSyncPingMessage = 23,
         AnticipationCounterSyncPongMessage = 24,
+        NetworkTransformBatchMessage = 25,
     }
 
     internal struct ILPPMessageProvider : INetworkMessageProvider
@@ -83,6 +84,7 @@ namespace Unity.Netcode
                 { typeof(ForwardServerRpcMessage), NetworkMessageTypes.ForwardServerRpc },
                 { typeof(NamedMessage), NetworkMessageTypes.NamedMessage },
                 { typeof(NetworkTransformMessage), NetworkMessageTypes.NetworkTransformMessage },
+                { typeof(NetworkTransformBatchMessage), NetworkMessageTypes.NetworkTransformBatchMessage },
                 { typeof(NetworkVariableDeltaMessage), NetworkMessageTypes.NetworkVariableDelta },
                 { typeof(ParentSyncMessage), NetworkMessageTypes.ParentSync },
                 { typeof(ProxyMessage), NetworkMessageTypes.Proxy },

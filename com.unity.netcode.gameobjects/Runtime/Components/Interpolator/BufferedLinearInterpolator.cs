@@ -274,7 +274,13 @@ namespace Unity.Netcode
         /// Resets the current interpolator to the target value.
         /// </summary>
         /// <remarks>
-        /// This is used when first synchronizing/initializing and when telporting an object.
+        /// This is used when first synchronizing/initializing and when teleporting an object.<br />
+        /// No baseline measurement is recorded.<br />
+        /// A baseline is stamped with the local ServerTime.Time.<br />
+        /// The measurements that follow carry the older tick they were authored on.<br />
+        /// AddMeasurement would drop every one of those.<br />
+        /// The interpolator is left the way a freshly spawned one is instead.<br />
+        /// <paramref name="serverTime"/> is not used. Mark this obsolete and deprecate it at a later date.
         /// </remarks>
         /// <param name="targetValue">The target value to reset the interpolator to</param>
         /// <param name="serverTime">The current server time</param>
@@ -287,7 +293,9 @@ namespace Unity.Netcode
         {
             // Clear the interpolator
             Clear();
-            InternalReset(parent, targetValue, serverTime);
+
+            // No baseline measurement. See the ResetTo remarks above.
+            InternalReset(parent, targetValue, serverTime, false);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

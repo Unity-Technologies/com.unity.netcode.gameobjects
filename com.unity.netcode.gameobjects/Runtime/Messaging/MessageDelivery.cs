@@ -63,6 +63,7 @@ internal static class MessageDelivery
         MessageDeliveryType<NamedMessage>.Initialize();
         MessageDeliveryType<UnnamedMessage>.Initialize();
         MessageDeliveryType<NetworkTransformMessage>.Initialize();
+        MessageDeliveryType<NetworkTransformBatchMessage>.Initialize();
         MessageDeliveryType<NetworkVariableDeltaMessage>.Initialize();
         MessageDeliveryType<ParentSyncMessage>.Initialize();
         MessageDeliveryType<ProxyMessage>.Initialize();

@@ -300,6 +300,18 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// This contains all of the interpolation related properties used by each non-authoritative
+        /// <see cref="NetworkTransform"/> instance on the non-authority side, but recalculated once
+        /// per update stage as opposed to once per <see cref="NetworkTransform"/>.
+        /// </summary>
+        internal NetworkTransform.InterpolationFrameData TransformInterpolationFrameData;
+
+        /// <summary>
+        /// The manager for native <see cref="NetworkTransform"/> state used by <see cref="TransformSyncModes.Batched"/>.
+        /// </summary>
+        internal NetworkTransformStateManager TransformStateManager = new NetworkTransformStateManager();
+
         internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
@@ -402,6 +414,16 @@ namespace Unity.Netcode
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 case NetworkUpdateStage.FixedUpdate:
                     {
+                        // Only refresh if there are NetworkTransforms to be updated
+                        if (NetworkTransformFixedUpdate.Count > 0)
+                        {
+                            NetworkTransform.RefreshInterpolationFrameData(this);
+                        }
+
+                        // Advance every registered non-authority interpolator in parallel, before the
+                        // instances below read the results and apply them to their transforms.
+                        TransformStateManager.RunInterpolation();
+
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
                         {
                             // if not active or not spawned then skip
@@ -442,6 +464,16 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.PreLateUpdate:
                     {
+                        // Only refresh if there are NetworkTransforms to be updated
+                        if (NetworkTransformUpdate.Count > 0)
+                        {
+                            NetworkTransform.RefreshInterpolationFrameData(this);
+                        }
+
+                        // Advance every registered non-authority interpolator in parallel, before the
+                        // instances below read the results and apply them to their transforms.
+                        TransformStateManager.RunInterpolation();
+
                         // Non-physics based non-authority NetworkTransforms update their states after all other components
                         foreach (var networkObjectEntry in NetworkTransformUpdate)
                         {
@@ -1221,6 +1253,15 @@ namespace Unity.Netcode
 
             UpdateTopology();
 
+            // Capture the transform synchronization mode for the session about to start. Everything downstream
+            // reads the captured value, so a project can expose NetworkConfig.TransformSyncMode in its own pre
+            // session UI without a mid-session write splitting a running session across both modes.
+            NetworkConfig.ActiveTransformSyncMode = NetworkConfig.TransformSyncMode;
+
+            // The captured mode is part of the connection configuration hash, so drop anything GetConfig
+            // cached before the session started or the server compares connecting clients against it.
+            NetworkConfig.ClearConfigHash();
+
             // Always create a default session config when starting a NetworkManager instance
             if (DistributedAuthorityMode)
             {
@@ -1872,6 +1913,12 @@ namespace Unity.Netcode
             // Clean up the internal prefabs data
             NetworkConfig?.Prefabs?.Shutdown();
             PrefabHandler.Shutdown();
+
+            // Release any native NetworkTransform state and replace the manager so a subsequent session starts
+            // from a clean one. Dispose clears the cached index on anything still registered, so a despawn
+            // that arrives after this point deregisters against the new manager as a no-op.
+            TransformStateManager?.Dispose();
+            TransformStateManager = new NetworkTransformStateManager();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes
