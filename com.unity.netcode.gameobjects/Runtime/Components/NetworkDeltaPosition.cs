@@ -21,6 +21,16 @@ namespace Unity.Netcode.Components
         internal const float MaxDeltaBeforeAdjustment = 2f;
 
         /// <summary>
+        /// Masks off a half float's sign bit, leaving its magnitude.
+        /// </summary>
+        internal const ushort HalfMagnitudeMask = 0x7FFF;
+
+        /// <summary>
+        /// The bit pattern of the largest finite half float (65504); anything above it is an infinity or a NaN.
+        /// </summary>
+        internal const ushort LargestFiniteHalfBits = 0x7BFF;
+
+        /// <summary>
         /// The HalfVector3 used to synchronize the delta in position
         /// </summary>
         public HalfVector3 HalfVector3;
@@ -162,7 +172,8 @@ namespace Unity.Netcode.Components
                     HalfVector3.Axis[i] = math.half(DeltaPosition[i]);
                     HalfDeltaConvertedBack[i] = Mathf.HalfToFloat(HalfVector3.Axis[i].value);
 
-                    // Left unchanged when skipped so it is still applied once movement resumes.
+                    // Only recompute the carried loss when it was applied. Leaving it alone otherwise is
+                    // what keeps it around to apply once movement resumes.
                     if (applyPrecisionLoss)
                     {
                         PrecisionLossDelta[i] = DeltaPosition[i] - HalfDeltaConvertedBack[i];
@@ -196,10 +207,10 @@ namespace Unity.Netcode.Components
         internal static float HalfPrecisionQuantum(float value)
         {
             // The step size is symmetric about zero, so the sign is dropped.
-            var magnitude = (ushort)(math.half(value).value & 0x7FFF);
+            var magnitude = (ushort)(math.half(value).value & HalfMagnitudeMask);
 
-            // Guard only: stepping past the largest finite half float would give infinity.
-            if (magnitude >= 0x7BFF)
+            // Guard only: stepping past this would give infinity.
+            if (magnitude >= LargestFiniteHalfBits)
             {
                 return MaxDeltaBeforeAdjustment;
             }

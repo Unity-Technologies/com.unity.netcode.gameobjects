@@ -16,6 +16,13 @@ namespace Unity.Netcode.GameObjects.EditorTests
         // Lossy as a half float, and two of them still fit under the collapse threshold.
         private const float k_LossyStep = 0.7f;
 
+        // The largest finite half float.
+        private const float k_LargestFiniteHalf = 65504.0f;
+
+        // Finite, but far enough past the half float range that the conversion itself rounds to infinity,
+        // which reaches the guard by a different path than handing it an infinity outright.
+        private const float k_RoundsToInfinity = 70000.0f;
+
         // Past the threshold and exactly representable, so the collapse cannot hinge on rounding.
         private const float k_CollapsingStep = NetworkDeltaPosition.MaxDeltaBeforeAdjustment + 0.5f;
 
@@ -307,11 +314,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [Test]
         public void QuantumIsGuardedAtTheTopOfTheRange()
         {
-            // 70000f is the finite one: the conversion itself rounds to infinity, which reaches the guard
-            // by a different path than handing it an infinity outright.
             var values = new[]
             {
-                65504.0f, -65504.0f, 70000.0f,
+                k_LargestFiniteHalf, -k_LargestFiniteHalf, k_RoundsToInfinity,
                 float.PositiveInfinity, float.NegativeInfinity, float.NaN,
             };
 
@@ -328,13 +333,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             // Why the guard exists: an infinite step size would make the "has it moved?" comparison in
             // UpdateFrom false for every input, silently stopping the rounding loss from being applied.
-            var unguarded = Mathf.HalfToFloat(0x7BFF + 1) - Mathf.HalfToFloat(0x7BFF);
+            const ushort topOfRange = NetworkDeltaPosition.LargestFiniteHalfBits;
+            var unguarded = Mathf.HalfToFloat(topOfRange + 1) - Mathf.HalfToFloat(topOfRange);
             Assert.IsTrue(float.IsInfinity(unguarded) || float.IsNaN(unguarded),
                 "The unguarded computation at the top of the range should be non-finite, which is why the guard exists.");
 
             var values = new[]
             {
-                0.0f, float.Epsilon, 1e-7f, 0.5f, 1.0f, 100.0f, 65503.0f, 65504.0f, -65504.0f, 70000.0f,
+                0.0f, float.Epsilon, 1e-7f, 0.5f, 1.0f, 100.0f, 65503.0f, k_LargestFiniteHalf, -k_LargestFiniteHalf, k_RoundsToInfinity,
                 float.PositiveInfinity, float.NegativeInfinity, float.NaN,
             };
 
