@@ -1223,7 +1223,6 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<HashSet<int>> ListCollectionServer = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<HashSet<int>> ListCollectionOwner = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         public NetworkVariable<HashSet<int>> UninitializedHashSet;
-        public NetworkVariable<HashSet<HashSet<int>>> UninitializedNestedHashSet;
 
         // This tracks what has changed per instance which is used to compare to all other instances
         internal Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>>();

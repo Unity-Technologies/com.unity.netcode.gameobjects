@@ -158,6 +158,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149595", "ValidateNetworkClients throws duplicate-key ArgumentException on CoreCLR (DAHost)")]
         public IEnumerator ValidateNetworkClients()
         {
+            m_ChangedPlayerPrefabs.Clear();
             // Validate the initial clients created
             yield return WaitForConditionOrTimeOut(AllNetworkClientsValidated);
             AssertOnTimeout($"[Start] Not all NetworkClients were valid!\n{m_ErrorLogLevel1}");
