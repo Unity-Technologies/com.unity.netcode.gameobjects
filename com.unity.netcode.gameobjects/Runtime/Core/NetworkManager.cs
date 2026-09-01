@@ -71,15 +71,15 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
+        [Obsolete("This field is no longer used and will be removed in a future version.", true)]
         internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
+        [Obsolete("This field is no longer used and will be removed in a future version.", true)]
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
 
         // RuntimeAccessModifiersILPP will make this `public` (legacy table should be removed in v3.x.x)
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
+        [Obsolete("This field is no longer used and will be removed in a future version.", true)]
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 
 #pragma warning restore IDE1006 // restore naming rule violation check

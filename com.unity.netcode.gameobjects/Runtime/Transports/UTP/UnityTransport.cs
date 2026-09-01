@@ -345,7 +345,7 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet drop rate (packet loss)
         /// </summary>
 
-        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", true)]
         [HideInInspector]
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
@@ -966,7 +966,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
-        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", true)]
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)

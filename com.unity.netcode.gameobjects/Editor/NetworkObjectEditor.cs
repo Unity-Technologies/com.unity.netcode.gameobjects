@@ -101,10 +101,7 @@ namespace Unity.Netcode.GameObjects.Editor
                 EditorGUILayout.Toggle(nameof(NetworkObject.IsOwner), m_NetworkObject.IsOwner);
                 EditorGUILayout.Toggle(nameof(NetworkObject.IsOwnedByServer), m_NetworkObject.IsOwnedByServer);
                 EditorGUILayout.Toggle(nameof(NetworkObject.IsPlayerObject), m_NetworkObject.IsPlayerObject);
-#pragma warning disable CS0618 // Type or member is obsolete
-                // TODO-3.x: Update name in 3.x branch
-                EditorGUILayout.Toggle(nameof(NetworkObject.IsSceneObject), m_NetworkObject.InScenePlaced);
-#pragma warning restore CS0618 // Type or member is obsolete
+                EditorGUILayout.Toggle("IsSceneObject", m_NetworkObject.InScenePlaced);
                 EditorGUILayout.Toggle(nameof(NetworkObject.DestroyWithScene), m_NetworkObject.DestroyWithScene);
                 EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;

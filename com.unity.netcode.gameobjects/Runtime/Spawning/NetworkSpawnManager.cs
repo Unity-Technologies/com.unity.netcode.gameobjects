@@ -452,7 +452,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="perviousOwner">not used</param>
         /// <param name="newOwner">not used</param>
-        [Obsolete("This method is no longer used and will be removed in a future version.")]
+        [Obsolete("This method is no longer used and will be removed in a future version.", true)]
         protected virtual void InternalOnOwnershipChanged(ulong perviousOwner, ulong newOwner)
         {
 
@@ -1300,11 +1300,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            // Obsolete with warning means we need the underlying behaviour to keep existing
-            // TODO: remove in the 3.x branch
-            networkObject.SetSceneObjectStatus(sceneObject);
-#pragma warning restore CS0618 // Type or member is obsolete
+            networkObject.IsSceneObjectInternal = sceneObject;
 
             networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
 

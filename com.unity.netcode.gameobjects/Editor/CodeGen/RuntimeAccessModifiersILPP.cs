@@ -97,23 +97,17 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-#pragma warning disable CS0618 // Type or member is obsolete
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_func_table))
-#pragma warning restore CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == "__rpc_func_table")
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
-#pragma warning restore CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == "RpcReceiveHandler")
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
-#pragma warning restore CS0618 // Type or member is obsolete
+                if (fieldDefinition.Name == "__rpc_name_table")
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -121,9 +115,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
             foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
             {
-#pragma warning disable CS0618 // Type or member is obsolete
-                if (nestedTypeDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
-#pragma warning restore CS0618 // Type or member is obsolete
+                if (nestedTypeDefinition.Name == "RpcReceiveHandler")
                 {
                     nestedTypeDefinition.IsNestedPublic = true;
                 }
