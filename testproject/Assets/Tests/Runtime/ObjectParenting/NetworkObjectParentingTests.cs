@@ -43,6 +43,8 @@ namespace TestProject.RuntimeTests
         {
             // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            // Excluding from unified tests. If deemed needed, update test, then  remove.
+            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

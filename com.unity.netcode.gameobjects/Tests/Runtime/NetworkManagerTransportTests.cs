@@ -16,6 +16,8 @@ namespace Unity.Netcode.RuntimeTests
         {
             // This test does not need to run against the Rust server.
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            // Excluding from unified tests. If deemed needed, update test, then  remove.
+            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
         }
 
         [Test]
