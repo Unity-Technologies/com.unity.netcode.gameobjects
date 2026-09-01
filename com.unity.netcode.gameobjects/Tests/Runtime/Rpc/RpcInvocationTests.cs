@@ -465,9 +465,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        [Rpc(SendTo.Everyone, RequireOwnership = true)]
-#pragma warning restore CS0618 // Type or member is obsolete
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Owner)]
         public void OwnerRequireOwnershipRpc()
         {
             TrackRpcCalled(GetCaller());

@@ -17,7 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
   - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
   - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
-- Several APIs that were already marked `[Obsolete]` with a warning now raise a compile error instead (they are not removed yet): `NetworkObject.IsSceneObject`, `NetworkObject.SetSceneObjectStatus`, `NetworkList.LastModifiedTick`, `UnityTransport.InitialMaxSendQueueSize`, `UnityTransport.DebugSimulator`, `UnityTransport.SetDebugSimulatorParameters`, the deprecated `BufferedLinearInterpolator` buffer/interpolation fields and its testing-only `Update(float, NetworkTime)` overload, `NetworkSpawnManager.InternalOnOwnershipChanged`, `CommandLineOptions.Instance`, `CommandLineOptions.GetArg`, and `NotListeningException`.
+- Several APIs that were already marked `[Obsolete]` with a warning now raise a compile error instead (they are not removed yet): `RpcAttribute.RequireOwnership`, `ServerRpcAttribute.RequireOwnership`, `NetworkObject.IsSceneObject`, `NetworkObject.SetSceneObjectStatus`, `NetworkList.LastModifiedTick`, `UnityTransport.InitialMaxSendQueueSize`, `UnityTransport.DebugSimulator`, `UnityTransport.SetDebugSimulatorParameters`, `UnityTransport.ConnectionData.ServerEndPoint`, the deprecated `BufferedLinearInterpolator` buffer/interpolation fields and its testing-only `Update(float, NetworkTime)` overload, `NetworkSpawnManager.InternalOnOwnershipChanged`, `CommandLineOptions.Instance`, `CommandLineOptions.GetArg`, and `NotListeningException`.
 
 ### Deprecated
 

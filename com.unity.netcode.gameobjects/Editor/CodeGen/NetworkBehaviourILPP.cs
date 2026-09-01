@@ -617,10 +617,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         private const string k_RpcAttribute_Delivery = nameof(RpcAttribute.Delivery);
         private const string k_RpcAttribute_InvokePermission = nameof(RpcAttribute.InvokePermission);
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        // Need to ignore the obsolete warning as the obsolete behaviour still needs to work
-        private const string k_ServerRpcAttribute_RequireOwnership = nameof(ServerRpcAttribute.RequireOwnership);
-#pragma warning restore CS0618 // Type or member is obsolete
+        private const string k_ServerRpcAttribute_RequireOwnership = "RequireOwnership";
 
         private const string k_RpcParams_Server = nameof(__RpcParams.Server);
         private const string k_RpcParams_Client = nameof(__RpcParams.Client);

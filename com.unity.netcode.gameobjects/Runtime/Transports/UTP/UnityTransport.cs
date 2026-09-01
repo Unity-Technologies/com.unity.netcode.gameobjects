@@ -266,7 +266,7 @@ namespace Unity.Netcode.Transports.UTP
             /// is still handled correctly by NGO, but for this reason usage of this property is
             /// discouraged.
             /// </remarks>
-            [Obsolete("Use NetworkEndpoint.Parse on the Address field instead.")]
+            [Obsolete("Use NetworkEndpoint.Parse on the Address field instead.", true)]
             public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
             /// <summary>
