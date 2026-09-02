@@ -2891,14 +2891,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
             var processor = rpcHandler.Body.GetILProcessor();
 
-            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            foreach (var attrField in rpcAttribute.Fields)
-            {
-                switch (attrField.Name)
-                {
-                }
-            }
-
             rpcHandler.Body.InitLocals = true;
             // NetworkManager networkManager;
             rpcHandler.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
