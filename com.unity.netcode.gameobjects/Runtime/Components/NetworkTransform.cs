@@ -3861,17 +3861,6 @@ namespace Unity.Netcode.Components
 
         #region PARENTING AND OWNERSHIP
         /// <inheritdoc/>
-        public override void OnLostOwnership()
-        {
-            base.OnLostOwnership();
-        }
-
-        /// <inheritdoc/>
-        public override void OnGainedOwnership()
-        {
-            base.OnGainedOwnership();
-        }
-        /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             // If we were the previous owner or the newly assigned owner then reinitialize

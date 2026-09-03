@@ -347,12 +347,6 @@ namespace Unity.Netcode
                     }
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                // Obsolete with warning means we need the underlying behaviour to keep existing
-                // TODO-3.x: remove in the 3.x branch
-                SetSceneObjectStatus(true);
-#pragma warning restore CS0618 // Type or member is obsolete
-
                 // We go ahead and set this for "typical in-scene placed" usage patterns so this is serialized
                 InScenePlaced = true;
 
@@ -1323,9 +1317,8 @@ namespace Unity.Netcode
         /// This method is marked for deprecation.<br />
         /// Use <see cref="InScenePlaced"/> instead.
         /// </remarks>
-        [Obsolete("Use InScenePlaced instead")]
+        [Obsolete("Use InScenePlaced instead", true)]
         public bool? IsSceneObject { get; internal set; }
-
 
         /// <summary>
         /// The serialized value.
@@ -1361,10 +1354,9 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>Only use this when using custom scene loading</remarks>
         /// <param name="isSceneObject">When true, marks this as a scene-instantiated object; when false, marks it as runtime-instantiated</param>
-        [Obsolete("SetSceneObjectStatus is now calculated during the build.")]
+        [Obsolete("SetSceneObjectStatus is now calculated during the build.", true)]
         public void SetSceneObjectStatus(bool isSceneObject = false)
         {
-            IsSceneObject = isSceneObject;
         }
 
         /// <summary>
@@ -1990,12 +1982,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Calculate the legacy IsSceneObject value as the public field is obsolete with warning
-            // We can't break the public behavior of the field.
-#pragma warning disable CS0618 // Type or member is obsolete
-            var legacyIsSceneObject = IsSceneObject.HasValue && IsSceneObject.Value;
-#pragma warning restore CS0618 // Type or member is obsolete
-
             // If the initial state of the GameObject was disabled and InScenePlaced is marked,
             // then spawn it as in-scene placed.
             // Otherwise:
@@ -2012,7 +1998,7 @@ namespace Unity.Netcode
                 InScenePlaced = false;
             }
 
-            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), legacyIsSceneObject, playerObject, ownerClientId, destroyWithScene))
+            if (!NetworkManagerOwner.SpawnManager.AuthorityLocalSpawn(this, NetworkManagerOwner.SpawnManager.GetNetworkObjectId(), playerObject, ownerClientId, destroyWithScene))
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {

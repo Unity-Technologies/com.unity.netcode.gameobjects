@@ -20,6 +20,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Several APIs that were already marked `[Obsolete]` with a warning now raise a compile error instead (they are not removed yet).
+
 ### Removed
 
 ### Fixed
