@@ -313,6 +313,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Parameters for the Network Simulator
         /// </summary>
+        [Obsolete("SimulatorParameters are no longer used and have no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
         [Serializable]
         public struct SimulatorParameters
         {

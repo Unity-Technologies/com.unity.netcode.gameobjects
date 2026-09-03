@@ -2285,6 +2285,43 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 {
                     // ServerRpc
 
+                    // Require ownership check.
+                    // Only the owner of an object can send a ServerRPC
+                    {
+                        var roReturnInstr = processor.Create(OpCodes.Ret);
+                        var roLastInstr = processor.Create(OpCodes.Nop);
+
+                        // if (this.OwnerClientId != networkManager.LocalClientId) { ... } return;
+                        instructions.Add(processor.Create(OpCodes.Ldarg_0));
+                        instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_getOwnerClientId_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getLocalClientId_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Brfalse, roLastInstr));
+
+                        var logNextInstr = processor.Create(OpCodes.Nop);
+
+                        // if (LogLevel.Normal > networkManager.LogLevel)
+                        instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
+                        instructions.Add(processor.Create(OpCodes.Cgt));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
+
+                        // Debug.LogError(...);
+                        instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc!"));
+                        instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
+
+                        instructions.Add(logNextInstr);
+
+                        instructions.Add(roReturnInstr);
+                        instructions.Add(roLastInstr);
+                    }
+
                     // var bufferWriter = __beginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
@@ -2891,6 +2928,8 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
             var processor = rpcHandler.Body.GetILProcessor();
 
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+
             rpcHandler.Body.InitLocals = true;
             // NetworkManager networkManager;
             rpcHandler.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
@@ -2914,6 +2953,44 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                 processor.Append(returnInstr);
                 processor.Append(lastInstr);
+            }
+
+            if (isServerRpc)
+            {
+                var roReturnInstr = processor.Create(OpCodes.Ret);
+                var roLastInstr = processor.Create(OpCodes.Nop);
+
+                // if (rpcParams.Server.Receive.SenderClientId != target.OwnerClientId) { ... } return;
+                processor.Emit(OpCodes.Ldarg_2);
+                processor.Emit(OpCodes.Ldfld, m_RpcParams_Server_FieldRef);
+                processor.Emit(OpCodes.Ldfld, m_ServerRpcParams_Receive_FieldRef);
+                processor.Emit(OpCodes.Ldfld, m_ServerRpcParams_Receive_SenderClientId_FieldRef);
+                processor.Emit(OpCodes.Ldarg_0);
+                processor.Emit(OpCodes.Call, m_NetworkBehaviour_getOwnerClientId_MethodRef);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Ldc_I4, 0);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Brfalse, roLastInstr);
+
+                var logNextInstr = processor.Create(OpCodes.Nop);
+
+                // if (LogLevel.Normal > networkManager.LogLevel)
+                processor.Emit(OpCodes.Ldloc, netManLocIdx);
+                processor.Emit(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef);
+                processor.Emit(OpCodes.Ldc_I4, (int)LogLevel.Normal);
+                processor.Emit(OpCodes.Cgt);
+                processor.Emit(OpCodes.Ldc_I4, 0);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Brfalse, logNextInstr);
+
+                // Debug.LogError(...);
+                processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc!");
+                processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
+
+                processor.Append(logNextInstr);
+
+                processor.Append(roReturnInstr);
+                processor.Append(roLastInstr);
             }
 
             // read method parameters from stream
