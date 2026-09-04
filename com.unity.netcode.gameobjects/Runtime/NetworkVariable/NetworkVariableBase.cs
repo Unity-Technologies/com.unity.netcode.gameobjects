@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Netcode.GameObjects.Timing;
 using UnityEngine;
 
 namespace Unity.Netcode

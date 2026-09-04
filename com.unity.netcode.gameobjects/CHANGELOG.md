@@ -17,6 +17,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - `Unity.Netcode.Editor.CodeGen` → `Unity.Netcode.GameObjects.Editor.CodeGen`
   - `Unity.Netcode.Editor.PackageChecker` → `Unity.Netcode.GameObjects.Editor.PackageChecker`
   - `Unity.Netcode.Editor.Tests` → `Unity.Netcode.GameObjects.Editor.Tests`
+- The timing types moved out of the `Unity.Netcode` namespace into `Unity.Netcode.GameObjects.Timing`. The assembly is unchanged, and existing scripts are migrated automatically when the package is upgraded.
+  - `Unity.Netcode.NetworkTime` → `Unity.Netcode.GameObjects.Timing.NetworkTime`
+  - `Unity.Netcode.NetworkTimeSystem` → `Unity.Netcode.GameObjects.Timing.NetworkTimeSystem`
+  - `Unity.Netcode.NetworkTickSystem` → `Unity.Netcode.GameObjects.Timing.NetworkTickSystem`
 
 ### Deprecated
 

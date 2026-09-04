@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     internal interface IAnticipationEventReceiver
     {

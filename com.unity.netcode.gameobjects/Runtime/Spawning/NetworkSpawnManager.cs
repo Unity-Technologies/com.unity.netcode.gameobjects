@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using UnityEngine;
 using Object = UnityEngine.Object;
