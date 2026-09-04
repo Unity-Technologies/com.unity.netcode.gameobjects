@@ -2,13 +2,20 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job validates the NGO 2.x -> 3.x upgrade path for editor scripts.
+  # This job validates the NGO 2.x -> 3.x upgrade path for user scripts.
   # NGO 3.0 renamed the editor assembly and its namespaces (Unity.Netcode.Editor ->
-  # Unity.Netcode.GameObjects.Editor), and every relocated public type carries a [MovedFrom] so that
-  # Unity's API updater rewrites a 2.x project's editor scripts automatically on upgrade.
-  # apiupdaterproject holds editor code written against the 2.x API; the job imports it with
+  # Unity.Netcode.GameObjects.Editor) and moved the runtime timing types (Unity.Netcode.NetworkTime
+  # and friends -> Unity.Netcode.GameObjects.Timing), and every relocated public type carries a
+  # [MovedFrom] so that Unity's API updater rewrites a 2.x project's scripts automatically on upgrade.
+  # apiupdaterproject holds code written against the 2.x API; the job imports it with
   # -accept-apiupdate and asserts that every 2.x type reference was rewritten and none survived.
   # See apiupdaterproject/README.md.
+  #
+  # The second run adds an assembly that occupies Unity.Netcode.NetworkTime and NetworkTimeSystem,
+  # standing in for another package taking those names, and inverts the expectation for exactly those
+  # two: the updater is driven by resolution failure, so a name that still resolves cannot be
+  # migrated. NetworkTickSystem is absent from the stub and must still migrate, so a pass proves both
+  # halves. This is the regression test for why the timing types were moved at all.
 
 
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
@@ -18,7 +25,9 @@
   # The script restores the 2.x sources when it finishes, so the checkout is left unmodified and the
   # job is safe to re-run on the same agent.
   # --clean purges Library first: the assertion is meaningless against a warm Library that already
-  # holds rewritten sources from a previous run.
+  # holds rewritten sources from a previous run. That is also why the two runs are sequential
+  # commands rather than one - each needs its own cold import, and the script removes the stub and
+  # restores the sources on every exit path, so the second run starts from the same state as the first.
 
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
@@ -31,6 +40,7 @@ api_updater_test_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor # Installing basic editor for the import
     - python apiupdaterproject/run_upgrade_test.py --unity .Editor --clean
+    - python apiupdaterproject/run_upgrade_test.py --unity .Editor --clean --collision-stub
   artifacts:
     logs:
       paths:

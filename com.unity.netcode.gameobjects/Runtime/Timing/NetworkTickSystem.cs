@@ -1,13 +1,15 @@
 using System;
 using Unity.Profiling;
+using UnityEngine.Scripting.APIUpdating;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     /// <summary>
     /// Provides discretized time.
     /// This is useful for games that require ticks happening at regular interval on the server and clients.
     /// </summary>
     [Serializable]
+    [MovedFrom(true, "Unity.Netcode", null, null)]
     public class NetworkTickSystem
     {
 #if DEBUG

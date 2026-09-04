@@ -7,6 +7,7 @@ using Unity.Entities;
 using Unity.NetCode;
 #endif
 using Unity.Netcode.Components;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 // TODO-UNIFIED: When:

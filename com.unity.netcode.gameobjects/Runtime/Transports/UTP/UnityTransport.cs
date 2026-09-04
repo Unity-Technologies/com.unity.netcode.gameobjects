@@ -11,6 +11,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Runtime;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Error;
