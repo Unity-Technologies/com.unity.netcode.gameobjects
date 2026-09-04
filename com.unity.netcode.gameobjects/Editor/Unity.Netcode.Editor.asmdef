@@ -8,8 +8,8 @@
         "Unity.Networking.Transport",
         "Unity.Services.Core",
         "Unity.Services.Authentication",
-        "Unity.NetCode",
-        "Unity.NetCode.Editor"
+        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
+        "GUID:eb8cf780bf058694ebf7ec5cf5b8cfa3"
     ],
     "includePlatforms": [
         "Editor"
