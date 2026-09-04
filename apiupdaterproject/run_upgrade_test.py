@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-Verifies that Unity's API updater rewrites NGO 2.x editor API references to their NGO 3.x
-Unity.Netcode.GameObjects.Editor equivalents. Runs on Windows, macOS and Linux.
+Verifies that Unity's API updater rewrites NGO 2.x API references to their NGO 3.x equivalents:
+editor types to Unity.Netcode.GameObjects.Editor, and the runtime timing types to
+Unity.Netcode.GameObjects.Timing. Runs on Windows, macOS and Linux.
 
-Imports the project in batch mode with -accept-apiupdate, then asserts that every
-Unity.Netcode.Editor reference under Assets/Editor was rewritten and that no stale reference
+Imports the project in batch mode with -accept-apiupdate, then asserts that every relocated
+reference under Assets/Editor and Assets/Runtime was rewritten and that no stale reference
 survived. The 2.x sources are restored on exit so the test can be re-run.
+
+With --collision-stub, a stub assembly is added that occupies Unity.Netcode.NetworkTime and
+Unity.Netcode.NetworkTimeSystem, standing in for a second package that has taken those names. The
+expectation then inverts for exactly those two: the updater is driven by resolution failure, so a
+name another assembly still resolves never reaches the MovedFrom data and cannot be migrated.
+NetworkTickSystem is deliberately absent from the stub and must still migrate, which is what makes
+the run prove both halves rather than merely fail.
 
 Note that this script can be run from anywhere; paths are resolved relative to the script itself.
 """
@@ -20,29 +28,56 @@ import sys
 import tempfile
 
 PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
-SOURCE_DIR = os.path.join(PROJECT_PATH, 'Assets', 'Editor')
+SOURCE_DIRS = [os.path.join(PROJECT_PATH, 'Assets', 'Editor'),
+               os.path.join(PROJECT_PATH, 'Assets', 'Runtime')]
 LOG_FILE = os.path.join(PROJECT_PATH, 'upgrade-test.log')
 
-# Every 2.x type the sources reference. The 3.x name is derived, so the pair cannot drift.
-# Frozen: this is the public editor API of develop-2.0.0, which is released and will not change.
-# Extend it by hand if a public editor type is ever relocated again within 3.x.
-EXPECTED_TYPES = [
-    'Unity.Netcode.Editor.HiddenScriptEditor',
-    'Unity.Netcode.Editor.UnityTransportEditor',
-    'Unity.Netcode.Editor.NetworkAnimatorEditor',
-    'Unity.Netcode.Editor.NetworkRigidbodyEditor',
-    'Unity.Netcode.Editor.NetworkRigidbody2DEditor',
-    'Unity.Netcode.Editor.NetcodeEditorBase',
-    'Unity.Netcode.Editor.NetworkBehaviourEditor',
-    'Unity.Netcode.Editor.NetworkManagerEditor',
-    'Unity.Netcode.Editor.NetworkManagerHelper',
-    'Unity.Netcode.Editor.NetworkObjectEditor',
-    'Unity.Netcode.Editor.NetworkRigidbodyBaseEditor',
-    'Unity.Netcode.Editor.NetworkTransformEditor',
-    'Unity.Netcode.Editor.NetworkPrefabsEditor',
-    'Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings',
-    'Unity.Netcode.Editor.Configuration.NetworkPrefabProcessor',
+# A directory whose name ends in '~' is not imported, so the stub is inert until it is copied in.
+STUB_SOURCE = os.path.join(PROJECT_PATH, 'Assets', 'CollisionStub~')
+STUB_TARGET = os.path.join(PROJECT_PATH, 'Assets', 'CollisionStub')
+
+# Every 2.x type the sources reference, grouped by the move that relocated it. Stating the namespace
+# pair once per move means a type's old and new names cannot drift apart.
+#
+# The two editor entries are frozen: they are the public editor API of develop-2.0.0, which is
+# released and will not change. Extend a list only when a public type is relocated again within 3.x.
+EXPECTED_MOVES = [
+    ('Unity.Netcode.Editor', 'Unity.Netcode.GameObjects.Editor', [
+        'HiddenScriptEditor',
+        'UnityTransportEditor',
+        'NetworkAnimatorEditor',
+        'NetworkRigidbodyEditor',
+        'NetworkRigidbody2DEditor',
+        'NetcodeEditorBase',
+        'NetworkBehaviourEditor',
+        'NetworkManagerEditor',
+        'NetworkManagerHelper',
+        'NetworkObjectEditor',
+        'NetworkRigidbodyBaseEditor',
+        'NetworkTransformEditor',
+        'NetworkPrefabsEditor',
+    ]),
+    ('Unity.Netcode.Editor.Configuration', 'Unity.Netcode.GameObjects.Editor.Configuration', [
+        'NetcodeForGameObjectsProjectSettings',
+        'NetworkPrefabProcessor',
+    ]),
+    ('Unity.Netcode', 'Unity.Netcode.GameObjects.Timing', [
+        'NetworkTime',
+        'NetworkTimeSystem',
+        'NetworkTickSystem',
+    ]),
 ]
+
+# The names the --collision-stub assembly occupies; under it these must NOT be rewritten.
+# Keep in sync with Assets/CollisionStub~/N4ECollisionStub.cs.
+STUB_OCCUPIED = ['Unity.Netcode.NetworkTime', 'Unity.Netcode.NetworkTimeSystem']
+
+
+def expected_pairs():
+    """Yields (old fully qualified name, new fully qualified name) for every relocated type."""
+    for old_namespace, new_namespace, names in EXPECTED_MOVES:
+        for name in names:
+            yield f"{old_namespace}.{name}", f"{new_namespace}.{name}"
 
 
 def find_editor_binary(path):
@@ -138,7 +173,7 @@ def purge_tree(path):
 
 
 def copy_flat(from_dir, to_dir):
-    """Copies the files of a flat directory. Assets/Editor has no subdirectories."""
+    """Copies the files of a flat directory. The source directories have no subdirectories."""
     os.makedirs(to_dir, exist_ok=True)
     for entry in os.listdir(from_dir):
         source = os.path.join(from_dir, entry)
@@ -146,14 +181,43 @@ def copy_flat(from_dir, to_dir):
             shutil.copy2(source, os.path.join(to_dir, entry))
 
 
+def backup_sources(backup_root):
+    """Copies every source directory into its own subdirectory of the backup root."""
+    for source_dir in SOURCE_DIRS:
+        copy_flat(source_dir, os.path.join(backup_root, os.path.basename(source_dir)))
+
+
+def restore_sources(backup_root):
+    """Restores every source directory from the backup root."""
+    for source_dir in SOURCE_DIRS:
+        copy_flat(os.path.join(backup_root, os.path.basename(source_dir)), source_dir)
+
+
 def read_sources():
-    """Returns the concatenated text of every .cs file under Assets/Editor."""
+    """Returns the concatenated text of every .cs file in the source directories."""
     parts = []
-    for entry in sorted(os.listdir(SOURCE_DIR)):
-        if entry.endswith('.cs'):
-            with open(os.path.join(SOURCE_DIR, entry), encoding='utf-8-sig') as handle:
-                parts.append(handle.read())
+    for source_dir in SOURCE_DIRS:
+        for entry in sorted(os.listdir(source_dir)):
+            if entry.endswith('.cs'):
+                with open(os.path.join(source_dir, entry), encoding='utf-8-sig') as handle:
+                    parts.append(handle.read())
     return '\n'.join(parts)
+
+
+def install_stub():
+    """Copies the collision stub into Assets so the editor imports it."""
+    if not os.path.isdir(STUB_SOURCE):
+        sys.exit(f"Collision stub not found at {STUB_SOURCE}")
+    shutil.copytree(STUB_SOURCE, STUB_TARGET, dirs_exist_ok=True)
+    print(f"Installed the collision stub at {STUB_TARGET}")
+
+
+def remove_stub():
+    """Removes the collision stub and the .meta the editor generated beside it."""
+    shutil.rmtree(STUB_TARGET, ignore_errors=True)
+    generated_meta = STUB_TARGET + '.meta'
+    if os.path.isfile(generated_meta):
+        os.remove(generated_meta)
 
 
 def run_editor(unity):
@@ -175,31 +239,42 @@ def run_editor(unity):
     print(f"Editor exit code: {result.returncode}")
 
 
-def assert_rewritten():
-    """Prints a per-type result table and returns the number of types that were not rewritten."""
+def assert_rewritten(collision_stub):
+    """
+    Prints a per-type result table and returns the number of types whose outcome was not the expected
+    one. Under the collision stub the expectation inverts for the names the stub occupies.
+    """
     all_text = read_sources()
 
+    # Both counts need a trailing-token boundary: a following word character or dot means the match
+    # is really part of a longer name. Without it 'Unity.Netcode.NetworkTime' also counts every
+    # 'Unity.Netcode.NetworkTimeSystem'.
+    boundary = r'(?![\w.])'
+
     failures = 0
-    print(f"\n{'TYPE':<72} {'UPDATED':>8} {'STALE':>6}  RESULT")
-    for old in EXPECTED_TYPES:
-        new = old.replace('Unity.Netcode.', 'Unity.Netcode.GameObjects.', 1)
+    print(f"\n{'TYPE':<72} {'UPDATED':>8} {'STALE':>6} {'EXPECT':>8}  RESULT")
+    for old, new in expected_pairs():
+        updated = len(re.findall(re.escape(new) + boundary, all_text))
+        stale = len(re.findall(re.escape(old) + boundary, all_text))
 
-        updated = len(re.findall(re.escape(new), all_text))
-        # The old name survives only as a distinct token: a trailing word character or dot means this
-        # is really part of the longer new name.
-        stale = len(re.findall(re.escape(old) + r'(?![\w.])', all_text))
+        blocked = collision_stub and old in STUB_OCCUPIED
+        if blocked:
+            # The old name still resolves to the stub, so the reference must have been left alone.
+            passed = updated == 0 and stale > 0
+        else:
+            passed = updated > 0 and stale == 0
 
-        passed = updated > 0 and stale == 0
         if not passed:
             failures += 1
-        print(f"{old:<72} {updated:>8} {stale:>6}  {'PASS' if passed else 'FAIL'}")
+        expect = 'blocked' if blocked else 'moved'
+        print(f"{old:<72} {updated:>8} {stale:>6} {expect:>8}  {'PASS' if passed else 'FAIL'}")
 
     return failures
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Verifies that Unity's API updater migrates NGO 2.x editor API references to 3.x.")
+        description="Verifies that Unity's API updater migrates NGO 2.x API references to 3.x.")
     parser.add_argument('--unity', default='',
                         help='Editor binary. Defaults to UNITY_EDITOR_PATH, then to the hub install '
                              'matching ProjectSettings/ProjectVersion.txt.')
@@ -207,14 +282,19 @@ def main():
                         help='Delete Library and Temp first, for a cold import.')
     parser.add_argument('--keep-updated-sources', action='store_true',
                         help='Leave the rewritten sources in place instead of restoring the originals.')
+    parser.add_argument('--collision-stub', action='store_true',
+                        help='Add an assembly occupying Unity.Netcode.NetworkTime and '
+                             'NetworkTimeSystem, and assert those two are NOT migrated while '
+                             'NetworkTickSystem still is.')
     args = parser.parse_args()
 
     unity = resolve_unity(args.unity)
     print(f"Editor:  {unity}")
     print(f"Project: {PROJECT_PATH}")
 
+    total = sum(1 for _ in expected_pairs())
     backup_dir = tempfile.mkdtemp(prefix='ngo-apiupdater-')
-    copy_flat(SOURCE_DIR, backup_dir)
+    backup_sources(backup_dir)
 
     try:
         if args.clean:
@@ -224,24 +304,30 @@ def main():
                     print(f"Removing {stale} ...")
                     purge_tree(target)
 
+        if args.collision_stub:
+            install_stub()
+
         run_editor(unity)
-        failures = assert_rewritten()
+        failures = assert_rewritten(args.collision_stub)
 
         print('')
         if failures == 0:
-            print(f"PASS: all {len(EXPECTED_TYPES)} deprecated editor types were rewritten.")
+            print(f"PASS: all {total} relocated types behaved as expected.")
         else:
-            print(f"FAIL: {failures} of {len(EXPECTED_TYPES)} types were not rewritten. See {LOG_FILE}")
+            print(f"FAIL: {failures} of {total} types did not. See {LOG_FILE}")
 
         if args.keep_updated_sources:
-            print(f"Rewritten sources left in place under Assets/Editor (backup: {backup_dir}).")
+            dirs = ', '.join(os.path.basename(d) for d in SOURCE_DIRS)
+            print(f"Rewritten sources left in place under Assets/{{{dirs}}} (backup: {backup_dir}).")
 
         return 0 if failures == 0 else 1
     finally:
         # Restore on every exit path, including Ctrl-C, so an interrupted run never leaves the
-        # rewritten sources behind as the next run's input.
+        # rewritten sources or the stub behind as the next run's input.
+        if args.collision_stub:
+            remove_stub()
         if not args.keep_updated_sources:
-            copy_flat(backup_dir, SOURCE_DIR)
+            restore_sources(backup_dir)
             shutil.rmtree(backup_dir, ignore_errors=True)
 
 

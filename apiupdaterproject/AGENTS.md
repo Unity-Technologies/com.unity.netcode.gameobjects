@@ -7,15 +7,17 @@ what it is and how to run it; this file covers why it is built this way and what
 
 * This is a standalone Unity project at the repo root. It is not part of `testproject` or
   `minimalproject`, and the package does not reference it.
-* It validates one thing end to end: that a project written against the **NGO 2.x** editor API is
-  migrated automatically by Unity's API updater when the package is upgraded to **3.x**.
+* It validates one thing end to end: that a project written against the **NGO 2.x** API is migrated
+  automatically by Unity's API updater when the package is upgraded to **3.x**. Two relocations are
+  covered — the editor namespaces, and the runtime timing types.
 * **The mechanism it tests does not live here.** The `[MovedFrom]` attributes are on the real types in
-  `com.unity.netcode.gameobjects/Editor/**`. This project only consumes them.
-* **Do not "fix" the sources under `Assets/Editor`.** They are deliberately written against the 2.x
-  API and are the input to the test. A helpful cleanup there silently guts it.
-* The expected-type list in `run_upgrade_test.py` is frozen: it enumerates the public editor API of
-  `develop-2.0.0`, which is released and cannot change. It only needs extending if a public editor
-  type is relocated again within 3.x.
+  `com.unity.netcode.gameobjects/Editor/**` and `com.unity.netcode.gameobjects/Runtime/Timing/**`.
+  This project only consumes them.
+* **Do not "fix" the sources under `Assets/Editor` or `Assets/Runtime`.** They are deliberately
+  written against the 2.x API and are the input to the test. A helpful cleanup there silently guts it.
+* The two editor blocks of `EXPECTED_MOVES` in `run_upgrade_test.py` are frozen: they enumerate the
+  public editor API of `develop-2.0.0`, which is released and cannot change. A block only needs
+  extending if a public type is relocated again within 3.x — as the timing types were.
 * CI runs it on demand only — comment `/ci apiupdater` on a PR. See `.yamato/api-updater-test.yml`.
 * **Opening this project locally mutates it.** Unity rewrites `ProjectVersion.txt` to whatever editor
   opened it, and the package manager can add builtin modules to `Packages/manifest.json` that only
@@ -62,6 +64,37 @@ Reference forms `MovedFrom` was confirmed to handle, via `Assets/Editor/Deprecat
 alias, type alias, base type, `typeof`, and generic type argument. The dead
 `using Unity.Netcode.Editor;` directives are removed and namespace aliases are rewritten in place
 rather than expanded at each use.
+
+## The timing move is a namespace-only relocation, and that is a different case
+
+Every row measured above was a namespace **and** assembly move. The timing types keep their assembly
+(`Unity.Netcode.Runtime`), so they carry `[MovedFrom(true, "Unity.Netcode", null, null)]` — a null
+`sourceAssembly`, which `MovedFromAttributeData.Set` records as `assemblyHasChanged = false`.
+
+Two things about that are worth knowing before trusting it:
+
+* **The null form is the documented one.** The attribute's own comment states that any null string is
+  read as "has not changed" and its value is taken from the decorated type, and there is a
+  single-argument `MovedFromAttribute(string sourceNamespace)` constructor that does exactly
+  `Set(true, ns, null, null)`. Passing the real assembly name instead would set `assemblyHasChanged`
+  for a change that did not happen.
+* **It has not been measured here.** The table above has no namespace-only row. `Assets/Runtime` plus
+  the timing block in `EXPECTED_MOVES` is what settles it; a `/ci apiupdater` run is the proof.
+
+Do not reach for `AffectsAPIUpdater` to reason about this. It reads
+`!classHasChanged && !assemblyHasChanged`, which would make it false for the editor move — and the
+editor move demonstrably works, so whatever that property gates, it is not script rewriting.
+
+### Open form: a namespace alias whose target survives
+
+`Assets/Runtime/DeprecatedTimingUsage.cs` contains `using TimeNs = Unity.Netcode;` used as
+`TimeNs.NetworkTickSystem`. This is **not** the same case as the editor project's
+`using Cfg = Unity.Netcode.Editor.Configuration;`: there the alias target itself stopped resolving and
+was rewritten in place, whereas `Unity.Netcode` still exists and still holds `NetworkBehaviour` and
+the rest. So the alias target cannot be rewritten and the use site has to be. The assertions do not
+depend on this form — `NetworkTickSystem` is also referenced by simple name and fully qualified — so
+if the updater leaves that one line alone the run still passes. Read the rewritten source rather than
+assuming it was handled.
 
 ## Known gap: assembly definition references
 
