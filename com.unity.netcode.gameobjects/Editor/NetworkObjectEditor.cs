@@ -42,7 +42,7 @@ namespace Unity.Netcode.GameObjects.Editor
         /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
         private static void OnGhostObjectPreRemoval(GameObject gameObject)
         {
-            var ghostBehaviours = gameObject.GetComponentsInChildren<NetworkObjectBridge>();
+            var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
             for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
             {
                 DestroyImmediate(ghostBehaviours[i], true);
