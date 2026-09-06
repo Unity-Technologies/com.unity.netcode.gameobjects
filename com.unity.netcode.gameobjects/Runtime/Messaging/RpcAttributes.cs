@@ -62,7 +62,7 @@ namespace Unity.Netcode
             /// <remarks>
             /// Deprecated in favor of <see cref="InvokePermission"/>.
             /// </remarks>
-            [Obsolete("RequireOwnership is deprecated. Please use InvokePermission instead.")]
+            [Obsolete("RequireOwnership is deprecated. Please use InvokePermission instead.", true)]
             public bool RequireOwnership;
 
             /// <summary>
@@ -98,7 +98,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// Deprecated in favor of <see cref="InvokePermission"/>.
         /// </remarks>
-        [Obsolete("RequireOwnership is deprecated. Please use InvokePermission = RpcInvokePermission.Owner or InvokePermission = RpcInvokePermission.Everyone instead.")]
+        [Obsolete("RequireOwnership is deprecated. Please use InvokePermission = RpcInvokePermission.Owner or InvokePermission = RpcInvokePermission.Everyone instead.", true)]
         public bool RequireOwnership;
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace Unity.Netcode
         ///     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         /// </code>
         /// </remarks>
-        [Obsolete("ServerRpc with RequireOwnership is deprecated. Use [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)] or [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)] instead.)]")]
+        [Obsolete("ServerRpc with RequireOwnership is deprecated. Use [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)] or [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)] instead.)]", true)]
         public new bool RequireOwnership;
 
         /// <summary>

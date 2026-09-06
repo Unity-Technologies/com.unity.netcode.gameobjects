@@ -452,7 +452,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="perviousOwner">not used</param>
         /// <param name="newOwner">not used</param>
-        [Obsolete("This method is no longer used and will be removed in a future version.")]
+        [Obsolete("This method is no longer used and will be removed in a future version.", true)]
         protected virtual void InternalOnOwnershipChanged(ulong perviousOwner, ulong newOwner)
         {
 
@@ -1110,7 +1110,7 @@ namespace Unity.Netcode
         /// Distributed Authority:
         /// All clients can invoke this method.
         /// </summary>
-        internal bool AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal bool AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject.IsSpawned)
             {
@@ -1158,7 +1158,7 @@ namespace Unity.Netcode
             }
 
 
-            if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene))
+            if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, playerObject, ownerClientId, destroyWithScene))
             {
                 if (NetworkManager.LogLevel <= LogLevel.Error)
                 {
@@ -1254,13 +1254,13 @@ namespace Unity.Netcode
             // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
             // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
             // the in-scene placed Networkobject changes several times over different sessions.
-            if (serializedObject.IsSceneObject && !serializedObject.HasParent && networkObject.GetNetworkParenting().HasValue)
+            if (networkObject.InScenePlaced && !serializedObject.HasParent && networkObject.GetNetworkParenting().HasValue)
             {
                 networkObject.ClearNetworkParenting();
             }
 
             // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
-            var succeeded = SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsSceneObject, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
+            var succeeded = SpawnNetworkObjectLocallyCommon(networkObject, serializedObject.NetworkObjectId, serializedObject.IsPlayerObject, serializedObject.OwnerClientId, destroyWithScene);
             if (!succeeded)
             {
                 // Don't need to log here as SpawnNetworkObjectLocallyCommon should log the specific error
@@ -1278,7 +1278,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <returns>boolean indicating whether the spawn succeeded.</returns>
         //  Internal dev note: THIS IS A CATCH FOR OURSELVES. DON'T PULL OUT
-        internal bool SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal bool SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             // TODO: Replace the following checks with internal Netcode asserts
             // We want our tests to double check this without impacting users.
@@ -1299,12 +1299,6 @@ namespace Unity.Netcode
                 }
                 return false;
             }
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            // Obsolete with warning means we need the underlying behaviour to keep existing
-            // TODO: remove in the 3.x branch
-            networkObject.SetSceneObjectStatus(sceneObject);
-#pragma warning restore CS0618 // Type or member is obsolete
 
             networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
 
@@ -1661,7 +1655,7 @@ namespace Unity.Netcode
                         ownerId = NetworkManager.LocalClientId;
                     }
 
-                    if (AuthorityLocalSpawn(networkObject, GetNetworkObjectId(), true, false, ownerId, true))
+                    if (AuthorityLocalSpawn(networkObject, GetNetworkObjectId(), false, ownerId, true))
                     {
                         networkObjectsToSpawn.Add(networkObject);
                     }

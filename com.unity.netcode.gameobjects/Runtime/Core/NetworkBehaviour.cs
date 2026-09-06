@@ -335,11 +335,7 @@ namespace Unity.Netcode
                 throw new RpcException("This RPC can only be sent by the server.");
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            var requireOwnership = attributeParams.RequireOwnership;
-#pragma warning restore CS0618 // Type or member is obsolete
-
-            if ((requireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
+            if (attributeParams.InvokePermission == RpcInvokePermission.Owner && !IsOwner)
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }

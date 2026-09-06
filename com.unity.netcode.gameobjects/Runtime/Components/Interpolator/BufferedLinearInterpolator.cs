@@ -59,28 +59,28 @@ namespace Unity.Netcode
         /// <remarks>
         /// This is replaced by the <see cref="m_BufferQueue"/> of type <see cref="Queue{T}"/>.
         /// </remarks>
-        [Obsolete("This list is no longer used and will be deprecated.", false)]
+        [Obsolete("This list is no longer used and will be deprecated.", true)]
         protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
 
         /// <summary>
         /// ** Deprecating **
         /// The starting value of type <see cref="T"/> to interpolate from.
         /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
+        [Obsolete("This property will be deprecated.", true)]
         protected internal T m_InterpStartValue;
 
         /// <summary>
         /// ** Deprecating **
         /// The current value of type <see cref="T"/>.
         /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
+        [Obsolete("This property will be deprecated.", true)]
         protected internal T m_CurrentInterpValue;
 
         /// <summary>
         /// ** Deprecating **
         /// The end (or target) value of type <see cref="T"/> to interpolate towards.
         /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
+        [Obsolete("This property will be deprecated.", true)]
         protected internal T m_InterpEndValue;
         #endregion
 
@@ -651,7 +651,7 @@ namespace Unity.Netcode
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        [Obsolete("This method is being deprecated due to it being only used for internal testing purposes.", false)]
+        [Obsolete("This method is being deprecated due to it being only used for internal testing purposes.", true)]
         public T Update(float deltaTime, NetworkTime serverTime)
         {
             return UpdateInternal(deltaTime, serverTime);
