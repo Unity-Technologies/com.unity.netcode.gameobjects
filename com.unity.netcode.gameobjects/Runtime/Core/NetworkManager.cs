@@ -24,6 +24,11 @@ using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
+// Netcode for Entities also declares Unity.Netcode.NetworkTimeSystem. The enclosing namespace is
+// searched before any using directive, so inside Unity.Netcode the bare name binds to theirs and the
+// import above is never consulted. An alias is the only spelling that reaches ours from here, since
+// IDE0001 rules out qualifying the name and an alias sharing it is silently ignored.
+using GameObjectsNetworkTimeSystem = Unity.Netcode.GameObjects.Timing.NetworkTimeSystem;
 
 
 
@@ -1017,7 +1022,7 @@ namespace Unity.Netcode
         /// Accessor property for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
         /// Prefer the use of the LocalTime and ServerTime properties
         /// </summary>
-        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
+        public GameObjectsNetworkTimeSystem NetworkTimeSystem { get; private set; }
 
         /// <summary>
         /// Accessor property for the <see cref="NetworkTickSystem"/> of the NetworkManager.
@@ -1310,7 +1315,7 @@ namespace Unity.Netcode
             ConnectionManager.Initialize(this);
 
             // The remaining systems can then be initialized
-            NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
+            NetworkTimeSystem = server ? GameObjectsNetworkTimeSystem.ServerTimeSystem() : new GameObjectsNetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
             AnticipationSystem = new AnticipationSystem(this);
 

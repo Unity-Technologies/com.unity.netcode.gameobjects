@@ -8,12 +8,12 @@ Imports the project in batch mode with -accept-apiupdate, then asserts that ever
 reference under Assets/Editor and Assets/Runtime was rewritten and that no stale reference
 survived. The 2.x sources are restored on exit so the test can be re-run.
 
-With --collision-stub, a stub assembly is added that occupies Unity.Netcode.NetworkTime and
-Unity.Netcode.NetworkTimeSystem, standing in for a second package that has taken those names. The
-expectation then inverts for exactly those two: the updater is driven by resolution failure, so a
+With --collision-stub, a stub assembly is added that occupies Unity.Netcode.NetworkTimeSystem,
+standing in for Netcode for Entities, which still declares that name in the shared root namespace.
+The expectation then inverts for exactly that one: the updater is driven by resolution failure, so a
 name another assembly still resolves never reaches the MovedFrom data and cannot be migrated.
-NetworkTickSystem is deliberately absent from the stub and must still migrate, which is what makes
-the run prove both halves rather than merely fail.
+NetworkTime and NetworkTickSystem are deliberately absent from the stub and must still migrate, which
+is what makes the run prove both halves rather than merely fail.
 
 Note that this script can be run from anywhere; paths are resolved relative to the script itself.
 """
@@ -70,7 +70,7 @@ EXPECTED_MOVES = [
 
 # The names the --collision-stub assembly occupies; under it these must NOT be rewritten.
 # Keep in sync with Assets/CollisionStub~/N4ECollisionStub.cs.
-STUB_OCCUPIED = ['Unity.Netcode.NetworkTime', 'Unity.Netcode.NetworkTimeSystem']
+STUB_OCCUPIED = ['Unity.Netcode.NetworkTimeSystem']
 
 
 def expected_pairs():
