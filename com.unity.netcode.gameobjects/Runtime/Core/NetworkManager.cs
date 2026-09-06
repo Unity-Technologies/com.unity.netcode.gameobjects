@@ -1360,7 +1360,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The world instance assigned to this NetworkManager instance.
         /// </summary>
-        public NetcodeWorld NetcodeWorld { get; internal set; }
+        internal NetcodeWorld NetcodeWorld { get; set; }
         internal void InitializeNetcodeWorld()
         {
             if (NetcodeWorld != null)
