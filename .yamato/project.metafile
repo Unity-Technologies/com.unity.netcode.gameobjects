@@ -172,50 +172,20 @@ test_platforms:
           standalone: GameCoreScarlett
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
-# Editors to be used for testing. NGOv2.X official support started from 6000.0 editor
+# Editors to be used for testing. NGOv3.X official support started from 6000.7 editor
 # TODO: When a new editor will be released it should be added to this list
 
 validation_editors:
     default:
-        - 6000.6
+        - 6000.7
     all:
-        - 6000.6.0b5
-        - 6000.6
+        - 6000.7.0a6
+        - 6000.7
         - trunk
-        - 5fe7931aab8c4fff9274e15ef0800125c68b8d6a
+        - 1d47644d0e359a8139ae6f99217da3c4e47f4779
     minimal:
-        - 6000.6.0b5
-pinnedTrunk:  5fe7931aab8c4fff9274e15ef0800125c68b8d6a
-
-
-# UNIFIED (NGO + N4E) CONFIGURATION---------------------------------------------------------------------
-# The unified test job validates NGO running against Netcode for Entities (N4E) through the unified API.
-# It is deliberately kept separate from every other job in this repo because it needs an editor that
-# bundles com.unity.netcode with the unified API, and that editor is NOT one of the validation_editors.
-#
-# WHY THIS IS PINNED TO 6000.7.0a5 (and not 6000.7.0a2):
-#   UnifiedNetcodeTransport is compiled behind "#if UNIFIED_NETCODE && OUT_OF_BAND_RPC" and needs the
-#   N4E out-of-band RPC API (IOutOfBandRpcCommand / OutgoingOutOfBandRpcDataStreamBuffer).
-#   Both 6000.7.0a2 and 6000.7.0a5 bundle com.unity.netcode 6.7.0, but that API only landed in the a5
-#   snapshot. On a2 the unified transport does not compile, so the unified tests cannot run there.
-#   Bump this pin (and unified_netcode_version below) together whenever the required N4E API moves.
-#
-# An explicit alpha version is used instead of a trunk revision hash because published alphas are
-# already immutable, so there is nothing to pin against.
-unified_editors:
-    default:
-        - 6000.7.0a5
-
-# Version of com.unity.netcode (N4E) bundled with unified_editors.default.
-# It resolves as a "builtin" package out of the editor install, so it must match the editor exactly.
-unified_netcode_version: 6.7.0
-
-# The unified job runs in Editor context only, so a single fast platform is enough.
-unified_test_platforms:
-    - name: ubuntu
-      type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.87.0
-      flavor: b1.large
+        - 6000.7.0a6
+pinnedTrunk:  1d47644d0e359a8139ae6f99217da3c4e47f4779
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
@@ -223,6 +193,7 @@ unified_test_platforms:
 scripting_backends:
   - mono
   - il2cpp
+  - coreclr
 
 
 # PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------
