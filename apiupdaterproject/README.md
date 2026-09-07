@@ -68,9 +68,9 @@ python run_upgrade_test.py --unity <editor> --clean --keep-updated-sources
 
 ### The `--collision-stub` run
 
-This is the regression test for the reason the timing move exists. The stub occupies the one name
-Netcode for Entities 6.7.0 still declares in the shared root: with it installed, a 2.x reference to
-`NetworkTimeSystem` still resolves — to the stub — so it never fails to resolve, never reaches the
+This is the regression test for the reason the timing move exists. The stub occupies one name,
+standing in for any second installed package that declares it: with the stub installed, a 2.x
+reference to `NetworkTimeSystem` still resolves — to the stub — so it never fails to resolve, never reaches the
 `MovedFrom` data, and cannot be migrated. `NetworkTime` and `NetworkTickSystem` are deliberately
 **not** in the stub, so the same run asserts those still migrate. A pass therefore proves both halves:
 

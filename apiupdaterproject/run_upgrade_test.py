@@ -9,7 +9,7 @@ reference under Assets/Editor and Assets/Runtime was rewritten and that no stale
 survived. The 2.x sources are restored on exit so the test can be re-run.
 
 With --collision-stub, a stub assembly is added that occupies Unity.Netcode.NetworkTimeSystem,
-standing in for Netcode for Entities, which still declares that name in the shared root namespace.
+standing in for any second installed package that declares the same name.
 The expectation then inverts for exactly that one: the updater is driven by resolution failure, so a
 name another assembly still resolves never reaches the MovedFrom data and cannot be migrated.
 NetworkTime and NetworkTickSystem are deliberately absent from the stub and must still migrate, which
