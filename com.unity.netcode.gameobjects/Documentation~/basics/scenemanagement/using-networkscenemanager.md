@@ -19,7 +19,7 @@
 > [!NOTE]
 > In-Scene placed NetworkObjects can be used in many ways and are treated uniquely from that of dynamically spawned NetworkObjects.  An in-scene placed NetworkObject is a GameObject with a NetworkObject and typically at least one NetworkBehaviour component attached to a child of or the same GameObject.  it's recommended to read through all integrated scene management materials (this document, [Scene Events](scene-events.md), and [Timing Considerations](timing-considerations.md)) before learning about more advanced [In-Scene (placed) NetworkObjects](inscene-placed-networkobjects.md) topics.
 
-All of these scene management features (and more) are handled by the [`NetworkSceneManager`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkSceneManager.html).
+All of these scene management features (and more) are handled by the [`NetworkSceneManager`](xref:Unity.Netcode.NetworkSceneManager).
 
 ### Accessing `NetworkSceneManager`
 The `NetworkSceneManager` lives within the NetworkManager and is instantiated when the NetworkManager is started.
@@ -122,7 +122,7 @@ The purpose behind the above outline is to show that a Scene Event can lead to o
 #### Scene Event Notifications
 You can be notified of scene events by registering in one of two ways:
 1. Receive all scene event notification types: `NetworkSceneManager.OnSceneEvent`
-2. Receive only a specific scene event notification type: [`NetworkSceneManager`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkSceneManager.html#events) has one for each [`SceneEventType`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.SceneEventType.html)<br/>
+2. Receive only a specific scene event notification type: [`NetworkSceneManager`](xref:Unity.Netcode.NetworkSceneManager) has one for each [`SceneEventType`](xref:Unity.Netcode.SceneEventType)<br/>
 
 > [!NOTE]
 > Receiving (via subscribing to the associated event callback) only specific scene event notification types does not change how a server or client receives and processes notifications.
@@ -137,7 +137,7 @@ Typically, this is used with clients or components that might only need to be no
 You might want to register for the `SceneEventType.LoadEventCompleted` scene event type to know, from a client perspective, that the server and all other clients have finished loading a scene.  This notification lets you know when you can start performing other netcode related actions on the newly loaded and spawned NetworkObjects.
 
 #### Scene Event Progress Status
-As we discussed in the earlier code example, it's important to check the status returned by `NetworkSceneManager.Load` to make sure your scene loading event has started.  The following is a list of all [SceneEventProgressStatus](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.SceneEventProgressStatus.html) `enum` values with some additional helpful information:
+As we discussed in the earlier code example, it's important to check the status returned by `NetworkSceneManager.Load` to make sure your scene loading event has started.  The following is a list of all [SceneEventProgressStatus](xref:Unity.Netcode.SceneEventProgressStatus) `enum` values with some additional helpful information:
 - Started
   - The scene event has started (success)
 - SceneNotLoaded

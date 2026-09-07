@@ -47,7 +47,7 @@ namespace Unity.Netcode
 
         private Dictionary<ulong, List<int>> m_ForwardUpdates;
 
-        private List<int> m_UpdatedNetworkVariables;
+        private NativeList<int> m_UpdatedNetworkVariables;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void WriteNetworkVariable(ref FastBufferWriter writer, ref NetworkVariableBase networkVariable, bool ensureNetworkVariableLengthSafety, int nonfragmentedSize, int fragmentedSize)
@@ -217,7 +217,7 @@ namespace Unity.Netcode
             var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
             var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery && networkManager.IsServer;
             var markNetworkVariableDirty = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery ? false : networkManager.IsServer;
-            m_UpdatedNetworkVariables = new List<int>();
+            m_UpdatedNetworkVariables = new NativeList<int>(Allocator.Temp);
 
             if (networkBehaviour == null)
             {
@@ -396,9 +396,9 @@ namespace Unity.Netcode
             // When a server forwards delta updates to connected clients, it needs to preserve the previous value
             // until it is done serializing all valid NetworkVariable field deltas (relative to each client). This
             // is invoked after it is done forwarding the deltas.
-            foreach (var fieldIndex in m_UpdatedNetworkVariables)
+            for (int i = 0; i < m_UpdatedNetworkVariables.Length; i++)
             {
-                networkBehaviour.NetworkVariableFields[fieldIndex].PostDeltaRead();
+                networkBehaviour.NetworkVariableFields[m_UpdatedNetworkVariables[i]].PostDeltaRead();
             }
         }
     }

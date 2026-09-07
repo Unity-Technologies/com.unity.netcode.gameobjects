@@ -53,7 +53,7 @@ You can use this property to conditionally execute logic that should only run on
 
 ### Session owner NetworkObjects
 
-For game systems that should always be [owned](./ownership.md) by the session owner, you can set the NetworkObject to have the `OwnershipStatus.SessionOwner` [ownership permission](../advanced-topics/networkobject-ownership.md). This ensures that the NetworkObject always belongs to the current session owner. If that session owner disconnects or leaves the game, the ownership of that NetworkObject will be automatically moved to the newly selected session owner.
+For game systems that should always be [owned](./ownership.md) by the session owner, you can set the NetworkObject to have the `OwnershipStatus.SessionOwner` [ownership permission](../components/core/networkobject-ownership.md). This ensures that the NetworkObject always belongs to the current session owner. If that session owner disconnects or leaves the game, the ownership of that NetworkObject will be automatically moved to the newly selected session owner.
 
 ## NetworkObject distribution
 

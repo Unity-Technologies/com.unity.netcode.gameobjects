@@ -356,6 +356,7 @@ namespace TestProject.RuntimeTests
         {
             var gameObject = new GameObject();
             gameObject.AddComponent<NetworkObject>();
+            gameObject.AddComponent<Animator>();
             var networkAnimator = gameObject.AddComponent<NetworkAnimator>();
 
             var writer = new FastBufferWriter(40, Unity.Collections.Allocator.TempJob);
@@ -371,6 +372,8 @@ namespace TestProject.RuntimeTests
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex($"parameters. Ignoring the remainger of this {nameof(ParametersUpdateMessage)}!"));
             // Pass in the invalid ParametersUpdateMessage
             networkAnimator.UpdateParameters(ref invalidParameters);
+
+            Object.DestroyImmediate(gameObject);
         }
 
         private bool AllTriggersDetected(OwnerShipMode ownerShipMode)
@@ -1078,27 +1081,18 @@ namespace TestProject.RuntimeTests
 
             TimeTravelToNextTick();
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => !m_ServerNetworkManager.ShutdownInProgress);
+            WaitForConditionOrTimeOutWithTimeTravel(() => !m_ServerNetworkManager.ShutdownInProgress && m_ServerNetworkManager.IsConnectedClient);
 
             Assert.IsTrue(m_ServerTestHelperDespawned, $"Server-Side {nameof(AnimatorTestHelper)} did not have a valid IsServer setting!");
             AssertOnTimeout($"Timed out waiting for the server to shutdown!");
 
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Restarting Server and Client ++++++++++++++++++ ");
-            // Since the dynamically generated PlayerPrefab is destroyed when the server shuts down,
-            // we need to create a new one and assign it to NetworkPrefab index 0
-            m_PlayerPrefab = new GameObject("Player");
-            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
-            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
-                clientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
                 clientNetworkManager.StartClient();
             }
 

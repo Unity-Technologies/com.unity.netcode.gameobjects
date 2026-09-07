@@ -10,7 +10,7 @@ Below is a list of practices and techniques that we use daily when working on th
 
 ### Use ParrelSync clone-based workflow during development.
 
-[ParrelSync workflow](testing_locally.md#parrelsync) is faster than creating builds and it allows you to debug the separate editor instances via separate IDE debuggers.
+[ParrelSync workflow](testing_with_artificial_conditions.md#clone-based-workflow-parrelsync) is faster than creating builds and it allows you to debug the separate editor instances via separate IDE debuggers.
 
 Use ParrelSync to run separate editor instances for your Host/Server and Client.
 
@@ -22,7 +22,7 @@ Unity engine has two debug rendering APIs that are useful for the purposes of mu
 
 Both of these functions allow us to draw arbitrary debug lines that would be visible in the Scene view and in the Game view, provided Gizmo rendering is enabled (to enable Gizmo rendering in Game view you need to click on the `Gizmos` menu at the top of the Game view).
 
-The key trick here is to use different colors for different kinds of information and to make the lines stay long enough for visual inspection by setting `duration` parameter. This technique shines when it's combined with [screen recordings](#7-recording-the-video-of-gameplay) of [multiple peers running side by side in separate editor instances via ParrelSync](#1-use-parrelsync-workflow-during-development).
+The key trick here is to use different colors for different kinds of information and to make the lines stay long enough for visual inspection by setting `duration` parameter. This technique shines when it's combined with [screen recordings](#capturing-screen-recordings-of-the-game-instances) of [multiple peers running side by side in separate editor instances via ParrelSync](#use-parrelsync-clone-based-workflow-during-development).
 
 The code below would render a green debug line that's 2 units tall at the position of the transform, and this line would stay on screen for 4 seconds:
 `Debug.DrawLine(this.transform.position, this.transform.position + Vector3.UP * 2f, Color.green, duration: 4f);`

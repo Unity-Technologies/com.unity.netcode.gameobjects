@@ -52,7 +52,7 @@ Note here an input from a client can be anything, from a user interacting with a
 
 #### Issue: Reactivity
 
-An issue with server authority is you're waiting for your server to tell you to update your world. This means that if you send an input to the server and wait for the server to tell you your position change, you'll need to wait for a full **RTT** before you see the effect. There are [patterns](#patterns-to-solve-these-issues) you can use to solve this issue while still remaining server authoritative.
+An issue with server authority is you're waiting for your server to tell you to update your world. This means that if you send an input to the server and wait for the server to tell you your position change, you'll need to wait for a full **RTT** before you see the effect. There are [patterns](#patterns-to-solve-latency-issues-in-a-server-authoritative-game) you can use to solve this issue while still remaining server authoritative.
 
 ### Client authority
 
@@ -82,7 +82,7 @@ To avoid this, it's recommended to use client **owner** authority, which allows 
 
 Client authority is a pretty dangerous door to leave open on your server because any malicious player can forge messages to say "kill player a, b, c, d, e, f, g" and win the game. It's pretty useful though for reactivity. Since the client is making all the important gameplay decisions, it can display the result of user inputs as soon as they happen instead of waiting a few hundred milliseconds.
 
-When you don't think there's any reason for your players to cheat, client authority can be a great way to have reactivity without the complexity added with techniques like [input prediction](#prediction).
+When you don't think there's any reason for your players to cheat, client authority can be a great way to have reactivity without the complexity added with techniques like [input prediction](#client-side-prediction).
 
 Another way of solving this issue in a client authoritative game is using soft validation server side. Instead of doing all simulation server side, the server only does basic validation. The server would, for example, do range checks to make sure a player isn't teleporting to places it shouldn't. Doing so is acceptable for most [PvE](https://en.wikipedia.org/wiki/Player_versus_environment) games. However, [PvP](https://en.wikipedia.org/wiki/Player_versus_player) games usually require server authority.
 
@@ -157,7 +157,7 @@ To do continuous client driven actions, there's a few more considerations to tak
 - You then need to make sure you don't send RPCs to the server (containing your authoritative state) when no data has changed and do dirty checks.
 - You'd need to send it on tick or at worst on FixedUpdate. Sending on Update() would spam your connection.
 
-A sample for a [ClientNetworkTransform](../components/helper/networktransform.md#clientnetworktransform) has been created, so you don't have to reimplement this yourself for transform updates. A [sample](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/tree/main/Basic/ClientDriven) has been created on how to use it. See [movement script](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/ClientDriven/Assets/Scripts/ClientPlayerMove.cs).
+A sample for a [ClientNetworkTransform](../components/helper/networktransform.md#client-vs-server-authority) has been created, so you don't have to reimplement this yourself for transform updates. A [sample](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/tree/main/Basic/ClientDriven) has been created on how to use it. See [movement script](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/ClientDriven/Assets/Scripts/ClientPlayerMove.cs).
 
 > [!NOTE]
 > A rule of thumb here is to ask yourself: "Can the server correct me on this?". If it can, use server authority.

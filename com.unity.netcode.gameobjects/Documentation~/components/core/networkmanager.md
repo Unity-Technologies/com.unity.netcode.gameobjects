@@ -5,7 +5,7 @@ The NetworkManager is a required Netcode for GameObjects component that has all 
 ## NetworkManager Inspector properties
 
 - **LogLevel**:  Sets the network logging level
-- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object. For more information about player prefabs, refer to [Player NetworkObjects](networkobject.md#player-networkobjects).
+- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object. For more information about player prefabs, refer to [Player NetworkObjects](playerobjects.md).
 - **NetworkPrefabs**: Where you register your network prefabs.  You can also create a single network Prefab override per registered network Prefab here.
 - **Protocol Version**: Set this value to help distinguish between builds when the most current build has new assets that can cause issues with older builds connecting.
 - **Network Transport**: Where your network specific settings and transport type is set. When using a [client-server topology](../../terms-concepts/client-server.md),  This field accepts any INetworkTransport implementation.  However, unless you have unique transport specific needs UnityTransport is the recommended transport to use with Netcode for GameObjects. For a [distributed authority topology](../../terms-concepts/distributed-authority.md), refer to the [distributed authority quickstart](../../learn/distributed-authority-quick-start.md).
@@ -18,6 +18,15 @@ The NetworkManager is a required Netcode for GameObjects component that has all 
 - **Network Id Recycle Delay**: The time it takes for a previously assigned but currently unassigned identifier to be available for use.
 - **Enable Scene Management**: When checked, Netcode for GameObjects will handle scene management and client synchronization for you.  When not checked, you will have to create your own scene management scripts and handle client synchronization.
 - **Load Scene Time Out**: When Enable Scene Management is checked, this specifies the period of time the `NetworkSceneManager` will wait while a scene is being loaded asynchronously before `NetworkSceneManager` considers the load/unload scene event to have failed/timed out.
+
+### Distributed authority network topology
+
+> [!NOTE]
+> The distributed authority network topology requires Multiplayer Services. If the Multiplayer Services package is not installed, the **Network Topology** property will not be displayed.
+
+- **Network Topology**:  Defines the network topology to use.
+  - **Client-Server**: Selects the client-server network topology.
+  - **Distributed authority**: Selects the distributed authority network topology.
 
 ## NetworkManager sub-systems
 NetworkManager is also where you can find references to other Netcode related management systems:<br/>
@@ -68,7 +77,7 @@ NetworkManager.Singleton.StartClient();
  When starting a Server or joining an already started session as client, the NetworkManager can spawn a "Player Object" belonging to the client. For more information about player prefabs, refer to:
 
  - [NetworkObject Player Prefab Documentation](networkobject.md)
- - [Connection Approval](../../basics/connection-approval)
+ - [Connection Approval](../../basics/connection-approval.md)
 
 ## Connecting
 
@@ -135,7 +144,7 @@ The server-host attempts to wait for all client connections to close before it f
 
 At times you might need to disconnect a client for various reasons without shutting down the server. To do this, you can call the `NetworkManager.DisconnectClient` method while passing the identifier of the client you wish to disconnect as the only parameter.  The client identifier can be found within:
 
-- The `NetworkManager.ConnectedClients` dictionary that uses the client identifier as a key and the value as the [`NetworkClient`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkClient.html).
+- The `NetworkManager.ConnectedClients` dictionary that uses the client identifier as a key and the value as the [`NetworkClient`](xref:Unity.Netcode.NetworkClient).
 - As a read only list of `NetworkClients`  via the `NetworkManager.ConnectedClientsList`.
 - A full list of all connected client identifiers can be accessed via `NetworkManager.ConnectedClientsIds`.
 - The client identifier is passed as a parameter to all subscribers of the `NetworkManager.OnClientConnected` event.
@@ -261,16 +270,16 @@ public class ConnectionNotificationManager : MonoBehaviour
 
 There are two static NetworkManager events you can use to be notified when a NetworkManager is instantiated or is about to be destroyed:
 
-- [`NetworkManager.OnInstantiated`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnInstantiated): This is invoked when a NetworkManager is instantiated.
-- [`NetworkManager.OnDestroying`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnDestroying): This is invoked when a NetworkManager is about to be destroyed.
+- [`NetworkManager.OnInstantiated`](xref:Unity.Netcode.NetworkManager.OnInstantiated): This is invoked when a NetworkManager is instantiated.
+- [`NetworkManager.OnDestroying`](xref:Unity.Netcode.NetworkManager.OnDestroying): This is invoked when a NetworkManager is about to be destroyed.
 
 ### When a NetworkManager is stopped
 
 
 Knowing when a NetworkManager has stopped is useful for establishing when it's safe to transition back to a main menu scene, or other similar tasks. There are two events you can use to be notified that the NetworkManager has finished shutting down:
 
-- [`NetworkManager.OnClientStopped`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnClientStopped): This is invoked on a host or client when the NetworkManager has completely shut down and is ready to be restarted.
-- [`NetworkManager.OnServerStopped`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnServerStopped): This is invoked on a host or server when the NetworkManager has completely shut down and is ready to be restarted.
+- [`NetworkManager.OnClientStopped`](xref:Unity.Netcode.NetworkManager.OnClientStopped): This is invoked on a host or client when the NetworkManager has completely shut down and is ready to be restarted.
+- [`NetworkManager.OnServerStopped`](xref:Unity.Netcode.NetworkManager.OnServerStopped): This is invoked on a host or server when the NetworkManager has completely shut down and is ready to be restarted.
 
 Since a host is both a client and a server, the event invocation order is:
 
@@ -283,4 +292,4 @@ Since a host is both a client and a server, the event invocation order is:
 
 If you need to save the state of spawned objects before they're destroyed when the NetworkManager shuts down, you can use the following event notification:
 
-- [`NetworkManager.OnPreShutdown`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkManager.html#Unity_Netcode_NetworkManager_OnPreShutdown): This is invoked prior to finalizing the NetworkManager shut down process. Any remaining spawned objects will still be instantiated and spawned when this event is invoked.
+- [`NetworkManager.OnPreShutdown`](xref:Unity.Netcode.NetworkManager.OnPreShutdown): This is invoked prior to finalizing the NetworkManager shut down process. Any remaining spawned objects will still be instantiated and spawned when this event is invoked.

@@ -503,9 +503,9 @@ namespace Unity.Netcode
             m_DisconnectedClients.Clear();
         }
 
-        public static int CreateMessageAndGetVersion<T>() where T : INetworkMessage, new()
+        public static int CreateMessageAndGetVersion<T>() where T : struct, INetworkMessage
         {
-            return new T().Version;
+            return default(T).Version;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -538,10 +538,10 @@ namespace Unity.Netcode
 
 
 
-        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : struct, INetworkMessage
         {
             var messageType = typeof(T);
-            var message = new T();
+            var message = default(T);
             var messageVersion = 0;
 
             // Special cases because these are the messages that carry the version info - thus the version info isn't
@@ -633,8 +633,9 @@ namespace Unity.Netcode
             return largestSerializedSize;
         }
 
-        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds, int messageVersionFilter)
+        internal unsafe int SendPreSerializedMessage<TMessageType, TClientIdListType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, int messageVersionFilter)
             where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
             using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<NetworkMessageHeader>(), Allocator.Temp);
 

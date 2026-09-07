@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools.Constraints;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -150,6 +151,12 @@ namespace Unity.Netcode.RuntimeTests
             var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
             var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
             Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
+
+            // Safety check for GC allocations
+            Assert.That(() =>
+            {
+                rpcManyClientsObject.WithParamsClientRpc(param);
+            }, NUnit.Framework.Is.Not.AllocatingGCMemory());
         }
     }
 }

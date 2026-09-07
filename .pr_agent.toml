@@ -1,2 +1,9 @@
+# This is the configuration for the u-pr bot
+# https://github.cds.internal.unity3d.com/unity/u-pr
+# For configuration of this file:
+# https://developer.portal.internal.unity.com/catalog/default/component/u-pr/docs/configuration/automatic_runs/
+
 [github_app]
-pr_commands = []
+handle_pr_actions = ['opened', 'ready_for_review']  # PR events that auto-run pr_commands
+pr_commands       = ["/harness-review"]             # what runs on those events
+reviewer_commands = ["/harness-review"]             # what runs when @u-pr is added as reviewer

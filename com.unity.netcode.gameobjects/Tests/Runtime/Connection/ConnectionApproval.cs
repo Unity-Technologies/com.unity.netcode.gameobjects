@@ -40,6 +40,11 @@ namespace Unity.Netcode.RuntimeTests
 
         private string m_ValidationToken;
 
+        internal override bool ShouldCreatePlayerPrefab()
+        {
+            return m_PlayerCreation != PlayerCreation.NoPlayer && m_PlayerCreation != PlayerCreation.FailValidation;
+        }
+
         protected override bool ShouldCheckForSpawnedPlayers()
         {
             return m_PlayerCreation != PlayerCreation.NoPlayer;

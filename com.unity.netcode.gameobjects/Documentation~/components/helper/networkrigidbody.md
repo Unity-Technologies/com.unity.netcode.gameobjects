@@ -12,7 +12,7 @@ When looking at a NetworkRigidbody in the Inspector view, there are three expose
   - When enabled and using a [NetworkTransform](networktransform.md), the NetworkTransform uses the PhysX position and rotation to synchronize changes during the `FixedUpdate` loop update stage.
 - __Auto Update Kinematic State__
   - When enabled, NetworkRigidbody automatically determines whether the current instance should be kinematic or non-kinematic.
-  - For custom solutions, you can opt to disable this field or derive from [NetworkRigidbodyBase](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.5/api/Unity.Netcode.Components.NetworkRigidbodyBase.html) and design your own custom networked Rigidbody handler.
+  - For custom solutions, you can opt to disable this field or derive from [NetworkRigidbodyBase](xref:Unity.Netcode.Components.NetworkRigidbodyBase) and design your own custom networked Rigidbody handler.
 - __Auto Set Kinematic On Despawn__
   - When enabled, this option makes the rigid body kinematic when despawned (which can be useful for [object pools](../../advanced-topics/object-pooling.md)).
 
@@ -25,7 +25,7 @@ Some collision events aren't fired when using NetworkRigidBody:
 - You can adjust the __Contact Pairs Mode__ to use kinematic and non-kinematic by setting it to __Enable All Contact Pairs__.![image](../../images/networktransform/ProjectPhysicsSettings2.png)
 
 > [!NOTE]
-> If there's a need for a gameplay event to happen on a collision, you can listen to the `OnCollisionEnter` function on the server and synchronize the event via `Rpc(SendTo.Everyone)` to all clients. If you plan on handling many collisions, then it's recommended to use the [RigidbodyContactEventManager component](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.RigidbodyContactEventManager.html) to handle collision checking during a job (`OnCollisionenter` can become expensive from a processing perspective if you have enough instances colliding).
+> If there's a need for a gameplay event to happen on a collision, you can listen to the `OnCollisionEnter` function on the server and synchronize the event via `Rpc(SendTo.Everyone)` to all clients. If you plan on handling many collisions, then it's recommended to use the [RigidbodyContactEventManager component](xref:Unity.Netcode.Components.RigidbodyContactEventManager) to handle collision checking during a job (`OnCollisionenter` can become expensive from a processing perspective if you have enough instances colliding).
 
 ### NetworkRigidbody2D
 

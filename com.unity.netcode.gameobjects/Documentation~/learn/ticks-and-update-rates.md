@@ -16,7 +16,7 @@ When a server fails to process all incoming client data before the end of the cu
 
 Update rate is a measure of how frequently the client sends and receives data to and from the server. It's also measured in hertz and, like tick rate, a higher update rate results in a more responsive game at the cost of increased processing and network demands on the client and server.
 
-![](../../images/update-rates-light.png)
+![](../images/update-rates-light.png)
 
 In addition to adding to perceived latency, low update rates can cause their own issues, such as multiple updates being bundled together and arriving at the same time, causing undesirable behavior.
 
@@ -24,7 +24,7 @@ In the example of 'super bullets': if an in-game gun is capable of shooting more
 
 The diagram below illustrates the difference between a 10 Hz update rate and a 60 Hz update rate. With a 10 Hz update rate, the game sends updates to the server ten times a second, so a gun that can fire 600 rounds per minute (RPM), or ten times a second, will only ever send a single bullet per update. A gun that fires at 750 RPM, more than ten times a second, will end up running into the super bullet problem. A higher update rate of 60 Hz resolves this issue, ensuring that there are enough updates for each bullet to arrive separately in its own update.
 
-![](../../images/rpm_update_rates-light.png)
+![](../images/rpm_update_rates-light.png)
 
 ### Discrepancy between tick rate and update rate
 

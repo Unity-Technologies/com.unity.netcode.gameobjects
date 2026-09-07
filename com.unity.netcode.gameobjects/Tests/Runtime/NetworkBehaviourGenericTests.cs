@@ -39,11 +39,9 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("TestPrefab");
+            m_PrefabToSpawn.AddComponent<SimpleNetworkBehaviour>();
 
-            var childObject = new GameObject
-            {
-                name = "ChildObject"
-            };
+            var childObject = new GameObject("ChildObject");
             childObject.transform.parent = m_PrefabToSpawn.transform;
             childObject.AddComponent<NetworkTransform>();
             base.OnServerAndClientsCreated();
@@ -137,8 +135,6 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ValidateNoSpam()
         {
             m_AllowServerToStart = true;
-            var objectToTest = new GameObject();
-            var simpleNetworkBehaviour = objectToTest.AddComponent<SimpleNetworkBehaviour>();
 
             // Now just start the Host
             yield return StartServerAndClients();
@@ -146,23 +142,36 @@ namespace Unity.Netcode.RuntimeTests
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
 
-            // The only valid condition for this would be if the NetworkBehaviour is spawned.
+            // We make an instance of the m_PrefabToSpawn
+            var validateInstance = Object.Instantiate(m_PrefabToSpawn);
+
+            // Then destroy the NetworkObject componwent of that instance.
+            Object.DestroyImmediate(validateInstance.GetComponent<NetworkObject>());
+
+            // Now get the Networkbehaviour and verify when you attempt to get a reference
+            // to the NetworkObject a warning is logged.
+            var simpleNetworkBehaviour = validateInstance.GetComponent<SimpleNetworkBehaviour>();
             simpleNetworkBehaviour.IsSpawned = true;
 
             // Verify the warning gets logged under normal conditions
             var isNull = simpleNetworkBehaviour.NetworkObject == null;
             LogAssert.Expect(LogType.Warning, $"[Netcode] Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
 
-            var networkObjectToTest = objectToTest.AddComponent<NetworkObject>();
-            networkObjectToTest.NetworkManagerOwner = m_ServerNetworkManager;
-            networkObjectToTest.Spawn();
+            simpleNetworkBehaviour.IsSpawned = false;
+            simpleNetworkBehaviour = null;
+
+            // Destroy this test instance
+            Object.DestroyImmediate(validateInstance);
+
+            // Now create a spawned instance (NetworkObject will exist)
+            var instance = SpawnObject(m_PrefabToSpawn, GetAuthorityNetworkManager()).GetComponent<NetworkObject>();
 
             // Assure no log messages are logged when they should not be logged
-            isNull = simpleNetworkBehaviour.NetworkObject != null;
+            isNull = instance.GetComponent<SimpleNetworkBehaviour>().NetworkObject != null;
             LogAssert.NoUnexpectedReceived();
 
-            networkObjectToTest.Despawn();
-            Object.Destroy(networkObjectToTest);
+            instance.Despawn();
+            Object.Destroy(instance.gameObject);
         }
 
         /// <summary>
@@ -182,13 +191,11 @@ namespace Unity.Netcode.RuntimeTests
             // Now just start the Host
             yield return StartServerAndClients();
 
-            var parentObject = new GameObject();
-            var childObject = new GameObject();
-            childObject.transform.parent = parentObject.transform;
-            var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
-            childObject.AddComponent<SimpleNetworkBehaviour>();
 
-            parentNetworkObject.Spawn();
+            var serverInstance = SpawnObject(m_PrefabToSpawn, GetAuthorityNetworkManager());
+            var parentNetworkObject = serverInstance.GetComponent<NetworkObject>();
+            var childObject = parentNetworkObject.transform.GetChild(0).gameObject;
+
             yield return s_DefaultWaitForTick;
 
             // Destroy the child object with child NetworkBehaviour
@@ -201,7 +208,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Destroy the parent object which should not cause any exceptions
             // (validating the fix)
-            Object.Destroy(parentObject);
+            Object.Destroy(serverInstance);
         }
 
         protected override void OnPlayerPrefabGameObjectCreated()

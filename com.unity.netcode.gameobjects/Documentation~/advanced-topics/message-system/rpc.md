@@ -328,4 +328,4 @@ void Update()
 ## Additional resources
 
 * [RPC parameters](rpc-params.md)
-* [Customizing serialization](../custom-serialization.md#remote-procedure-call-rpc)
+* [Customizing serialization](../custom-serialization.md#remote-procedure-call-rpcs)

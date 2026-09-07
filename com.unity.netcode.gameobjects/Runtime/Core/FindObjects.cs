@@ -69,8 +69,8 @@ namespace Unity.Netcode
             internal ObjectsInSceneEnumerator(Scene scene, bool includeInactive)
             {
                 m_IncludeInactive = includeInactive;
-
-                m_RootObjects = scene.GetRootGameObjects();
+                // If the scene is invalid, use an empty array.
+                m_RootObjects = scene.IsValid() ? scene.GetRootGameObjects() : new UnityEngine.GameObject[0];
                 m_RootIndex = 0;
                 m_CurrentChildObjects = null;
                 m_CurrentChildIndex = 0;

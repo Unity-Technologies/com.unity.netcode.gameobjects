@@ -73,19 +73,19 @@ The Boss Room sample shows how to adapt some Unity Transport properties to fit i
 
 ### Disconnect Timeout {#disconnect-timeout}
 
-The [Disconnect Timeout property](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Transports.UTP.UnityTransport.html#Unity_Netcode_Transports_UTP_UnityTransport_DisconnectTimeoutMS) controls how long the server (and the clients) wait before disconnecting. The Boss Room sample uses a Disconnect Timeout value of 10 seconds to prevent the server and the clients from hanging onto a connection for too long.
+The [Disconnect Timeout property](xref:Unity.Netcode.Transports.UTP.UnityTransport.DisconnectTimeoutMS) controls how long the server (and the clients) wait before disconnecting. The Boss Room sample uses a Disconnect Timeout value of 10 seconds to prevent the server and the clients from hanging onto a connection for too long.
 
 ### Max Connect Attempts {#max-connect-attempts}
 
-The [Max Connect Attempts property](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Transports.UTP.UnityTransport.html#Unity_Netcode_Transports_UTP_UnityTransport_MaxConnectAttempts) controls the times a client tries to connect before declaring a connection failure. The Boss Room sample uses a Max Connect Attempts value of 10 to prevent clients from waiting too long before declaring a connection failure.
+The [Max Connect Attempts property](xref:Unity.Netcode.Transports.UTP.UnityTransport.MaxConnectAttempts) controls the times a client tries to connect before declaring a connection failure. The Boss Room sample uses a Max Connect Attempts value of 10 to prevent clients from waiting too long before declaring a connection failure.
 
 ### Connect Timeout {#connect-timeout}
 
-The [Connect Timeout property](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Transports.UTP.UnityTransport.html#Unity_Netcode_Transports_UTP_UnityTransport_ConnectTimeoutMS) controls the number of times clients attempt to connect per second. The Boss Room sample uses a Connect Timeout value of 1 second, meaning that clients try to connect once per second. Having the Connect Timeout set to 1 second and the Max Connect Attempts set to 10 means that clients fail to connect after 10 seconds of waiting.
+The [Connect Timeout property](xref:Unity.Netcode.Transports.UTP.UnityTransport.ConnectTimeoutMS) controls the number of times clients attempt to connect per second. The Boss Room sample uses a Connect Timeout value of 1 second, meaning that clients try to connect once per second. Having the Connect Timeout set to 1 second and the Max Connect Attempts set to 10 means that clients fail to connect after 10 seconds of waiting.
 
 ### Max Packet Queue Size {#max-packet-queue-size}
 
-The [Max Packet Queue Size property](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Transports.UTP.UnityTransport.html#Unity_Netcode_Transports_UTP_UnityTransport_MaxPacketQueueSize) defines the maximum number of packets that can be sent and received during a single frame.
+The [Max Packet Queue Size property](xref:Unity.Netcode.Transports.UTP.UnityTransport.MaxPacketQueueSize) defines the maximum number of packets that can be sent and received during a single frame.
 
 The impact of surpassing the Max Packet Queue Size threshold varies depending on the packet direction (sending or receiving).
 

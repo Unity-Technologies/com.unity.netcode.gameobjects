@@ -51,7 +51,7 @@
 pr_minimal_required_checks:
   name: Minimal PR checks
   dependencies:
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
     - .yamato/package-pack.yml#package_pack_-_ngo_win
   triggers:
     expression: |-
@@ -89,8 +89,8 @@ pr_code_changes_checks:
     # Note that our daily tests will anyway run both test configurations in "minimal supported" and "trunk" configurations
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_{{ pinnedTrunk }}
-    # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
+    # Run code coverage test (PRs use the pinned "safe" trunk)
+    - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_{{ pinnedTrunk }}
   triggers:
     expression: |-
       (pull_request.comment eq "ngo" OR
@@ -130,7 +130,7 @@ develop_nightly:
         rerun: always
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.default }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_{{ validation_editors.standards }}
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 6000.0
@@ -159,8 +159,8 @@ develop_nightly:
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_6000.0
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
-  # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_{{ validation_editors.default }}
+  # Run code coverage test (nightly uses actual trunk)
+    - .yamato/code-coverage.yml#code_coverage_project_test_testproject_ubuntu_trunk
 
 
 # Run all tests on weekly bases

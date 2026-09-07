@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="RecipeEngine" Version="9.2.0" />
-        <PackageReference Include="RecipeEngine.Api" Version="15.0.0" />
+        <PackageReference Include="RecipeEngine" Version="9.2.1" />
+        <PackageReference Include="RecipeEngine.Api" Version="15.1.0" />
         <PackageReference Include="RecipeEngine.Api.Extensions" Version="8.2.0" />
         <PackageReference Include="RecipeEngine.Modules.Api" Version="6.2.0" />
-        <PackageReference Include="RecipeEngine.Modules.Wrench" Version="3.2.1" />
+        <PackageReference Include="RecipeEngine.Modules.Wrench" Version="3.3.1" />
     </ItemGroup>
 
 </Project>

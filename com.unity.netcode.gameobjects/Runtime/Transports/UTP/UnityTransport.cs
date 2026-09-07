@@ -520,6 +520,14 @@ namespace Unity.Netcode.Transports.UTP
                 receiveQueueCapacity: m_MaxPacketQueueSize,
                 heartbeatTimeoutMS: m_HeartbeatTimeoutMS);
 
+            // Disable PMTU discovery if using DA, leave it at its default otherwise.
+            if (OnCurrentTopology() == NetworkTopologyTypes.DistributedAuthority)
+            {
+                var config = settings.GetNetworkConfigParameters();
+                config.performPathMtuDiscovery = false;
+                settings.AddRawParameterStruct(ref config);
+            }
+
             // Configure Relay if in use.
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {

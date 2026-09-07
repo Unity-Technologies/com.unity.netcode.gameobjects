@@ -33,7 +33,7 @@ In contrast to dedicated servers, listen servers are cheaper without the need to
 
 ## Connecting to a listen server
 
-Personal computers are hidden behind NATs (Network Address Translation devices) and routers to protect them from direct access. To connect to a listen server, you may choose an option such as [port forwarding](#port-forwarding), a [relay server](#relay-server), [NAT punch-through](#nat-punchthrough), or a [NAT punch with relay fallback](#nat-punch-and-relay-fallback).
+Personal computers are hidden behind NATs (Network Address Translation devices) and routers to protect them from direct access. To connect to a listen server, you may choose an option such as [port forwarding](#port-forwarding), a [relay server](#relay-server), [NAT punch-through](#nat-punch-through), or a [NAT punch with relay fallback](#nat-punch-and-relay-fallback).
 
 ### Port Forwarding
 

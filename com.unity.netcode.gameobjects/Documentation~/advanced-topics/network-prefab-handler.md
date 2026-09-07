@@ -2,7 +2,7 @@
 
 The network prefab handler system provides advanced control over how network prefabs are instantiated and destroyed during runtime. You can use it to override the default Netcode for GameObjects [object spawning](../basics/object-spawning.md) behavior by implementing custom prefab handlers.
 
-The network prefab handler system is accessible from the [NetworkManager](../components/networkmanager.md) as `NetworkManager.PrefabHandler`.
+The network prefab handler system is accessible from the [NetworkManager](../components/core/networkmanager.md) as `NetworkManager.PrefabHandler`.
 
 ## When to use a prefab handler
 
@@ -13,14 +13,14 @@ For an overview of the default object spawning behavior, refer to the [object sp
 - **Custom initialization**: Setting up objects with game client specific data or configurations.
 - **Conditional spawning**: Initializing different prefab variants based on runtime conditions.
 
-The prefab handler system addresses these needs through an interface-based architecture. The system relies on two key methods: `Instantiate` and `Destroy`. `Instantiate` is called on non-authority clients when an [authority](../terms-concepts/authority.md) spawns a new [NetworkObject](../basics/networkobject.md) that has a registered network prefab handler. `Destroy` is called on all game clients whenever a registered [NetworkObject](../basics/networkobject.md) is destroyed.
+The prefab handler system addresses these needs through an interface-based architecture. The system relies on two key methods: `Instantiate` and `Destroy`. `Instantiate` is called on non-authority clients when an [authority](../terms-concepts/authority.md) spawns a new [NetworkObject](../components/core/networkobject.md) that has a registered network prefab handler. `Destroy` is called on all game clients whenever a registered [NetworkObject](../components/core/networkobject.md) is destroyed.
 
 ## Create a prefab handler
 
 Prefab handlers are classes that implement one of the Netcode for GameObjects prefab handler descriptions. There are currently two such descriptions:
 
-- [**INetworkPrefabInstanceHandler**](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.INetworkPrefabInstanceHandler.html): This is the simplest interface for custom prefab handlers.
-- [**NetworkPrefabInstanceHandlerWithData**](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkPrefabInstanceHandlerWithData.html): This specialized handler receives custom data from the authority during spawning, enabling dynamic prefab customization.
+- [**INetworkPrefabInstanceHandler**](xref:Unity.Netcode.INetworkPrefabInstanceHandler): This is the simplest interface for custom prefab handlers.
+- [**NetworkPrefabInstanceHandlerWithData**](xref:Unity.Netcode.NetworkPrefabInstanceHandlerWithData): This specialized handler receives custom data from the authority during spawning, enabling dynamic prefab customization.
 
 When using a prefab handler, Netcode for GameObjects uses the `Instantiate` and `Destroy` methods instead of default spawn handlers for the NetworkObject during spawning and despawning. The authority instance uses the traditional spawning approach where it will, via user script, instantiate and spawn a network prefab (even for those registered with a prefab handler). However, all non-authority clients will automatically use the instantiate method defined by the `INetworkPrefabInstanceHandler` implementation if the network prefab spawned has a registered `INetworkPrefabInstanceHandler` implementation with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`).
 
@@ -55,7 +55,7 @@ public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabIn
 
 ## Register a prefab handler
 
-Once you've [created a prefab handler](#create-a-prefab-handler), whether by implementing or deriving, you need to register any new instance of that handler with the network prefab handler system using `NetworkManager.PrefabHandler.AddHandler`. Prefab handlers are registered against a NetworkObject's [GlobalObjectIdHash](../basics/networkobject.md#using-networkobjects).
+Once you've [created a prefab handler](#create-a-prefab-handler), whether by implementing or deriving, you need to register any new instance of that handler with the network prefab handler system using `NetworkManager.PrefabHandler.AddHandler`. Prefab handlers are registered against a NetworkObject's [GlobalObjectIdHash](../components/core/networkobject.md#using-networkobjects).
 
 ```csharp
 public class GameManager : NetworkBehaviour
@@ -70,7 +70,7 @@ public class GameManager : NetworkBehaviour
 }
 ```
 
-To un-register a prefab handler, you can [invoke the `NetworkManager.PrefabHandler.RemoveHandler` method](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkPrefabHandler.html#Unity_Netcode_NetworkPrefabHandler_RemoveHandler_System_UInt32_). There are several override versions of this method.
+To un-register a prefab handler, you can [invoke the `NetworkManager.PrefabHandler.RemoveHandler` method](xref:Unity.Netcode.NetworkPrefabHandler.RemoveHandler*). There are several override versions of this method.
 
 ## Object spawning with prefab handlers
 

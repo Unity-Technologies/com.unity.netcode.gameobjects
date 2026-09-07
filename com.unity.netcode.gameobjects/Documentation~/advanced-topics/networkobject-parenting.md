@@ -26,7 +26,7 @@ If you aren't familiar with transform parenting in Unity, then it's recommended 
 
 ### OnNetworkObjectParentChanged
 
-[`NetworkBehaviour.OnNetworkObjectParentChanged`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html#Unity_Netcode_NetworkBehaviour_OnNetworkObjectParentChanged_Unity_Netcode_NetworkObject_) is a virtual method you can override to be notified when a NetworkObject component's parent has changed. The [`MonoBehaviour.OnTransformParentChanged()`](https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnTransformParentChanged.html) method is used by NetworkObject component to catch `transform.parent` changes and notify its associated NetworkBehaviour components.
+[`NetworkBehaviour.OnNetworkObjectParentChanged`](xref:Unity.Netcode.NetworkBehaviour.OnNetworkObjectParentChanged*) is a virtual method you can override to be notified when a NetworkObject component's parent has changed. The [`MonoBehaviour.OnTransformParentChanged()`](https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnTransformParentChanged.html) method is used by NetworkObject component to catch `transform.parent` changes and notify its associated NetworkBehaviour components.
 
 ```csharp
 /// <summary>
@@ -49,7 +49,7 @@ The [owner](../terms-concepts/ownership.md) of a NetworkObject can always parent
 
 By default, only the [authority](../terms-concepts/authority.md) of a NetworkObject can parent a NetworkObject under a non-networked object. This means in a client-server game, only the server (or host) can control NetworkObject component parenting. In a distributed authority game the [owner](../terms-concepts/ownership.md) of the object can always parent the object.
 
-To allow the [owner](../terms-concepts/ownership.md) to parent their owned NetworkObject in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_AllowOwnerToParent) property.
+To allow the [owner](../terms-concepts/ownership.md) to parent their owned NetworkObject in a client-server game, use the [`NetworkObject.AllowOwnerToParent`](xref:Unity.Netcode.NetworkObject.AllowOwnerToParent) property.
 
 ![image](../images/networkobject/allowOwnerToParent.png)
 
@@ -78,7 +78,7 @@ If you plan on parenting in-scene placed NetworkObject components with a player 
 For more information, refer to:
 
 - [Real World In-scene NetworkObject Parenting of Players Solution](inscene_parenting_player.md)
-- [Scene Event Notifications](../basics/scenemanagement/scene-events#scene-event-notifications)
+- [Scene Event Notifications](../basics/scenemanagement/scene-events.md#scene-event-notifications)
 - [In-Scene NetworkObjects](../basics/scenemanagement/inscene-placed-networkobjects.md)
 
 ### WorldPositionStays usage

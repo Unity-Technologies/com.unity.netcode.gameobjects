@@ -170,7 +170,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T : unmanaged
         {
-            var val = new T();
+            var val = default(T);
             byte* ptr = ((byte*)&val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + BytePosition;
             UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);

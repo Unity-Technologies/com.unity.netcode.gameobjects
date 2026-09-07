@@ -1,6 +1,6 @@
 # ComponentController
 
-Use a [ComponentController](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.ComponentController.html) component to enable or disable one or more components depending on the authority state of the ComponentController and have those changes synchronized with non-authority instances.
+Use a [ComponentController](xref:Unity.Netcode.ComponentController) component to enable or disable one or more components depending on the authority state of the ComponentController and have those changes synchronized with non-authority instances.
 
 For example, you can use a ComponentController to enable or disable a MeshRenderer component on the owner of the ComponentController instance, while disabling it for all other clients. This is useful for controlling visibility of objects that should only be visible to the owner, such as a player's avatar or a weapon they are holding.
 

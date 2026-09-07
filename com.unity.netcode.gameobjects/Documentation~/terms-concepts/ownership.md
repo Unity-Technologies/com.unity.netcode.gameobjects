@@ -35,7 +35,7 @@ In [distributed authority](./distributed-authority.md) the owner of a NetworkObj
 
 ![diagram showing ownership precedes authority](../images/diagrams/distributedAuthorityOwnership.png)
 
-When building your game you can use [ownership permissions](../advanced-topics/networkobject-ownership.md#ownership-permission-settings) to control how and when ownership of NetworkObjects can be transferred between clients.
+When building your game you can use [ownership permissions](../components/core/networkobject-ownership.md#ownership-permission-settings) to control how and when ownership of NetworkObjects can be transferred between clients.
 
 NetworkObjects with the `OwnershipStatus.Distributable` permission will have their ownership automatically distributed between all connected game clients whenever a new client joins or an existing client leaves. This is the key mechanism in how the game simulation is distributed between clients in a distributed authority session.
 
@@ -48,4 +48,4 @@ The `IsOwner` property, which is available on both NetworkObjects and NetworkBeh
 * [Authority](authority.md)
 * [Client-server](client-server.md)
 * [Distributed authority](distributed-authority.md)
-* [NetworkObject ownership](../advanced-topics/networkobject-ownership.md)
+* [NetworkObject ownership](../components/core/networkobject-ownership.md)

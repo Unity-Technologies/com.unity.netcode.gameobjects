@@ -1,6 +1,6 @@
 # Testing against the CMB Service
 
-The CMB Service is a tool that is external to our repository. The tool is inside the `runtime` folder in the [mps-common-multiplayer-backend](https://github.com/Unity-Technologies/mps-common-multiplayer-backend) repository.
+The CMB Service is a tool that is external to our repository. The tool is inside the `runtime` folder of the [CMB service](https://github.com/Unity-Technologies/unity-player-services/tree/main/services/common-multiplayer-backend) in the Unity Player Services monorepo.
 
 Due to this, there is some more setup needed when running tests against the CMB Service.
 
@@ -56,3 +56,7 @@ The following environment variables allow for further configuration of the setup
 `CMB_SERVICE_PORT` defines the port where the tests will try to connect to the service (defaults to `7789`).
 
 `NGO_HOST` defines the http address where the tests will try to connect to the service (defaults to `127.0.0.1`).
+
+## Running on CI (Yamato)
+
+The CMB tests can also be run from Yamato. The jobs are defined in [`.yamato/cmb-service-standalone-tests.yml`](../../../.yamato/cmb-service-standalone-tests.yml) and appear in Yamato as `CMB Service Test - NGO <project> - [<platform>, <editor>, <backend>]`. The job can be triggered manually from any branch meaning it can be easier to run the CMB tests from Yamato rather than set them up locally. The test uses [`run_cmb_service.sh`](./run_cmb_service.sh) to setup and run the CMB service.

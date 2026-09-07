@@ -82,7 +82,7 @@ This allows the four bytes of the embedded struct to be rapidly serialized as a 
 
 `FastBufferWriter` and `FastBufferReader` are replacements for the old `NetworkWriter` and `NetworkReader`. For those familiar with the old classes, there are some key differences:
 
-- `FastBufferWriter` uses `WriteValue()` as the name of the method for all types *except* [`INetworkSerializable`](serialization/inetworkserializable) types, which are serialized through `WriteNetworkSerializable()`
+- `FastBufferWriter` uses `WriteValue()` as the name of the method for all types *except* [`INetworkSerializable`](serialization/inetworkserializable.md) types, which are serialized through `WriteNetworkSerializable()`
 - `FastBufferReader` similarly uses `ReadValue()` for all types except INetworkSerializable (which is read through `ReadNetworkSerializable`), with the output changed from a return value to an `out` parameter to allow for method overload resolution to pick the correct value.
 - `FastBufferWriter` and `FastBufferReader` outsource packed writes and reads to `BytePacker` and `ByteUnpacker`, respectively.
 - `FastBufferWriter` and `FastBufferReader` are **structs**, not **classes**. This means they can be constructed and destructed without GC allocations.
