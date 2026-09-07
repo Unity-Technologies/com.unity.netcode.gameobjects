@@ -56,6 +56,11 @@
             "define": "COM_UNITY_MODULES_PHYSICS"
         },
         {
+            "name": "com.unity.modules.physics2d",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_PHYSICS2D"
+        },
+        {
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
