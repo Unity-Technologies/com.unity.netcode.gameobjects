@@ -65,25 +65,6 @@ namespace Unity.Netcode
         public bool NetworkManagerExpanded;
 #endif
 
-        // TODO: Deprecate...
-        // The following internal values are not used, but because ILPP makes them public in the assembly, they cannot
-        // be removed thanks to our semver validation.
-#pragma warning disable IDE1006 // disable naming rule violation check
-
-        // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
-
-        // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
-
-        // RuntimeAccessModifiersILPP will make this `public` (legacy table should be removed in v3.x.x)
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-
-#pragma warning restore IDE1006 // restore naming rule violation check
-
 #if DEBUG
         private static List<Type> s_SerializedType = new List<Type>();
         // This is used to control the serialized type not optimized messaging for integration test purposes

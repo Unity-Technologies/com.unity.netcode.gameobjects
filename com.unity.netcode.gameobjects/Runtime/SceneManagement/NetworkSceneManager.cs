@@ -1842,7 +1842,7 @@ namespace Unity.Netcode
                     {
                         // All in-scene placed NetworkObjects default to being owned by the server
                         NetworkManager.SpawnManager.AuthorityLocalSpawn(keyValuePairBySceneHandle.Value,
-                            NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, NetworkManager.LocalClientId, true);
+                            NetworkManager.SpawnManager.GetNetworkObjectId(), false, NetworkManager.LocalClientId, true);
                     }
                 }
             }

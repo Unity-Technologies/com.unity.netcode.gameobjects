@@ -617,11 +617,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         private const string k_RpcAttribute_Delivery = nameof(RpcAttribute.Delivery);
         private const string k_RpcAttribute_InvokePermission = nameof(RpcAttribute.InvokePermission);
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        // Need to ignore the obsolete warning as the obsolete behaviour still needs to work
-        private const string k_ServerRpcAttribute_RequireOwnership = nameof(ServerRpcAttribute.RequireOwnership);
-#pragma warning restore CS0618 // Type or member is obsolete
-
         private const string k_RpcParams_Server = nameof(__RpcParams.Server);
         private const string k_RpcParams_Client = nameof(__RpcParams.Client);
         private const string k_RpcParams_Ext = nameof(__RpcParams.Ext);
@@ -1502,10 +1497,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     {
                         switch (attrField.Name)
                         {
-                            case k_ServerRpcAttribute_RequireOwnership:
-                                var requireOwnership = attrField.Argument.Type == rpcHandler.Module.TypeSystem.Boolean && (bool)attrField.Argument.Value;
-                                invokePermission = requireOwnership ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone;
-                                break;
                             case k_RpcAttribute_InvokePermission:
                                 invokePermission = (RpcInvokePermission)attrField.Argument.Value;
                                 break;
@@ -1691,28 +1682,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                 return null;
             }
-
-            bool hasInvokePermission = false, hasRequireOwnership = false;
-
-            foreach (var argument in rpcAttribute.Fields)
-            {
-                switch (argument.Name)
-                {
-                    case k_ServerRpcAttribute_RequireOwnership:
-                        hasRequireOwnership = true;
-                        break;
-                    case k_RpcAttribute_InvokePermission:
-                        hasInvokePermission = true;
-                        break;
-                }
-            }
-
-            if (hasInvokePermission && hasRequireOwnership)
-            {
-                m_Diagnostics.AddError($"{methodDefinition.Name} cannot declare both RequireOwnership and InvokePermission!");
-                return null;
-            }
-
 
             // Checks for IsSerializable are moved to later as the check is now done by dynamically seeing if any valid
             // serializer OR extension method exists for it.
@@ -2180,7 +2149,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
             var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
             var isGenericRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.RpcAttribute_FullName;
-            var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
             var rpcDelivery = RpcDelivery.Reliable; // default value MUST be == `RpcAttribute.Delivery`
             var defaultTarget = SendTo.Everyone;
             var allowTargetOverride = false;
@@ -2195,9 +2163,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 {
                     case k_RpcAttribute_Delivery:
                         rpcDelivery = (RpcDelivery)attrField.Argument.Value;
-                        break;
-                    case k_ServerRpcAttribute_RequireOwnership:
-                        requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                     case nameof(RpcAttribute.AllowTargetOverride):
                         allowTargetOverride = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
@@ -2320,7 +2285,8 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 {
                     // ServerRpc
 
-                    if (requireOwnership)
+                    // Require ownership check.
+                    // Only the owner of an object can send a ServerRPC
                     {
                         var roReturnInstr = processor.Create(OpCodes.Ret);
                         var roLastInstr = processor.Create(OpCodes.Nop);
@@ -2347,7 +2313,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
 
                         // Debug.LogError(...);
-                        instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!"));
+                        instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc!"));
                         instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
 
                         instructions.Add(logNextInstr);
@@ -2963,16 +2929,6 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             var processor = rpcHandler.Body.GetILProcessor();
 
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
-            foreach (var attrField in rpcAttribute.Fields)
-            {
-                switch (attrField.Name)
-                {
-                    case k_ServerRpcAttribute_RequireOwnership:
-                        requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
-                        break;
-                }
-            }
 
             rpcHandler.Body.InitLocals = true;
             // NetworkManager networkManager;
@@ -2999,7 +2955,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 processor.Append(lastInstr);
             }
 
-            if (isServerRpc && requireOwnership)
+            if (isServerRpc)
             {
                 var roReturnInstr = processor.Create(OpCodes.Ret);
                 var roLastInstr = processor.Create(OpCodes.Nop);
@@ -3028,7 +2984,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 processor.Emit(OpCodes.Brfalse, logNextInstr);
 
                 // Debug.LogError(...);
-                processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!");
+                processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc!");
                 processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
 
                 processor.Append(logNextInstr);

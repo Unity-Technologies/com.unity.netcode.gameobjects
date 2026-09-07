@@ -499,7 +499,7 @@ public class NetworkManagerBootstrapper : NetworkManager
             // Set the application frame rate to like 30 to reduce frame processing overhead
             Application.targetFrameRate = 30;
 
-            Debug.Log($"[Pre-Init] Server Address Endpoint: {m_UnityTransport.ConnectionData.ServerEndPoint}");
+            Debug.Log($"[Pre-Init] Server Address Endpoint: {m_UnityTransport.ConnectionData.Address}:{m_UnityTransport.ConnectionData.Port}");
             Debug.Log($"[Pre-Init] Server Listen Endpoint: {m_UnityTransport.ConnectionData.ListenEndPoint}");
             // Setup your IP and port sepcific to your DGS
             //unityTransport.SetConnectionData(ListenAddress, ListenPort, ListenAddress);
@@ -527,7 +527,7 @@ public class NetworkManagerBootstrapper : NetworkManager
     private void ServerStarted()
     {
         Debug.Log("Dedicated Server Started!");
-        Debug.Log($"[Started] Server Address Endpoint: {m_UnityTransport.ConnectionData.ServerEndPoint}");
+        Debug.Log($"[Started] Server Address Endpoint: {m_UnityTransport.ConnectionData.Address}:{m_UnityTransport.ConnectionData.Port}");
         Debug.Log($"[Started] Server Listen Endpoint: {m_UnityTransport.ConnectionData.ListenEndPoint}");
         Debug.Log("===============================================================");
         Debug.Log("[X] Exits session (Shutdown) | [ESC] Exits application instance");
