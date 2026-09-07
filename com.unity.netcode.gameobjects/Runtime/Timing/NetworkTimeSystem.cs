@@ -1,5 +1,4 @@
 using System;
-using Unity.Netcode;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -88,12 +87,12 @@ namespace Unity.Netcode.GameObjects.Timing
         /// <remarks>
         /// For a distributed authority network topology, this latency is between the client and the
         /// distributed authority service instance.<br />
-        /// Note: <see cref="Unity.Netcode.Components.NetworkTransform"/> uses this value plus an additional global
-        /// offset <see cref="Unity.Netcode.Components.NetworkTransform.InterpolationBufferTickOffset"/> when interpolation
+        /// Note: <see cref="Components.NetworkTransform"/> uses this value plus an additional global
+        /// offset <see cref="Components.NetworkTransform.InterpolationBufferTickOffset"/> when interpolation
         /// is enabled. <br />
-        /// To see the current <see cref="Unity.Netcode.Components.NetworkTransform"/> tick latency: <br />
-        /// - <see cref="Unity.Netcode.Components.NetworkTransform.GetTickLatency"/> <br />
-        /// - <see cref="Unity.Netcode.Components.NetworkTransform.GetTickLatencyInSeconds"/> <br />
+        /// To see the current <see cref="Components.NetworkTransform"/> tick latency: <br />
+        /// - <see cref="Components.NetworkTransform.GetTickLatency"/> <br />
+        /// - <see cref="Components.NetworkTransform.GetTickLatencyInSeconds"/> <br />
         /// </remarks>
         public int TickLatency = 1;
 
