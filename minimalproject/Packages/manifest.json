@@ -3,8 +3,11 @@
   "dependencies": {
     "com.unity.ide.rider": "3.0.38",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
+    "com.unity.test-framework": "1.9.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
+    "com.unity.modules.localizationruntime": "1.0.0",
     "com.unity.modules.physicscore2d": "1.0.0",
+    "com.unity.modules.smartstrings": "1.0.0",
     "com.unity.modules.tetgen": "1.0.0",
     "com.unity.modules.timelinefoundation": "1.0.0",
     "com.unity.modules.vectorgraphics": "1.0.0"
