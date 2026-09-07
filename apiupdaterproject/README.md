@@ -84,6 +84,18 @@ reference to `NetworkTimeSystem` still resolves — to the stub — so it never 
 If a future change ever makes the blocked row pass as "rewritten", the mechanism has changed and the
 one-sided-move conclusion needs revisiting.
 
+### One reference form the updater does not migrate
+
+`DeprecatedTimingUsage.cs` reaches `NetworkTickSystem` through a namespace alias
+(`using TimeNs = Unity.Netcode;` then `TimeNs.NetworkTickSystem`). The updater leaves that site alone,
+measured on CI. The alias itself still resolves - `Unity.Netcode` is very much alive - so only the
+member lookup inside it fails, and that does not appear to trigger a rewrite. Every other form in that
+file migrates, including the plain simple name.
+
+The run asserts this as `blocked` rather than treating it as a bug to fix here. A user who writes
+references that way gets a compile error naming the type, so it is loud rather than silent, but it is
+worth knowing when someone reports that the upgrade "did not finish".
+
 Default hub locations, if you need to pass `--unity` explicitly — note that on macOS the binary is
 inside the `.app` bundle rather than beside it:
 
