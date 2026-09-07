@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Text;
+#if ENABLE_CORECLR
 using NUnit.Framework;
+#endif
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
