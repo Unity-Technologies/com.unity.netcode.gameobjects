@@ -73,6 +73,14 @@ EXPECTED_MOVES = [
 STUB_OCCUPIED = ['Unity.Netcode.NetworkTimeSystem']
 
 
+# Reference forms the per-type counts above cannot see, because the source never spells the type's
+# fully qualified name. 'TimeNs.NetworkTickSystem' in DeprecatedTimingUsage.cs goes through a
+# namespace alias and so matches neither the old nor the new spelling: without asserting on it
+# directly, the updater could leave that site unresolved and the run would still pass on the strength
+# of the other reference forms. The editor runs with -ignoreCompilerErrors, so nothing else catches it.
+UNQUALIFIED_FORMS = ['TimeNs.NetworkTickSystem']
+
+
 def expected_pairs():
     """Yields (old fully qualified name, new fully qualified name) for every relocated type."""
     for old_namespace, new_namespace, names in EXPECTED_MOVES:
@@ -268,6 +276,13 @@ def assert_rewritten(collision_stub):
             failures += 1
         expect = 'blocked' if blocked else 'moved'
         print(f"{old:<72} {updated:>8} {stale:>6} {expect:>8}  {'PASS' if passed else 'FAIL'}")
+
+    for form in UNQUALIFIED_FORMS:
+        survived = len(re.findall(re.escape(form) + boundary, all_text))
+        passed = survived == 0
+        if not passed:
+            failures += 1
+        print(f"{form:<72} {'-':>8} {survived:>6} {'moved':>8}  {'PASS' if passed else 'FAIL'}")
 
     return failures
 
