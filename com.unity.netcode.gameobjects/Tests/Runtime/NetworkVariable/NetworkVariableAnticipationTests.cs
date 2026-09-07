@@ -59,7 +59,9 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149591", "NGO multi-instance test sessions fail to start/connect or time out on CoreCLR")]
+#if ENABLE_CORECLR
+    [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
+#endif
     internal class NetworkVariableAnticipationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
