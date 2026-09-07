@@ -1908,6 +1908,13 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
+#if UNIFIED_NETCODE
+            // Writing nothing excludes this instance from the synchronization payload entirely.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             var targetClientId = m_TargetIdBeingSynchronized;
             SynchronizeState = new NetworkTransformState()
             {
@@ -3527,6 +3534,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected internal override void InternalOnNetworkSessionSynchronized()
         {
+#if UNIFIED_NETCODE
+            // Nothing was synchronized for a hybrid prefab, so there is nothing to finalize.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             NonAuthorityFinalizeSynchronization();
 
             base.InternalOnNetworkSessionSynchronized();
@@ -3548,6 +3562,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected internal override void InternalOnNetworkPostSpawn()
         {
+#if UNIFIED_NETCODE
+            // Nothing was synchronized for a hybrid prefab, so there is nothing to finalize.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             // This is a special case for client-server where a server is spawning an owner authoritative NetworkObject but has yet to serialize anything.
             // When the server detects that:
             // - We are not in a distributed authority session (DAHost check).
@@ -3643,9 +3664,8 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
 #if UNIFIED_NETCODE
-            // TODO-UNIFIED:
-            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
-            // it will be using N4E's built in interpolation and extrapolation features.
+            // A hybrid prefab's motion comes from its GhostObject, so this component stays inert. It is
+            // left in place rather than destroyed so NetworkBehaviourId values match on every peer.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3743,9 +3763,8 @@ namespace Unity.Netcode.Components
         internal virtual void InternalInitialization(bool isOwnershipChange = false)
         {
 #if UNIFIED_NETCODE
-            // TODO-UNIFIED:
-            // Provide a notification to users that NetworkTransform component will be removed at runtime if it is a hybrid prefab that is spawned since
-            // it will be using N4E's built in interpolation and extrapolation features.
+            // A hybrid prefab's motion comes from its GhostObject, so this component stays inert. It is
+            // left in place rather than destroyed so NetworkBehaviourId values match on every peer.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3932,6 +3951,13 @@ namespace Unity.Netcode.Components
 
         internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
+#if UNIFIED_NETCODE
+            // A hybrid prefab's transform space is driven by its GhostObject.
+            if (NetworkObject.HasGhost)
+            {
+                return;
+            }
+#endif
             if (!SwitchTransformSpaceWhenParented)
             {
                 // Motion authority doesn't need to adjust anything
