@@ -106,4 +106,5 @@
 * [FAQ](learn/faq.md)
 * [Samples](samples.md)
   * [Boss Room](samples/bossroom/bossroom-landing.md)
+* [Upgrading from 2.x to 3.x](upgrade-guide.md)
 * [Migrate from UNet to Netcode for GameObjects](migratingfromUNet.md)
