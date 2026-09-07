@@ -24,10 +24,13 @@ using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
-// Netcode for Entities also declares Unity.Netcode.NetworkTimeSystem. The enclosing namespace is
-// searched before any using directive, so inside Unity.Netcode the bare name binds to theirs and the
-// import above is never consulted. An alias is the only spelling that reaches ours from here, since
-// IDE0001 rules out qualifying the name and an alias sharing it is silently ignored.
+// Netcode for Entities declares NetworkTime and NetworkTimeSystem too, and reaching ours by the bare
+// name fails against either casing of their namespace. Under Unity.NetCode both arrive as imports and
+// the reference is CS0104 ambiguous; once that is corrected to Unity.Netcode they become members of
+// the enclosing namespace, which is searched ahead of any import, and the bare name silently binds to
+// theirs. An alias is the only spelling that survives both: IDE0001 rules out qualifying the name, and
+// an alias sharing it is ignored rather than applied.
+using GameObjectsNetworkTime = Unity.Netcode.GameObjects.Timing.NetworkTime;
 using GameObjectsNetworkTimeSystem = Unity.Netcode.GameObjects.Timing.NetworkTimeSystem;
 
 
@@ -877,12 +880,12 @@ namespace Unity.Netcode
         /// <summary>
         /// The local <see cref="NetworkTime"/>
         /// </summary>
-        public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
+        public GameObjectsNetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
 
         /// <summary>
         /// The <see cref="NetworkTime"/> on the server
         /// </summary>
-        public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
+        public GameObjectsNetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         /// <summary>
         /// Gets or sets if the application should be set to run in background
