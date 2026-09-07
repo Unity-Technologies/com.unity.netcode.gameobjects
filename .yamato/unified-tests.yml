@@ -17,8 +17,8 @@
 #------------------------------------------------------------------------------------
 
 {% for project in projects.default -%}
-{% for platform in unified_test_platforms -%}
-{% for editor in unified_editors.default -%}
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
 unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name : Unified Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
