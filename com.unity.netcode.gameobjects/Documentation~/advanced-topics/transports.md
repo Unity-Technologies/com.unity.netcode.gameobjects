@@ -1,6 +1,6 @@
 # Transports
 
-Unity Netcode for GameObjects (Netcode) uses Unity Transport by default and supports UNet Transport (deprecated) up to Unity 2022.2 version.
+Unity Netcode for GameObjects (Netcode) uses Unity Transport by default and also provides a single player transport.
 
 ## So what is a transport layer?
 
@@ -18,11 +18,13 @@ A transport layer can provide:
 
 Netcode's default transport Unity Transport is an entire transport layer that you can use to add multiplayer and network features to your project with or without Netcode. Refer to the Transport [documentation](https://docs.unity3d.com/Packages/com.unity.transport@latest) for more information and how to [install](https://docs.unity3d.com/Packages/com.unity.transport@latest?subfolder=/manual/install.html).
 
-## Unity's UNet Transport Layer API
+Netcode provides a [UnityTransport](xref:Unity.Netcode.Transports.UTP.UnityTransport) implementation for easy transport integration with Netcode.
 
-UNet is a deprecated solution that is no longer supported after Unity 2022.2. Unity Transport Package is the default transport for Netcode for GameObjects. We recommend transitioning to Unity Transport as soon as possible.
+## Single player transport
 
-### Community Transports or Writing Your Own
+Netcode also provides a [single player transport](./singleplayer.md) that allows for easy switching between multiplayer and single player configurations.
+
+## Community Transports or Writing Your Own
 
 You can use any of the community contributed custom transport implementations or write your own.
 

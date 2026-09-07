@@ -62,7 +62,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// The default maximum send queue size
         /// </summary>
-        [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", false)]
+        [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", true)]
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         // Maximum reliable throughput, assuming the full reliable window can be sent on every
@@ -267,7 +267,7 @@ namespace Unity.Netcode.Transports.UTP
             /// is still handled correctly by NGO, but for this reason usage of this property is
             /// discouraged.
             /// </remarks>
-            [Obsolete("Use NetworkEndpoint.Parse on the Address field instead.")]
+            [Obsolete("Use NetworkEndpoint.Parse on the Address field instead.", true)]
             public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
             /// <summary>
@@ -314,6 +314,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Parameters for the Network Simulator
         /// </summary>
+        [Obsolete("SimulatorParameters are no longer used and have no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
         [Serializable]
         public struct SimulatorParameters
         {
@@ -346,7 +347,7 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet drop rate (packet loss)
         /// </summary>
 
-        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", true)]
         [HideInInspector]
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
@@ -967,7 +968,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
-        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", true)]
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)
