@@ -4,7 +4,11 @@ using System.Linq;
 using Unity.Collections;
 #if UNIFIED_NETCODE
 using Unity.Entities;
-using Unity.NetCode;
+// Netcode for Entities' namespace differs from this one only by the casing of a single letter, so a
+// blanket import of it competes with Unity.Netcode on every name the two happen to share. Importing
+// only the types used here keeps that surface to exactly those names.
+using NetCodeConfig = Unity.NetCode.NetCodeConfig;
+using NetcodeWorld = Unity.NetCode.NetcodeWorld;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Timing;
@@ -24,14 +28,6 @@ using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
-// Netcode for Entities declares NetworkTime and NetworkTimeSystem too, and reaching ours by the bare
-// name fails against either casing of their namespace. Under Unity.NetCode both arrive as imports and
-// the reference is CS0104 ambiguous; once that is corrected to Unity.Netcode they become members of
-// the enclosing namespace, which is searched ahead of any import, and the bare name silently binds to
-// theirs. An alias is the only spelling that survives both: IDE0001 rules out qualifying the name, and
-// an alias sharing it is ignored rather than applied.
-using GameObjectsNetworkTime = Unity.Netcode.GameObjects.Timing.NetworkTime;
-using GameObjectsNetworkTimeSystem = Unity.Netcode.GameObjects.Timing.NetworkTimeSystem;
 
 
 
@@ -880,12 +876,12 @@ namespace Unity.Netcode
         /// <summary>
         /// The local <see cref="NetworkTime"/>
         /// </summary>
-        public GameObjectsNetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
+        public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
 
         /// <summary>
         /// The <see cref="NetworkTime"/> on the server
         /// </summary>
-        public GameObjectsNetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
+        public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         /// <summary>
         /// Gets or sets if the application should be set to run in background
@@ -1006,7 +1002,7 @@ namespace Unity.Netcode
         /// Accessor property for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
         /// Prefer the use of the LocalTime and ServerTime properties
         /// </summary>
-        public GameObjectsNetworkTimeSystem NetworkTimeSystem { get; private set; }
+        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
         /// <summary>
         /// Accessor property for the <see cref="NetworkTickSystem"/> of the NetworkManager.
@@ -1299,7 +1295,7 @@ namespace Unity.Netcode
             ConnectionManager.Initialize(this);
 
             // The remaining systems can then be initialized
-            NetworkTimeSystem = server ? GameObjectsNetworkTimeSystem.ServerTimeSystem() : new GameObjectsNetworkTimeSystem(1.0 / NetworkConfig.TickRate);
+            NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
             AnticipationSystem = new AnticipationSystem(this);
 
