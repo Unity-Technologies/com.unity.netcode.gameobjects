@@ -39,7 +39,7 @@ file or the DeprecatedApiUsageQualified.cs files are updated to reflect the adde
 | `Assets/Editor/DeprecatedApiUsageQualified.cs` | Fully qualified names, namespace alias, type alias, base type, `typeof`, generic |
 | `Assets/Runtime/DeprecatedTimingUsage.cs` | The three relocated timing types, in every reference form plus a constructor call |
 | `Assets/UpgradeProbeBehaviour.cs` | The `MonoBehaviour` used as the `NetcodeEditorBase<TT>` type argument |
-| `Assets/CollisionStub~/` | An assembly occupying the two colliding timing names. Inert — Unity does not import a folder whose name ends in `~` — until `--collision-stub` copies it in |
+| `Assets/CollisionStub~/` | An assembly occupying the one colliding timing name. Inert — Unity does not import a folder whose name ends in `~` — until `--collision-stub` copies it in |
 
 `UpgradeProbeBehaviour` exists so the test does not name NGO's `NetworkManager`: com.unity.transport
 6.6.0 — the builtin on some 6000.6 editors — ships a `Unity.Netcode.NetworkManager` of its own in
@@ -64,24 +64,25 @@ python run_upgrade_test.py --unity <editor> --clean --keep-updated-sources
 | `--unity` | Omit it if `UNITY_EDITOR_PATH` is set, or if the hub has the version named in `ProjectSettings/ProjectVersion.txt`. |
 | `--clean` | Purges `Library` and `Temp` first for a cold import. |
 | `--keep-updated-sources` | Leaves the rewritten sources in place so `git diff` shows exactly what the updater produced. |
-| `--collision-stub` | Adds an assembly occupying `Unity.Netcode.NetworkTime` and `NetworkTimeSystem`, then **inverts** the expectation for those two. See below. |
+| `--collision-stub` | Adds an assembly occupying `Unity.Netcode.NetworkTimeSystem`, then **inverts** the expectation for that one name. See below. |
 
 ### The `--collision-stub` run
 
-This is the regression test for the reason the timing move exists. With the stub installed, a 2.x
-reference to `NetworkTime` still resolves — to the stub — so it never fails to resolve, never reaches
-the `MovedFrom` data, and cannot be migrated. `NetworkTickSystem` is deliberately **not** in the stub,
-so the same run asserts that one still migrates. A pass therefore proves both halves:
+This is the regression test for the reason the timing move exists. The stub occupies the one name
+Netcode for Entities 6.7.0 still declares in the shared root: with it installed, a 2.x reference to
+`NetworkTimeSystem` still resolves — to the stub — so it never fails to resolve, never reaches the
+`MovedFrom` data, and cannot be migrated. `NetworkTime` and `NetworkTickSystem` are deliberately
+**not** in the stub, so the same run asserts those still migrate. A pass therefore proves both halves:
 
 | Type | Expected under `--collision-stub` |
 | --- | --- |
-| `Unity.Netcode.NetworkTime` | **not** rewritten |
-| `Unity.Netcode.NetworkTimeSystem` | **not** rewritten |
+| `Unity.Netcode.NetworkTimeSystem` | **not** rewritten |
+| `Unity.Netcode.NetworkTime` | rewritten |
 | `Unity.Netcode.NetworkTickSystem` | rewritten |
 | every editor type | rewritten |
 
-If a future change ever makes the two blocked rows pass as "rewritten", the mechanism has changed and
-the one-sided-move conclusion needs revisiting.
+If a future change ever makes the blocked row pass as "rewritten", the mechanism has changed and the
+one-sided-move conclusion needs revisiting.
 
 Default hub locations, if you need to pass `--unity` explicitly — note that on macOS the binary is
 inside the `.app` bundle rather than beside it:
