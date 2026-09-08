@@ -7,7 +7,7 @@ using Unity.Entities;
 // Netcode for Entities' namespace differs from this one only by the casing of a single letter, so a
 // blanket import of it competes with Unity.Netcode on every name the two happen to share. Importing
 // only the types used here keeps that surface to exactly those names.
-using NetCodeConfig = Unity.NetCode.NetCodeConfig;
+using NetCodeConfig = Unity.Netcode.NetcodeConfig;
 using NetcodeWorld = Unity.Netcode.NetcodeWorld;
 #endif
 using Unity.Netcode.Components;
@@ -1375,13 +1375,13 @@ namespace Unity.Netcode
 
             if (this == Singleton)
             {
-                if (NetCode.Netcode.IsActive)
+                if (Netcode.IsActive)
                 {
                     Log.Info(new Context(LogLevel.Normal, "Netcode is not active but has an instance at this point."));
                 }
                 /// !! Important !!
                 /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
-                NetCode.Netcode.Reset();
+                Netcode.Reset();
             }
 
             /// !! Initialize worlds here !!
