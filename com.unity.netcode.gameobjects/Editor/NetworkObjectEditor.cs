@@ -42,10 +42,15 @@ namespace Unity.Netcode.GameObjects.Editor
         /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
         private static void OnGhostObjectPreRemoval(GameObject gameObject)
         {
-            var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
-            for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
+            // GhostBehaviour is internal to N4E and its IVT grant to this assembly differs between N4E's editor-bundled and standalone builds, so resolve it via reflection to stay build-agnostic.
+            var ghostBehaviourType = typeof(NetcodeWorld).Assembly.GetType("Unity.Netcode.GhostBehaviour");
+            if (ghostBehaviourType != null)
             {
-                DestroyImmediate(ghostBehaviours[i], true);
+                var ghostBehaviours = gameObject.GetComponentsInChildren(ghostBehaviourType);
+                for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
+                {
+                    DestroyImmediate(ghostBehaviours[i], true);
+                }
             }
             var networkObject = gameObject.GetComponent<NetworkObject>();
             networkObject.GhostObject = null;
