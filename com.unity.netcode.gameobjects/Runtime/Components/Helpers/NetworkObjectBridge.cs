@@ -1,5 +1,8 @@
 #if UNIFIED_NETCODE
 using Unity.Mathematics;
+#if !UNIFIED_NETCODE_7_0_0
+using Unity.NetCode;
+#endif
 using Unity.Transforms;
 using UnityEngine;
 
@@ -87,10 +90,12 @@ namespace Unity.Netcode
         }
     }
 
+#if UNIFIED_NETCODE_7_0_0
     /// <summary>
-    /// Stands in for N4E's <c>GhostObject.ApplyPostTransformMatrixScale</c>, removed by the 6.7.0 non-uniform
-    /// scale rework that gave the GameObject-to-entity transform sync ownership of the
-    /// <see cref="PostTransformMatrix"/>. Remove this once N4E exposes a supported way to push scale to a ghost.
+    /// Stands in for N4E's <c>GhostObject.ApplyPostTransformMatrixScale</c>, which 7.0.0 removed along with the
+    /// non-uniform scale rework that gave the GameObject-to-entity transform sync ownership of the
+    /// <see cref="PostTransformMatrix"/>. 6.7.0 still has the method, so this is only compiled against 7.0.0.
+    /// Remove it once N4E exposes a supported way to push scale to a ghost.
     /// </summary>
     internal static class GhostObjectScaleExtensions
     {
@@ -123,5 +128,6 @@ namespace Unity.Netcode
             entityManager.SetComponentData(entity, localTransform);
         }
     }
+#endif
 }
 #endif

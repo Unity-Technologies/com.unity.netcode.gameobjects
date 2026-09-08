@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+#if !UNIFIED_NETCODE_7_0_0
+using Unity.NetCode;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode.Components

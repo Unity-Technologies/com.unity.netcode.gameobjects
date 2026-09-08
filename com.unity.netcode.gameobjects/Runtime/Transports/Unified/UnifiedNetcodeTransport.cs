@@ -6,6 +6,10 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+#if !UNIFIED_NETCODE_7_0_0
+using Unity.NetCode;
+using NetcodeConnectionEvent = Unity.NetCode.NetCodeConnectionEvent;
+#endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
