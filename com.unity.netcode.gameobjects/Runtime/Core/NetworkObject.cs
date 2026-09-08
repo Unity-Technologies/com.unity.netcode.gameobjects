@@ -8,7 +8,6 @@ using Unity.Netcode.Components;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 #if UNIFIED_NETCODE
-using Unity.NetCode;
 #endif
 
 #if UNITY_EDITOR

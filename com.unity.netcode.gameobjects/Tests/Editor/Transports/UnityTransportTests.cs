@@ -231,7 +231,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 #endif
 
-        private class IPCDriverConstructor : INetworkStreamDriverConstructor
+        // Fully qualified: Netcode for Entities declares an INetworkStreamDriverConstructor of its own in the
+        // Unity.Netcode root, which the enclosing namespace resolves ahead of the using directive above.
+        private class IPCDriverConstructor : Unity.Netcode.Transports.UTP.INetworkStreamDriverConstructor
         {
             public void CreateDriver(
                 UnityTransport transport,

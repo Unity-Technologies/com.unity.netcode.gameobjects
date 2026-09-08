@@ -47,11 +47,6 @@
             "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
         },
         {
-            "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
-        },
-        {
             "name": "com.unity.multiplayer.playmode",
             "expression": "0.1.0",
             "define": "UNITY_MULTIPLAYER_PLAYMODE"

@@ -7,7 +7,8 @@
     "unityRelease": "0a6",
     "dependencies": {
         "com.unity.nuget.mono-cecil": "1.11.4",
-        "com.unity.transport": "2.6.0"
+        "com.unity.transport": "6.5.0",
+        "com.unity.netcode": "7.0.0"
     },
     "samples": [
         {

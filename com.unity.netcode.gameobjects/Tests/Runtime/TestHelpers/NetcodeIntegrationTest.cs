@@ -6,9 +6,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
-#if UNIFIED_NETCODE
-using Unity.NetCode;
-#endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
@@ -2651,11 +2648,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             else
             {
 #if UNIFIED_NETCODE
-                // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
+                // TODO-FixMe: Netcode.Instance is a singleton and might cause issues
                 // assigning this.
                 if (networkObjectToSpawn.HasGhost)
                 {
-                    NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+                    Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
                 }
 #endif
                 networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
@@ -2723,10 +2720,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // N4E's rate managers reassign that singleton on every world update, so by the time a test body runs
             // it points at whichever world updated last - typically a client world - and the spawn is rejected with
             // "You can only spawn a ghost on a server or during prediction on a client."
-            // TODO-UNIFIED: NetCode.Netcode.Instance is a singleton and might cause issues assigning this.
+            // TODO-UNIFIED: Netcode.Instance is a singleton and might cause issues assigning this.
             if (prefabNetworkObject.HasGhost)
             {
-                NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+                Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
             }
 #endif
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);

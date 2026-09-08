@@ -33,18 +33,18 @@ namespace Unity.Netcode
     /// <list type="bullet">
     ///
     /// <item><description><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
+    /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
     /// resulting in a "snap" to the new value if it is different from the anticipated value.</description></item>
     ///
     /// <item><description><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
+    /// <see cref="StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
     /// <see cref="Smooth"/> from the anticipated value to the authority value with an appropriate
     /// <see cref="Mathf.Lerp"/>-style smooth function), when a more up-to-date value is received from the authority,
     /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</description></item>
     ///
     /// <item><description><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
+    /// <see cref="StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
     /// new anticipated value based on the current authoritative value), when a more up-to-date value is received from
     /// the authority, user code calculates a new anticipated value, possibly calling <see cref="Smooth"/> to interpolate
     /// between the previous anticipation and the new anticipation. This is useful for values that change frequently and
@@ -85,11 +85,11 @@ namespace Unity.Netcode
         /// Defines what the behavior should be if we receive a value from the server with an earlier associated
         /// time value than the anticipation time value.
         /// <br/><br/>
-        /// If this is <see cref="Netcode.StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
+        /// If this is <see cref="StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
         /// value will not replace the anticipated value until the anticipation time is reached. <see cref="OnAuthoritativeValueChanged"/>
         /// and <see cref="NetworkBehaviour.OnReanticipate"/> will also not be invoked for this stale data.
         /// <br/><br/>
-        /// If this is <see cref="Netcode.StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
+        /// If this is <see cref="StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
         /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="NetworkBehaviour.OnReanticipate"/> will be invoked.
         /// In this case, the authoritativeTime value passed to <see cref="NetworkBehaviour.OnReanticipate"/> will be lower than
         /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
@@ -229,7 +229,7 @@ namespace Unity.Netcode
         /// Retrieves or sets the underlying authoritative value.
         /// Note that only a client or server with write permissions to this variable may set this value.
         /// When this variable has been anticipated, this value will alawys return the most recent authoritative
-        /// state, which is updated even if <see cref="StaleDataHandling"/> is <see cref="Netcode.StaleDataHandling.Ignore"/>.
+        /// state, which is updated even if <see cref="StaleDataHandling"/> is <see cref="StaleDataHandling.Ignore"/>.
         /// </summary>
 #pragma warning restore IDE0001
         public T AuthoritativeValue

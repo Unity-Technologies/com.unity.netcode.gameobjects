@@ -10,7 +10,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Netcode for Entities (`com.unity.netcode` 7.0.0) is now a dependency, so installing Netcode for GameObjects also brings it, and its own dependencies (Entities, Burst, Collections), into the project.
+
 ### Changed
+
+- The `com.unity.transport` dependency moved from 2.6.0 to 6.5.0, the version Netcode for Entities 7.0.0 requires.
 
 - Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4129)
 

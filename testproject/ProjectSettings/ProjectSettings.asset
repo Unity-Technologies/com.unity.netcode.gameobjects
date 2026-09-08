@@ -741,7 +741,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL;NETCODE_EXPERIMENTAL_SINGLE_WORLD_HOST;OUT_OF_BAND_RPC
+    Standalone: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
   additionalCompilerArguments:
     Standalone: []
   platformArchitecture: {}

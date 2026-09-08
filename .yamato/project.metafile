@@ -175,16 +175,19 @@ test_platforms:
 # Editors to be used for testing. NGOv3.X official support started from 6000.7 editor
 # TODO: When a new editor will be released it should be added to this list
 
+# TEMPORARY: only trunk has dropped Netcode for Entities as a core package, so only there does the
+# com.unity.netcode 7.0.0 dependency resolve - a released editor's bundled 6.7.0 wins over the request.
+# Restore the released editors here once one ships without it. `all` is left alone as the reminder.
 validation_editors:
     default:
-        - 6000.7
+        - trunk
     all:
         - 6000.7.0a6
         - 6000.7
         - trunk
         - 1d47644d0e359a8139ae6f99217da3c4e47f4779
     minimal:
-        - 6000.7.0a6
+        - trunk
 pinnedTrunk:  1d47644d0e359a8139ae6f99217da3c4e47f4779
 
 

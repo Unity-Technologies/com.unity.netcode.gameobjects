@@ -1,5 +1,6 @@
 #if UNIFIED_NETCODE
-using Unity.NetCode;
+using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,7 +14,9 @@ namespace Unity.Netcode
 
     [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
-    public partial class NetworkObjectBridge : GhostBehaviour
+    // Internal: GhostBehaviour is only public when NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, and a public
+    // type cannot derive from an internal one.
+    internal partial class NetworkObjectBridge : GhostBehaviour
     {
         // DefaultExecutionOrder
         // TODO: Define a const for the value used on GhostObject and use that value
@@ -81,6 +84,43 @@ namespace Unity.Netcode
         internal void ApplyScale(Vector3 scale)
         {
             Ghost.ApplyPostTransformMatrixScale(scale);
+        }
+    }
+
+    /// <summary>
+    /// Stands in for N4E's <c>GhostObject.ApplyPostTransformMatrixScale</c>, removed by the 6.7.0 non-uniform
+    /// scale rework that gave the GameObject-to-entity transform sync ownership of the
+    /// <see cref="PostTransformMatrix"/>. Remove this once N4E exposes a supported way to push scale to a ghost.
+    /// </summary>
+    internal static class GhostObjectScaleExtensions
+    {
+        /// <summary>
+        /// A ghost that replicates 3D scale stores it in its <see cref="PostTransformMatrix"/> and holds
+        /// <see cref="LocalTransform.Scale"/> at 1, because consumers multiply the two. A ghost authored with
+        /// <c>UseUniformScale</c> has no matrix - and cannot gain one at runtime, since the component is only in the
+        /// replicated set when the prefab is registered - so only the uniform scale can be applied there.
+        /// </summary>
+        internal static void ApplyPostTransformMatrixScale(this GhostObject ghost, Vector3 scale)
+        {
+            var entityManager = ghost.World.EntityManager;
+            var entity = ghost.Entity;
+            var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
+
+            if (entityManager.HasComponent<PostTransformMatrix>(entity))
+            {
+                entityManager.SetComponentData(entity, new PostTransformMatrix { Value = float4x4.Scale(scale) });
+                localTransform.Scale = 1f;
+            }
+            else
+            {
+                if (!Mathf.Approximately(scale.x, scale.y) || !Mathf.Approximately(scale.y, scale.z))
+                {
+                    Debug.LogWarning($"[{nameof(NetworkObjectBridge)}] Non-uniform scale {scale} cannot be replicated by a ghost authored for uniform scale; applying {scale.x} to all axes.", ghost);
+                }
+                localTransform.Scale = scale.x;
+            }
+
+            entityManager.SetComponentData(entity, localTransform);
         }
     }
 }

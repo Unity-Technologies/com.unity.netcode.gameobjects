@@ -10,9 +10,10 @@
     # 2. For all unified editors (currently a single pinned alpha, see project.metafile)
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # TODO: the manifest swap means testproject/Packages/manifest-unified.json has to be kept in sync
-  #       with manifest.json by hand. Revisit once N4E is a hard dependency of NGO and one manifest
-  #       can cover both cases.
+  # TODO: N4E is now a hard dependency, so the manifest swap only pins the N4E version and the two
+  #       manifests can be collapsed into one.
+  # This job is deliberately not part of the PR checks: N4E 7.0.0 ships the unified API behind its own
+  #       experimental define, so nothing in the shipping configuration compiles it.
 
 #------------------------------------------------------------------------------------
 
@@ -36,9 +37,11 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    # Swap in the manifest that has the unified packages and versions required.
-    # Without the N4E package, UNIFIED_NETCODE is undefined and the unified API excluded.
+    # Swap in the manifest that pins the N4E version the unified API is written against.
     - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
+    # Turn the unified API on. UNIFIED_NETCODE is opt-in, and N4E keeps its GameObject bridge internal
+    # until NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, so both are needed here and nowhere else.
+    - sed -i "s/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL;UNIFIED_NETCODE;OUT_OF_BAND_RPC/" {{ project.path }}/ProjectSettings/ProjectSettings.asset
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 #if UNIFIED_NETCODE
-using Unity.NetCode;
-using Unity.NetCode.Editor;
+using Unity.Netcode.Editor;
 #endif
 using UnityEditor;
 using UnityEngine;
