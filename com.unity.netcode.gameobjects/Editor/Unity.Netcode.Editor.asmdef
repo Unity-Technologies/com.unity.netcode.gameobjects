@@ -22,6 +22,11 @@
     "defineConstraints": [],
     "versionDefines": [
         {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
+        {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
