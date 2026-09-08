@@ -15,7 +15,8 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "Unity.NetCode",
-        "Unity.Entities"
+        "Unity.Entities",
+        "Unity.Transforms"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

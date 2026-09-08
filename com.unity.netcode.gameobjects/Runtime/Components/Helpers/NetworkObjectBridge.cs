@@ -1,5 +1,7 @@
 #if UNIFIED_NETCODE
+using Unity.Entities;
 using Unity.NetCode;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -81,6 +83,29 @@ namespace Unity.Netcode
         internal void ApplyScale(Vector3 scale)
         {
             Ghost.ApplyPostTransformMatrixScale(scale);
+        }
+    }
+
+    /// <summary>
+    /// Replaces the N4E <c>GhostObject.ApplyPostTransformMatrixScale</c> helper that was removed by the 6.7.0
+    /// PostTransformMatrix scale rework, keeping NGO's hybrid parenting scale path working without an N4E change.
+    /// </summary>
+    internal static class GhostObjectScaleExtensions
+    {
+        internal static void ApplyPostTransformMatrixScale(this GhostObject ghost, Vector3 scale)
+        {
+            var entityManager = ghost.World.EntityManager;
+            var entity = ghost.Entity;
+            if (entityManager.HasComponent<PostTransformMatrix>(entity))
+            {
+                entityManager.SetComponentData(entity, new PostTransformMatrix { Value = Unity.Mathematics.float4x4.Scale(scale) });
+            }
+            else
+            {
+                var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
+                localTransform.Scale = scale.x;
+                entityManager.SetComponentData(entity, localTransform);
+            }
         }
     }
 }
