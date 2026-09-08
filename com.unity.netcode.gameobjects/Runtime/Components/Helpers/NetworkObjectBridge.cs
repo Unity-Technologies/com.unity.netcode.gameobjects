@@ -100,11 +100,15 @@ namespace Unity.Netcode
             {
                 entityManager.SetComponentData(entity, new PostTransformMatrix { Value = Unity.Mathematics.float4x4.Scale(scale) });
             }
-            else
+            else if (Mathf.Approximately(scale.x, scale.y) && Mathf.Approximately(scale.y, scale.z))
             {
                 var localTransform = entityManager.GetComponentData<LocalTransform>(entity);
                 localTransform.Scale = scale.x;
                 entityManager.SetComponentData(entity, localTransform);
+            }
+            else
+            {
+                entityManager.AddComponentData(entity, new PostTransformMatrix { Value = Unity.Mathematics.float4x4.Scale(scale) });
             }
         }
     }
