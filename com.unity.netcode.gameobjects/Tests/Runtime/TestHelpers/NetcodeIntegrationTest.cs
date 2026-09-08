@@ -9,6 +9,7 @@ using NUnit.Framework;
 #if UNIFIED_NETCODE
 using Unity.NetCode;
 #endif
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;

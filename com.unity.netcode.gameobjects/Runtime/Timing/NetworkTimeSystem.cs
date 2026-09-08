@@ -1,8 +1,9 @@
 using System;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
@@ -11,6 +12,7 @@ namespace Unity.Netcode
     /// effort at predicting what the server tick will be when a given network action is processed on the server.
     /// </summary>
     [Serializable]
+    [MovedFrom(true, "Unity.Netcode", null, null)]
     public class NetworkTimeSystem
     {
         /// <remarks>

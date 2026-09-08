@@ -1,5 +1,6 @@
 using System;
 using Unity.Mathematics;
+using Unity.Netcode.GameObjects.Timing;
 using UnityEngine;
 
 namespace Unity.Netcode
