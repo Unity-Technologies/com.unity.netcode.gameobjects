@@ -1,7 +1,6 @@
 #if UNIFIED_NETCODE
 using System;
 using Unity.Entities;
-using Unity.NetCode;
 using UnityEngine;
 
 namespace Unity.Netcode

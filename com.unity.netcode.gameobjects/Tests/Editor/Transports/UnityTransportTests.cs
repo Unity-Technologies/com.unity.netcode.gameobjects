@@ -231,7 +231,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 #endif
 
-        private class IPCDriverConstructor : Unity.Netcode.Transports.UTP.INetworkStreamDriverConstructor
+        private class IPCDriverConstructor : Transports.UTP.INetworkStreamDriverConstructor
         {
             public void CreateDriver(
                 UnityTransport transport,

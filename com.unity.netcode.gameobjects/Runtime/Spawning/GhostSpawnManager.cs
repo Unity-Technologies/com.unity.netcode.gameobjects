@@ -182,13 +182,13 @@ namespace Unity.Netcode
                     m_GhostSynchronizationPendingRemoval.Add(networkObjectId);
                 }
                 else
-                if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
-                {
-                    m_Log.Info(new Context(LogLevel.Developer, $"Registering {nameof(NetworkObject.SerializedObject)} for pending synchronization").AddInfo(nameof(NetworkObject.NetworkObjectId), networkObjectId));
+                    if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
+                    {
+                        m_Log.Info(new Context(LogLevel.Developer, $"Registering {nameof(NetworkObject.SerializedObject)} for pending synchronization").AddInfo(nameof(NetworkObject.NetworkObjectId), networkObjectId));
 
-                    // Timed out entries are removed too
-                    m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
-                }
+                        // Timed out entries are removed too
+                        m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
+                    }
             }
 
             foreach (var networkObjectId in m_GhostSynchronizationPendingRemoval)

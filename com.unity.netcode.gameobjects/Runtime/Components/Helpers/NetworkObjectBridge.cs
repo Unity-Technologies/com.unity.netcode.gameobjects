@@ -1,6 +1,4 @@
 #if UNIFIED_NETCODE
-using Unity.Entities;
-using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -98,7 +96,7 @@ namespace Unity.Netcode
             var entity = ghost.Entity;
             if (entityManager.HasComponent<PostTransformMatrix>(entity))
             {
-                entityManager.SetComponentData(entity, new PostTransformMatrix { Value = Unity.Mathematics.float4x4.Scale(scale) });
+                entityManager.SetComponentData(entity, new PostTransformMatrix { Value = Mathematics.float4x4.Scale(scale) });
             }
             else if (Mathf.Approximately(scale.x, scale.y) && Mathf.Approximately(scale.y, scale.z))
             {
@@ -108,7 +106,7 @@ namespace Unity.Netcode
             }
             else
             {
-                entityManager.AddComponentData(entity, new PostTransformMatrix { Value = Unity.Mathematics.float4x4.Scale(scale) });
+                entityManager.AddComponentData(entity, new PostTransformMatrix { Value = Mathematics.float4x4.Scale(scale) });
             }
         }
     }

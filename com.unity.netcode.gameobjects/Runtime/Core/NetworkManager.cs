@@ -8,7 +8,6 @@ using Unity.Entities;
 // blanket import of it competes with Unity.Netcode on every name the two happen to share. Importing
 // only the types used here keeps that surface to exactly those names.
 using NetCodeConfig = Unity.Netcode.NetcodeConfig;
-using NetcodeWorld = Unity.Netcode.NetcodeWorld;
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Timing;
