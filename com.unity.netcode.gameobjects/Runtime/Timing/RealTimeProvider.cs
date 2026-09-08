@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     internal class RealTimeProvider : IRealTimeProvider
     {

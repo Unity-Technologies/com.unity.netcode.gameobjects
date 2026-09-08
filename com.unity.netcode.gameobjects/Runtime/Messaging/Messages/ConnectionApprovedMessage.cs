@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Netcode.GameObjects.Timing;
 
 namespace Unity.Netcode
 {

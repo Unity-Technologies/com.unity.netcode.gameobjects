@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Unity.Netcode.GameObjects.Timing;
 using UnityEngine;
 
 namespace Unity.Netcode.GameObjects.EditorTests

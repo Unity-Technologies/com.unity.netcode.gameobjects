@@ -1,4 +1,4 @@
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     internal interface IRealTimeProvider
     {

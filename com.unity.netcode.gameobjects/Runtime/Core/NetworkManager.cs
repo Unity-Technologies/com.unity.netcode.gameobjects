@@ -4,9 +4,14 @@ using System.Linq;
 using Unity.Collections;
 #if UNIFIED_NETCODE
 using Unity.Entities;
-using Unity.NetCode;
+// Netcode for Entities' namespace differs from this one only by the casing of a single letter, so a
+// blanket import of it competes with Unity.Netcode on every name the two happen to share. Importing
+// only the types used here keeps that surface to exactly those names.
+using NetCodeConfig = Unity.NetCode.NetCodeConfig;
+using NetcodeWorld = Unity.NetCode.NetcodeWorld;
 #endif
 using Unity.Netcode.Components;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 // TODO-UNIFIED: When:
