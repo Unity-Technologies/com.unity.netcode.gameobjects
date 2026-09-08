@@ -3,6 +3,10 @@ using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
+// Netcode for Entities declares an INetworkStreamDriverConstructor of its own in the shared Unity.Netcode
+// root, which the enclosing namespace resolves ahead of the import above. Aliasing it keeps this pointing
+// at NGO's, and unlike a qualified name there is nothing here for the formatter to simplify away.
+using UtpDriverConstructor = Unity.Netcode.Transports.UTP.INetworkStreamDriverConstructor;
 
 namespace Unity.Netcode.GameObjects.EditorTests
 {
@@ -231,9 +235,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 #endif
 
-        // Qualified: Netcode for Entities declares an INetworkStreamDriverConstructor of its own in the
-        // Unity.Netcode root, which the enclosing namespace resolves ahead of the using directive above.
-        private class IPCDriverConstructor : Transports.UTP.INetworkStreamDriverConstructor
+        private class IPCDriverConstructor : UtpDriverConstructor
         {
             public void CreateDriver(
                 UnityTransport transport,
