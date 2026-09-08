@@ -10,6 +10,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added additional section under Project Settings > Multiplayer > Netcode for GameObjects, shown when Netcode for Entities is installed and provides users a way to restor back to the recommended settings. (#4144)
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session with `GhostObject` prefabs is started, so ghost updates land on the same (relative) interval as the rest of Netcode for GameObjects. (#4144)
+
+
 ### Changed
 
 - Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4129)
@@ -41,6 +45,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
 - Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
 - Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
+- Issue where the hybrid mode `NetCodeConfig` validation messages were not interpolated and did not check that automatic bootstrapping was disabled.
 
 ### Security
 

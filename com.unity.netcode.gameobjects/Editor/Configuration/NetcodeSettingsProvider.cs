@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
+#if UNIFIED_NETCODE
+using Unity.NetCode;
+#endif
 using UnityEditor;
 using UnityEngine;
 using Directory = UnityEngine.Windows.Directory;
@@ -11,6 +14,9 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
     {
         private const float k_MaxLabelWidth = 450f;
         private static float s_MaxLabelWidth;
+#if UNIFIED_NETCODE
+        private static float s_HybridLabelWidth;
+#endif
         private static bool s_ShowEditorSettingFields = true;
         private static bool s_ShowProjectSettingFields = true;
 
@@ -192,6 +198,10 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                     networkPrefabsPath,
                     GUILayout.Width(s_MaxLabelWidth + 270));
                 GUILayout.EndVertical();
+
+#if UNIFIED_NETCODE
+                DrawHybridSettings(settings);
+#endif
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
             GUILayout.EndVertical();
@@ -205,6 +215,84 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                 settings.SaveSettings();
             }
         }
+
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Displays the NetCodeConfig the NGO hybrid mode defaults were written into, and offers a way to restore
+        /// those defaults for anyone who has since changed them.
+        /// </summary>
+        /// <param name="settings">The project settings holding the opt-in flag and the applied-defaults marker.</param>
+        private static void DrawHybridSettings(NetcodeForGameObjectsProjectSettings settings)
+        {
+            if (HybridNetcodeConfigApplier.RequiresExperimentalOptIn && !DrawUnifiedNetcodeApiToggle(settings))
+            {
+                return;
+            }
+
+            GUILayout.BeginVertical("Box");
+            GUILayout.Label("Hybrid (Netcode for Entities)", EditorStyles.boldLabel);
+
+            var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
+            if (config == null)
+            {
+                EditorGUILayout.HelpBox("No NetCodeConfig could be resolved. Open Project Settings > Multiplayer, which creates one, then reload the project.", MessageType.Warning);
+                GUILayout.EndVertical();
+                return;
+            }
+
+            EditorGUILayout.ObjectField(new GUIContent("Applied to", "The NetCodeConfig that Netcode for GameObjects wrote its hybrid mode defaults into."), config, typeof(NetCodeConfig), false);
+
+            if (settings.HybridDefaultsVersion < HybridNetcodeDefaults.Version)
+            {
+                EditorGUILayout.HelpBox("The Netcode for GameObjects hybrid defaults have not been applied to this config yet.", MessageType.Info);
+            }
+
+            if (GUILayout.Button(new GUIContent("Apply Recommended Hybrid Defaults", "Restores the snapshot, interpolation and transport values Netcode for GameObjects recommends for hybrid mode. Applied automatically once; use this to get back to them after changing them.")))
+            {
+                HybridNetcodeConfigApplier.ApplyDefaults(true);
+            }
+
+            GUILayout.EndVertical();
+        }
+
+        /// <summary>
+        /// Draws the opt-in for the experimental unified netcode API, writing the NGO hybrid mode defaults the first
+        /// time it is checked.
+        /// </summary>
+        /// <param name="settings">The project settings holding the opt-in flag.</param>
+        /// <returns>Whether the rest of the hybrid section should draw.</returns>
+        private static bool DrawUnifiedNetcodeApiToggle(NetcodeForGameObjectsProjectSettings settings)
+        {
+            const string enableUnifiedApiString = "Enable the experimental unified netcode API";
+
+            if (s_HybridLabelWidth == 0)
+            {
+                s_HybridLabelWidth = Mathf.Min(k_MaxLabelWidth, EditorStyles.label.CalcSize(new GUIContent(enableUnifiedApiString)).x);
+            }
+
+            EditorGUIUtility.labelWidth = s_HybridLabelWidth;
+            var enabled = EditorGUILayout.Toggle(
+                new GUIContent(
+                    enableUnifiedApiString,
+                    "When enabled, Netcode for GameObjects writes the NetCodeConfig values it recommends for hybrid " +
+                    "mode. Disabling it again hides these settings and leaves the NetCodeConfig as it is."),
+                settings.EnableUnifiedNetcodeApi,
+                GUILayout.Width(s_HybridLabelWidth + 20));
+            EditorGUIUtility.labelWidth = s_MaxLabelWidth;
+
+            if (enabled != settings.EnableUnifiedNetcodeApi)
+            {
+                settings.EnableUnifiedNetcodeApi = enabled;
+                settings.SaveSettings();
+                if (enabled)
+                {
+                    HybridNetcodeConfigApplier.ApplyDefaults(false);
+                }
+            }
+
+            return enabled;
+        }
+#endif
     }
 
     internal class NetcodeSettingsLabel : NetcodeGUISettings

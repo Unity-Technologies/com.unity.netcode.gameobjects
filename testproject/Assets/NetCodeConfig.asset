@@ -63,7 +63,7 @@ MonoBehaviour:
     CleanupConnectionStatePerTick: 1
     m_FirstSendImportanceMultiplier: 1
     m_IrrelevantImportanceDownScale: 1
-    m_TempStreamSize: 4192
+    m_TempStreamSize: 8192
     m_UseCustomSerializer: 0
   ConnectTimeoutMS: 1000
   MaxConnectAttempts: 60
