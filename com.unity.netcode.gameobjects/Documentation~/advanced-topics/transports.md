@@ -6,9 +6,9 @@ Netcode for GameObjects uses [Unity Transport](https://docs.unity3d.com/Packages
 
 ## Introduction to transports
 
-A transport layer is a software layer that provides communication services between applications on different hosts in a network. It's responsible for establishing, maintaining, and terminating connections, as well as ensuring reliable data transfer.
+A transport layer is a software layer that provides communication services between applications on different hosts in a network. It's responsible for establishing, maintaining, and terminating connections, and for delivering data according to the guarantees that the chosen protocol offers.
 
-Transport layers are essential for networked applications, as they provide the following key features:
+Transport layers are essential for networked applications. Depending on the protocol and the delivery mode in use, a transport layer can provide the following features:
 
 - *Connection-oriented communication* to ensure a robust connection before exchanging data with a handshake protocol.
 - *Maintain order delivery* for your packets to fix any discrepancies from the network layer in case of packet drops or device interruption.
@@ -16,6 +16,9 @@ Transport layers are essential for networked applications, as they provide the f
 - *Control the data flow* in a network connection to avoid buffer overflow or underflow, which can cause unnecessary network performance issues.
 - *Manage network congestion* by mediating flow rates and node overloads.
 - *Adjust data streams* to transmit as byte streams or packets.
+
+> [!NOTE]
+> Not all of these features apply to every message. Netcode for GameObjects supports both reliable and unreliable delivery through the `NetworkDelivery` modes, and messages sent as `Unreliable` or `UnreliableSequenced` can be dropped instead of retransmitted. Refer to [Reliability](./message-system/reliability.md) for more information.
 
 ## Unity Transport package
 
