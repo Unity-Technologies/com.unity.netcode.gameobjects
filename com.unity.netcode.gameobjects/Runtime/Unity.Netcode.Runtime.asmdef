@@ -14,7 +14,7 @@
         "Unity.Collections",
         "Unity.Burst",
         "Unity.Mathematics",
-        "Unity.NetCode",
+        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
         "Unity.Entities"
     ],
     "includePlatforms": [],
