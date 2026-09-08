@@ -15,7 +15,7 @@ namespace Unity.Netcode
 
     [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
-    public partial class NetworkObjectBridge : GhostBehaviour
+    internal partial class NetworkObjectBridge : GhostBehaviour
     {
         // DefaultExecutionOrder
         // TODO: Define a const for the value used on GhostObject and use that value
