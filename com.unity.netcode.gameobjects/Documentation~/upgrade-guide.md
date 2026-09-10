@@ -1,8 +1,8 @@
 # Upgrade from 2.x to 3.x
 
-Update your project for the Unity Editor, dependency, and API changes that Netcode for GameObjects 3.x introduces.
+Update your project for the Unity Editor, assembly definition, dependency, and API changes that Netcode for GameObjects 3.x introduces.
 
-Version 3.x of Netcode for GameObjects raises the minimum Unity Editor version and adds a dependency on Netcode for Entities. It also renames the Editor assembly definitions and turns several obsolete API warnings into compile errors. Refer to the following sections for the changes that affect your project and the steps to take for each one.
+Version 3.x of Netcode for GameObjects raises the minimum Unity Editor version, renames the Editor assembly definitions, and turns several obsolete API warnings into compile errors. Refer to the following sections for the changes that affect your project and the steps to take for each one.
 
 > [!WARNING]
 > The API updater modifies your files in place. Commit or back up your work before you update your project.
@@ -21,7 +21,7 @@ Version 3.x depends on the Netcode for Entities package (`com.unity.netcode`), w
 To upgrade an existing project from version 2.x to version 3.x, follow these steps:
 
 1. Back up your project, or commit your work to source control.
-1. Upgrade your project to Unity Editor version 6000.7 or later.
+1. Upgrade your project to Unity Editor version 6.7 or later.
 1. From the Unity Editor, select **Window** > **Package Manager**.
 1. From the **Package Manager** window, select **Netcode for GameObjects** in the list of packages.
 1. Select version 3.x, then select **Update**.
@@ -44,7 +44,7 @@ Version 3.x renames the Editor assembly definitions to the `Unity.Netcode.GameOb
 | --- | --- |
 | `Unity.Netcode.Editor` | `Unity.Netcode.GameObjects.Editor` |
 | `Unity.Netcode.Editor.CodeGen` | `Unity.Netcode.GameObjects.Editor.CodeGen` |
-| `Unity.Netcode.Editor.PackageChecker` | `Unity.Netcode.GameObjects.PackageChecker.Editor` |
+| `Unity.Netcode.PackageChecker.Editor` | `Unity.Netcode.GameObjects.PackageChecker.Editor` |
 | `Unity.Netcode.Editor.Tests` | `Unity.Netcode.GameObjects.Editor.Tests` |
 
 If your own Editor assemblies reference any of these assembly definitions by name, update the reference to the new name. The API updater migrates references to the moved Editor namespace types for you.
@@ -65,10 +65,28 @@ Replace each of the following APIs with its listed replacement:
 | `[ServerRpc(RequireOwnership = true)]` | `[Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]` |
 | `[ServerRpc(RequireOwnership = false)]` | `[Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]` |
 | `ConnectionAddressData.ServerEndPoint` (`ParseNetworkEndpoint`) | `NetworkEndpoint.Parse` on the `Address` field |
-| `CommandLineOptions.Instance` | `TryGetArg` |
 | `NetworkBehaviourEditor.GetRootParentTransform(Transform)` | `transform.root` |
 
 The `RequireOwnership` field applies to `ServerRpc` and the other remote procedure call (RPC) attributes. Use `InvokePermission` in its place. For more information, refer to [RPCs](advanced-topics/message-system/rpc.md).
+
+### Replace command-line argument lookups
+
+Version 3.x raises a compile error for both `CommandLineOptions.Instance` and the `CommandLineOptions.GetArg` instance method, so a typical `Instance.GetArg` call needs a full rewrite rather than a rename. Use the static `CommandLineOptions.TryGetArg` method, which reports whether it found the argument and returns the value through an `out` parameter:
+
+```csharp
+// Version 2.x
+var value = CommandLineOptions.Instance.GetArg("--myArg");
+if (value != null)
+{
+    // Use value.
+}
+
+// Version 3.x
+if (CommandLineOptions.TryGetArg("--myArg", out var value))
+{
+    // Use value.
+}
+```
 
 ### APIs without replacements
 
