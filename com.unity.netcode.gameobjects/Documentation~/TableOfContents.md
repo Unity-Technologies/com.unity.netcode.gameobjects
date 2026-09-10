@@ -1,5 +1,6 @@
 * [Netcode for GameObjects package](index.md)
 * [Install](install.md)
+* [Upgrade from 2.x to 3.x](upgrade-guide.md)
 * [Get started](tutorials/get-started-with-ngo.md)
   * [Client-server quickstart](tutorials/get-started-with-ngo.md)
   * [Distributed authority quickstart](da-quickstart.md)
@@ -106,5 +107,4 @@
 * [FAQ](learn/faq.md)
 * [Samples](samples.md)
   * [Boss Room](samples/bossroom/bossroom-landing.md)
-* [Upgrading from 2.x to 3.x](upgrade-guide.md)
 * [Migrate from UNet to Netcode for GameObjects](migratingfromUNet.md)
