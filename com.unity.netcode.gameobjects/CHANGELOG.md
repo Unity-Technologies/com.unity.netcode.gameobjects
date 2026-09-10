@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Netcode for Entities (`com.unity.netcode` 6.7.0) is now a dependency, so installing Netcode for GameObjects also brings it, and its own dependencies (Entities, Burst, Collections), into the project.
+- Netcode for Entities (`com.unity.netcode` 7.0.0) is now a hard dependency, so installing Netcode for GameObjects also brings it, and its own dependencies (Entities, Burst, Collections), into the project.
 
 ### Changed
 
