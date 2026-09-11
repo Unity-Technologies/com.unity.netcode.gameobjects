@@ -708,6 +708,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InternalOnOneTimeSetup();
         }
 
+#if UNIFIED_NETCODE && UNITY_EDITOR
+        private bool m_PreviousWarnBatchedTicks;
+#endif
+
         private void InternalOnOneTimeSetup()
         {
             Application.runInBackground = true;
@@ -722,6 +726,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
+
+#if UNIFIED_NETCODE && UNITY_EDITOR
+            // Netcode for Entities emits a performance-dependent "Server Tick Batching" warning on loaded CI agents that would fail strict log assertions.
+            m_PreviousWarnBatchedTicks = MultiplayerPlayModePreferences.WarnBatchedTicks;
+            MultiplayerPlayModePreferences.WarnBatchedTicks = false;
+#endif
 
 #if UNITY_INCLUDE_TESTS
             // Provide an external hook to be able to make adjustments to netcode classes prior to running any tests
@@ -1904,6 +1914,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Disable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
+
+#if UNIFIED_NETCODE && UNITY_EDITOR
+            MultiplayerPlayModePreferences.WarnBatchedTicks = m_PreviousWarnBatchedTicks;
+#endif
 
             UnloadRemainingScenes();
 
