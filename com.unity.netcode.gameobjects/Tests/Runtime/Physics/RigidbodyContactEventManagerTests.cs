@@ -121,6 +121,7 @@ namespace Unity.Netcode.RuntimeTests
 
 
         [UnityTest]
+        [Ignore("Rigidbody contact events never fire (players never move) when Netcode for Entities is a hard dependency of NGO. See UUM-152669.")]
         public IEnumerator TestContactEvents()
         {
             ContactEventTransformHelper.VerboseDebug = m_EnableVerboseDebug;
