@@ -21,6 +21,7 @@ namespace TestProject.RuntimeTests
     {
         private const string k_ActiveScene = "SessionSynchronize";
         private const string k_AdditionalScene = "InSceneNetworkObjectMovesToDDOL";
+        private const string k_PreLoadedScene = "EmptyScene1";
 
         private readonly List<NetworkObject> m_ObjectsInScenes = new List<NetworkObject>();
         private Scene m_OriginalActiveScene;
@@ -139,6 +140,35 @@ namespace TestProject.RuntimeTests
             // Wait for all existing objects to spawn on the client
             yield return WaitForSpawnedOnAllOrTimeOut(existingObjects);
             AssertOnTimeout("Timed out waiting for objects to spawn on all clients!");
+        }
+
+        /// <summary>
+        /// Validates that a scene additively loaded before the session started is tracked well enough
+        /// to be unloaded through <see cref="NetworkSceneManager"/> without error.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator UnloadPreLoadedScene()
+        {
+            yield return PreLoadScene(k_PreLoadedScene);
+            var preLoadedScene = m_SceneLoaded;
+
+            m_CanStart = true;
+            yield return StartServerAndClients();
+
+            // Scenes loaded before the session started are registered in both the loaded scenes and the
+            // scene handle tables, otherwise unloading them fails part way through and leaks the entry.
+            var sceneManager = GetAuthorityNetworkManager().SceneManager;
+            Assert.IsTrue(sceneManager.ScenesLoaded.ContainsKey(preLoadedScene.handle), $"{k_PreLoadedScene} is not in {nameof(NetworkSceneManager.ScenesLoaded)}!");
+            Assert.IsTrue(sceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(preLoadedScene.handle), $"{k_PreLoadedScene} is not in {nameof(NetworkSceneManager.ServerSceneHandleToClientSceneHandle)}!");
+
+            var status = sceneManager.UnloadScene(preLoadedScene);
+            Assert.AreEqual(SceneEventProgressStatus.Started, status, $"{nameof(NetworkSceneManager.UnloadScene)} returned {status}!");
+
+            yield return WaitForConditionOrTimeOut(() => !preLoadedScene.isLoaded);
+            AssertOnTimeout($"Timed out waiting for {k_PreLoadedScene} to unload!");
+
+            Assert.IsFalse(sceneManager.ScenesLoaded.ContainsKey(preLoadedScene.handle), $"{k_PreLoadedScene} was unloaded but is still in {nameof(NetworkSceneManager.ScenesLoaded)}!");
+            Assert.IsFalse(sceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(preLoadedScene.handle), $"{k_PreLoadedScene} was unloaded but is still in {nameof(NetworkSceneManager.ServerSceneHandleToClientSceneHandle)}!");
         }
 
         #region Scene loading and related methods

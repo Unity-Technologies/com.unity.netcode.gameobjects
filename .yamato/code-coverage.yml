@@ -2,7 +2,8 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job is responsible for executing package tests with code coverage analysis enabled.
+  # This job runs the in-repo testproject tests with code coverage analysis enabled.
+  # The project tests also exercise the NGO package tests, so a separate package-test coverage job is not needed.
   # Coverage analysis provides insights into:
     # Test coverage metrics for NGO assemblies
     # Line and branch coverage statistics
@@ -10,25 +11,28 @@
     # Additional metrics for coverage analysis
 
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # Jobs are generated using nested loops through:
-    # 1. For default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
-    # 2. For default editor version (trunk) since coverage would not vary between editors (no need for checks on more editors)
+  # Jobs are generated for:
+    # 1. Default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
+    # 2. Two editors: actual "trunk" (used by nightly) and the "pinnedTrunk" safe version (used by PRs).
+    #    Occasionally trunk breaks our tests, so PRs run against a pinned "safe" trunk while nightly runs actual trunk.
 
 #TECHNICAL CONSIDERATIONS---------------------------------------------------------------
-  # In theory this job also runs package tests, but we don't want to use it as default since is heavier (because of added coverage analysis) and coverage is not changing that often
   # Requires Unity Editor installation
   # Burst compilation is disabled to ensure accurate coverage measurement
   # In order to properly use -coverage-results-path parameter we need to start it with $PWD (which means the absolute path). Otherwise coverage results will not be visible
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file. Currently:
+    # [Code Coverage] Project Test runs on PR changes (pr_code_changes_checks, pinnedTrunk) and nightly (develop_nightly, trunk)
 
-
+{% assign coverage_editors = "trunk," | append: pinnedTrunk | split: "," -%}
 
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.default -%}
-code_coverage_{{ platform.name }}_{{ editor }}:
-  name: Code Coverage - NGO [{{ platform.name }}, {{ editor }}]
+{% for project in projects.default -%}
+{% for editor in coverage_editors -%}
+{% if editor == "trunk" -%}{% assign editor_label = "trunk" -%}{% else -%}{% assign editor_label = "pinnedTrunk" -%}{% endif -%}
+code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name: '[Code Coverage] Project Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]'
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -38,13 +42,14 @@ code_coverage_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
-    - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_{{ platform.name }}_{{ editor }};flags:NGOv2_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --editor-location=.Editor --enable-code-coverage --coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_project_{{ project.name }}_{{ platform.name }}_{{ editor_label }};flags:NGOv2_project_{{ project.name }}_{{ platform.name }}_{{ editor_label }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
   dependencies:
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}

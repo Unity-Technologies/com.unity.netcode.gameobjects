@@ -1,3 +1,4 @@
+#if !NGO_EXCLUDE_HEAVY_TESTS
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
@@ -40,3 +41,4 @@ namespace Unity.Netcode.EditorTests
         }
     }
 }
+#endif

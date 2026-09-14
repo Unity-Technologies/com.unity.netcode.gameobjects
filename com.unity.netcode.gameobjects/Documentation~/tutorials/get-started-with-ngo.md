@@ -33,7 +33,7 @@ This section guides you through adding the essential components of a networked g
 
 - [A NetworkManager component](#create-the-networkmanager-component)
 - [A player object](#create-an-object-to-spawn-for-each-connected-player)
-- [A scene](#add-your-scene-to-the-build)
+- [A scene](#scene-management-and-the-scenes-in-build-list)
 
 ### Create the NetworkManager component
 
@@ -68,7 +68,7 @@ First, create the NetworkManager component:
 ### Create an object to spawn for each connected player
 
 > [!NOTE]
-> When you drop the prefab into the **PlayerPrefab** slot, you're telling the library that when a client connects to the game, it automatically spawns this prefab as the character for the connecting client. Netcode for GameObjects won't spawn a player object if you don't have any prefab set as the **PlayerPrefab**. Refer to [Player Objects](../components/core/networkobject.md#finding-playerobjects).
+> When you drop the prefab into the **PlayerPrefab** slot, you're telling the library that when a client connects to the game, it automatically spawns this prefab as the character for the connecting client. Netcode for GameObjects won't spawn a player object if you don't have any prefab set as the **PlayerPrefab**. Refer to [Player Objects](../components/core/playerobjects.md#finding-playerobjects).
 
 
 This section guides you through creating an object that spawns for each connected player.
@@ -111,7 +111,7 @@ Netcode for GameObjects comes with an integrated scene management solution that 
 
 Now that you have a **NetworkManager**, assigned a **PlayerPrefab**, and added your current scene to the scenes in build test, you can quickly verify everything is functioning/configured correctly via entering play mode in the Unity Editor. By starting a host, you are starting NetworkManager as both a server and a client at the same time.
 
-You can test your Hello World project using the Unity Editor or a command-line helper. If you choose the latter, refer to [Create a command line helper](../tutorials/command-line-helper/). Otherwise, refer to the following instructions to test using the Unity Editor. Only the Plane appears on the server until the first client connects. Then, Netcode for GameObjects spawns a new Player prefab for each connected client; however, they overlap in the Game view.
+You can test your Hello World project using the Unity Editor or a command-line helper. If you choose the latter, refer to [Create a command line helper](command-line-helper.md). Otherwise, refer to the following instructions to test using the Unity Editor. Only the Plane appears on the server until the first client connects. Then, Netcode for GameObjects spawns a new Player prefab for each connected client; however, they overlap in the Game view.
 
 1. Select **Play** from the top of the Unity Editor to start the scene.
 
@@ -119,7 +119,7 @@ You can test your Hello World project using the Unity Editor or a command-line h
 
 2. Select **NetworkManager** from the **Hierarchy** list.
 
-![](\img\get-started-ngo\ngo-2.png)
+![](../images/get-started-ngo/ngo-2.png)
 
 3. With **NetworkManager** selected (in the Hierarchy tab), select **Start Host** from the **Inspector** tab. Alternatively, you can use the in-game GUI buttons.
 
@@ -239,7 +239,7 @@ The `HelloWorldManager.cs` script accomplishes this menu within the `StartButton
 
 As seen in the earlier code snippet, the `HelloWorldManager.cs` script also uses the NetworkManager's instance via its singleton to grab properties like the `IsClient`, `IsServer`, and `IsLocalClient`. The `IsClient` and `IsServer` properties dictate the established connection state.
 
-The `HelloWorldManager.cs` script also introduces a new method called `SubmitNewPosition()` that the `HelloWorldPlayer` script uses to [create a simple RPC call](#add-simple-rpc-use).
+The `HelloWorldManager.cs` script also introduces a new method called `SubmitNewPosition()` that the `HelloWorldPlayer` script uses to [create a simple RPC call](#adding-rpcs-remote-procedure-calls).
 
 ## Adding RPCs (Remote Procedure Calls)
 

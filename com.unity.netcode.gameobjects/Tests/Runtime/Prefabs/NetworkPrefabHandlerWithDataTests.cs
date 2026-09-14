@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -24,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             // Creates a network object prefab and registers it to all clients.
-            m_Prefab = CreateNetworkObjectPrefab(k_TestPrefabObjectName).gameObject;
+            m_Prefab = CreateNetworkObjectPrefab(k_TestPrefabObjectName);
             var authority = GetAuthorityNetworkManager();
 
             m_ClientHandlers = new PrefabInstanceHandlerWithData[NumberOfClients];
@@ -67,8 +68,11 @@ namespace Unity.Netcode.RuntimeTests
             var data = new NetworkSerializableTest { Value = 42, Value2 = 2.71f };
             var spawned = SpawnPrefabWithData(data);
 
+            Debug.Log("Spawn");
             yield return WaitForConditionOrTimeOut(() => AllHandlersSynchronized(data));
             AssertOnTimeout("Not all handlers synchronized");
+            yield return WaitForSpawnedOnAllOrTimeOut(spawned);
+            AssertOnTimeout($"Not all clients spawned {spawned.name}!");
 
             // When running with Distributed Authority, test a late-joiner after an ownership change
             // The object owner will synchronize the late joining client, showing that the instantiationData will survive host migration.
@@ -88,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests
                 });
                 AssertOnTimeout($"Timed out while waiting for Client-{newOwner.LocalClientId} to own object");
             }
-
+            Debug.Log("Late client...");
             // Late join a client
             yield return CreateAndStartNewClient();
 
@@ -105,9 +109,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
         {
-            var instance = UnityEngine.Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
+            var authority = GetAuthorityNetworkManager();
+            var instance = Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
+
             GetAuthorityNetworkManager().PrefabHandler.SetInstantiationData(instance, data);
-            instance.Spawn();
+
+            SpawnObjectInstance(instance, authority);
             return instance;
         }
 
@@ -129,12 +136,12 @@ namespace Unity.Netcode.RuntimeTests
             public override NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
                 InstantiationData = data;
-                return UnityEngine.Object.Instantiate(m_Prefab, position, rotation).GetComponent<NetworkObject>();
+                return Object.Instantiate(m_Prefab, position, rotation).GetComponent<NetworkObject>();
             }
 
             public override void Destroy(NetworkObject networkObject)
             {
-                UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
+                Object.DestroyImmediate(networkObject.gameObject);
             }
         }
 
@@ -150,7 +157,9 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             public bool IsSynchronizedWith(NetworkSerializableTest other)
-                => Value == other.Value && Math.Abs(Value2 - other.Value2) < 0.0001f;
+            {
+                return Value == other.Value && Math.Abs(Value2 - other.Value2) < 0.0001f;
+            }
         }
     }
 }

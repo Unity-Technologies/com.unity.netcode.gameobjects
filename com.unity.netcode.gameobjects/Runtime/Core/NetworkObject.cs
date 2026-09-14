@@ -350,9 +350,30 @@ namespace Unity.Netcode
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
+
+                // Set our disabled in-scene placed flag for spawning initially disabled in-scene placed objects.
+                m_InScenePlacedDisabledByDefault = !gameObject.activeInHierarchy;
             }
         }
 #endif // UNITY_EDITOR
+
+        /// <summary>
+        /// This is intentionally private since this is a sealed class.
+        /// </summary>
+        private void Awake()
+        {
+            SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
+        }
+
+        /// <summary>
+        /// Used to provide support for initially disabled in-scene placed objects.
+        /// This is only ever set on in-scene placed objects that are already disabled
+        /// in the scene asset itself.
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
+        private bool m_InScenePlacedDisabledByDefault;
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -1259,6 +1280,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// This provides a means to determine if the post processing had applied
+        /// the in-scene placed status or if it was already serialized. This is used
+        /// when determining if the thing being spawned is a valid thing to spawn.
+        /// </summary>
+        internal bool InScenePlacedPostProcessorMarkedDuringRuntime;
+
+        /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
         /// </summary>
         /// <remarks>Only use this when using custom scene loading</remarks>
@@ -1877,6 +1905,13 @@ namespace Unity.Netcode
                 }
             }
 
+            // Trap for runtime generated instances as this is not valid
+            if (GlobalObjectIdHash == 0)
+            {
+                NetworkManager.Log.ErrorServer(new Context(LogLevel.Error, $"Detected {nameof(NetworkObject)} {nameof(GlobalObjectIdHash)} value of 0!" +
+                    $"This is typically a sign of runtime generated network prefab assets which are not supported.").AddNetworkObject(this));
+                return;
+            }
 
             // Calculate the legacy IsSceneObject value as the public field is obsolete with warning
             // We can't break the public behavior of the field.
@@ -1884,13 +1919,15 @@ namespace Unity.Netcode
             var legacyIsSceneObject = IsSceneObject.HasValue && IsSceneObject.Value;
 #pragma warning restore CS0618 // Type or member is obsolete
 
-            // If SpawnInternal is being called on an object that is marked as InScenePlaced,
-            // The scene object was never automatically spawned when the scene was loaded.
-            // Count this object as a dynamically spawned object.
-            // TODO-[MTT-15388]: Actually support disabled/not spawned InScenePlaced NetworkObjects
-            if (InScenePlaced && !HasBeenSpawned)
+            // If the initial state of the GameObject was disabled and InScenePlaced is marked,
+            // then spawn it as in-scene placed.
+            // Otherwise:
+            // If we are marked as in-scene place, have never been spawned, and the root GameObject
+            // was not disabled upon being instantiated, then treat this as a dynamically spawned
+            // instance.
+            if (InScenePlaced && !m_InScenePlacedDisabledByDefault && !HasBeenSpawned)
             {
-                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                if (NetworkManagerOwner.NetworkConfig.EnableSceneManagement && NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
                     Debug.LogWarning($"[{name}][SceneOrigin={SceneOriginHandle}] Dynamically spawning InScenePlaced network object. This can cause issues!", this);
                 }
@@ -2971,17 +3008,31 @@ namespace Unity.Netcode
                 childBehaviour.MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
 
+            // If the spawn authority of a distributed authority network topology has invoked a change in ownership,
+            // then we want to invoke the NetworkBehaviourUpdate prior to changing the owner back.
+            if (NetworkManager.DistributedAuthorityMode)
+            {
+                // Force send a state update for all owner read NetworkVariables  and any currently dirty
+                // owner write NetworkVariables.
+                NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            }
+
             // Now set the new owner and previous owner identifiers back to their original new values
-            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
-            // operations is **particularly important** as we need to first (above) mark things as dirty
-            // from the context of the original owner and then second (below) we need to send the messages
-            // which requires the new owner to be set for owner read permission NetworkVariables.
+            // after we run the NetworkBehaviourUpdate.
             OwnerClientId = currentOwnerId;
             PreviousOwnerId = originalOwnerId;
 
-            // Force send a state update for all owner read NetworkVariables  and any currently dirty
-            // owner write NetworkVariables.
-            NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            // For owner read only permissions this order of operations is **particularly important** as
+            // we need to first (above) mark things as dirty from the context of the original owner and
+            // then second (below) we need to send the messages which requires the new owner to be set.
+            // Note: Owner read only NetworkVariables do not make sense in a distributed authority topology
+            // since the only instance that can write is the owner.
+            if (!NetworkManager.DistributedAuthorityMode)
+            {
+                // Force send a state update for all owner read NetworkVariables and any currently dirty
+                // owner write NetworkVariables.
+                NetworkManagerOwner.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            }
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
@@ -3701,11 +3752,7 @@ namespace Unity.Netcode
             }
         }
 
-        private void Awake()
-        {
-            SetCachedParent(transform.parent);
-            SceneOrigin = gameObject.scene;
-        }
+
 
         /// <summary>
         /// Update

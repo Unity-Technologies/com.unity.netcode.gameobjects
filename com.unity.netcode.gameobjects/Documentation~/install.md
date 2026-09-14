@@ -7,7 +7,7 @@ Follow the instructions on this page to set up Netcode for GameObjects in your U
 Before you begin, you need the following:
 
 - An active Unity account with a valid license.
-- A supported version of Unity. Check [Netcode for GameObjects' requirements](#netcode-installation-requirements) for the specific version details.
+- A supported version of Unity. Check [Netcode for GameObjects' requirements](#compatibility) for the specific version details.
 - An existing Unity project. If you're new to Unity, you can refer to the [get started](./tutorials/get-started-with-ngo.md) section for guidance.
 
 ### Compatibility

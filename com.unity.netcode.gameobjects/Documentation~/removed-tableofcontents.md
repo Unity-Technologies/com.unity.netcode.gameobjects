@@ -10,7 +10,7 @@
     * [Bitesize introduction](samples/bitesize/bitesize-introduction.md)
     * [Bitesize space shooter](samples/bitesize/bitesize-spaceshooter.md)
     * [Bitesize client driven](samples/bitesize/bitesize-clientdriven.md)
-    * [Bitesize dynamic prefabs](samples/bitesize/bitesize-dynamicPrefabs.md)
+    * [Bitesize dynamic prefabs](samples/bitesize/bitesize-dynamicprefabs.md)
     * [Bitesize social hub](samples/bitesize/bitesize-socialhub.md)
 
 -->

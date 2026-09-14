@@ -183,6 +183,6 @@ For games with short play sessions casting the time to float is safe or `TimeAsF
 > [!NOTE]
 > The properties of the `NetworkTimeSystem` should be left untouched on the server/host. Changing the values on the client is sufficient to change the behavior of the time system.
 
-The way network time gets calculated can be configured in the `NetworkTimeSystem` if needed. Refer to the [API docs](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkTimeSystem.html) for information about the properties which can be modified. All properties can be safely adjusted at runtime. For instance, buffer values can be increased for a player with a bad connection.
+The way network time gets calculated can be configured in the `NetworkTimeSystem` if needed. Refer to the [API docs](xref:Unity.Netcode.NetworkTimeSystem) for information about the properties which can be modified. All properties can be safely adjusted at runtime. For instance, buffer values can be increased for a player with a bad connection.
 
 <!-- On page code -->

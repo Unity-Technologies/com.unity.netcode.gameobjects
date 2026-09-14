@@ -6,7 +6,7 @@ The following diagrams provide insight into the Network Update Loop process and 
 
 <div class="imgwhite">
 
-![Injecting NetworkUpdateLoop Systems Into PlayerLoop](../images/injecting-networkupdatesloop.svg)
+![Injecting NetworkUpdateLoop Systems Into PlayerLoop](../../images/injecting-networkupdatesloop.svg)
 
 </div>
 
@@ -14,6 +14,6 @@ The following diagrams provide insight into the Network Update Loop process and 
 
 <div class="imgwhite">
 
-![NetworkUpdateLoop Running INetworkUpdateSystem Updates](../images/runninginetworkupdatesystemupdates.svg)
+![NetworkUpdateLoop Running INetworkUpdateSystem Updates](../../images/runninginetworkupdatesystemupdates.svg)
 
 </div>

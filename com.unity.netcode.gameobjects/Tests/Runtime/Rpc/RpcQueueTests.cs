@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -13,62 +11,47 @@ namespace Unity.Netcode.RuntimeTests
     ///     - That all RPCs invoke at the appropriate `NetworkUpdateStage` (Client and Server)
     ///     - A lower level `MessageQueueContainer` test that validates `MessageQueueFrameItems` after they have been put into the queue
     /// </summary>
-    internal class RpcQueueTests
+    internal class RpcQueueTests : NetcodeIntegrationTest
     {
-        [OneTimeSetUp]
-        public void OneTimeSetup()
+        protected override int NumberOfClients => 0;
+
+        private GameObject m_TestPrefab;
+
+        protected override void OnOneTimeSetup()
         {
             // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
             NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+            base.OnOneTimeSetup();
         }
 
-        [SetUp]
-        public void Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            // Create, instantiate, and host
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+            m_TestPrefab = CreateNetworkObjectPrefab("RpcQueueTest");
+            m_TestPrefab.AddComponent<BufferDataValidationComponent>();
+            base.OnServerAndClientsCreated();
         }
 
         /// <summary>
         /// This tests the RPC Queue outbound and inbound buffer capabilities.
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest, Order(2)]
+        [UnityTest]
         public IEnumerator BufferDataValidation()
         {
-            Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
+            var authority = GetAuthorityNetworkManager();
+            var instance = SpawnObject(m_TestPrefab, authority);
 
-            var growingRpcBufferSizeComponent = NetworkManagerHelper.AddComponentToObject<BufferDataValidationComponent>(gameObjectId);
+            yield return WaitForSpawnedOnAllOrTimeOut(instance);
+            AssertOnTimeout($"Not all clients spawned {instance.name}!");
 
-            NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
+            var bufferDataValidationComponent = instance.GetComponent<BufferDataValidationComponent>();
 
             // Start Testing
-            growingRpcBufferSizeComponent.EnableTesting = true;
+            bufferDataValidationComponent.EnableTesting = true;
 
-            var testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
+            yield return WaitForConditionOrTimeOut(() => bufferDataValidationComponent.IsTestComplete());
+            AssertOnTimeout($"Timed out waiting for the {nameof(BufferDataValidationComponent)} tests to complete!");
 
-            // Wait for the RPC pipeline test to complete or if we exceeded the maximum iterations bail
-            while (!testsAreComplete)
-            {
-                yield return new WaitForSeconds(0.003f);
-
-                testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
-            }
-
-            // Stop Testing
-            growingRpcBufferSizeComponent.EnableTesting = false;
-
-            // Just disable this once we are done.
-            growingRpcBufferSizeComponent.gameObject.SetActive(false);
-
-            Assert.IsTrue(testsAreComplete);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            // Stop, shutdown, and destroy
-            NetworkManagerHelper.ShutdownNetworkManager();
         }
     }
 }

@@ -1,7 +1,7 @@
 # NetworkObject and NetworkBehaviour serialization
 
 > [!NOTE]
-> Read the [Serialization overview](./serialization/serialization-overview.md) page to understand the basics of serialization before learning how to serialize `NetworkObjects` and `NetworkBehaviours`.
+> Read the [Serialization overview](./serialization-overview.md) page to understand the basics of serialization before learning how to serialize `NetworkObjects` and `NetworkBehaviours`.
 
 `GameObject`, [`NetworkObject`](../../components/core/networkobject.md) and [`NetworkBehaviour`](../../components/core/networkbehaviour.md) aren't serializable types so they can't be used in [`RPC`s](../message-system/rpc.md) or [`NetworkVariable`s](../../basics/networkvariable.md) by default.
 

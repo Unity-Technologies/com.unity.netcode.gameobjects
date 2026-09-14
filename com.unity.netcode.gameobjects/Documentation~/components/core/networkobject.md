@@ -7,7 +7,7 @@ Netcode for GameObjects' high level components, [the RPC system](../../advanced-
   1. NetworkObject
   2. [NetworkBehaviour](networkbehaviour.md)
 
-NetworkObjects require the use of specialized [`NetworkObjectReference`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObjectReference.html) structures before you can serialize and use them with RPCs and `NetworkVariable`s
+NetworkObjects require the use of specialized [`NetworkObjectReference`](xref:Unity.Netcode.NetworkObjectReference) structures before you can serialize and use them with RPCs and `NetworkVariable`s
 
 Netcode for GameObjects also has [PlayerObjects](playerobjects.md), an optional feature that you can use to assign a NetworkObject to a specific client.
 
@@ -18,6 +18,32 @@ To replicate any Netcode-aware properties or send/receive RPCs, a GameObject mus
 When spawning a NetworkObject, the `NetworkObject.GlobalObjectIdHash` value initially identifies the associated network prefab asset that clients instantiate to create a client-local clone. After instantiated locally, each NetworkObject is assigned a NetworkObjectId that's used to associate NetworkObjects across the network. For example, one peer can say "Send this RPC to the object with the NetworkObjectId 103," and everyone knows what object it's referring to. A NetworkObject is spawned on a client when it's instantiated and assigned a unique NetworkObjectId.
 
 You can use [NetworkBehaviours](networkbehaviour.md) to add your own custom Netcode logic to the associated NetworkObject.
+
+### What is a valid NetworkObject?
+
+There are two categories of NetworkObjects:
+* Dynamically instantiated
+* [In-scene placed](../../basics/scenemanagement/inscene-placed-networkobjects.md)
+
+The following provides the validity requirements for both types.
+
+#### Dynamically instantiated network prefabs
+
+Dynamically instantiated network prefabs must:
+
+* Be a valid [network prefab](./networkobject.md#network-prefabs) created within the Editor.
+* Be registered in a network prefab list that's assigned to your NetworkManager.
+
+#### In-scene placed network prefabs
+
+In-scene placed network prefabs must:
+
+* Be a valid network prefab instance within a scene.
+* Be a GameObject with a NetworkObject component created within the scene while in the Editor.
+
+### What is an invalid NetworkObject?
+
+GameObjects that have NetworkObject components added to them during runtime are **not supported** and will result in the NetworkObject's `GlobalObjectIdHash` being zero, which causes synchronization issues. In the event you make this mistake, a warning message will be logged and the NetworkObject won't be spawned.
 
 ### Component order
 
@@ -65,7 +91,7 @@ Refer to the [NetworkSceneManager active scene synchronization](../../basics/sce
 
 ![image](../../images/SceneMigrationSynchronization.png)
 
-Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
+Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](xref:Unity.Netcode.NetworkObject.SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
 
 `NetworkObject.ActiveSceneSynchronization` can be used with `NetworkObject.SceneMigrationSynchronization` as long as you take into consideration that if you migrate a NetworkObject into a non-active scene via `SceneManager.MoveGameObjectToScene` and later change the active scene, then the NetworkObject instance will be automatically migrated to the newly set active scene.
 

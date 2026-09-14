@@ -847,7 +847,7 @@ namespace Unity.Netcode
                 for (int i = 0; i < SceneManager.sceneCount; i++)
                 {
                     var loadedScene = SceneManager.GetSceneAt(i);
-                    ScenesLoaded.Add(loadedScene.handle, loadedScene);
+                    UpdateServerClientSceneHandle(loadedScene.handle, loadedScene.handle, loadedScene);
                 }
                 SceneManagerHandler.PopulateLoadedScenes(ref ScenesLoaded, NetworkManager);
             }

@@ -34,7 +34,7 @@ Since PhysX has no concept of local space, it can be difficult to synchronize tw
 
 ## Using AttachableBehaviour or Joint
 
-The implementation of physics in a networked project differs from a single player project. This is especially true when you're using NetworkTransform and NetworkRigidbody components with [`NetworkRigidbody.UseRigidBodyForMotion`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkRigidbodyBase.html#Unity_Netcode_Components_NetworkRigidbodyBase_UseRigidBodyForMotion) enabled. Deciding whether to use a Joint or an AttachableBehaviour component depends on your project's requirements.
+The implementation of physics in a networked project differs from a single player project. This is especially true when you're using NetworkTransform and NetworkRigidbody components with [`NetworkRigidbody.UseRigidBodyForMotion`](xref:Unity.Netcode.Components.NetworkRigidbodyBase.UseRigidBodyForMotion) enabled. Deciding whether to use a Joint or an AttachableBehaviour component depends on your project's requirements.
 
 For example, if you want to create world items that players can pick up, you may have the following requirements:
 

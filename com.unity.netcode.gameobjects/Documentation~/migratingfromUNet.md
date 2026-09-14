@@ -115,7 +115,7 @@ public class MyNetcodeExample : NetworkBehaviour
 }
 ```
 
-Refer to [NetworkBehaviour](basics/networkbehaviour.md) for more information.
+Refer to [NetworkBehaviour](components/core/networkbehaviour.md) for more information.
 
 ## Replace SyncVar
 
@@ -343,7 +343,7 @@ Refer to [Object Spawning](basics/object-spawning.md) for more information.
 
 ## Custom Spawn Handlers
 
-Netcode has `Custom Spawn Handlers` to replace UNet's `Custom Spawn Functions`. See [Object Pooling](../advanced-topics/object-pooling) for more information.
+Netcode has `Custom Spawn Handlers` to replace UNet's `Custom Spawn Functions`. See [Object Pooling](advanced-topics/object-pooling.md) for more information.
 
 ## Replace `NetworkContextProperties`
 

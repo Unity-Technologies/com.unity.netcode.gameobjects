@@ -51,7 +51,7 @@ namespace Unity.Netcode
         /// </summary>
         NotMe,
         /// <summary>
-        /// Send this RPC to everone, filtered to the current observer list.
+        /// Send this RPC to everyone, filtered to the current observer list.
         /// Will execute locally.
         /// </summary>
         Everyone,
@@ -220,7 +220,7 @@ namespace Unity.Netcode
         public BaseRpcTarget NotMe;
 
         /// <summary>
-        /// Send this RPC to everone, filtered to the current observer list.
+        /// Send this RPC to everyone, filtered to the current observer list.
         /// Will execute locally.
         /// </summary>
         public BaseRpcTarget Everyone;

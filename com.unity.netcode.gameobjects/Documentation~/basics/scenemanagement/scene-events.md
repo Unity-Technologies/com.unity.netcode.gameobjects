@@ -240,7 +240,7 @@ So, the big "take-away" from the above table is that you need to understand the 
 
 ### SceneEventType Specific Notifications
 There might be a time where you aren't interested in all of the details for each scene event type that occurs.  As it just so happens, `NetworkSceneManager` includes a single delegate handler for each `SceneEventType` that is only triggered for the associated `SceneEventType`.
-You can explore the [NetworkSceneManager](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.SceneEventType.html) for a full listing of the corresponding single `SceneEventType` events.
+You can explore the [NetworkSceneManager](xref:Unity.Netcode.SceneEventType) for a full listing of the corresponding single `SceneEventType` events.
 Some examples:
 - NetworkSceneManager.OnLoad:  Triggered when for `OnLoad` scene events.
 - NetworkSceneManager.OnUnload:  Triggered when for `OnUnload` scene events.

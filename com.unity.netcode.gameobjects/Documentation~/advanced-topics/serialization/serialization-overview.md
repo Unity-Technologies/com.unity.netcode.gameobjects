@@ -10,7 +10,7 @@ When Netcode for GameObjects first receives a type, it checks for any custom typ
 
 By default, any type that satisfies the unmanaged generic constraint can be automatically serialized as RPC parameters. This includes all basic types (bool, byte, int, float, enum, for example), as well as any structs that contain only these basic types.
 
-Serialization and deserialization is done via the structs [`FastBufferWriter` and `FastBufferReader`](fastbufferwriter-fastbufferreader.md). These have methods for serializing individual types and methods for serializing packed numbers, but in particular provide a high-performance method called `WriteValue()/ReadValue()` (for Writers and Readers, respectively) that can extremely quickly write an entire unmanaged struct to a buffer.
+Serialization and deserialization is done via the structs [`FastBufferWriter` and `FastBufferReader`](../fastbufferwriter-fastbufferreader.md). These have methods for serializing individual types and methods for serializing packed numbers, but in particular provide a high-performance method called `WriteValue()/ReadValue()` (for Writers and Readers, respectively) that can extremely quickly write an entire unmanaged struct to a buffer.
 
 `FastBufferWriter` and `FastBufferReader` also contain the functions `FastBufferWriter.WriteNetworkSerializable()` and `FastBufferReader.ReadNetworkSerializable` for writing and reading values that use the `INetworkSerializable` interface.
 

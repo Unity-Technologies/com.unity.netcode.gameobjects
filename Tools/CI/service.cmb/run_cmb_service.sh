@@ -17,7 +17,7 @@
   # Example usage:
     # ./<path-to-script>/run_cmb_service.sh -e 7788 -s 7799
 
-  # This script is currently used in the desktop-standalone-tests yamato job.
+  # This script is currently used in the cmb-service-standalone-tests yamato job (found at ../../../.yamato/cmb-service-standalone-tests.yml).
 
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This is a bash script and so needs to be run on a Unix based system.
@@ -136,11 +136,14 @@ else
 logMessage "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
 fi
 
-# clone the cmb service repo
-git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+# Sparse-checkout only the CMB service directory from the unity-player-services monorepo.
+# --filter=blob:none + --depth 1 avoids downloading file contents and history for the rest of the monorepo.
+git clone --depth 1 --filter=blob:none --sparse https://github.com/Unity-Technologies/unity-player-services.git
+cd ./unity-player-services
+git sparse-checkout set services/common-multiplayer-backend/runtime
 
 # navigate to the cmb service directory
-cd ./mps-common-multiplayer-backend/runtime
+cd ./services/common-multiplayer-backend/runtime
 
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
