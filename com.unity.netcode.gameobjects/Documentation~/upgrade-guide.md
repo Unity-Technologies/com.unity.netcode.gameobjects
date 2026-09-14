@@ -16,19 +16,20 @@ Before you upgrade, make sure that your project meets the following requirements
 
 Version 3.x depends on the Netcode for Entities package (`com.unity.netcode`), which in turn depends on the Entities packages (`com.unity.entities`, `com.unity.collections`, `com.unity.burst`, and `com.unity.mathematics`). Installing version 3.x adds these packages to your project. As a result, your project contains more packages, and its build times increase.
 
-## Upgrade your project to version 3.x
+## Upgrade your project to Unity 6000.7 or higher
 
 To upgrade an existing project from version 2.x to version 3.x, follow these steps:
 
 1. Back up your project, or commit your work to source control.
-1. Upgrade your project to Unity Editor version 6.7 or later.
-1. From the Unity Editor, select **Window** > **Package Manager**.
-1. From the **Package Manager** window, select **Netcode for GameObjects** in the list of packages.
-1. Select version 3.x, then select **Update**.
-1. Wait for the API updater to finish, then open the **Console** window to review the remaining compile errors.
-1. Resolve the remaining compile errors using the sections that follow.
-
+2. Open your project with the Unity Editor version 6.7 or later.
+3. Your project's manifest will be updated with NGO v3.x.x prior to the API updater running.
+4. The API updater should catch any issues and ask if you want to allow it to make changes to your script(s).
+5. If you allow the API updater to make changes for you, then it should auto-update your project's scripts with the correct namespace changes.
+6. If you do not allow the API updater to make changes for you, then the editor will enter safe mode. Open the **Console** window to review the remaining compile errors and resolve the errors. (_[Review the Update Editor assembly definition references section below.](#update-editor-assembly-definition-references)_).
+   
 After the API updater finishes and you resolve the compile errors, your project compiles against version 3.x. If the API updater doesn't resolve every reference, refer to [Continue an incomplete API update](#continue-an-incomplete-api-update).
+
+_** If, at any point, you decide to downgrade to the editor version you were using prior to updating to 6.7, then make sure to restore or delete the packages-lock.json file (_assures you are not referencing 6.7 specific packages_), restore your backed up version, and delete your Library folder prior to opening your project with the editor version you were using prior to upgrading to 6.7._
 
 ### Continue an incomplete API update
 
