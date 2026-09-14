@@ -29,7 +29,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Obsolete
 
 
-## [2.13.4] - 2026-09-14
+## [2.13.3] - 2026-09-14
 
 ### Changed
 
