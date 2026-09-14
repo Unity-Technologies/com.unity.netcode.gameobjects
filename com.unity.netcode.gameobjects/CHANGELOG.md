@@ -10,11 +10,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+### Obsolete
+
+## [3.0.0] - 2026-09-14
+
+### Added
+
 - Netcode for Entities (`com.unity.netcode` 7.0.0) is now a hard dependency, so installing Netcode for GameObjects also brings it, and its own dependencies (Entities, Burst, Collections), into the project.
 
 ### Changed
-
-- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4129)
 
 - All editor assembly definitions are renamed with `Unity.Netcode.GameObjects.x` variants
   - `Unity.Netcode.Editor` → `Unity.Netcode.GameObjects.Editor`
@@ -30,24 +44,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Several APIs that were already marked `[Obsolete]` with a warning now raise a compile error instead (they are not removed yet).
 
-### Removed
+## [2.13.3] - 2026-09-14
+
+### Changed
+
+- Changed `NetworkTransform.UseHalfFloatPrecision` to synchronize position with a resolution of approximately 1mm regardless of how far an object has travelled. Previously the resolution could degrade to approximately 3cm. This does not increase bandwidth, but projects using `NetworkTransform.UseUnreliableDeltas` will send full precision position updates more often. (#4128)
 
 ### Fixed
 
-- Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4146)
-- Issue where `NetworkTransform` interpolated towards a point in time taken from the local clock rather than the server clock that state updates are stamped on, which starved the interpolator on clients and reduced interpolation to snapping between state updates. (#4135)
-- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned an absolute network timestamp that grew for as long as the session ran, rather than the tick latency as a duration in seconds that it is documented to return. (#4135)
-- Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#4132)
-- Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#4132)
-- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4129)
-- Issue with not being able to spawn initially disabled in-scene placed objects. (#4093)
-- Issue with pre-instantiated network prefab instances being marked as in-scene placed. Now pre-instantiated network prefabs are dynamically spawned. (#4093)
-- Issue where a user could spawn runtime created `NetworkObject` that has a GlobalObjectIdHash of zero. These are not valid instances and will no longer be allowed to spawn. (#4093)
-
-### Security
-
-### Obsolete
-
+- Fixed issue where scenes additively loaded before a session started were tracked as loaded on the server but had no scene handle entries, which caused `NetworkSceneManager.UnloadScene` to log an error and leave the scene registered as loaded even though it unloaded on all peers. (#4145)
+- Issue where `NetworkTransform` interpolated towards a point in time taken from the local clock rather than the server clock that state updates are stamped on, which starved the interpolator on clients and reduced interpolation to snapping between state updates. (#4133)
+- Issue where `NetworkTransform.GetTickLatencyInSeconds` returned an absolute network timestamp that grew for as long as the session ran, rather than the tick latency as a duration in seconds that it is documented to return. (#4133)
+- Issue where lerp smoothing was applied per frame instead of over time, which caused the `Lerp` and `SmoothDampening` interpolation types to smooth by different amounts at different frame rates. Results at 60fps are unchanged. (#4130)
+- Issue where setting a maximum interpolation time of 1.0 would stop a `NetworkTransform` from interpolating at all when using the `Lerp` or `SmoothDampening` interpolation types. (#4130)
+- Issue where objects using `NetworkTransform.UseHalfFloatPrecision` appeared to jitter on non-authority instances while they were stationary or coming to rest, even though the authority was not moving them. (#4128)
 
 ## [2.13.2] - 2026-08-16
 
