@@ -23,7 +23,7 @@ namespace Unity.Netcode
     {
         /// <summary>
         /// The <see cref="UnityEngine.AsyncOperation"/> returned by <see cref="SceneManager"/><br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.Load"/></term></item>
         /// <item><term><see cref="SceneEventType.Unload"/></term></item>
@@ -32,13 +32,13 @@ namespace Unity.Netcode
         public AsyncOperation AsyncOperation;
 
         /// <summary>
-        /// Will always be set to the current <see cref="Netcode.SceneEventType"/>
+        /// Will always be set to the current <see cref="SceneEventType"/>
         /// </summary>
         public SceneEventType SceneEventType;
 
         /// <summary>
         /// If applicable, this reflects the type of scene loading or unloading that is occurring.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.Load"/></term></item>
         /// <item><term><see cref="SceneEventType.Unload"/></term></item>
@@ -52,7 +52,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// This will be set to the scene name that the event pertains to.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.Load"/></term></item>
         /// <item><term><see cref="SceneEventType.Unload"/></term></item>
@@ -66,7 +66,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// This will be set to the path to the scene that the event pertains to.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.Load"/></term></item>
         /// <item><term><see cref="SceneEventType.Unload"/></term></item>
@@ -80,7 +80,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// When a scene is loaded, the Scene structure is returned.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.LoadComplete"/></term></item>
         /// </list>
@@ -90,7 +90,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The client identifier can vary depending upon the following conditions: <br />
         /// <list type="number">
-        /// <item><term><see cref="Netcode.SceneEventType"/>s that always set the <see cref="ClientId"/>
+        /// <item><term><see cref="SceneEventType"/>s that always set the <see cref="ClientId"/>
         /// to the local client identifier, are initiated (and processed locally) by the
         /// server-host, and sent to all clients to be processed.<br />
         /// <list type="bullet">
@@ -122,7 +122,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// List of clients that completed a loading or unloading event.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
         /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
@@ -132,7 +132,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// List of clients that timed out during a loading or unloading event.<br />
-        /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
+        /// This is set for the following <see cref="SceneEventType"/>s:
         /// <list type="bullet">
         /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
         /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
@@ -824,7 +824,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="networkManager">one <see cref="Netcode.NetworkManager"/> instance per <see cref="NetworkSceneManager"/> instance</param>
+        /// <param name="networkManager">one <see cref="NetworkManager"/> instance per <see cref="NetworkSceneManager"/> instance</param>
         /// <param name="sceneEventDataPoolSize">maximum <see cref="SceneEventData"/> pool size</param>
         internal NetworkSceneManager(NetworkManager networkManager)
         {
@@ -2693,7 +2693,7 @@ namespace Unity.Netcode
             }
             else
             {
-                Debug.LogError($"{nameof(HandleSceneEvent)} was invoked but {nameof(Netcode.NetworkManager)} reference was null!");
+                Debug.LogError($"{nameof(HandleSceneEvent)} was invoked but {nameof(NetworkManager)} reference was null!");
             }
         }
 

@@ -179,13 +179,13 @@ validation_editors:
     default:
         - 6000.7
     all:
-        - 6000.7.0a6
+        - 6000.7.0b1
         - 6000.7
         - trunk
-        - 1d47644d0e359a8139ae6f99217da3c4e47f4779
+        - dfdad7ed5522da345003b66ed78dc5e725357037
     minimal:
-        - 6000.7.0a6
-pinnedTrunk:  1d47644d0e359a8139ae6f99217da3c4e47f4779
+        - 6000.7.0b1
+pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------

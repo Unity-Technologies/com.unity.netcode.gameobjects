@@ -22,6 +22,11 @@
     "defineConstraints": [],
     "versionDefines": [
         {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
+        {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
@@ -45,11 +50,6 @@
             "name": "com.unity.services.multiplayer",
             "expression": "0.2.0",
             "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
-        },
-        {
-            "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
         },
         {
             "name": "com.unity.multiplayer.playmode",

@@ -4,11 +4,17 @@ using System.Linq;
 using Unity.Collections;
 #if UNIFIED_NETCODE
 using Unity.Entities;
-// Netcode for Entities' namespace differs from this one only by the casing of a single letter, so a
-// blanket import of it competes with Unity.Netcode on every name the two happen to share. Importing
-// only the types used here keeps that surface to exactly those names.
-using NetCodeConfig = Unity.NetCode.NetCodeConfig;
+// N4E's own Netcode class cannot be aliased as "Netcode": inside namespace Unity.Netcode that name
+// resolves to the enclosing Unity.Netcode namespace before any file-scope alias is considered, so it gets
+// its own name here. 6.7.0 additionally keeps the config and world types under the older Unity.NetCode
+// casing, aliased to the 7.0.0 spellings so the use sites below read the same either way.
+#if UNIFIED_NETCODE_7_0_0
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#else
+using EntitiesNetcode = Unity.NetCode.Netcode;
+using NetcodeConfig = Unity.NetCode.NetCodeConfig;
 using NetcodeWorld = Unity.NetCode.NetcodeWorld;
+#endif
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Timing;
@@ -1375,13 +1381,13 @@ namespace Unity.Netcode
 
             if (this == Singleton)
             {
-                if (NetCode.Netcode.IsActive)
+                if (EntitiesNetcode.IsActive)
                 {
                     Log.Info(new Context(LogLevel.Normal, "Netcode is not active but has an instance at this point."));
                 }
                 /// !! Important !!
                 /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
-                NetCode.Netcode.Reset();
+                EntitiesNetcode.Reset();
             }
 
             /// !! Initialize worlds here !!
@@ -1396,14 +1402,14 @@ namespace Unity.Netcode
         /// <returns>True if the configuration is correct; otherwise, false.</returns>
         private bool UnifiedIsConfiguredCorrectly()
         {
-            if (NetCodeConfig.Global == null)
+            if (NetcodeConfig.Global == null)
             {
-                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetcodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (NetCodeConfig.Global.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            if (NetcodeConfig.Global.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
             {
-                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetcodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
             return true;

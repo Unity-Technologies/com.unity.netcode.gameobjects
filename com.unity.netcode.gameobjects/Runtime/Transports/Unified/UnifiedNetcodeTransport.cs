@@ -6,7 +6,10 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+#if !UNIFIED_NETCODE_7_0_0
 using Unity.NetCode;
+using NetcodeConnectionEvent = Unity.NetCode.NetCodeConnectionEvent;
+#endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -273,7 +276,7 @@ namespace Unity.Netcode.Unified
             return NetworkEvent.Nothing;
         }
 
-        private void OnClientConnectedToServer(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnClientConnectedToServer(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
@@ -287,7 +290,7 @@ namespace Unity.Netcode.Unified
             updateSystem.EntityManager.AddBuffer<TransportRpcData>(connection.ConnectionEntity);
         }
 
-        private void OnServerNewClientConnection(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnServerNewClientConnection(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
@@ -365,7 +368,7 @@ namespace Unity.Netcode.Unified
             return DisconnectEvents.Disconnected;
         }
 
-        private void OnClientDisconnectFromServer(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnClientDisconnectFromServer(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             SetDisconnectEvent(
                 GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
@@ -374,12 +377,12 @@ namespace Unity.Netcode.Unified
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
-        private void OnServerClientDisconnected(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnServerClientDisconnected(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
-        private void OnClientConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnClientConnectionEvent(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)
             {
@@ -392,7 +395,7 @@ namespace Unity.Netcode.Unified
             }
         }
 
-        private void OnServerConnectionEvent(Connection connection, NetCodeConnectionEvent connectionEvent)
+        private void OnServerConnectionEvent(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             switch (connectionEvent.State)
             {

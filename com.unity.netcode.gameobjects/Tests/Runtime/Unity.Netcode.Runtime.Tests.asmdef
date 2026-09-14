@@ -31,6 +31,11 @@
     ],
     "versionDefines": [
         {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
+        {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
@@ -49,11 +54,6 @@
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
-        },
-        {
-            "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
         }
     ],
     "noEngineReferences": false
