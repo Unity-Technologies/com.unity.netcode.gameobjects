@@ -26,6 +26,9 @@
       "dependantsToIgnoreInPreviewApv": {
         "6000.7": [
           "com.unity.services.multiplayer"
+        ],
+        "7000.0": [
+          "com.unity.services.multiplayer"
         ]
       },
       "postPackCommands": []

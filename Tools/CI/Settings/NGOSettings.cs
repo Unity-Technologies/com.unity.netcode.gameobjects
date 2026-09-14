@@ -40,7 +40,8 @@ public class NGOSettings : AnnotatedSettingsBase
         // com.unity.services.multiplayer's Entities integration doesn't yet compile against the N4E 7.0.0 that NGO now depends on, so skip it in Preview APV until a compatible version ships.
         Wrench.Packages["com.unity.netcode.gameobjects"].DependantsToIgnoreInPreviewApv = new Dictionary<Editor, ISet<string>>
         {
-            [new EditorVersion("6000.7")] = new HashSet<string> { "com.unity.services.multiplayer" }
+            [new EditorVersion("6000.7")] = new HashSet<string> { "com.unity.services.multiplayer" },
+            [new EditorVersion("7000.0")] = new HashSet<string> { "com.unity.services.multiplayer" }
         };
     }
 
