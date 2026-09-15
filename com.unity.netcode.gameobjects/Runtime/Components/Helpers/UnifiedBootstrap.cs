@@ -75,7 +75,16 @@ namespace Unity.Netcode
                 LastCreatedWorld = CreateLocalWorld("LocalWorld");
             }
 
-            OnInitialized?.Invoke();
+            // Always wrap events that can invoke user script in a try-catch to assure any
+            // proceeding script is still executed.
+            try
+            {
+                OnInitialized?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             return true;
         }

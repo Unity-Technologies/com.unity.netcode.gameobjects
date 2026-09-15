@@ -711,7 +711,15 @@ namespace Unity.Netcode
             var clientSeverOrHost = LocalClient.IsServer ? LocalClient.IsHost ? "Host" : "Server" : "Client";
             var whenFailed = duringStart ? "start failure" : "failure";
             NetworkLog.LogError($"{clientSeverOrHost} is shutting down due to network transport {whenFailed} of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
-            OnTransportFailure?.Invoke();
+
+            try
+            {
+                OnTransportFailure?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             // If we had a transport failure when trying to start, reset the local client roles and directly invoke the internal shutdown.
             if (duringStart)
@@ -854,12 +862,25 @@ namespace Unity.Netcode
             // Note: ToArray() also allocates. :(
             var response = new NetworkManager.ConnectionApprovalResponse();
             ClientsToApprove[context.SenderId] = response;
-            ConnectionApprovalCallback?.Invoke(
-                new NetworkManager.ConnectionApprovalRequest
-                {
-                    Payload = connectionRequestMessage.ConnectionData,
-                    ClientNetworkId = context.SenderId
-                }, response);
+            try
+            {
+                ConnectionApprovalCallback?.Invoke(
+                    new NetworkManager.ConnectionApprovalRequest
+                    {
+                        Payload = connectionRequestMessage.ConnectionData,
+                        ClientNetworkId = context.SenderId
+                    }, response);
+            }
+            catch (Exception ex)
+            {
+                // A throwing approval handler would otherwise leave a Pending response stranded in
+                // ClientsToApprove, hanging the connecting client until it times out. Deny instead.
+                Debug.LogException(ex);
+                response.Approved = false;
+                response.Pending = false;
+                response.CreatePlayerObject = false;
+                response.Reason = "Connection approval handler threw an exception.";
+            }
         }
 
         /// <summary>
@@ -1748,13 +1769,22 @@ namespace Unity.Netcode
             {
                 //The Transport is set during initialization, thus it is possible for the Transport to be null
                 var transport = NetworkManager.NetworkConfig?.NetworkTransport;
-                if (transport != null)
+                if (transport == null)
+                {
+                    return;
+                }
+                // if the transport throws we need to ensure we finish the shutdown sequence.
+                try
                 {
                     transport.Shutdown();
-                    if (NetworkManager.LogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"{nameof(NetworkConnectionManager)}.{nameof(Shutdown)}() -> {nameof(IsListening)} && {nameof(NetworkManager.NetworkConfig.NetworkTransport)} != null -> {nameof(NetworkTransport)}.{nameof(NetworkTransport.Shutdown)}()");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"{nameof(NetworkConnectionManager)}.{nameof(Shutdown)}() -> {nameof(IsListening)} && {nameof(NetworkManager.NetworkConfig.NetworkTransport)} != null -> {nameof(NetworkTransport)}.{nameof(NetworkTransport.Shutdown)}()");
                 }
             }
         }
