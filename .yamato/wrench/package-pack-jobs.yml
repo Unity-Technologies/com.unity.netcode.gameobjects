@@ -10,7 +10,7 @@
 package_pack_-_netcode_gameobjects:
   name: Package Pack - netcode.gameobjects
   agent:
-    image: package-ci/ubuntu-22.04:v4
+    image: package-ci/win10:v4
     type: Unity::VM
     flavor: b1.large
   commands:
@@ -18,9 +18,9 @@ package_pack_-_netcode_gameobjects:
     timeout: 20
     retries: 10
   - command: upm-ci package pack --package-path com.unity.netcode.gameobjects
-  - command: cp upm-ci~/packages/packages.json upm-ci~/packages/com.unity.netcode.gameobjects_packages.json
+  - command: copy upm-ci~\packages\packages.json upm-ci~\packages\com.unity.netcode.gameobjects_packages.json
   after:
-  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     packages:
       paths:
