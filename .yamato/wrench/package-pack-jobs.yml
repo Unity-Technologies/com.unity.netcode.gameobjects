@@ -27,7 +27,8 @@ package_pack_-_netcode_gameobjects:
       - upm-ci~/packages/**/*
   variables:
     UPMCI_ACK_LARGE_PACKAGE: 1
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-15_84f461813aada1be64b3885e7b9464e7f92445674e81d708813ac0bdf2c90408.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 3.3.1.0
+    Wrench: 3.7.0.0
 
