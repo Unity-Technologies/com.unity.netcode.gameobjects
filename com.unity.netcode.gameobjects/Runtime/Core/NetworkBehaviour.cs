@@ -137,7 +137,14 @@ namespace Unity.Netcode
                     MessageSize = 0
                 };
                 serverRpcMessage.ReadBuffer = tempBuffer;
-                serverRpcMessage.Handle(ref context);
+                try
+                {
+                    serverRpcMessage.Handle(ref context);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
                 rpcWriteSize = tempBuffer.Length;
             }
             else
@@ -267,7 +274,14 @@ namespace Unity.Netcode
                     MessageSize = 0
                 };
                 clientRpcMessage.ReadBuffer = tempBuffer;
-                clientRpcMessage.Handle(ref context);
+                try
+                {
+                    clientRpcMessage.Handle(ref context);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
 
             bufferWriter.Dispose();
@@ -640,8 +654,16 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SetIsDestroying()
         {
-            // We intentionally invoke this before setting the IsDestroying flag.
-            OnIsDestroying();
+            try
+            {
+                // We intentionally invoke this before setting the IsDestroying flag.
+                OnIsDestroying();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            // Set outside of the try-catch: a throwing override must not leave this flag false.
             IsDestroying = true;
         }
 
@@ -931,7 +953,14 @@ namespace Unity.Netcode
             {
                 UpdateNetworkVariableOnOwnershipChanged();
             }
-            OnGainedOwnership();
+            try
+            {
+                OnGainedOwnership();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
@@ -948,7 +977,14 @@ namespace Unity.Netcode
 
         internal void InternalOnOwnershipChanged(ulong previous, ulong current)
         {
-            OnOwnershipChanged(previous, current);
+            try
+            {
+                OnOwnershipChanged(previous, current);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>

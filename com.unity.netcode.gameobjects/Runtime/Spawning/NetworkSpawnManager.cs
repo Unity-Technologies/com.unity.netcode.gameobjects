@@ -522,7 +522,7 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogErrorServer($"[{networkObject.name}][Session Owner Only] You cannot change ownership of a {nameof(NetworkObject)} that has the {NetworkObject.OwnershipStatus.SessionOwner} flag set!");
                     }
-                    networkObject.OnOwnershipPermissionsFailure?.Invoke(NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly);
+                    networkObject.InvokeOwnershipPermissionsFailure();
                     return;
                 }
 
@@ -535,7 +535,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Locked] You cannot change ownership while a {nameof(NetworkObject)} is locked!");
                         }
-                        networkObject.OnOwnershipPermissionsFailure?.Invoke(NetworkObject.OwnershipPermissionsFailureStatus.Locked);
+                        networkObject.InvokeOwnershipPermissionsFailure();
                         return;
                     }
                     if (networkObject.IsRequestInProgress)
@@ -544,7 +544,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Request Pending] You cannot change ownership while a {nameof(NetworkObject)} has a pending ownership request!");
                         }
-                        networkObject.OnOwnershipPermissionsFailure?.Invoke(NetworkObject.OwnershipPermissionsFailureStatus.RequestInProgress);
+                        networkObject.InvokeOwnershipPermissionsFailure();
                         return;
                     }
                     if (networkObject.IsOwnershipRequestRequired)
@@ -553,7 +553,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Request Required] You cannot change ownership directly if a {nameof(NetworkObject)} has the {NetworkObject.OwnershipStatus.RequestRequired} flag set!");
                         }
-                        networkObject.OnOwnershipPermissionsFailure?.Invoke(NetworkObject.OwnershipPermissionsFailureStatus.RequestRequired);
+                        networkObject.InvokeOwnershipPermissionsFailure();
                         return;
                     }
                     if (!networkObject.IsOwnershipTransferable)
@@ -562,7 +562,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Not transferrable] You cannot change ownership of a {nameof(NetworkObject)} that does not have the {NetworkObject.OwnershipStatus.Transferable} flag set!");
                         }
-                        networkObject.OnOwnershipPermissionsFailure?.Invoke(NetworkObject.OwnershipPermissionsFailureStatus.NotTransferrable);
+                        networkObject.InvokeOwnershipPermissionsFailure();
                         return;
                     }
                 }
@@ -1915,7 +1915,7 @@ namespace Unity.Netcode
                 else
                 {
                     // CheckObject visibility overrides SpawnWithObservers under this condition
-                    if (sobj.CheckObjectVisibility(clientId))
+                    if (sobj.InvokeCheckObjectVisibility(clientId))
                     {
                         sobj.AddObserver(clientId);
                     }
@@ -2312,8 +2312,19 @@ namespace Unity.Netcode
                 // Double check to make sure user did not remove the callback
                 if (networkObject.OnDeferredDespawnComplete != null)
                 {
+                    var despawnThisTick = false;
+                    try
+                    {
+                        despawnThisTick = networkObject.OnDeferredDespawnComplete.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                        // If the user callback throws, despawn immediately to avoid throwing every tick.
+                        despawnThisTick = true;
+                    }
                     // If the user callback returns true, then we despawn it this tick
-                    if (networkObject.OnDeferredDespawnComplete.Invoke())
+                    if (despawnThisTick)
                     {
                         deferredObjectEntry.TickToDespawn = currentTick;
                     }

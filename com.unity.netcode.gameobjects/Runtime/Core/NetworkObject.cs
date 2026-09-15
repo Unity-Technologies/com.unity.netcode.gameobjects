@@ -523,7 +523,14 @@ namespace Unity.Netcode
                 // Notify all NetworkBehaviours that the authority is performing a deferred despawn.
                 // This is when user script would update NetworkVariable states that might be needed
                 // for the deferred despawn sequence on non-authoritative instances.
-                behaviour.OnDeferringDespawn(DeferredDespawnTick);
+                try
+                {
+                    behaviour.OnDeferringDespawn(DeferredDespawnTick);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
 
             // DAHost handles sending updates to all clients
@@ -810,6 +817,19 @@ namespace Unity.Netcode
         /// </summary>
         public OnOwnershipPermissionsFailureDelegateHandler OnOwnershipPermissionsFailure;
 
+
+        internal void InvokeOwnershipPermissionsFailure()
+        {
+            try
+            {
+                OnOwnershipPermissionsFailure?.Invoke(OwnershipPermissionsFailureStatus.SessionOwnerOnly);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
         /// <summary>
         /// Returned by <see cref="RequestOwnership"/> to signify w
         /// <see cref="RequestSent"/>: The request for ownership was sent (does not mean it will be granted, but the request was sent).
@@ -978,8 +998,16 @@ namespace Unity.Netcode
 
             // Finally, check to see if OnOwnershipRequested is registered and if user script is allowing
             // this transfer of ownership
-            if (OnOwnershipRequested != null && !OnOwnershipRequested.Invoke(clientRequestingOwnership))
+            try
             {
+                if (OnOwnershipRequested != null && !OnOwnershipRequested.Invoke(clientRequestingOwnership))
+                {
+                    response = OwnershipRequestResponseStatus.Denied;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
                 response = OwnershipRequestResponseStatus.Denied;
             }
 
@@ -1072,7 +1100,14 @@ namespace Unity.Netcode
         /// </summary>
         internal void OwnershipRequestResponse(OwnershipRequestResponseStatus ownershipRequestResponse)
         {
-            OnOwnershipRequestResponse?.Invoke(ownershipRequestResponse);
+            try
+            {
+                OnOwnershipRequestResponse?.Invoke(ownershipRequestResponse);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         /// <summary>
@@ -1435,6 +1470,27 @@ namespace Unity.Netcode
         public VisibilityDelegate CheckObjectVisibility = null;
 
         /// <summary>
+        /// Returns true if the object should be visible to the specified client, false otherwise
+        /// Defaults to the object being visible.
+        /// </summary>
+        internal bool InvokeCheckObjectVisibility(ulong clientId)
+        {
+            if (CheckObjectVisibility == null)
+            {
+                return true;
+            }
+            try
+            {
+                return CheckObjectVisibility(clientId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Delegate type for checking spawn options
         /// </summary>
         /// <param name="clientId">The clientId to check spawn options for</param>
@@ -1637,7 +1693,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+            if (!InvokeCheckObjectVisibility(clientId))
             {
                 if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
                 {
@@ -2295,8 +2351,8 @@ namespace Unity.Netcode
             // then add all connected clients as observers
             foreach (var clientId in NetworkManagerOwner.ConnectedClientsIds)
             {
-                // If CheckObjectVisibility has a callback, then allow that method determine who the observers are.
-                if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+                // If CheckObjectVisibility marks this object as not visible to the client, then skip adding it as an observer
+                if (!InvokeCheckObjectVisibility(clientId))
                 {
                     continue;
                 }
@@ -2386,7 +2442,14 @@ namespace Unity.Netcode
                 childBehaviour.UpdateNetworkProperties();
                 if (distributedAuthorityMode || isServer || isPreviousOwner)
                 {
-                    childBehaviour.OnLostOwnership();
+                    try
+                    {
+                        childBehaviour.OnLostOwnership();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
                 }
             }
 
@@ -2457,7 +2520,14 @@ namespace Unity.Netcode
                 // Invoke internal notification
                 child.InternalOnNetworkObjectParentChanged(parentNetworkObject);
                 // Invoke public notification
-                child.OnNetworkObjectParentChanged(parentNetworkObject);
+                try
+                {
+                    child.OnNetworkObjectParentChanged(parentNetworkObject);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
         }
 
@@ -3904,7 +3974,14 @@ namespace Unity.Netcode
                     $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
                     $"has no associated server side (network) scene handle!");
             }
-            OnMigratedToNewScene?.Invoke();
+            try
+            {
+                OnMigratedToNewScene?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             // Only the authority side will notify clients of non-parented NetworkObject scene changes
             if (m_HasAuthority && notify && !transform.parent)
