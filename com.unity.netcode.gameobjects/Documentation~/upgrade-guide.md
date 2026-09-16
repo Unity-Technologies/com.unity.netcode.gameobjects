@@ -25,7 +25,7 @@ To upgrade an existing project from version 2.x to version 3.x, follow these ste
 3. Your project's manifest will be updated with Netcode for GameObjects version 3.x.x prior to the API updater running.
 4. The API updater should catch any issues and ask if you want to allow it to make changes to your script(s).
 5. If you allow the API updater to make changes for you, then it should auto-update your project's scripts with the correct namespace changes.
-6. If you do not allow the API updater to make changes for you, then the editor will enter safe mode. Open the **Console** window to review the remaining compile errors and resolve the errors. (_[Review the Update Editor assembly definition references section below.](#update-editor-assembly-definition-references)_).
+6. If you don't allow the API updater to make changes for you, then the Editor will enter safe mode. Open the **Console** window to review the remaining compile errors and resolve the errors manually. ([Refer to the Update Editor assembly definition references section below.](#update-editor-assembly-definition-references)).
 
 After the API updater finishes and you resolve the compile errors, your project compiles against version 3.x. If the API updater doesn't resolve every reference, refer to [Continue an incomplete API update](#continue-an-incomplete-api-update).
 
