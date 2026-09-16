@@ -26,7 +26,7 @@ To upgrade an existing project from version 2.x to version 3.x, follow these ste
 4. The API updater should catch any issues and ask if you want to allow it to make changes to your script(s).
 5. If you allow the API updater to make changes for you, then it should auto-update your project's scripts with the correct namespace changes.
 6. If you do not allow the API updater to make changes for you, then the editor will enter safe mode. Open the **Console** window to review the remaining compile errors and resolve the errors. (_[Review the Update Editor assembly definition references section below.](#update-editor-assembly-definition-references)_).
-   
+
 After the API updater finishes and you resolve the compile errors, your project compiles against version 3.x. If the API updater doesn't resolve every reference, refer to [Continue an incomplete API update](#continue-an-incomplete-api-update).
 
 _** If, at any point, you decide to downgrade to the editor version you were using prior to updating to 6.7, then make sure to restore or delete the packages-lock.json file (_assures you are not referencing 6.7 specific packages_), restore your backed up version, and delete your Library folder prior to opening your project with the editor version you were using prior to upgrading to 6.7._
