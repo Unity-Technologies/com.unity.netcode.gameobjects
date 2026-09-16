@@ -22,7 +22,7 @@ To upgrade an existing project from version 2.x to version 3.x, follow these ste
 
 1. Back up your project, or commit your work to source control.
 2. Open your project with the Unity Editor version 6.7 or later.
-3. Your project's manifest will be updated with NGO v3.x.x prior to the API updater running.
+3. Your project's manifest will be updated with Netcode for GameObjects version 3.x.x prior to the API updater running.
 4. The API updater should catch any issues and ask if you want to allow it to make changes to your script(s).
 5. If you allow the API updater to make changes for you, then it should auto-update your project's scripts with the correct namespace changes.
 6. If you do not allow the API updater to make changes for you, then the editor will enter safe mode. Open the **Console** window to review the remaining compile errors and resolve the errors. (_[Review the Update Editor assembly definition references section below.](#update-editor-assembly-definition-references)_).
