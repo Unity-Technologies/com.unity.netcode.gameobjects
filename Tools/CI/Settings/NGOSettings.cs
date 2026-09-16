@@ -24,6 +24,7 @@ public class NGOSettings : AnnotatedSettingsBase
             new PackageOptions()
             {
                 ReleaseOptions = new ReleaseOptions() { IsReleasing = true },
+                MaximumEditorVersion = "6000.6", // NGOv2.X will be deprecated in 6000.7+ so we won't run tests on higher editor versions
                 ValidationOptions = validationOptions
             }
         }
