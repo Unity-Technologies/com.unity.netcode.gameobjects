@@ -29,7 +29,8 @@ To upgrade an existing project from version 2.x to version 3.x, follow these ste
 
 After the API updater finishes and you resolve the compile errors, your project compiles against version 3.x. If the API updater doesn't resolve every reference, refer to [Continue an incomplete API update](#continue-an-incomplete-api-update).
 
-_** If, at any point, you decide to downgrade to the editor version you were using prior to updating to 6.7, then make sure to restore or delete the packages-lock.json file (_assures you are not referencing 6.7 specific packages_), restore your backed up version, and delete your Library folder prior to opening your project with the editor version you were using prior to upgrading to 6.7._
+> [!NOTE]
+> If you decide to downgrade to the Editor version you were using before updating to 6.7, then make sure to restore or delete the `packages-lock.json` file (which ensures you're not referencing any 6.7 specific packages), restore your backed up version, and delete your `Library` folder before opening your project with the Editor version you were using before upgrading to 6.7.
 
 ### Continue an incomplete API update
 
