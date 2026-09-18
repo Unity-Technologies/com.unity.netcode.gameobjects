@@ -12,7 +12,8 @@ namespace Unity.Netcode.GameObjects.EditorTests
     {
         public const string DefaultBuildScenePath = "Tests/Editor/Build/BuildTestScene.unity";
 
-        [Timeout(1500000)]
+        // Increased the Build test timeout from 3 to 10 minutes.
+        [Timeout(900000)]
         [Test]
         public void BasicBuildTest()
         {
@@ -24,9 +25,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             if (buildTargetSupported)
             {
-                // Netcode for Entities' build preprocessor writes an asset under this folder and errors if the parent does not already exist; the folder is recreated unconditionally because --clean-library-on-rerun leaves it unimported between attempts.
-                Directory.CreateDirectory("Assets/netcode-build-assets-temp");
-                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                // Netcode for Entities' build preprocessor writes an asset under this folder and errors if the parent does not already exist.
+                if (!AssetDatabase.IsValidFolder("Assets/netcode-build-assets-temp"))
+                {
+                    AssetDatabase.CreateFolder("Assets", "netcode-build-assets-temp");
+                    AssetDatabase.Refresh();
+                }
 
                 var buildReport = BuildPipeline.BuildPlayer(
                     new[] { Path.Combine(packagePath, DefaultBuildScenePath) },
