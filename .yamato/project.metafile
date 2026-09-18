@@ -179,18 +179,16 @@ test_platforms:
 validation_editors:
     default:
         - 6000.3
+    minimal:
+        - 6000.0
+    latest:
+        - 6000.6
     all:
         - 6000.0
         - 6000.3
-        - 6000.5
         - 6000.6
-        - trunk
-        - 5fe7931aab8c4fff9274e15ef0800125c68b8d6a
-    minimal:
-        - 6000.0
     standards:
         - 6000.0.72f1
-pinnedTrunk:  5fe7931aab8c4fff9274e15ef0800125c68b8d6a
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
