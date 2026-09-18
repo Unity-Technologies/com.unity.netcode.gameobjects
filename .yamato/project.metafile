@@ -185,9 +185,11 @@ validation_editors:
         - trunk
     all:
         - 6000.7
+        - dfdad7ed5522da345003b66ed78dc5e725357037
         - trunk
     standards:
         - 6000.7.0b1
+    pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
