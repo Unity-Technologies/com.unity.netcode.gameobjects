@@ -252,7 +252,14 @@ namespace Unity.Netcode
                 networkObject.InvokeSessionOwnerPromoted(isSessionOwner);
             }
 
-            OnSessionOwnerPromoted?.Invoke(sessionOwner);
+            try
+            {
+                OnSessionOwnerPromoted?.Invoke(sessionOwner);
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
 #if ENABLE_SESSIONOWNER_PROMOTION_NOTIFICATION
@@ -1103,7 +1110,14 @@ namespace Unity.Netcode
             EditorApplication.playModeStateChanged += ModeChanged;
 #endif
             // Notify we have instantiated a new instance of NetworkManager.
-            OnInstantiated?.Invoke(this);
+            try
+            {
+                OnInstantiated?.Invoke(this);
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
         private void OnEnable()
@@ -1479,8 +1493,15 @@ namespace Unity.Netcode
 
                     // Notify the server that everything should be synchronized/spawned at this time.
                     SpawnManager.NotifyNetworkObjectsSynchronized();
-                    OnServerStarted?.Invoke();
-                    OnStarted?.Invoke();
+                    try
+                    {
+                        OnServerStarted?.Invoke();
+                        OnStarted?.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Exception(ex);
+                    }
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
                 }
@@ -1555,8 +1576,15 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    OnClientStarted?.Invoke();
-                    OnStarted?.Invoke();
+                    try
+                    {
+                        OnClientStarted?.Invoke();
+                        OnStarted?.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Exception(ex);
+                    }
                 }
             }
             catch (Exception ex)
@@ -1677,9 +1705,16 @@ namespace Unity.Netcode
             // Notify the host that everything should be synchronized/spawned at this time.
             SpawnManager.NotifyNetworkObjectsSynchronized();
 
-            OnServerStarted?.Invoke();
-            OnClientStarted?.Invoke();
-            OnStarted?.Invoke();
+            try
+            {
+                OnServerStarted?.Invoke();
+                OnClientStarted?.Invoke();
+                OnStarted?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
 
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
@@ -1874,21 +1909,28 @@ namespace Unity.Netcode
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
 
-            if (localClient.IsClient)
-            {
-                // If we were a client, we want to know if we were a host
-                // client or not. (why we pass in "IsServer")
-                OnClientStopped?.Invoke(localClient.IsServer);
-            }
 
-            if (localClient.IsServer)
+            try
             {
-                // If we were a server, we want to know if we were a host
-                // or not. (why we pass in "IsClient")
-                OnServerStopped?.Invoke(localClient.IsClient);
-            }
+                if (localClient.IsClient)
+                {
+                    // If we were a client, we want to know if we were a host
+                    // client or not. (why we pass in "IsServer")
+                    OnClientStopped?.Invoke(localClient.IsServer);
+                }
+                if (localClient.IsServer)
+                {
+                    // If we were a server, we want to know if we were a host
+                    // or not. (why we pass in "IsClient")
+                    OnServerStopped?.Invoke(localClient.IsClient);
+                }
 
-            OnStopped?.Invoke();
+                OnStopped?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
@@ -1914,9 +1956,17 @@ namespace Unity.Netcode
 #endif
         }
 
+        private bool m_IsDestroyed = false;
+
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
+            if (m_IsDestroyed)
+            {
+                return;
+            }
+            m_IsDestroyed = true;
+
             try
             {
                 ShutdownInternal();

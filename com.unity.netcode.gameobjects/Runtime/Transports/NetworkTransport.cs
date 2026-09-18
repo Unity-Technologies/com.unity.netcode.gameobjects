@@ -50,7 +50,14 @@ namespace Unity.Netcode
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
         protected void InvokeOnTransportEvent(NetworkEvent eventType, ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
-            OnTransportEvent?.Invoke(eventType, clientId, payload, receiveTime);
+            try
+            {
+                OnTransportEvent?.Invoke(eventType, clientId, payload, receiveTime);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         /// <summary>
