@@ -46,7 +46,7 @@ When you open a pull request, you will be asked to enter into Unity's License Ag
 
 ## <a name="submit-pr"></a> Pull Request Submission Guidelines
 
-We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of the Netcode for GameObjects. This means development happens on the **develop branch** and Pull Requests should be submited to it.
+We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of the Netcode for GameObjects. This means development happens on the **develop-3.x.x branch** and Pull Requests should be submited to it.
 
 ### Commit Message Guidelines
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more

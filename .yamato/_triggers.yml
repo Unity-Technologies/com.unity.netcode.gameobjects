@@ -126,7 +126,7 @@ develop_nightly:
   name: "\U0001F319 [Nightly] Run All Tests [Latest Editor and Minimal Editor]"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch: develop-3.x.x
         frequency: daily
         rerun: always
   dependencies:
@@ -172,7 +172,7 @@ develop_weekly_trunk:
   name: "\U0001F319 [Weekly] Run All Tests"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch: develop-3.x.x
         frequency: weekly
         rerun: always
   dependencies:
