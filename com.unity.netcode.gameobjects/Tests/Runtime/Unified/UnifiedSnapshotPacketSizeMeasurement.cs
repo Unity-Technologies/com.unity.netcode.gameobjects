@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
+#if !UNIFIED_NETCODE_7_0_0
+using Unity.NetCode;
+#endif
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -12,11 +15,20 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// Measurement harness (not a pass/fail behaviour test) used to determine bandwidth consumption based
-    /// on the <see cref="NetCode.GhostSendSystemData.DefaultSnapshotPacketSize"/> when running in hybrid mode.
-    /// Spawns N hybrid ghosts, keeps every one of them dirty on every tick, and reads the N4E client-side
-    /// snapshot metrics singleton for a fixed sample window. Results are emitted as "PKTSZ|" log lines.
+    /// Measurement harness (not a pass/fail behaviour test) for how much of an N4E snapshot hybrid prefab transform
+    /// synchronization consumes, swept across <see cref="GhostSendSystemData.DefaultSnapshotPacketSize"/> and ghost
+    /// count. This is where <c>HybridNetcodeDefaults.SnapshotPacketSize</c> comes from; re-run it when that value is
+    /// reconsidered or when N4E changes its snapshot encoding.
     /// </summary>
+    /// <remarks>
+    /// Spawns N hybrid ghosts, keeps every one dirty on every tick, and reads the client-side
+    /// <see cref="SnapshotMetrics"/> singleton over a fixed sample window. Each case emits one <c>PKTSZ|</c> line:
+    /// packet size, requested ghosts, ghosts the client spawned, samples, mean snapshot bits, p95 bits, max bits,
+    /// mean ghosts per snapshot, p95 ghosts, bytes per ghost, fraction of snapshots that hit the size cap, fraction
+    /// that could not carry every ghost, effective per ghost update rate, tick rate. Bytes per ghost and the
+    /// effective update rate are the two that decide the default: raising the cap only helps while the latter is
+    /// still below the tick rate.
+    /// </remarks>
     [TestFixture(HostOrServer.UnifiedHost)]
     [Explicit("Measurement harness, not a regression test. The 24 auto-expanded cases take ~162s, so it only runs when selected by name: -testFilter \".*UnifiedSnapshotPacketSizeMeasurement.*\"")]
     internal class UnifiedSnapshotPacketSizeMeasurement : NetcodeIntegrationTest
@@ -32,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private GameObject m_Prefab;
         private Transform[] m_Instances;
-        private NetCode.GhostObject[] m_Ghosts;
+        private GhostObject[] m_Ghosts;
         private float[] m_Phases;
         private int m_Frame;
 
@@ -94,14 +106,14 @@ namespace Unity.Netcode.RuntimeTests
         private static Entity CreateMetricsSingleton(EntityManager entityManager)
         {
             var typeList = new NativeArray<ComponentType>(8, Allocator.Temp);
-            typeList[0] = ComponentType.ReadWrite<NetCode.GhostMetricsMonitor>();
-            typeList[1] = ComponentType.ReadWrite<NetCode.NetworkMetrics>();
-            typeList[2] = ComponentType.ReadWrite<NetCode.SnapshotMetrics>();
-            typeList[3] = ComponentType.ReadWrite<NetCode.GhostNames>();
-            typeList[4] = ComponentType.ReadWrite<NetCode.GhostMetrics>();
-            typeList[5] = ComponentType.ReadWrite<NetCode.GhostSerializationMetrics>();
-            typeList[6] = ComponentType.ReadWrite<NetCode.PredictionErrorNames>();
-            typeList[7] = ComponentType.ReadWrite<NetCode.PredictionErrorMetrics>();
+            typeList[0] = ComponentType.ReadWrite<GhostMetricsMonitor>();
+            typeList[1] = ComponentType.ReadWrite<NetworkMetrics>();
+            typeList[2] = ComponentType.ReadWrite<SnapshotMetrics>();
+            typeList[3] = ComponentType.ReadWrite<GhostNames>();
+            typeList[4] = ComponentType.ReadWrite<GhostMetrics>();
+            typeList[5] = ComponentType.ReadWrite<GhostSerializationMetrics>();
+            typeList[6] = ComponentType.ReadWrite<PredictionErrorNames>();
+            typeList[7] = ComponentType.ReadWrite<PredictionErrorMetrics>();
             var singleton = entityManager.CreateEntity(entityManager.CreateArchetype(typeList));
             typeList.Dispose();
             entityManager.SetName(singleton, (FixedString64Bytes)"MetricsMonitor");
@@ -140,27 +152,27 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsNotNull(hostWorld, "Host has no NetcodeWorld!");
             Assert.IsNotNull(clientWorld, "Client has no NetcodeWorld!");
 
-            var sendDataQuery = hostWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetCode.GhostSendSystemData>());
-            var sendData = sendDataQuery.GetSingleton<NetCode.GhostSendSystemData>();
+            var sendDataQuery = hostWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<GhostSendSystemData>());
+            var sendData = sendDataQuery.GetSingleton<GhostSendSystemData>();
             sendData.DefaultSnapshotPacketSize = packetSize;
             sendDataQuery.SetSingleton(sendData);
 
             var tickRate = 30;
-            var tickRateQuery = hostWorld.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<NetCode.ClientServerTickRate>());
+            var tickRateQuery = hostWorld.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ClientServerTickRate>());
             if (tickRateQuery.CalculateEntityCount() == 1)
             {
-                var configured = tickRateQuery.GetSingleton<NetCode.ClientServerTickRate>();
+                var configured = tickRateQuery.GetSingleton<ClientServerTickRate>();
                 tickRate = configured.NetworkTickRate > 0 ? configured.NetworkTickRate : Mathf.Max(1, configured.SimulationTickRate);
             }
 
             CreateMetricsSingleton(clientWorld.EntityManager);
-            var snapshotMetricsQuery = clientWorld.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<NetCode.SnapshotMetrics>());
+            var snapshotMetricsQuery = clientWorld.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<SnapshotMetrics>());
 
             var clientSpawnManager = m_ClientNetworkManagers[0].SpawnManager;
             var preSpawnCount = clientSpawnManager.SpawnedObjects.Count;
 
             m_Instances = new Transform[objectCount];
-            m_Ghosts = new NetCode.GhostObject[objectCount];
+            m_Ghosts = new GhostObject[objectCount];
             m_Phases = new float[objectCount];
             var random = new System.Random(12345);
             for (int i = 0; i < objectCount; i++)
@@ -168,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Phases[i] = (float)(random.NextDouble() * Mathf.PI * 2.0f);
                 var spawned = SpawnObject(m_Prefab, m_ServerNetworkManager);
                 m_Instances[i] = spawned.transform;
-                m_Ghosts[i] = spawned.GetComponent<NetCode.GhostObject>();
+                m_Ghosts[i] = spawned.GetComponent<GhostObject>();
                 if ((i + 1) % k_SpawnsPerFrame == 0)
                 {
                     MoveAll();
@@ -198,7 +210,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     continue;
                 }
-                var metrics = snapshotMetricsQuery.GetSingleton<NetCode.SnapshotMetrics>();
+                var metrics = snapshotMetricsQuery.GetSingleton<SnapshotMetrics>();
                 if (metrics.SnapshotTick == 0 || metrics.SnapshotTick == lastSnapshotTick)
                 {
                     continue;

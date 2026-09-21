@@ -14,8 +14,7 @@
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Runtime.Tests",
-        "Unity.NetCode"
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"
@@ -38,8 +37,8 @@
         },
         {
             "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
         },
         {
             "name": "Unity",

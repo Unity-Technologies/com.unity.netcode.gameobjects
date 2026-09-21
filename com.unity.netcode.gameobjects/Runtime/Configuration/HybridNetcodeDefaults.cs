@@ -1,15 +1,18 @@
 #if UNIFIED_NETCODE
+#if !UNIFIED_NETCODE_7_0_0
 using Unity.NetCode;
+using NetcodeConfig = Unity.NetCode.NetCodeConfig;
+#endif
 
 namespace Unity.Netcode
 {
     /// <summary>
-    /// The <see cref="NetCodeConfig"/> values NGO needs when running in hybrid mode (i.e. Netcode for Entities is
+    /// The <see cref="NetcodeConfig"/> values NGO needs when running in hybrid mode (i.e. Netcode for Entities is
     /// installed and a registered network prefab carries a <see cref="GhostObject"/>).
     /// </summary>
     /// <remarks>
-    /// This lives in the runtime assembly rather than the editor one because <see cref="NetCodeConfig.HostWorldModeSelection"/>
-    /// is internal to Unity.NetCode, and Unity.Netcode.Runtime is the only NGO assembly it grants InternalsVisibleTo to.
+    /// This lives in the runtime assembly rather than the editor one because <see cref="NetcodeConfig.HostWorldModeSelection"/>
+    /// is internal to Netcode for Entities, and Unity.Netcode.Runtime is the only NGO assembly it grants InternalsVisibleTo to.
     /// Nothing here touches the AssetDatabase; the editor-side applier drives all of it.
     /// </remarks>
     internal static class HybridNetcodeDefaults
@@ -18,7 +21,7 @@ namespace Unity.Netcode
         /// Bump whenever <see cref="ApplyRecommended"/> changes so that an upgrading project re-applies exactly once.
         /// Persisted as NetcodeForGameObjectsProjectSettings.HybridDefaultsVersion.
         /// </summary>
-        internal const int Version = 1;
+        internal const int Version = 2;
 
         // Mirrors NetworkConfig.TickRate's default. The editor writes the defaults before any NetworkManager is
         // necessarily loaded, so it has nothing to read the real rate from. NetworkManager re-aligns the config when a
@@ -26,9 +29,10 @@ namespace Unity.Netcode
         internal const uint DefaultTickRate = 30;
 
         // Tuned against 2000 GenericPhysicsBallNGO instances in the ngo-examples project. A hybrid ghost costs ~4.87
-        // bytes per snapshot, so 15000 carries ~3000 of them at the full tick rate. This is a cap and not a cost:
-        // below that count it puts no more on the wire than the N4E default would.
-        internal const int SnapshotPacketSize = 15000;
+        // bytes per snapshot, so 4096 carries ~840 of them at the full tick rate. This is a cap and not a cost:
+        // below that count it puts no more on the wire than the N4E default would. Kept small because a snapshot is
+        // sent unreliably: losing any one of its fragments loses the whole snapshot.
+        internal const int SnapshotPacketSize = 4096;
 
         // A ceiling on despawn bytes, not a reservation, so unused headroom is free. 0.2 is also N4E's clamp minimum.
         internal const float PercentReservedForDespawn = 0.2f;
@@ -42,7 +46,7 @@ namespace Unity.Netcode
         internal const float InterpolationTimeScaleMin = 0.9f;
         internal const float InterpolationTimeScaleMax = 1.33f;
 
-        // A full snapshot fragments into ~11 datagrams and each fragment consumes a queue slot.
+        // A full snapshot fragments into ~3 datagrams and each fragment consumes a queue slot.
         internal const int ClientQueueCapacity = 128;
 
         /// <summary>
@@ -50,20 +54,20 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="config">The config to correct.</param>
         /// <returns>True if anything changed.</returns>
-        internal static bool ApplyRequired(NetCodeConfig config)
+        internal static bool ApplyRequired(NetcodeConfig config)
         {
             var changed = false;
 
             // NetworkManager gates the world spin-up, so N4E must not bootstrap worlds on its own.
-            if (config.EnableClientServerBootstrap != NetCodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
+            if (config.EnableClientServerBootstrap != NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
             {
-                config.EnableClientServerBootstrap = NetCodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap;
+                config.EnableClientServerBootstrap = NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap;
                 changed = true;
             }
 
-            if (config.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            if (config.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
             {
-                config.HostWorldModeSelection = NetCodeConfig.HostWorldMode.SingleWorld;
+                config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.SingleWorld;
                 changed = true;
             }
 
@@ -77,7 +81,7 @@ namespace Unity.Netcode
         /// <param name="config">The config to correct.</param>
         /// <param name="tickRate">The owning <see cref="NetworkManager"/>'s configured tick rate.</param>
         /// <returns>True if anything changed.</returns>
-        internal static bool ApplyTickRate(NetCodeConfig config, uint tickRate)
+        internal static bool ApplyTickRate(NetcodeConfig config, uint tickRate)
         {
             var rate = (int)tickRate;
             if (config.ClientServerTickRate.SimulationTickRate == rate && config.ClientServerTickRate.NetworkTickRate == rate)
@@ -99,7 +103,7 @@ namespace Unity.Netcode
         /// <param name="config">The config to correct.</param>
         /// <param name="tickRate">The owning <see cref="NetworkManager"/>'s configured tick rate.</param>
         /// <returns>True if anything changed.</returns>
-        internal static bool ApplyRecommended(NetCodeConfig config, uint tickRate)
+        internal static bool ApplyRecommended(NetcodeConfig config, uint tickRate)
         {
             var changed = ApplyRequired(config);
             changed |= ApplyTickRate(config, tickRate);
@@ -126,17 +130,17 @@ namespace Unity.Netcode
         /// <param name="config">The config to inspect.</param>
         /// <param name="reason">Populated with a user-facing description of what is wrong.</param>
         /// <returns>True when <paramref name="config"/> cannot support hybrid mode as-is.</returns>
-        internal static bool IsMissingRequired(NetCodeConfig config, out string reason)
+        internal static bool IsMissingRequired(NetcodeConfig config, out string reason)
         {
-            if (config.HostWorldModeSelection != NetCodeConfig.HostWorldMode.SingleWorld)
+            if (config.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
             {
-                reason = $"{nameof(NetCodeConfig.HostWorldModeSelection)} must be {nameof(NetCodeConfig.HostWorldMode.SingleWorld)} but is {config.HostWorldModeSelection}";
+                reason = $"{nameof(NetcodeConfig.HostWorldModeSelection)} must be {nameof(NetcodeConfig.HostWorldMode.SingleWorld)} but is {config.HostWorldModeSelection}";
                 return true;
             }
 
-            if (config.EnableClientServerBootstrap != NetCodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
+            if (config.EnableClientServerBootstrap != NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
             {
-                reason = $"{nameof(NetCodeConfig.EnableClientServerBootstrap)} must be {nameof(NetCodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)} because {nameof(NetworkManager)} owns world creation in hybrid mode";
+                reason = $"{nameof(NetcodeConfig.EnableClientServerBootstrap)} must be {nameof(NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)} because {nameof(NetworkManager)} owns world creation in hybrid mode";
                 return true;
             }
 

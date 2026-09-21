@@ -1,6 +1,9 @@
 #if UNIFIED_NETCODE
 using NUnit.Framework;
+#if !UNIFIED_NETCODE_7_0_0
 using Unity.NetCode;
+using NetcodeConfig = Unity.NetCode.NetCodeConfig;
+#endif
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +11,7 @@ using UnityEngine;
 namespace Unity.Netcode.GameObjects.EditorTests
 {
     /// <summary>
-    /// Validates the <see cref="NetCodeConfig"/> values NGO applies in hybrid mode.
+    /// Validates the <see cref="NetcodeConfig"/> values NGO applies in hybrid mode.
     /// </summary>
     internal class HybridNetcodeDefaultsTests
     {
@@ -16,12 +19,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
         // look like a pass.
         private const int k_UserPacketSize = 9000;
 
-        private NetCodeConfig m_Config;
+        private NetcodeConfig m_Config;
 
         [SetUp]
         public void SetUp()
         {
-            m_Config = ScriptableObject.CreateInstance<NetCodeConfig>();
+            m_Config = ScriptableObject.CreateInstance<NetcodeConfig>();
             m_Config.Reset();
         }
 
@@ -41,12 +44,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [Test]
         public void ApplyRequiredAdjustsBothSettings()
         {
-            m_Config.EnableClientServerBootstrap = NetCodeConfig.AutomaticBootstrapSetting.EnableAutomaticBootstrap;
-            m_Config.HostWorldModeSelection = NetCodeConfig.HostWorldMode.BinaryWorlds;
+            m_Config.EnableClientServerBootstrap = NetcodeConfig.AutomaticBootstrapSetting.EnableAutomaticBootstrap;
+            m_Config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.BinaryWorlds;
 
             Assert.IsTrue(HybridNetcodeDefaults.ApplyRequired(m_Config), "The first apply should report a change.");
-            Assert.AreEqual(NetCodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap, m_Config.EnableClientServerBootstrap, "Automatic bootstrapping should be disabled.");
-            Assert.AreEqual(NetCodeConfig.HostWorldMode.SingleWorld, m_Config.HostWorldModeSelection, "Hybrid mode should use a single world.");
+            Assert.AreEqual(NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap, m_Config.EnableClientServerBootstrap, "Automatic bootstrapping should be disabled.");
+            Assert.AreEqual(NetcodeConfig.HostWorldMode.SingleWorld, m_Config.HostWorldModeSelection, "Hybrid mode should use a single world.");
 
             Assert.IsFalse(HybridNetcodeDefaults.ApplyRequired(m_Config), "Applying an already correct config should report no change.");
         }
@@ -57,14 +60,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
             HybridNetcodeDefaults.ApplyRequired(m_Config);
             Assert.IsFalse(HybridNetcodeDefaults.IsMissingRequired(m_Config, out _), "An adjusted config should be valid for hybrid mode.");
 
-            m_Config.HostWorldModeSelection = NetCodeConfig.HostWorldMode.BinaryWorlds;
+            m_Config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.BinaryWorlds;
             Assert.IsTrue(HybridNetcodeDefaults.IsMissingRequired(m_Config, out var worldReason), "Binary worlds should be reported as invalid.");
-            Assert.That(worldReason, Does.Contain(nameof(NetCodeConfig.HostWorldModeSelection)), "The reason should name the setting that is wrong.");
+            Assert.That(worldReason, Does.Contain(nameof(NetcodeConfig.HostWorldModeSelection)), "The reason should name the setting that is wrong.");
 
-            m_Config.HostWorldModeSelection = NetCodeConfig.HostWorldMode.SingleWorld;
-            m_Config.EnableClientServerBootstrap = NetCodeConfig.AutomaticBootstrapSetting.EnableAutomaticBootstrap;
+            m_Config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.SingleWorld;
+            m_Config.EnableClientServerBootstrap = NetcodeConfig.AutomaticBootstrapSetting.EnableAutomaticBootstrap;
             Assert.IsTrue(HybridNetcodeDefaults.IsMissingRequired(m_Config, out var bootstrapReason), "Automatic bootstrapping should be reported as invalid.");
-            Assert.That(bootstrapReason, Does.Contain(nameof(NetCodeConfig.EnableClientServerBootstrap)), "The reason should name the setting that is wrong.");
+            Assert.That(bootstrapReason, Does.Contain(nameof(NetcodeConfig.EnableClientServerBootstrap)), "The reason should name the setting that is wrong.");
         }
 
         [TestCase(30u)]
@@ -165,16 +168,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [Test]
         public void ApplyDefaultsIsAOneShotUnlessItIsForced()
         {
-            var config = HybridNetcodeConfigApplier.ResolveGlobalConfig();
-            Assert.IsNotNull(config, "This project should have a NetCodeConfig to adjust.");
+            var config = NetcodeConfig.Global;
+            Assert.IsNotNull(config, "This project should have a NetcodeConfig to adjust.");
 
             var settings = NetcodeForGameObjectsProjectSettings.instance;
-            var restoreOptIn = settings.EnableUnifiedNetcodeApi;
             var restoreVersion = settings.HybridDefaultsVersion;
             var restoreConfig = EditorJsonUtility.ToJson(config);
             try
             {
-                settings.EnableUnifiedNetcodeApi = true;
                 settings.HybridDefaultsVersion = HybridNetcodeDefaults.Version;
                 config.GhostSendSystemData.DefaultSnapshotPacketSize = k_UserPacketSize;
 
@@ -187,21 +188,20 @@ namespace Unity.Netcode.GameObjects.EditorTests
             finally
             {
                 Restore(config, restoreConfig);
-                settings.EnableUnifiedNetcodeApi = restoreOptIn;
                 settings.HybridDefaultsVersion = restoreVersion;
                 settings.SaveSettings();
             }
         }
 
         /// <summary>
-        /// Puts the project's own <see cref="NetCodeConfig"/> back the way the test found it.
+        /// Puts the project's own <see cref="NetcodeConfig"/> back the way the test found it.
         /// </summary>
         /// <remarks>
         /// Serialized rather than field by field because the applier writes across three nested structures.
         /// </remarks>
         /// <param name="config">The project config the test mutated.</param>
         /// <param name="serializedConfig">Its state before the test ran.</param>
-        private static void Restore(NetCodeConfig config, string serializedConfig)
+        private static void Restore(NetcodeConfig config, string serializedConfig)
         {
             EditorJsonUtility.FromJsonOverwrite(serializedConfig, config);
             EditorUtility.SetDirty(config);
