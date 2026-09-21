@@ -1,8 +1,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.Scripting.APIUpdating;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.GameObjects.Timing
 {
     /// <summary>
     /// A struct to represent a point of time in a networked game.
@@ -10,6 +11,7 @@ namespace Unity.Netcode
     /// This struct is meant to replace the Unity <see cref="Time"/> API for multiplayer gameplay.
     /// </summary>
     [Serializable]
+    [MovedFrom(true, "Unity.Netcode", null, null)]
     public struct NetworkTime
     {
         private double m_TimeSec;

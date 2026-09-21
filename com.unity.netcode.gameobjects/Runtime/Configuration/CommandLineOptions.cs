@@ -12,7 +12,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Command-line options singleton
         /// </summary>
-        [Obsolete("Not used anymore replaced by TryGetArg")]
+        [Obsolete("Not used anymore replaced by TryGetArg", true)]
         public static CommandLineOptions Instance
         {
             get
@@ -38,7 +38,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="arg">The name of the argument</param>
         /// <returns><see cref="string"/>Value of the command line argument passed in.</returns>
-        [Obsolete("Not used anymore replaced by TryGetArg")]
+        [Obsolete("Not used anymore replaced by TryGetArg", true)]
         public string GetArg(string arg)
         {
             var argIndex = k_CommandLineArguments.IndexOf(arg);

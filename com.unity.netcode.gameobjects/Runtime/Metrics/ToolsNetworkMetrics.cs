@@ -8,20 +8,22 @@ using Unity.Profiling;
 
 namespace Unity.Netcode
 {
-    internal class NetworkMetrics : INetworkMetrics
+    internal class ToolsNetworkMetrics : INetworkMetrics
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
         private static readonly Dictionary<uint, string> k_SceneEventTypeNames;
         private static readonly ProfilerMarker k_FrameDispatch;
 
-        static NetworkMetrics()
+        static ToolsNetworkMetrics()
         {
             k_SceneEventTypeNames = new Dictionary<uint, string>();
             foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
             {
                 k_SceneEventTypeNames[(uint)type] = type.ToString();
             }
-            k_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+            // Spelled out rather than nameof: this is the name shown in the Profiler, and it
+            // should not move because the implementing type was renamed.
+            k_FrameDispatch = new ProfilerMarker("NetworkMetrics.DispatchFrame");
         }
 
         private static string GetSceneEventTypeName(uint typeCode)
@@ -85,7 +87,7 @@ namespace Unity.Netcode
 
         private ulong m_NumberOfMetricsThisFrame;
 
-        public NetworkMetrics()
+        public ToolsNetworkMetrics()
         {
             Dispatcher = new MetricDispatcherBuilder()
                 .WithCounters(m_TransportBytesSent, m_TransportBytesReceived)

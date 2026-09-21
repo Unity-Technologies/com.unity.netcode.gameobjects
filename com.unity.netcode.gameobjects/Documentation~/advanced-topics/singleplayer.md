@@ -1,10 +1,10 @@
 # Single player sessions
 
-Netcode for GameObjects provides a [SinglePlayerTransport](xref:Unity.Netcode.Transports.SinglePlayer.SinglePlayerTransport) which derives from [NetworkTransport](xref:Unity.Netcode.NetworkTransport).
+Netcode for GameObjects provides a [`SinglePlayerTransport`](xref:Unity.Netcode.Transports.SinglePlayer.SinglePlayerTransport) that derives from [`NetworkTransport`](xref:Unity.Netcode.NetworkTransport).
 
-This provides the ability to run a hosted session using the single player transport without having to modify your primary netcode script.
+You can use the `SinglePlayerTransport` to run a single player session without having to modify your primary networking script.
 
-## Adding the single player transport
+## Add the single player transport
 
 - Add the `SinglePlayerTransport` to your NetworkManager.
 - You can create a custom `MonoBehaviour` component to handle your connection flow or you can derive from `NetworkManager` and add additional methods/logic to handle starting a single player session or multiplayer session.
@@ -13,6 +13,6 @@ This provides the ability to run a hosted session using the single player transp
 
 ## Example script
 
-Below is an example component script that provides a single method to start a single or multi player session:
+The following is an example component script that provides a single method to start a single or multiplayer session:
 
 [!code-cs[](../../Tests/Runtime/DocumentationCodeSamples/Configuration/SinglePlayerSessions.cs#SinglePlayerTransportExample)]

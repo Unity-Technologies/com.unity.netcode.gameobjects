@@ -811,7 +811,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkObjectRoot"><see cref="GameObject"/></param>
         /// <param name="server"><see cref="NetworkManager"/></param>
         /// <param name="clients">An array of <see cref="NetworkManager"/>s</param>
-        [Obsolete("This method is no longer valid or used.", false)]
+        [Obsolete("This method is no longer valid or used.", true)]
         public static void MarkAsSceneObjectRoot(GameObject networkObjectRoot, NetworkManager server, NetworkManager[] clients)
         {
         }
@@ -1173,7 +1173,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This method is no longer used.
         /// </summary>
         /// <param name="scenesProcessed"><see cref="Action"/></param>
-        [Obsolete("This method is deprecated and no longer used", false)]
+        [Obsolete("This method is deprecated and no longer used", true)]
         public static void SetRefreshAllPrefabsCallback(Action scenesProcessed)
         {
             NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
@@ -1184,7 +1184,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="networkObject"><see cref="NetworkObject"/></param>
         /// <param name="scenesProcessed"><see cref="Action"/></param>
-        [Obsolete("This method is deprecated and no longer used", false)]
+        [Obsolete("This method is deprecated and no longer used", true)]
         public static void RefreshAllPrefabInstances(NetworkObject networkObject, Action scenesProcessed)
         {
             NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;

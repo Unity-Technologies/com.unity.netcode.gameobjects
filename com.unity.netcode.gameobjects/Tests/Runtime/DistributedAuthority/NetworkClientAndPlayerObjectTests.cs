@@ -155,7 +155,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Validates the same thing when a client late joins and when a client disconnects.
         /// </summary>
         [UnityTest]
-        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149595", "ValidateNetworkClients throws duplicate-key ArgumentException on CoreCLR (DAHost)")]
+#if ENABLE_CORECLR
+        [Explicit("ValidateNetworkClients throws duplicate-key ArgumentException on CoreCLR (DAHost), see https://jira.unity3d.com/browse/UUM-149595")]
+#endif
         public IEnumerator ValidateNetworkClients()
         {
             // Validate the initial clients created

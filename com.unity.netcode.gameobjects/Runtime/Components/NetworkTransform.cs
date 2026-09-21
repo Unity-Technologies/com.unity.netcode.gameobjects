@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Runtime;
 using UnityEngine;
 
@@ -3860,17 +3861,6 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region PARENTING AND OWNERSHIP
-        /// <inheritdoc/>
-        public override void OnLostOwnership()
-        {
-            base.OnLostOwnership();
-        }
-
-        /// <inheritdoc/>
-        public override void OnGainedOwnership()
-        {
-            base.OnGainedOwnership();
-        }
         /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {

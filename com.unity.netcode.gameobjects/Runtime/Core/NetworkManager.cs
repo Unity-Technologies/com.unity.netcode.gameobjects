@@ -4,9 +4,20 @@ using System.Linq;
 using Unity.Collections;
 #if UNIFIED_NETCODE
 using Unity.Entities;
-using Unity.NetCode;
+// N4E's own Netcode class cannot be aliased as "Netcode": inside namespace Unity.Netcode that name
+// resolves to the enclosing Unity.Netcode namespace before any file-scope alias is considered, so it gets
+// its own name here. 6.7.0 additionally keeps the config and world types under the older Unity.NetCode
+// casing, aliased to the 7.0.0 spellings so the use sites below read the same either way.
+#if UNIFIED_NETCODE_7_0_0
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#else
+using EntitiesNetcode = Unity.NetCode.Netcode;
+using NetcodeConfig = Unity.NetCode.NetCodeConfig;
+using NetcodeWorld = Unity.NetCode.NetcodeWorld;
+#endif
 #endif
 using Unity.Netcode.Components;
+using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
 // TODO-UNIFIED: When:
@@ -64,25 +75,6 @@ namespace Unity.Netcode
         [HideInInspector]
         public bool NetworkManagerExpanded;
 #endif
-
-        // TODO: Deprecate...
-        // The following internal values are not used, but because ILPP makes them public in the assembly, they cannot
-        // be removed thanks to our semver validation.
-#pragma warning disable IDE1006 // disable naming rule violation check
-
-        // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
-
-        // RuntimeAccessModifiersILPP will make this `public`
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
-
-        // RuntimeAccessModifiersILPP will make this `public` (legacy table should be removed in v3.x.x)
-        [Obsolete("This field is no longer used and will be removed in a future version.")]
-        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-
-#pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEBUG
         private static List<Type> s_SerializedType = new List<Type>();
@@ -1389,13 +1381,13 @@ namespace Unity.Netcode
 
             if (this == Singleton)
             {
-                if (NetCode.Netcode.IsActive)
+                if (EntitiesNetcode.IsActive)
                 {
                     Log.Info(new Context(LogLevel.Normal, "Netcode is not active but has an instance at this point."));
                 }
                 /// !! Important !!
                 /// Clear out any pre-existing configuration in the event this applicatioin instance has already been connected to a session.
-                NetCode.Netcode.Reset();
+                EntitiesNetcode.Reset();
             }
 
             /// !! Initialize worlds here !!
@@ -1410,21 +1402,21 @@ namespace Unity.Netcode
         /// <returns>True if the configuration is correct; otherwise, false.</returns>
         private bool UnifiedIsConfiguredCorrectly()
         {
-            if (NetCodeConfig.Global == null)
+            if (NetcodeConfig.Global == null)
             {
-                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetCodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetcodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (HybridNetcodeDefaults.IsMissingRequired(NetCodeConfig.Global, out var reason))
+            if (HybridNetcodeDefaults.IsMissingRequired(NetcodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetcodeConfig)} cannot be used in hybrid mode: {reason}.").AddTag("Unified"));
                 return false;
             }
             return true;
         }
 
         /// <summary>
-        /// Drives the <see cref="NetCodeConfig"/> tick rates from <see cref="NetworkConfig.TickRate"/> so that ghost
+        /// Drives the <see cref="NetcodeConfig"/> tick rates from <see cref="NetworkConfig.TickRate"/> so that ghost
         /// updates land on the same interval as the rest of Netcode for GameObjects.
         /// </summary>
         /// <remarks>
@@ -1434,12 +1426,12 @@ namespace Unity.Netcode
         /// </remarks>
         private void UnifiedAlignTickRate()
         {
-            if (!HybridNetcodeDefaults.ApplyTickRate(NetCodeConfig.Global, NetworkConfig.TickRate))
+            if (!HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
             {
                 return;
             }
 
-            Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetCodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
+            Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
         }
 #endif
 

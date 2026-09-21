@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Netcode.GameObjects.Timing;
 
 namespace Unity.Netcode
 {
@@ -686,7 +687,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This method should not be used. It is left over from a previous interface
         /// </summary>
-        [Obsolete("This property is no longer used and will be removed in a future version.")]
+        [Obsolete("This property is no longer used and will be removed in a future version.", true)]
         public int LastModifiedTick => NetworkTickSystem.NoTick;
 
         /// <summary>

@@ -14,7 +14,7 @@
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.NetCode",
+        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
         "Unity.Entities"
     ],
     "includePlatforms": [],
@@ -30,6 +30,11 @@
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [
+        {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
         {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
@@ -49,16 +54,6 @@
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
-        },
-        {
-            "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
-        },
-        {
-            "name": "com.unity.test-framework",
-            "expression": "1.7.0",
-            "define": "UNITY_TEST_FRAMEWORK_1_7_OR_NEWER"
         }
     ],
     "noEngineReferences": false

@@ -1,3 +1,5 @@
+using Unity.Netcode.GameObjects.Timing;
+
 namespace Unity.Netcode
 {
     internal struct TimeSyncMessage : INetworkMessage, INetworkSerializeByMemcpy

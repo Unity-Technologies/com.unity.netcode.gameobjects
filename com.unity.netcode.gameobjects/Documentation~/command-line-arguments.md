@@ -23,40 +23,22 @@ You can define additional custom command-line arguments and retrieve them throug
 ## Example
 
 The following code shows you an example of defining and then reading a custom command-line argument.
-```
-private const string k_OverrideArg = "-argName";
 
-private bool ParseCommandLineOptions(out string command)
-{
-    if (CommandLineOptions.Instance.GetArg(k_OverrideArg) is string argValue)
-    {
-        command = argValue;
-        return true;
-    }
-    command = default;
-    return false;
-}
-```
+[!code-cs[](../Tests/Runtime/DocumentationCodeSamples/Configuration/CommandLineOptionsDocsTests.cs#DefineAndRead)]
 
 Usage example:
 
-```
-if (ParseCommandLineOptions(out var command))
-{
-    // Your logic here
-}
-```
+[!code-cs[](../Tests/Runtime/DocumentationCodeSamples/Configuration/CommandLineOptionsDocsTests.cs#Usage)]
 
 ## Override connection data
 
-If you want to ignore the connection port provided through command-line arguments, you can override it by using the optional `forceOverride` parameter in:
+By default, the command line provided connection port and ip address take precedence over runtime configured values when using the [Unity transport](./advanced-topics/transports.md#unity-transport-package).
 
-```
-UnityTransport.SetConnectionData(string ip, ushort port, string listenAddress, bool forceOverride);
-```
+> [!NOTE]
+> When the [Unity dedicated server package](https://docs.unity3d.com/Documentation/Manual/dedicated-server.html) is installed, Unity transport will use the port and ip address provided by the dedicated server package.
 
-Setting `forceOverride` to `true` ensures that the values you pass to `SetConnectionData` override any values specified via command-line arguments.
+If you want to ignore the connection port provided through command-line arguments, you can override it by setting the `forceOverrideCommandLineArgs` parameter of UnityTransport's [`SetConnectionData`](xref:Unity.Netcode.Transports.UTP.UnityTransport.SetConnectionData(System.Boolean,System.String,System.UInt16,System.String)). Setting `forceOverrideCommandLineArgs` to `true` ensures that the values you pass to `SetConnectionData` will override any values specified via command-line arguments.
 
 ## Additional resources
 
-- [Command-line arguments in the Unity Manual](https://docs.unity3d.com/6000.2/Documentation/Manual/CommandLineArguments.html)
+- [Command-line arguments in the Unity Manual](https://docs.unity3d.com/Documentation/Manual/CommandLineArguments.html)

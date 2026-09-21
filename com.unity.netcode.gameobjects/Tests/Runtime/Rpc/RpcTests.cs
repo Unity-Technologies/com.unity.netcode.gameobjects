@@ -91,7 +91,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [UnityCoreClrExplicitDisabled("https://jira.unity3d.com/browse/UUM-149592", "NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer)")]
+#if ENABLE_CORECLR
+        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
+#endif
         public IEnumerator TestRpcs()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER* RpcTestNB component
