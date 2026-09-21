@@ -522,7 +522,7 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogErrorServer($"[{networkObject.name}][Session Owner Only] You cannot change ownership of a {nameof(NetworkObject)} that has the {NetworkObject.OwnershipStatus.SessionOwner} flag set!");
                     }
-                    networkObject.InvokeOwnershipPermissionsFailure();
+                    networkObject.InvokeOwnershipPermissionsFailure(NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly);
                     return;
                 }
 
@@ -535,7 +535,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Locked] You cannot change ownership while a {nameof(NetworkObject)} is locked!");
                         }
-                        networkObject.InvokeOwnershipPermissionsFailure();
+                        networkObject.InvokeOwnershipPermissionsFailure(NetworkObject.OwnershipPermissionsFailureStatus.Locked);
                         return;
                     }
                     if (networkObject.IsRequestInProgress)
@@ -544,7 +544,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Request Pending] You cannot change ownership while a {nameof(NetworkObject)} has a pending ownership request!");
                         }
-                        networkObject.InvokeOwnershipPermissionsFailure();
+                        networkObject.InvokeOwnershipPermissionsFailure(NetworkObject.OwnershipPermissionsFailureStatus.RequestInProgress);
                         return;
                     }
                     if (networkObject.IsOwnershipRequestRequired)
@@ -553,7 +553,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Request Required] You cannot change ownership directly if a {nameof(NetworkObject)} has the {NetworkObject.OwnershipStatus.RequestRequired} flag set!");
                         }
-                        networkObject.InvokeOwnershipPermissionsFailure();
+                        networkObject.InvokeOwnershipPermissionsFailure(NetworkObject.OwnershipPermissionsFailureStatus.RequestRequired);
                         return;
                     }
                     if (!networkObject.IsOwnershipTransferable)
@@ -562,7 +562,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogErrorServer($"[{networkObject.name}][Not transferrable] You cannot change ownership of a {nameof(NetworkObject)} that does not have the {NetworkObject.OwnershipStatus.Transferable} flag set!");
                         }
-                        networkObject.InvokeOwnershipPermissionsFailure();
+                        networkObject.InvokeOwnershipPermissionsFailure(NetworkObject.OwnershipPermissionsFailureStatus.NotTransferrable);
                         return;
                     }
                 }

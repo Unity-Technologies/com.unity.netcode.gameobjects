@@ -1501,6 +1501,9 @@ namespace Unity.Netcode
                     catch (Exception ex)
                     {
                         Log.Exception(ex);
+                        // Shutdown on exception to assure everything is cleaned up correctly
+                        ShutdownInternal();
+                        return false;
                     }
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
@@ -1584,6 +1587,9 @@ namespace Unity.Netcode
                     catch (Exception ex)
                     {
                         Log.Exception(ex);
+                        // Shutdown on exception to assure everything is cleaned up correctly
+                        ShutdownInternal();
+                        return false;
                     }
                 }
             }
@@ -1705,16 +1711,10 @@ namespace Unity.Netcode
             // Notify the host that everything should be synchronized/spawned at this time.
             SpawnManager.NotifyNetworkObjectsSynchronized();
 
-            try
-            {
-                OnServerStarted?.Invoke();
-                OnClientStarted?.Invoke();
-                OnStarted?.Invoke();
-            }
-            catch (Exception ex)
-            {
-                Log.Exception(ex);
-            }
+            // No need to try/catch these callbacks because this function is already wrapped.
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+            OnStarted?.Invoke();
 
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are

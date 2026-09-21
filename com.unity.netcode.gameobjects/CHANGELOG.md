@@ -18,6 +18,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Ensured all callbacks are wrapped with exception handling to avoid silent errors. (#4161)
+
 ### Security
 
 ### Obsolete

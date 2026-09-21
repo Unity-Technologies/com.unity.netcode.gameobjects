@@ -818,11 +818,11 @@ namespace Unity.Netcode
         public OnOwnershipPermissionsFailureDelegateHandler OnOwnershipPermissionsFailure;
 
 
-        internal void InvokeOwnershipPermissionsFailure()
+        internal void InvokeOwnershipPermissionsFailure(OwnershipPermissionsFailureStatus failureStatus)
         {
             try
             {
-                OnOwnershipPermissionsFailure?.Invoke(OwnershipPermissionsFailureStatus.SessionOwnerOnly);
+                OnOwnershipPermissionsFailure?.Invoke(failureStatus);
             }
             catch (Exception ex)
             {
