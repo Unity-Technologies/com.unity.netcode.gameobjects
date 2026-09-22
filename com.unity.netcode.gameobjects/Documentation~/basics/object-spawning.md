@@ -106,13 +106,12 @@ To override prefabs on non-authority clients, refer to [Network prefab handler](
 
 By default, when you destroy a spawned network prefab instance on the authority, Netcode for GameObjects automatically destroys it on all clients.
 
-When a client disconnects, by default it destroys all network prefab instances that it dynamically created during the network session. If you don't want that to happen, set the `DontDestroyWithOwner` field on `NetworkObject` to `true` before you despawn.
+When a client disconnects, the authority despawns and destroys every spawned `NetworkObject` that the disconnecting client owns, regardless of which client spawned it. This matters under a server-authoritative model, where clients can't spawn objects but commonly own objects that the server spawned. To keep an object alive after its owner disconnects, set the `DontDestroyWithOwner` field on `NetworkObject` to `true` while the object is still spawned. The authority then transfers or removes ownership instead of destroying the object.
 
 To do this at runtime:
 
 ```csharp
 m_SpawnedNetworkObject.DontDestroyWithOwner = true;
-m_SpawnedNetworkObject.Despawn();
 ```
 
 To make this the default in the **Inspector** window:
@@ -130,7 +129,7 @@ On the non-authority side, never call `Object.Destroy` on any GameObject with a 
 The only way to despawn a `NetworkObject` for a specific client is to use `NetworkObject.NetworkHide`. For more information, refer to [Object visibility](object-visibility.md).
 
 > [!NOTE]
-> If you have child GameObjects with `NetworkBehaviour` components attached, of a parent GameObject with a `NetworkObject` component attached, you can't disable the child GameObjects before you spawn or despawn. Make sure all child GameObjects are enabled in the hierarchy before you spawn or despawn.
+> Don't disable child GameObjects that have `NetworkBehaviour` components attached before you spawn the parent `NetworkObject`. Netcode for GameObjects excludes disabled `NetworkBehaviour` components from spawning and synchronization, so make sure all child GameObjects are enabled in the hierarchy before you spawn. This restriction doesn't apply to despawning.
 
 ## Spawn network prefabs dynamically
 
