@@ -3716,6 +3716,28 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Determines whether any <see cref="NetworkTransform"/> on this <see cref="NetworkObject"/> is non-authority.
+        /// </summary>
+        /// <remarks>
+        /// Authority is derived the same way <see cref="InternalInitialization"/> derives it rather than read from
+        /// <see cref="CanCommitToTransform"/>, so the result does not depend upon the order in which the nested
+        /// <see cref="NetworkTransform"/> components are initialized.
+        /// </remarks>
+        private bool HasNonAuthorityNetworkTransform()
+        {
+            var networkTransforms = NetworkObject.NetworkTransforms;
+            for (int i = 0; i < networkTransforms.Count; i++)
+            {
+                var networkTransform = networkTransforms[i];
+                if (!(networkTransform.IsServerAuthoritative() ? networkTransform.IsServer : networkTransform.IsOwner))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// The internal initialization method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
@@ -3777,8 +3799,13 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+                // Make sure authority doesn't get added to updates (no need to do this on the authority side), but the
+                // registration is per-NetworkObject while the authority motion model is per-NetworkTransform. Nested
+                // instances with the inverted authority mode still need the update.
+                if (!HasNonAuthorityNetworkTransform())
+                {
+                    m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+                }
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
