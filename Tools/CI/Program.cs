@@ -9,7 +9,7 @@ public static class Program
 {
     public static int Main(string[] args)
     {
-        var settings = new NGOSettings();
+        var settings = new NgoWrenchSettings();
         var buildAutomationSettings = new NgoBuildAutomationSettings();
 
         // ReSharper disable once UnusedVariable
