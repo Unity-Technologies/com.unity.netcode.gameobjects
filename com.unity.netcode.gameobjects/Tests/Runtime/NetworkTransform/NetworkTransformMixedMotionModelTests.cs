@@ -49,6 +49,10 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Failed to spawn {instance.name} on all clients!");
 
             var newOwner = m_ClientNetworkManagers[0];
+
+            // Establish the baseline before ownership is transferred, otherwise the check below would still pass if this instance was never registered for the fixed update to begin with.
+            Assert.True(newOwner.NetworkTransformFixedUpdate.ContainsKey(instance.NetworkObjectId), $"Client-{newOwner.LocalClientId} should initially be registered for the fixed update!");
+
             instance.ChangeOwnership(newOwner.LocalClientId);
             yield return WaitForConditionOrTimeOut(() => newOwner.SpawnManager.SpawnedObjects[instance.NetworkObjectId].OwnerClientId == newOwner.LocalClientId);
             AssertOnTimeout($"Client-{newOwner.LocalClientId} never gained ownership of {instance.name}!");
