@@ -3716,13 +3716,15 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Determines whether any <see cref="NetworkTransform"/> on this <see cref="NetworkObject"/> is non-authority.
+        /// Returns whether any <see cref="NetworkTransform"/> on this <see cref="NetworkObject"/> is non-authority.
         /// </summary>
-        /// <remarks>
-        /// Authority is derived the same way <see cref="InternalInitialization"/> derives it rather than read from
-        /// <see cref="CanCommitToTransform"/>, so the result does not depend upon the order in which the nested
-        /// <see cref="NetworkTransform"/> components are initialized.
-        /// </remarks>
+
+        private void Thing() { }
+
+        /// <summary>
+        /// Determines if this <see cref="NetworkObject"/> has any <see cref="NetworkTransform"/> instances that are non-authority.
+        /// </summary>
+        /// <returns>true if a non-authority NetworkTransform exists on this NetworkObject and false if there are none.</returns>
         private bool HasNonAuthorityNetworkTransform()
         {
             var networkTransforms = NetworkObject.NetworkTransforms;
@@ -3799,9 +3801,8 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // Make sure authority doesn't get added to updates (no need to do this on the authority side), but the
-                // registration is per-NetworkObject while the authority motion model is per-NetworkTransform. Nested
-                // instances with the inverted authority mode still need the update.
+                // If there are no non-authority NetworkTransform instances on this NetworkObject, then remove this instance from the NetworkManager's update list.
+                // Otherwise, we need to keep it registered for updates so the non-authority instances will process their received state updates and apply them to the transform.
                 if (!HasNonAuthorityNetworkTransform())
                 {
                     m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
