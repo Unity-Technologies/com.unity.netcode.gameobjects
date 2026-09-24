@@ -3716,21 +3716,29 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Returns whether any <see cref="NetworkTransform"/> on this <see cref="NetworkObject"/> is non-authority.
+        /// Determines if this <see cref="NetworkObject"/> has any <see cref="NetworkTransform"/> instances that are non-authority and are updated during the same update stage.
         /// </summary>
-
-        private void Thing() { }
-
-        /// <summary>
-        /// Determines if this <see cref="NetworkObject"/> has any <see cref="NetworkTransform"/> instances that are non-authority.
-        /// </summary>
+        /// <remarks>
+        /// See <see cref="InternalInitialization"/> to better understand how the <paramref name="forUpdate"/> parameter is used to determine which update stage to check for non-authority <see cref="NetworkTransform"/> instances.
+        /// </remarks>
+        /// <param name="forUpdate">true to check the instances updated during the standard update and false to check the instances updated during the fixed update.</param>
         /// <returns>true if a non-authority NetworkTransform exists on this NetworkObject and false if there are none.</returns>
-        private bool HasNonAuthorityNetworkTransform()
+        private bool HasNonAuthorityNetworkTransform(bool forUpdate)
         {
             var networkTransforms = NetworkObject.NetworkTransforms;
             for (int i = 0; i < networkTransforms.Count; i++)
             {
                 var networkTransform = networkTransforms[i];
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                // If the update stages don't match, then skip this instance.
+                // Reference:
+                // forUpdate is true for the standard update and false for the fixed update.
+                // m_UseRigidbodyForMotion is false for the standard update and true for the fixed update.
+                if (forUpdate == networkTransform.m_UseRigidbodyForMotion)
+                {
+                    continue;
+                }
+#endif
                 if (!(networkTransform.IsServerAuthoritative() ? networkTransform.IsServer : networkTransform.IsOwner))
                 {
                     return true;
@@ -3801,9 +3809,9 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // If there are no non-authority NetworkTransform instances on this NetworkObject, then remove this instance from the NetworkManager's update list.
+                // If there are no non-authority NetworkTransform instances on this NetworkObject using this update, then remove this instance from the NetworkManager's update list.
                 // Otherwise, we need to keep it registered for updates so the non-authority instances will process their received state updates and apply them to the transform.
-                if (!HasNonAuthorityNetworkTransform())
+                if (!HasNonAuthorityNetworkTransform(forUpdate))
                 {
                     m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
                 }
