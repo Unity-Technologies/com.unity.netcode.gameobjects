@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue with mixed authority nested `NetworkTransform` instances can stop child/nested `NetworkTransform` instances from updating due to a parent (root or otherwise) `NetworkTransform` that is the authority instance will remove the `NetworkObject` completely from the non-authority update group causing non-authority instances to never update their state (interpolating or not) on the authority side. (#4169)
 
 ### Security
 

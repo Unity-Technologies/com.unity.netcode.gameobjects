@@ -3716,6 +3716,38 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Determines if this <see cref="NetworkObject"/> has any <see cref="NetworkTransform"/> instances that are non-authority and are updated during the same update stage.
+        /// </summary>
+        /// <remarks>
+        /// See <see cref="InternalInitialization"/> to better understand how the <paramref name="forUpdate"/> parameter is used to determine which update stage to check for non-authority <see cref="NetworkTransform"/> instances.
+        /// </remarks>
+        /// <param name="forUpdate">true to check the instances updated during the standard update and false to check the instances updated during the fixed update.</param>
+        /// <returns>true if a non-authority NetworkTransform exists on this NetworkObject and false if there are none.</returns>
+        private bool HasNonAuthorityNetworkTransform(bool forUpdate)
+        {
+            var networkTransforms = NetworkObject.NetworkTransforms;
+            for (int i = 0; i < networkTransforms.Count; i++)
+            {
+                var networkTransform = networkTransforms[i];
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                // If the update stages don't match, then skip this instance.
+                // Reference:
+                // forUpdate is true for the standard update and false for the fixed update.
+                // m_UseRigidbodyForMotion is false for the standard update and true for the fixed update.
+                if (forUpdate == networkTransform.m_UseRigidbodyForMotion)
+                {
+                    continue;
+                }
+#endif
+                if (!(networkTransform.IsServerAuthoritative() ? networkTransform.IsServer : networkTransform.IsOwner))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// The internal initialization method to allow for internal API adjustments
         /// </summary>
         /// <param name="isOwnershipChange"></param>
@@ -3777,8 +3809,12 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+                // If there are no non-authority NetworkTransform instances on this NetworkObject using this update, then remove this instance from the NetworkManager's update list.
+                // Otherwise, we need to keep it registered for updates so the non-authority instances will process their received state updates and apply them to the transform.
+                if (!HasNonAuthorityNetworkTransform(forUpdate))
+                {
+                    m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+                }
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
