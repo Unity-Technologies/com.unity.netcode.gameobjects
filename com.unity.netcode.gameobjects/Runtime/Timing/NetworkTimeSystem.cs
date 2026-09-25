@@ -7,10 +7,17 @@ namespace Unity.Netcode.GameObjects.Timing
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
-    /// The network time system maintains both a local and a server time. The local time is based on the server time
-    /// as last received from the server plus an offset based on the current RTT - in other words, it is a best-guess
-    /// effort at predicting what the server tick will be when a given network action is processed on the server.
+    /// The network time system maintains both a local and a server time. The local time is the server time as last
+    /// received from the server, plus half the current RTT to account for the delivery delay of that value, plus
+    /// <see cref="LocalBufferSec"/> - in other words, it is a best-guess estimate of what the server clock reads
+    /// right now.
     /// </summary>
+    /// <remarks>
+    /// <see cref="LocalTime"/> is not a prediction of the server tick that will process a message sent from this
+    /// client. Its lead over the server clock is <see cref="LocalBufferSec"/>, which does not scale with latency,
+    /// so a message sent at <see cref="LocalTime"/> arrives before or after that tick depending on the RTT. For the
+    /// measured client-to-server latency in ticks, use <see cref="TickLatency"/>, which is based on the full RTT.
+    /// </remarks>
     [Serializable]
     [MovedFrom(true, "Unity.Netcode", null, null)]
     public class NetworkTimeSystem
