@@ -5,7 +5,7 @@ using RecipeEngine.Modules.Wrench.Settings;
 
 namespace NGO.Cookbook.Settings;
 
-public class NGOSettings : AnnotatedSettingsBase
+public class NgoWrenchSettings : AnnotatedSettingsBase
 {
     // Path from the root of the repository where packages are located.
     readonly string[] packagesRootPaths = {"."};
@@ -29,7 +29,7 @@ public class NGOSettings : AnnotatedSettingsBase
         }
     };
 
-    public NGOSettings()
+    public NgoWrenchSettings()
     {
         Wrench = new WrenchSettings(packagesRootPaths, PackageOptions);
         Wrench.PvpProfilesToCheck = new HashSet<string>() { "supported" };
