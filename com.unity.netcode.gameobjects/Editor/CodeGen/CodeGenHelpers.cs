@@ -208,6 +208,148 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             }
         }
 
+        /// <summary>
+        /// Checks a generic method instantiation against the generic constraints of the method it instantiates.
+        /// Mono does not enforce these on the calls codegen emits, but CoreCLR does, and it rejects the entire
+        /// calling method if any single call in it violates them.
+        /// </summary>
+        /// <param name="method">The instantiation to validate.</param>
+        /// <param name="violation">Why the instantiation is invalid, or null when it is valid.</param>
+        /// <returns>True if every generic argument satisfies its parameter's constraints.</returns>
+        public static bool SatisfiesGenericConstraints(this GenericInstanceMethod method, out string violation)
+        {
+            var genericParameters = method.ElementMethod.Resolve().GenericParameters;
+            for (var i = 0; i < genericParameters.Count; ++i)
+            {
+                var parameter = genericParameters[i];
+                var argument = method.GenericArguments[i];
+                violation = GetConstraintViolation(parameter, argument, method.GenericArguments);
+                if (violation != null)
+                {
+                    violation = $"{argument.FullName} {violation} (required by {parameter.Name} on {method.ElementMethod.Name})";
+                    return false;
+                }
+            }
+
+            violation = null;
+            return true;
+        }
+
+        private static string GetConstraintViolation(GenericParameter parameter, TypeReference argument, IList<TypeReference> methodArguments)
+        {
+            var resolved = argument.Resolve();
+            if (resolved == null)
+            {
+                return "could not be resolved";
+            }
+
+            if (parameter.HasNotNullableValueTypeConstraint && (!resolved.IsValueType || resolved.FullName == typeof(Nullable<>).FullName))
+            {
+                return "is not a non-nullable value type";
+            }
+
+            if (parameter.HasReferenceTypeConstraint && resolved.IsValueType)
+            {
+                return "is not a reference type";
+            }
+
+            if (parameter.HasDefaultConstructorConstraint && !resolved.IsValueType && (resolved.IsAbstract || !HasPublicParameterlessConstructor(resolved)))
+            {
+                return "does not have a public parameterless constructor";
+            }
+
+            foreach (var constraint in parameter.Constraints)
+            {
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
+                var constraintType = constraint;
+#else
+                var constraintType = constraint.ConstraintType;
+#endif
+                // The unmanaged constraint is encoded as System.ValueType modreq(UnmanagedType); the runtime only checks the value type part.
+                if (constraintType is RequiredModifierType modifierType)
+                {
+                    constraintType = modifierType.ElementType;
+                }
+
+                constraintType = SubstituteGenericArguments(constraintType, GenericParameterType.Method, methodArguments);
+                if (constraintType.FullName == typeof(ValueType).FullName)
+                {
+                    continue;
+                }
+
+                if (!IsAssignableTo(argument, constraintType.FullName))
+                {
+                    return $"does not implement or derive from {constraintType.FullName}";
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasPublicParameterlessConstructor(TypeDefinition type)
+        {
+            foreach (var method in type.Methods)
+            {
+                if (method.IsConstructor && !method.IsStatic && method.IsPublic && !method.HasParameters)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAssignableTo(TypeReference type, string targetFullName)
+        {
+            if (type.FullName == targetFullName)
+            {
+                return true;
+            }
+
+            var resolved = type.Resolve();
+            if (resolved == null)
+            {
+                return false;
+            }
+
+            // Interfaces and the base type are declared against the definition's own generic parameters, so close them over this instance's arguments.
+            var typeArguments = (type as GenericInstanceType)?.GenericArguments;
+            foreach (var implemented in resolved.Interfaces)
+            {
+                if (IsAssignableTo(SubstituteGenericArguments(implemented.InterfaceType, GenericParameterType.Type, typeArguments), targetFullName))
+                {
+                    return true;
+                }
+            }
+
+            return resolved.BaseType != null && IsAssignableTo(SubstituteGenericArguments(resolved.BaseType, GenericParameterType.Type, typeArguments), targetFullName);
+        }
+
+        private static TypeReference SubstituteGenericArguments(TypeReference type, GenericParameterType parameterType, IList<TypeReference> arguments)
+        {
+            if (arguments == null)
+            {
+                return type;
+            }
+
+            if (type is GenericParameter genericParameter && genericParameter.Type == parameterType)
+            {
+                return arguments[genericParameter.Position];
+            }
+
+            if (type is GenericInstanceType genericInstance)
+            {
+                var substituted = new GenericInstanceType(genericInstance.ElementType);
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    substituted.GenericArguments.Add(SubstituteGenericArguments(argument, parameterType, arguments));
+                }
+                return substituted;
+            }
+
+            return type;
+        }
+
         public static bool IsSerializable(this TypeReference typeReference)
         {
             var typeSystem = typeReference.Module.TypeSystem;

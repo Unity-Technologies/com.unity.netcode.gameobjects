@@ -104,13 +104,20 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator TestPeerDisconnectCallback([Values] ClientDisconnectType clientDisconnectType, [Values(1ul, 2ul, 3ul)] ulong disconnectedClient)
         {
             m_TargetClientShutdown = false;
-            m_TargetClient = m_ClientNetworkManagers[disconnectedClient - 1];
+            // Client ids follow connection order, which is not guaranteed to match creation order
+            m_TargetClient = null;
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager.LocalClientId == disconnectedClient)
+                {
+                    m_TargetClient = clientNetworkManager;
+                    break;
+                }
+            }
+            Assert.NotNull(m_TargetClient, $"No client has id {disconnectedClient}!");
             m_TargetClientId = m_TargetClient.LocalClientId;
             m_TargetClient.OnClientStopped += ClientToDisconnect_OnClientStopped;
             foreach (var client in m_NetworkManagers)
