@@ -143,7 +143,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private static readonly int[] k_NumberToSpawn = { 1, 2 };
 
-        // Clients are added during the test, so this is only the starting count.
+        // The starting client count. Clients are added during the test.
         protected override int NumberOfClients => m_MinimumClients;
 
 #if UNIFIED_NETCODE
@@ -217,10 +217,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Runs every NetVar combination and spawn count against each client count, adding a client between
-        /// passes rather than starting a new session per combination.
-        /// All clients spawn the NetworkObjects before the NetworkVariables are set, and every case despawns
-        /// its NetworkObjects before the next one starts.
+        /// Runs each NetVar combination and spawn count for each client count in one session.<br />
+        /// A client is added between client count passes.<br />
+        /// Each case despawns its NetworkObjects before the next case starts.
         /// </summary>
         [UnityTest]
         public IEnumerator BehaviourUpdaterAllTests()

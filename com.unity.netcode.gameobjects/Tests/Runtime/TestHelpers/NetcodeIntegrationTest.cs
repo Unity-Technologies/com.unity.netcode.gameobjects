@@ -1014,8 +1014,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
 #if UNIFIED_NETCODE
-            // N4E worlds and the unified transport only start when a hybrid prefab is registered, so a hybrid
-            // test case that registers none of its own (i.e. it only spawns players) would otherwise run as plain NGO.
+            // N4E worlds and the unified transport only start when a hybrid prefab is registered.
+            // Without this, a hybrid test case that only spawns players would run as plain NGO.
             if (m_AllPrefabsAsHybrid && !m_HybridPrefabCreated)
             {
                 CreateHybridPrefab("UnifiedSessionPrefab");

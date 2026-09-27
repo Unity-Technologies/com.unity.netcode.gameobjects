@@ -67,9 +67,6 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        /// <summary>
-        /// Despawns the current instance from its authority, which may have moved to another client.
-        /// </summary>
         private IEnumerator DespawnInstance(string testCase)
         {
             var instanceName = m_Instance.name;

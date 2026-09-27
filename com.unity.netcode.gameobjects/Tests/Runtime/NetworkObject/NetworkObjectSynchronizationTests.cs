@@ -113,11 +113,9 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkObjectDeserializationFailure()
         {
 #if UNIFIED_NETCODE
-            // Removing the prefab from the client's NetworkConfig does not unregister its ghost prefab,
-            // which every world in this process shares, so the client still spawns the "invalid" instances.
             if (m_AllPrefabsAsHybrid)
             {
-                Assert.Ignore("A missing hybrid prefab cannot be simulated with all worlds in one process.");
+                Assert.Ignore("Removing a hybrid prefab from one client does not unregister its ghost prefab. All worlds in this process share that registration.");
             }
 #endif
             m_CurrentLogLevel = LogLevel.Nothing;
