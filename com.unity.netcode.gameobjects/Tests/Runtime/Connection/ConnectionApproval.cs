@@ -13,6 +13,12 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(PlayerCreation.PrefabHash)]
     [TestFixture(PlayerCreation.NoPlayer)]
     [TestFixture(PlayerCreation.FailValidation)]
+#if UNIFIED_NETCODE
+    [TestFixture(PlayerCreation.Prefab, HostOrServer.UnifiedHost)]
+    [TestFixture(PlayerCreation.PrefabHash, HostOrServer.UnifiedHost)]
+    [TestFixture(PlayerCreation.NoPlayer, HostOrServer.UnifiedHost)]
+    [TestFixture(PlayerCreation.FailValidation, HostOrServer.UnifiedHost)]
+#endif
     internal class ConnectionApprovalTests : IntegrationTestWithApproximation
     {
         private const string k_InvalidToken = "Invalid validation token!";
@@ -35,6 +41,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_PlayerCreation = playerCreation;
         }
+
+#if UNIFIED_NETCODE
+        public ConnectionApprovalTests(PlayerCreation playerCreation, HostOrServer hostOrServer) : base(hostOrServer)
+        {
+            m_PlayerCreation = playerCreation;
+        }
+
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         protected override int NumberOfClients => 1;
 

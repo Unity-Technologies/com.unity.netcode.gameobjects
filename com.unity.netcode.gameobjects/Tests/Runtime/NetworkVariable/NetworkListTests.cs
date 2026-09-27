@@ -23,6 +23,13 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 3;
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         public NetworkListTests(HostOrServer host) : base(host) { }
 
         private GameObject m_ListObjectPrefab;

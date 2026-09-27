@@ -148,10 +148,34 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
     [TestFixture(HostOrServer.Host, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.Host, 2, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
+    [TestFixture(HostOrServer.UnifiedServer, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedServer, 1, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedServer, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
+    [TestFixture(HostOrServer.UnifiedServer, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedServer, 2, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 0, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
+    [TestFixture(HostOrServer.UnifiedHost, 0, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 0, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
+    [TestFixture(HostOrServer.UnifiedHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 1, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
+    [TestFixture(HostOrServer.UnifiedHost, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
+    [TestFixture(HostOrServer.UnifiedHost, 2, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
+#endif
     internal class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
         protected override int NumberOfClients => m_ClientCount;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
         public const int NetVarValueToSet = 1;
         private List<ulong> m_SpawnedObjects = new List<ulong>();
         private GameObject m_PrefabToSpawn;
