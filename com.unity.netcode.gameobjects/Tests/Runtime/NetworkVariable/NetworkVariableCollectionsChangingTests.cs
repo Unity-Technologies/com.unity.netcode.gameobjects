@@ -11,17 +11,12 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
 
-    [TestFixture(HostOrServer.DAHost, CollectionTypes.List)]
-    [TestFixture(HostOrServer.DAHost, CollectionTypes.Dictionary)]
-    [TestFixture(HostOrServer.Host, CollectionTypes.List)]
-    [TestFixture(HostOrServer.Host, CollectionTypes.Dictionary)]
-    [TestFixture(HostOrServer.Server, CollectionTypes.List)]
-    [TestFixture(HostOrServer.Server, CollectionTypes.Dictionary)]
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
 #if UNIFIED_NETCODE
-    [TestFixture(HostOrServer.UnifiedHost, CollectionTypes.List)]
-    [TestFixture(HostOrServer.UnifiedHost, CollectionTypes.Dictionary)]
-    [TestFixture(HostOrServer.UnifiedServer, CollectionTypes.List)]
-    [TestFixture(HostOrServer.UnifiedServer, CollectionTypes.Dictionary)]
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
 #endif
 #if ENABLE_CORECLR
     [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
@@ -42,33 +37,45 @@ namespace Unity.Netcode.RuntimeTests
             Dictionary,
             List,
         }
+        private static readonly CollectionTypes[] k_CollectionTypes = { CollectionTypes.List, CollectionTypes.Dictionary };
+
         private StringBuilder m_ErrorLog = new StringBuilder();
-        private CollectionTypes m_CollectionType;
-        private GameObject m_TestPrefab;
+        private readonly GameObject[] m_TestPrefabs = new GameObject[k_CollectionTypes.Length];
         private NetworkObject m_Instance;
 
-        public NetworkVariableCollectionsChangingTests(HostOrServer hostOrServer, CollectionTypes collectionType) : base(hostOrServer)
-        {
-            m_CollectionType = collectionType;
-        }
+        public NetworkVariableCollectionsChangingTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override void OnServerAndClientsCreated()
         {
-            m_TestPrefab = CreateNetworkObjectPrefab("TestObject");
-            if (m_CollectionType == CollectionTypes.Dictionary)
+            for (int i = 0; i < k_CollectionTypes.Length; i++)
             {
-                m_TestPrefab.AddComponent<DictionaryCollectionUpdateHelper>();
-            }
-            else
-            {
-                m_TestPrefab.AddComponent<ListCollectionUpdateHelper>();
-            }
-            if (m_DistributedAuthority)
-            {
-                var networkObject = m_TestPrefab.GetComponent<NetworkObject>();
-                networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
+                m_TestPrefabs[i] = CreateNetworkObjectPrefab($"TestObject-{k_CollectionTypes[i]}");
+                if (k_CollectionTypes[i] == CollectionTypes.Dictionary)
+                {
+                    m_TestPrefabs[i].AddComponent<DictionaryCollectionUpdateHelper>();
+                }
+                else
+                {
+                    m_TestPrefabs[i].AddComponent<ListCollectionUpdateHelper>();
+                }
+                if (m_DistributedAuthority)
+                {
+                    var networkObject = m_TestPrefabs[i].GetComponent<NetworkObject>();
+                    networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
+                }
             }
             base.OnServerAndClientsCreated();
+        }
+
+        /// <summary>
+        /// Despawns the current instance from its authority, which may have moved to another client.
+        /// </summary>
+        private IEnumerator DespawnInstance(string testCase)
+        {
+            var instanceName = m_Instance.name;
+            GetAuthorityInstance().NetworkObject.Despawn();
+            yield return WaitForDespawnedOnAllOrTimeOut(new List<NetworkObject> { m_Instance });
+            AssertOnTimeout($"{testCase} Timed out waiting for all clients to despawn {instanceName}!");
         }
 
         private bool AllInstancesSpawned()
@@ -228,6 +235,16 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator CollectionAndOwnershipChangingTest()
         {
+            for (int i = 0; i < k_CollectionTypes.Length; i++)
+            {
+                var testCase = $"[{k_CollectionTypes[i]}]";
+                yield return CollectionAndOwnershipChanging(m_TestPrefabs[i], testCase);
+                yield return DespawnInstance(testCase);
+            }
+        }
+
+        private IEnumerator CollectionAndOwnershipChanging(GameObject prefab, string testCase)
+        {
             BaseCollectionUpdateHelper.VerboseMode = m_EnableVerboseDebug;
             var runWaitPeriod = new WaitForSeconds(0.5f);
             m_Managers.Clear();
@@ -238,12 +255,12 @@ namespace Unity.Netcode.RuntimeTests
 
             var authorityNetworkManager = GetAuthorityNetworkManager();
 
-            var instance = SpawnObject(m_TestPrefab, authorityNetworkManager);
+            var instance = SpawnObject(prefab, authorityNetworkManager);
             m_Instance = instance.GetComponent<NetworkObject>();
             var helper = instance.GetComponent<BaseCollectionUpdateHelper>();
             var currentOwner = helper.OwnerClientId;
             yield return WaitForConditionOrTimeOut(AllInstancesSpawned);
-            AssertOnTimeout($"[Pre][1st Phase] Timed out waiting for all clients to spawn {m_Instance.name}!");
+            AssertOnTimeout($"{testCase}[Pre][1st Phase] Timed out waiting for all clients to spawn {m_Instance.name}!");
             helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
             yield return runWaitPeriod;
 
@@ -252,15 +269,15 @@ namespace Unity.Netcode.RuntimeTests
             {
                 helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
                 yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-                AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to validdate their values!");
+                AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to validdate their values!");
                 helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
                 yield return s_DefaultWaitForTick;
 
                 currentOwner = GetAuthorityInstance().ChangeOwner();
-                Assert.IsFalse(currentOwner == ulong.MaxValue, "A non-authority instance attempted to change ownership!");
+                Assert.IsFalse(currentOwner == ulong.MaxValue, $"{testCase} A non-authority instance attempted to change ownership!");
 
                 yield return WaitForConditionOrTimeOut(() => OwnershipChangedOnAllClients(currentOwner));
-                AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to change ownership!\n {m_ErrorLog.ToString()}");
+                AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to change ownership!\n {m_ErrorLog.ToString()}");
                 helper = GetOwnerInstance();
                 yield return runWaitPeriod;
             }
@@ -271,7 +288,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate all instances are reset
             yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[Pre][2nd Phase]Timed out waiting for all clients to validdate their values!");
+            AssertOnTimeout($"{testCase}[Pre][2nd Phase]Timed out waiting for all clients to validdate their values!");
             helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
 
             // Update, change ownership, and repeat until all clients have been the owner at least once
@@ -279,19 +296,29 @@ namespace Unity.Netcode.RuntimeTests
             {
                 yield return runWaitPeriod;
                 currentOwner = GetAuthorityInstance().ChangeOwner();
-                Assert.IsFalse(currentOwner == ulong.MaxValue, "A non-authority instance attempted to change ownership!");
+                Assert.IsFalse(currentOwner == ulong.MaxValue, $"{testCase} A non-authority instance attempted to change ownership!");
                 yield return WaitForConditionOrTimeOut(() => OwnershipChangedOnAllClients(currentOwner));
-                AssertOnTimeout($"[2nd Phase] Timed out waiting for all clients to change ownership!");
+                AssertOnTimeout($"{testCase}[2nd Phase] Timed out waiting for all clients to change ownership!");
                 helper = GetOwnerInstance();
             }
 
             helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
             yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[Last Validate] Timed out waiting for all clients to validdate their values!");
+            AssertOnTimeout($"{testCase}[Last Validate] Timed out waiting for all clients to validdate their values!");
         }
 
         [UnityTest]
         public IEnumerator CollectionFastChangingTest()
+        {
+            for (int i = 0; i < k_CollectionTypes.Length; i++)
+            {
+                var testCase = $"[{k_CollectionTypes[i]}]";
+                yield return CollectionFastChanging(m_TestPrefabs[i], testCase);
+                yield return DespawnInstance(testCase);
+            }
+        }
+
+        private IEnumerator CollectionFastChanging(GameObject prefab, string testCase)
         {
             BaseCollectionUpdateHelper.VerboseMode = m_EnableVerboseDebug;
             var runWaitPeriod = new WaitForSeconds(0.2f);
@@ -303,25 +330,25 @@ namespace Unity.Netcode.RuntimeTests
 
             var authorityNetworkManager = GetAuthorityNetworkManager();
 
-            var instance = SpawnObject(m_TestPrefab, authorityNetworkManager);
+            var instance = SpawnObject(prefab, authorityNetworkManager);
             m_Instance = instance.GetComponent<NetworkObject>();
             var helper = instance.GetComponent<BaseCollectionUpdateHelper>();
 
             yield return WaitForConditionOrTimeOut(AllInstancesSpawned);
-            AssertOnTimeout($"[Pre][1st Phase] Timed out waiting for all clients to spawn {m_Instance.name}!");
+            AssertOnTimeout($"{testCase}[Pre][1st Phase] Timed out waiting for all clients to spawn {m_Instance.name}!");
 
             helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
             yield return runWaitPeriod;
 
             helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
             yield return WaitForConditionOrTimeOut(ValidateAllValueChangedEqual);
-            AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
+            AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
 
             // Clear the collection
             helper.Clear();
 
             yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to validate their values!");
+            AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to validate their values!");
 
             // Change the collection and then change back in the same frame without forcing a dirty check
             VerboseDebug("Doing fast change test without a forced dirty check");
@@ -329,7 +356,7 @@ namespace Unity.Netcode.RuntimeTests
             helper.Clear();
 
             yield return WaitForConditionOrTimeOut(ValidateAllValueChangedEqual);
-            AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
+            AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
 
             // Change the collection and then change back in the same frame with a forced dirty check
             VerboseDebug("Doing fast change test with a forced dirty check");
@@ -337,10 +364,10 @@ namespace Unity.Netcode.RuntimeTests
             helper.Clear(true);
 
             yield return WaitForConditionOrTimeOut(ValidateOwnerHasExtraValueChangedCall);
-            AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
+            AssertOnTimeout($"{testCase}[1st Phase] Timed out waiting for all clients to have OnValueChanged an equal number of times!");
 
             yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[Last Validate] Timed out waiting for all clients to validate their values!");
+            AssertOnTimeout($"{testCase}[Last Validate] Timed out waiting for all clients to validate their values!");
         }
     }
 
