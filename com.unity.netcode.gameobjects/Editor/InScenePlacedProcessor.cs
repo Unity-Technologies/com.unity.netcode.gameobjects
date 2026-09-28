@@ -15,7 +15,10 @@ namespace Unity.Netcode.GameObjects.Editor
     /// <remarks>
     /// This will always run as the game enters the scene,
     /// </remarks>
+    // TODO: migrate to AssetPostprocessor.OnProcessScene once its cached processing is validated for this processor
+#pragma warning disable CS0618
     internal class SetInScenePlaced : IProcessSceneWithReport
+#pragma warning restore CS0618
     {
         public int callbackOrder => 0;
         public void OnProcessScene(Scene scene, BuildReport report)

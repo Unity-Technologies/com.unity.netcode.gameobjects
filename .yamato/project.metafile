@@ -85,15 +85,17 @@ test_platforms:
           standalone: Android
           base: win
           architecture: armv7
+          host_architecture: x64
         # iOS modern builds are ARM64-only, thus no testing with armv7
         - name: ios-arm64
           type: Unity::VM::osx
-          image: package-ci/macos-13:v4
+          image: package-ci/macos-13-arm64:v4
           flavor: m1.mac
           larger_flavor: m1.mac
           standalone: IOS
           base: mac
           architecture: arm64
+          host_architecture: arm64
     mobile_test:
         - name: android
           type: Unity::mobile::shield
@@ -103,6 +105,7 @@ test_platforms:
           standalone: Android
           base: win
           architecture: armv7
+          host_architecture: x64
         - name: ios-arm64
           type: Unity::mobile::iPhone
           image: package-ci/macos-13-arm64:v4
@@ -112,6 +115,7 @@ test_platforms:
           standalone: IOS
           base: mac
           architecture: arm64
+          host_architecture: arm64
     console_build:
         - name: ps4
           type: Unity::VM
