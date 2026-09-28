@@ -42,6 +42,8 @@ test_platforms:
           image: package-ci/ubuntu-22.04:v4.87.0
           flavor: b1.large
           standalone: StandaloneLinux64
+          architecture: x64
+          coreclr_component: linux-coreclr
     desktop:
         - name: ubuntu
           type: Unity::VM
@@ -50,6 +52,8 @@ test_platforms:
           smaller_flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: StandaloneLinux64
+          architecture: x64
+          coreclr_component: linux-coreclr
         - name: win
           type: Unity::VM
           image: package-ci/win10:v4
@@ -57,6 +61,8 @@ test_platforms:
           smaller_flavor: b1.medium
           larger_flavor: b1.xlarge
           standalone: StandaloneWindows64
+          architecture: x64
+          coreclr_component: windows-coreclr
         - name: mac
           type: Unity::VM::osx
           image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
@@ -65,6 +71,8 @@ test_platforms:
           smaller_flavor: m1.mac
           larger_flavor: m1.mac
           standalone: StandaloneOSX
+          architecture: arm64
+          coreclr_component: mac-coreclr
           model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
     # TODO: For android we could consider adding ARM64 configuration
@@ -195,8 +203,8 @@ validation_editors:
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
 
 scripting_backends:
-  - mono
   - il2cpp
+  - coreclr
 
 
 # PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------

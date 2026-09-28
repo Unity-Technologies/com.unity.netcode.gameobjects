@@ -36,7 +36,7 @@ code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ validation_
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ validation_editors.default }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
+    - unity-downloader-cli --fast --wait -u {{ validation_editors.default }} -c Editor -a {{ platform.architecture }}
     - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --editor-location=.Editor --enable-code-coverage --coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_project_{{ project.name }}_{{ platform.name }};flags:NGOv2_project_{{ project.name }}_{{ platform.name }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
