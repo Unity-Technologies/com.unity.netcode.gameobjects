@@ -22,9 +22,6 @@ namespace Unity.Netcode.RuntimeTests
         #region Tests using non-null NetworkBehaviours and RPCs
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator TestRpc()
         {
             yield return SpawnTestPrefabInstance();
@@ -39,9 +36,6 @@ namespace Unity.Netcode.RuntimeTests
 
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator TestRpcImplicitNetworkBehaviour()
         {
             yield return SpawnTestPrefabInstance();
@@ -57,9 +51,6 @@ namespace Unity.Netcode.RuntimeTests
 
         #region Tests using non-null NetworkBehaviours and NetworkVariable
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator TestNetworkVariable()
         {
             yield return SpawnTestPrefabInstance();
@@ -78,9 +69,6 @@ namespace Unity.Netcode.RuntimeTests
 
         #region Validating using NULL as a NetworkBehaviourReference
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator TestSerializeNull()
         {
             yield return SpawnTestPrefabInstance(true);
