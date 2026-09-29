@@ -172,20 +172,24 @@ test_platforms:
           standalone: GameCoreScarlett
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
-# Editors to be used for testing. NGOv3.X official support started from 6000.7 editor
+# Editors to be used for testing. NGOv3.X official support started from 6000.7.0b1 editor
 # TODO: When a new editor will be released it should be added to this list
+# standards editor is used for standards check so we won't get random manifest changes due to newer editor being used
 
 validation_editors:
     default:
         - 6000.7
-    all:
-        - 6000.7.0b1
-        - 6000.7
-        - trunk
-        - dfdad7ed5522da345003b66ed78dc5e725357037
     minimal:
+        - 6000.7
+    latest:
+        - trunk
+    all:
+        - 6000.7
+        - dfdad7ed5522da345003b66ed78dc5e725357037
+        - trunk
+    standards:
         - 6000.7.0b1
-pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
+    pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------

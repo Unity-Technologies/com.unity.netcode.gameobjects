@@ -13,8 +13,7 @@
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated for:
     # 1. Default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
-    # 2. Two editors: actual "trunk" (used by nightly) and the "pinnedTrunk" safe version (used by PRs).
-    #    Occasionally trunk breaks our tests, so PRs run against a pinned "safe" trunk while nightly runs actual trunk.
+    # 2. Default (most used) editor which is 6000.3
 
 #TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # Requires Unity Editor installation
@@ -23,16 +22,12 @@
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file. Currently:
-    # [Code Coverage] Project Test runs on PR changes (pr_code_changes_checks, pinnedTrunk) and nightly (develop_nightly, trunk)
-
-{% assign coverage_editors = "trunk," | append: pinnedTrunk | split: "," -%}
+    # [Code Coverage] Project Test runs on PR changes (pr_code_changes_checks) and nightly (develop_nightly)
 
 {% for platform in test_platforms.default -%}
 {% for project in projects.default -%}
-{% for editor in coverage_editors -%}
-{% if editor == "trunk" -%}{% assign editor_label = "trunk" -%}{% else -%}{% assign editor_label = "pinnedTrunk" -%}{% endif -%}
-code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: '[Code Coverage] Project Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]'
+code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ validation_editors.default }}:
+  name: '[Code Coverage] Project Test - NGO {{ project.name }} [{{ platform.name }}, {{ validation_editors.default }}]'
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -41,8 +36,8 @@ code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
-    - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --editor-location=.Editor --enable-code-coverage --coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_project_{{ project.name }}_{{ platform.name }}_{{ editor_label }};flags:NGOv2_project_{{ project.name }}_{{ platform.name }}_{{ editor_label }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
+    - unity-downloader-cli --fast --wait -u {{ validation_editors.default }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
+    - UnifiedTestRunner --testproject={{ project.path }} --suite=editor --suite=playmode --editor-location=.Editor --enable-code-coverage --coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv2_project_{{ project.name }}_{{ platform.name }};flags:NGOv2_project_{{ project.name }}_{{ platform.name }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout={{ test_timeout }} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
@@ -50,6 +45,5 @@ code_coverage_project_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
-{% endfor -%}
 {% endfor -%}
 {% endfor -%}
