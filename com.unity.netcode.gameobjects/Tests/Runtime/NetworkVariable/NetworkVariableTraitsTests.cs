@@ -18,9 +18,6 @@ namespace Unity.Netcode.RuntimeTests
 #if UNIFIED_NETCODE
     [TestFixture(HostOrServer.UnifiedHost)]
 #endif
-#if ENABLE_CORECLR
-    [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
     internal class NetworkVariableTraitsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;

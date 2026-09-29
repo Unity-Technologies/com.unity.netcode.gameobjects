@@ -18,9 +18,6 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.UnifiedHost)]
     [TestFixture(HostOrServer.UnifiedServer)]
 #endif
-#if ENABLE_CORECLR
-    [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
     internal class NetworkVariableCollectionsChangingTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;

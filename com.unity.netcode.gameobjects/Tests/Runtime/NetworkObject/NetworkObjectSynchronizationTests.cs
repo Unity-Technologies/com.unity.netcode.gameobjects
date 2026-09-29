@@ -107,9 +107,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkObjectDeserializationFailure()
         {
 #if UNIFIED_NETCODE
@@ -299,9 +296,6 @@ namespace Unity.Netcode.RuntimeTests
         /// will still be initialized properly
         /// </summary>
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkBehaviourSynchronization()
         {
             var authority = GetAuthorityNetworkManager();
@@ -343,9 +337,6 @@ namespace Unity.Netcode.RuntimeTests
         /// A basic validation for the NetworkBehaviour.OnSynchronize method
         /// </summary>
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkBehaviourOnSynchronize()
         {
             var authority = GetAuthorityNetworkManager();
