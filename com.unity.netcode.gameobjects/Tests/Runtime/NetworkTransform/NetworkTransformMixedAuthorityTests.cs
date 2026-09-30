@@ -8,10 +8,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host, NetworkTransform.AuthorityModes.Server)]
-    [TestFixture(HostOrServer.Host, NetworkTransform.AuthorityModes.Owner)]
-    [TestFixture(HostOrServer.Server, NetworkTransform.AuthorityModes.Server)]
-    [TestFixture(HostOrServer.Server, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     internal class NetworkTransformMixedAuthorityTests : IntegrationTestWithApproximation
     {
         private const float k_MotionMagnitude = 5.5f;
@@ -19,76 +17,79 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
-        private readonly NetworkTransform.AuthorityModes m_RootAuthorityMode;
-        private readonly NetworkTransform.AuthorityModes m_ChildAuthorityMode;
+        /// <summary>
+        /// The root's authority mode for each case. The nested child uses the inverse.
+        /// </summary>
+        private static readonly NetworkTransform.AuthorityModes[] k_RootAuthorityModes =
+        {
+            NetworkTransform.AuthorityModes.Server,
+            NetworkTransform.AuthorityModes.Owner,
+        };
+
+        private GameObject[] m_MixedAuthorityPrefabs;
 
         private StringBuilder m_ErrorMsg = new StringBuilder();
 
-        public NetworkTransformMixedAuthorityTests(HostOrServer hostOrServer, NetworkTransform.AuthorityModes rootAuthorityMode) : base(hostOrServer)
+        public NetworkTransformMixedAuthorityTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            m_RootAuthorityMode = rootAuthorityMode;
-            m_ChildAuthorityMode = rootAuthorityMode == NetworkTransform.AuthorityModes.Server ? NetworkTransform.AuthorityModes.Owner : NetworkTransform.AuthorityModes.Server;
         }
 
-        protected override void OnCreatePlayerPrefab()
+        protected override void OnServerAndClientsCreated()
         {
-            m_PlayerPrefab.AddComponent<NetworkTransform>().AuthorityMode = m_RootAuthorityMode;
+            m_MixedAuthorityPrefabs = new GameObject[k_RootAuthorityModes.Length];
+            for (int i = 0; i < k_RootAuthorityModes.Length; i++)
+            {
+                var rootAuthorityMode = k_RootAuthorityModes[i];
+                var prefab = CreateNetworkObjectPrefab($"MixedAuthority-{rootAuthorityMode}Root");
+                prefab.AddComponent<NetworkTransform>().AuthorityMode = rootAuthorityMode;
 
-            var childGameObject = new GameObject();
-            childGameObject.transform.parent = m_PlayerPrefab.transform;
-            var childNetworkTransform = childGameObject.AddComponent<NetworkTransform>();
-            childNetworkTransform.AuthorityMode = m_ChildAuthorityMode;
-            childNetworkTransform.InLocalSpace = true;
+                var childGameObject = new GameObject();
+                childGameObject.transform.parent = prefab.transform;
+                var childNetworkTransform = childGameObject.AddComponent<NetworkTransform>();
+                childNetworkTransform.AuthorityMode = InverseOf(rootAuthorityMode);
+                childNetworkTransform.InLocalSpace = true;
 
-            base.OnCreatePlayerPrefab();
+                m_MixedAuthorityPrefabs[i] = prefab;
+            }
+
+            base.OnServerAndClientsCreated();
+        }
+
+        private static NetworkTransform.AuthorityModes InverseOf(NetworkTransform.AuthorityModes authorityMode)
+        {
+            return authorityMode == NetworkTransform.AuthorityModes.Server ? NetworkTransform.AuthorityModes.Owner : NetworkTransform.AuthorityModes.Server;
         }
 
         /// <summary>
-        /// Returns the instance of <paramref name="player"/>'s player object that has authority over a
-        /// <see cref="NetworkTransform"/> using the <paramref name="authorityMode"/> authority mode.
+        /// Returns the instance with authority over a <see cref="NetworkTransform"/> set to the given authority mode.
         /// </summary>
-        private NetworkObject GetAuthorityInstance(NetworkManager player, NetworkTransform.AuthorityModes authorityMode)
+        private NetworkObject GetAuthorityInstance(NetworkObject instance, NetworkManager owner, NetworkTransform.AuthorityModes authorityMode)
         {
-            var authority = authorityMode == NetworkTransform.AuthorityModes.Server ? m_ServerNetworkManager : player;
-            return authority.SpawnManager.SpawnedObjects[player.LocalClient.PlayerObject.NetworkObjectId];
+            return GetManagersInstance(authorityMode == NetworkTransform.AuthorityModes.Server ? m_ServerNetworkManager : owner, instance);
         }
 
-        private void MovePlayers()
-        {
-            foreach (var networkManager in m_ClientNetworkManagers)
-            {
-                var direction = GetRandomVector3(-1.0f, 1.0f);
-                GetAuthorityInstance(networkManager, m_RootAuthorityMode).transform.position += direction * k_MotionMagnitude;
-                GetAuthorityInstance(networkManager, m_ChildAuthorityMode).transform.GetChild(0).localPosition += direction * k_MotionMagnitude;
-            }
-        }
-
-        private bool AllInstancePositionsMatch()
+        private bool AllInstancePositionsMatch(NetworkObject instance, NetworkManager owner, NetworkTransform.AuthorityModes rootAuthorityMode)
         {
             m_ErrorMsg.Clear();
-            foreach (var networkManager in m_ClientNetworkManagers)
+            var authorityRootPosition = GetAuthorityInstance(instance, owner, rootAuthorityMode).transform.position;
+            var authorityChildPosition = GetAuthorityInstance(instance, owner, InverseOf(rootAuthorityMode)).transform.GetChild(0).localPosition;
+
+            // The authority instances are compared too. An instance with authority over one nested
+            // NetworkTransform is still non-authority for the other.
+            foreach (var networkManager in m_NetworkManagers)
             {
-                var playerObjectId = networkManager.LocalClient.PlayerObject.NetworkObjectId;
-                var authorityRootPosition = GetAuthorityInstance(networkManager, m_RootAuthorityMode).transform.position;
-                var authorityChildPosition = GetAuthorityInstance(networkManager, m_ChildAuthorityMode).transform.GetChild(0).localPosition;
+                var clone = GetManagersInstance(networkManager, instance);
+                var cloneRootPosition = clone.transform.position;
+                var cloneChildPosition = clone.transform.GetChild(0).localPosition;
 
-                // The authority instances are compared too, as an instance with authority over one nested
-                // NetworkTransform is still non-authority for the other.
-                foreach (var client in m_NetworkManagers)
+                if (!Approximately(authorityRootPosition, cloneRootPosition))
                 {
-                    var playerClone = client.SpawnManager.SpawnedObjects[playerObjectId];
-                    var cloneRootPosition = playerClone.transform.position;
-                    var cloneChildPosition = playerClone.transform.GetChild(0).localPosition;
+                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Root mismatch ({GetVector3Values(authorityRootPosition)})({GetVector3Values(cloneRootPosition)})!");
+                }
 
-                    if (!Approximately(authorityRootPosition, cloneRootPosition))
-                    {
-                        m_ErrorMsg.AppendLine($"[Client-{client.LocalClientId}][{playerClone.name}] Root mismatch ({GetVector3Values(authorityRootPosition)})({GetVector3Values(cloneRootPosition)})!");
-                    }
-
-                    if (!Approximately(authorityChildPosition, cloneChildPosition))
-                    {
-                        m_ErrorMsg.AppendLine($"[Client-{client.LocalClientId}][{playerClone.name}] Child mismatch ({GetVector3Values(authorityChildPosition)})({GetVector3Values(cloneChildPosition)})!");
-                    }
+                if (!Approximately(authorityChildPosition, cloneChildPosition))
+                {
+                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Child mismatch ({GetVector3Values(authorityChildPosition)})({GetVector3Values(cloneChildPosition)})!");
                 }
             }
             return m_ErrorMsg.Length == 0;
@@ -96,42 +97,45 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Client-Server Only
-        /// Validates that mixed authority is working properly
+        /// Validates that mixed authority is working properly for both arrangements:
         /// Root -- Server or Owner authoritative
         /// |--Child -- The inverse of the root's authority mode
         /// </summary>
         [UnityTest]
         public IEnumerator MixedAuthorityTest()
         {
-            for (int i = 0; i < k_Iterations; i++)
+            // A client owns the instance so the owner authoritative half is never also the server.
+            var owner = m_ClientNetworkManagers[0];
+            for (int i = 0; i < k_RootAuthorityModes.Length; i++)
             {
-                MovePlayers();
-                yield return WaitForConditionOrTimeOut(AllInstancePositionsMatch);
-                AssertOnTimeout($"Transforms failed to synchronize!\n{m_ErrorMsg}");
-            }
-        }
+                var rootAuthorityMode = k_RootAuthorityModes[i];
+                var instance = SpawnObject(m_MixedAuthorityPrefabs[i], owner).GetComponent<NetworkObject>();
+                yield return WaitForSpawnedOnAllOrTimeOut(instance);
+                AssertOnTimeout($"[{rootAuthorityMode}Root] Failed to spawn {instance.name} on all clients!");
 
-        /// <summary>
-        /// The update registration is per-NetworkObject while the authority motion model is per-NetworkTransform,
-        /// so an instance stays registered for as long as any one of its nested NetworkTransform components is
-        /// non-authority.
-        /// </summary>
-        [Test]
-        public void MixedAuthorityUpdateRegistration()
-        {
-            foreach (var networkManager in m_ClientNetworkManagers)
-            {
-                var playerObjectId = networkManager.LocalClient.PlayerObject.NetworkObjectId;
-                foreach (var client in m_NetworkManagers)
+                // An instance stays registered for updates while any of its nested NetworkTransform components is non-authority.
+                foreach (var networkManager in m_NetworkManagers)
                 {
-                    var playerClone = client.SpawnManager.SpawnedObjects[playerObjectId];
+                    var clone = GetManagersInstance(networkManager, instance);
                     var hasNonAuthority = false;
-                    foreach (var networkTransform in playerClone.NetworkTransforms)
+                    foreach (var networkTransform in clone.NetworkTransforms)
                     {
                         hasNonAuthority |= !networkTransform.CanCommitToTransform;
                     }
-                    Assert.AreEqual(hasNonAuthority, client.NetworkTransformUpdate.ContainsKey(playerObjectId), $"[Client-{client.LocalClientId}][{playerClone.name}] Unexpected update registration!");
+                    Assert.AreEqual(hasNonAuthority, networkManager.NetworkTransformUpdate.ContainsKey(instance.NetworkObjectId), $"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Unexpected update registration!");
                 }
+
+                for (int iteration = 0; iteration < k_Iterations; iteration++)
+                {
+                    var direction = GetRandomVector3(-1.0f, 1.0f);
+                    GetAuthorityInstance(instance, owner, rootAuthorityMode).transform.position += direction * k_MotionMagnitude;
+                    GetAuthorityInstance(instance, owner, InverseOf(rootAuthorityMode)).transform.GetChild(0).localPosition += direction * k_MotionMagnitude;
+
+                    yield return WaitForConditionOrTimeOut(() => AllInstancePositionsMatch(instance, owner, rootAuthorityMode));
+                    AssertOnTimeout($"[{rootAuthorityMode}Root] Transforms failed to synchronize!\n{m_ErrorMsg}");
+                }
+
+                instance.Despawn();
             }
         }
     }

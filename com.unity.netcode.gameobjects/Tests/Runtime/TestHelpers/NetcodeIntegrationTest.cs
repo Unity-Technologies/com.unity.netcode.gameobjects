@@ -323,6 +323,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the <see cref="NetworkObject"/> with the given identifier.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObjectId">The identifier of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, ulong networkObjectId)
+        {
+            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"Client-{networkManager.LocalClientId} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
+            return networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the given <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObject">Any instance of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            return GetManagersInstance(networkManager, networkObject.NetworkObjectId);
+        }
+
+        /// <summary>
         /// Contains each client relative set of player NetworkObject instances
         /// [Client Relative set of player instances][The player instance ClientId][The player instance's NetworkObject]
         /// Example:
