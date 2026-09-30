@@ -2554,7 +2554,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
         private bool m_HybridPrefabCreated;
-        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
+        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
         {
             m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
@@ -2579,12 +2579,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Initialize it as a prefab
             adapter.InitializeAsPrefab();
 
-            // TODO: This might be part of the CreateHybridPrefab parameters
-            // For now, just use normal interpolation until we get integration
-            // tests running.
-            // Once we have validated prediction works and have a working manual
-            // test, we can circle back to this (possibly make that a sub-task
-            // with the dependency to prediction manual test).
             adapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
@@ -2593,6 +2587,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // GhostBehaviours that are part of a prefab will not invoke Ghost.InternalAcquireEntityReference
             // Add the bridge
             var bridge = gameObject.AddComponent<NetworkObjectBridge>();
+
+            // Set after the bridge is added, since its editor OnValidate resets the supported modes to interpolated.
+            // The prefab is registered when each world is created, so this still applies before the session starts.
+            if (ghostMode != GhostMode.Interpolated)
+            {
+                adapter.SupportedGhostModes = GhostModeMask.All;
+                adapter.DefaultGhostMode = ghostMode;
+                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
+            }
 
             // Now add NGO components
             var no = gameObject.AddComponent<NetworkObject>();

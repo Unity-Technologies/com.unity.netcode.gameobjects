@@ -1,0 +1,354 @@
+#if UNIFIED_NETCODE
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace Unity.Netcode.RuntimeTests
+{
+    /// <summary>
+    /// A NetworkVariable value stamped with the tick it applies from, so prediction can apply it tick-aligned.
+    /// </summary>
+    internal struct TickStampedValue : INetworkSerializable, IEquatable<TickStampedValue>
+    {
+        public int Value;
+        public int PreviousValue;
+        public uint Tick;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Value);
+            serializer.SerializeValue(ref PreviousValue);
+            serializer.SerializeValue(ref Tick);
+        }
+
+        public bool Equals(TickStampedValue other)
+        {
+            return Value == other.Value && PreviousValue == other.PreviousValue && Tick == other.Tick;
+        }
+    }
+
+    /// <summary>
+    /// The N4E half of the interop prefab: sends NGO RPCs from <see cref="GhostBehaviour.PredictionUpdate"/> and
+    /// relays pings between unified remotes and NGO RPCs.
+    /// </summary>
+    internal partial class HybridInteropGhost : GhostBehaviour
+    {
+        public bool SendRpcFromPrediction;
+        public bool GateOnFirstTimeTick;
+        public int PredictionSends;
+        public int ResimulatedTicks;
+        public int PingValue;
+
+        public bool RecordStampedValue;
+        public uint LatestPredictedTick;
+        public int EarlyReadsOfNewValue;
+        public int InconsistentRawTicks;
+        public int InconsistentStampedTicks;
+        public int StampedValueAtStampTick;
+        private readonly Dictionary<uint, int> m_RawValueByTick = new Dictionary<uint, int>();
+        private readonly Dictionary<uint, int> m_StampedValueByTick = new Dictionary<uint, int>();
+
+        public override void PredictionUpdate(float tickedDeltaTime)
+        {
+            if (IsServer)
+            {
+                return;
+            }
+            var networkTime = Ghost.World.NetworkTime;
+            if (RecordStampedValue)
+            {
+                RecordStampedValueAtTick(networkTime.ServerTick.TickIndexForValidTick);
+            }
+            if (!SendRpcFromPrediction)
+            {
+                return;
+            }
+            if (!networkTime.IsFirstTimeFullyPredictingTick)
+            {
+                ResimulatedTicks++;
+                if (GateOnFirstTimeTick)
+                {
+                    return;
+                }
+            }
+            PredictionSends++;
+            GetComponent<HybridInteropNetworkBehaviour>().PredictionTickRpc(networkTime.ServerTick.SerializedData);
+        }
+
+        /// <summary>
+        /// Records, per predicted tick, the raw NetworkVariable value and the value the tick stamp says applies to that tick.
+        /// </summary>
+        private void RecordStampedValueAtTick(uint tick)
+        {
+            var stamped = GetComponent<HybridInteropNetworkBehaviour>().StampedValue.Value;
+            var hasStamp = stamped.Tick != 0;
+            if (hasStamp && tick < stamped.Tick && stamped.Value == HybridInteropNetworkBehaviour.StampedNewValue)
+            {
+                EarlyReadsOfNewValue++;
+            }
+            // The pattern under test: apply the value only when the tick being predicted is at or past its stamp.
+            var applied = hasStamp && tick >= stamped.Tick ? stamped.Value : stamped.PreviousValue;
+            if (hasStamp && tick == stamped.Tick)
+            {
+                StampedValueAtStampTick = applied;
+            }
+            InconsistentRawTicks += RecordValue(m_RawValueByTick, tick, stamped.Value);
+            InconsistentStampedTicks += RecordValue(m_StampedValueByTick, tick, applied);
+            if (tick > LatestPredictedTick)
+            {
+                LatestPredictedTick = tick;
+            }
+        }
+
+        /// <returns>1 if this tick was already predicted with a different value, otherwise 0.</returns>
+        private static int RecordValue(Dictionary<uint, int> valueByTick, uint tick, int value)
+        {
+            if (valueByTick.TryGetValue(tick, out var previous))
+            {
+                return previous == value ? 0 : 1;
+            }
+            valueByTick.Add(tick, value);
+            return 0;
+        }
+
+        [Remote(Directionality.ServerToClient)]
+        public void PingToClient(int value)
+        {
+            PingValue = value;
+            GetComponent<HybridInteropNetworkBehaviour>().PingToServerRpc(value + 1);
+        }
+
+        [Remote(Directionality.ServerToClient)]
+        public void FinalPingToClient(int value)
+        {
+            PingValue = value;
+        }
+
+        [Remote(Directionality.ClientToServer)]
+        public void PingToServer(int value)
+        {
+            PingValue = value;
+            GetComponent<HybridInteropNetworkBehaviour>().FinalPingToClientRpc(value + 1);
+        }
+    }
+
+    /// <summary>
+    /// The NGO half of the interop prefab.
+    /// </summary>
+    internal class HybridInteropNetworkBehaviour : NetworkBehaviour
+    {
+        public const int StampedNewValue = 1;
+
+        public readonly List<uint> ReceivedPredictionTicks = new List<uint>();
+        public int PingValue;
+        public NetworkVariable<TickStampedValue> StampedValue = new NetworkVariable<TickStampedValue>();
+
+        [Rpc(SendTo.Server)]
+        public void PredictionTickRpc(uint tick)
+        {
+            ReceivedPredictionTicks.Add(tick);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void PingToServerRpc(int value)
+        {
+            PingValue = value;
+            GetComponent<HybridInteropGhost>().FinalPingToClient(value + 1);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        public void PingToClientRpc(int value)
+        {
+            PingValue = value;
+            GetComponent<HybridInteropGhost>().PingToServer(value + 1);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        public void FinalPingToClientRpc(int value)
+        {
+            PingValue = value;
+        }
+    }
+
+    /// <summary>
+    /// Combines N4E remotes and prediction with NGO RPCs on the same hybrid prefab.
+    /// </summary>
+    /// <remarks>
+    /// One client only: a ClientToServer remote is sent from every client world in the process.
+    /// </remarks>
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+    internal class HybridInteropTests : NetcodeIntegrationTest
+    {
+        private const int k_MinimumPredictionSends = 20;
+        private const uint k_StampLeadTicks = 20;
+        private const uint k_TicksPastStamp = 5;
+
+        protected override int NumberOfClients => 1;
+
+        private GameObject m_InteropPrefab;
+        private NetworkObject m_ServerInstance;
+        private NetworkObject m_ClientInstance;
+
+        public HybridInteropTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_InteropPrefab = CreateHybridPrefab("InteropPrefab", true, GhostMode.OwnerPredicted);
+            m_InteropPrefab.AddComponent<HybridInteropGhost>();
+            m_InteropPrefab.AddComponent<HybridInteropNetworkBehaviour>();
+            base.OnServerAndClientsCreated();
+        }
+
+        protected override IEnumerator OnServerAndClientsConnected()
+        {
+            // Remote methods send through ClientServerBootstrap.ServerWorlds, but each bootstrap constructor clears
+            // that list, and NGO creates one bootstrap per NetworkManager. With several NetworkManagers in one process
+            // only the last one started stays registered, so the server world has to be added back.
+            if (!ClientServerBootstrap.ServerWorlds.Contains(m_ServerNetworkManager.NetcodeWorld))
+            {
+                ClientServerBootstrap.ServerWorlds.Add(m_ServerNetworkManager.NetcodeWorld);
+            }
+            var client = m_ClientNetworkManagers[0];
+            m_ServerInstance = SpawnObject(m_InteropPrefab, client).GetComponent<NetworkObject>();
+            m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
+            yield return WaitForSpawnedOnAllOrTimeOut(m_ServerInstance);
+            AssertOnTimeout($"Timed out waiting for {m_ServerInstance.name} to spawn on all clients!");
+            m_ClientInstance = client.SpawnManager.SpawnedObjects[m_ServerInstance.NetworkObjectId];
+            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.GetComponent<GhostObject>().IsPredictedGhost);
+            AssertOnTimeout($"{m_ClientInstance.name} never became predicted on the client!");
+        }
+
+        /// <summary>
+        /// An NGO RPC sent from <see cref="GhostBehaviour.PredictionUpdate"/> is sent again for every re-simulated tick.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RpcFromPredictionUpdateRepeatsForResimulatedTicks()
+        {
+            yield return SendRpcsFromPrediction(false);
+            var duplicates = CountDuplicateTicks();
+            Assert.Greater(duplicates, 0, "Expected re-simulated ticks to send the same tick more than once.");
+        }
+
+        /// <summary>
+        /// Gating the send on <c>IsFirstTimeFullyPredictingTick</c> sends each predicted tick once.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RpcFromPredictionUpdateGatedOnFirstTimeTickSendsEachTickOnce()
+        {
+            yield return SendRpcsFromPrediction(true);
+            var duplicates = CountDuplicateTicks();
+            Assert.AreEqual(0, duplicates, $"{duplicates} ticks were sent more than once.");
+        }
+
+        /// <summary>
+        /// Unified remote to NGO RPC to unified remote, starting on the server.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator UnifiedRemoteToNgoRpcToUnifiedRemote()
+        {
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            m_ServerInstance.GetComponent<HybridInteropGhost>().PingToClient(1);
+            yield return WaitForConditionOrTimeOut(() => clientGhost.PingValue == 3);
+            AssertOnTimeout($"Ping did not complete! Client remote value: {clientGhost.PingValue}, " +
+                $"server RPC value: {m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().PingValue}");
+        }
+
+        /// <summary>
+        /// NGO RPC to unified remote to NGO RPC, starting on the server.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NgoRpcToUnifiedRemoteToNgoRpc()
+        {
+            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().PingToClientRpc(1);
+            yield return WaitForConditionOrTimeOut(() => clientBehaviour.PingValue == 3);
+            AssertOnTimeout($"Ping did not complete! Client RPC value: {clientBehaviour.PingValue}, " +
+                $"server remote value: {m_ServerInstance.GetComponent<HybridInteropGhost>().PingValue}");
+        }
+
+        /// <summary>
+        /// A NetworkVariable is not rolled back: prediction of a tick before the value's stamp still reads the new value.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkVariableReadDuringPredictionIsNotTickAligned()
+        {
+            yield return RecordAcrossStampedValueChange();
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            Assert.Greater(clientGhost.EarlyReadsOfNewValue, 0, "Expected prediction of ticks before the stamp to read the new value.");
+        }
+
+        /// <summary>
+        /// Applying a NetworkVariable only from its stamped tick gives every re-simulation of a tick the same value.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TickStampedNetworkVariableIsConsistentAcrossResimulation()
+        {
+            yield return RecordAcrossStampedValueChange();
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            Assert.AreEqual(0, clientGhost.InconsistentStampedTicks, $"{clientGhost.InconsistentStampedTicks} ticks applied a different stamped value on re-simulation.");
+            Assert.AreEqual(HybridInteropNetworkBehaviour.StampedNewValue, clientGhost.StampedValueAtStampTick, "The stamped value was not applied at its stamp tick.");
+        }
+
+        private IEnumerator RecordAcrossStampedValueChange()
+        {
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            clientGhost.RecordStampedValue = true;
+
+            // Stamp far enough ahead that the value reaches the client before it predicts the stamp tick.
+            var serverTick = m_ServerInstance.GetComponent<GhostObject>().World.NetworkTime.ServerTick.TickIndexForValidTick;
+            var stampTick = serverTick + k_StampLeadTicks;
+            m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().StampedValue.Value = new TickStampedValue
+            {
+                Value = HybridInteropNetworkBehaviour.StampedNewValue,
+                PreviousValue = 0,
+                Tick = stampTick,
+            };
+
+            yield return WaitForConditionOrTimeOut(() => clientGhost.LatestPredictedTick >= stampTick + k_TicksPastStamp);
+            clientGhost.RecordStampedValue = false;
+            AssertOnTimeout($"Client never predicted past tick {stampTick + k_TicksPastStamp}! Latest predicted tick: {clientGhost.LatestPredictedTick}");
+            Debug.Log($"Stamp tick: {stampTick}, early reads of the new value: {clientGhost.EarlyReadsOfNewValue}, " +
+                $"inconsistent raw ticks: {clientGhost.InconsistentRawTicks}, inconsistent stamped ticks: {clientGhost.InconsistentStampedTicks}");
+        }
+
+        private IEnumerator SendRpcsFromPrediction(bool gateOnFirstTimeTick)
+        {
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            clientGhost.GateOnFirstTimeTick = gateOnFirstTimeTick;
+            clientGhost.SendRpcFromPrediction = true;
+            yield return WaitForConditionOrTimeOut(() => clientGhost.PredictionSends >= k_MinimumPredictionSends && clientGhost.ResimulatedTicks > 0);
+            clientGhost.SendRpcFromPrediction = false;
+            AssertOnTimeout($"Client prediction did not send enough RPCs! Sends: {clientGhost.PredictionSends}, re-simulated ticks: {clientGhost.ResimulatedTicks}");
+
+            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            yield return WaitForConditionOrTimeOut(() => serverBehaviour.ReceivedPredictionTicks.Count == clientGhost.PredictionSends);
+            AssertOnTimeout($"Server received {serverBehaviour.ReceivedPredictionTicks.Count} of {clientGhost.PredictionSends} RPCs!");
+            Debug.Log($"Gated: {gateOnFirstTimeTick}, sends: {clientGhost.PredictionSends}, re-simulated ticks: {clientGhost.ResimulatedTicks}, duplicate ticks: {CountDuplicateTicks()}");
+        }
+
+        private int CountDuplicateTicks()
+        {
+            var seen = new HashSet<uint>();
+            var duplicates = 0;
+            foreach (var tick in m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().ReceivedPredictionTicks)
+            {
+                if (!seen.Add(tick))
+                {
+                    duplicates++;
+                }
+            }
+            return duplicates;
+        }
+    }
+}
+#endif
