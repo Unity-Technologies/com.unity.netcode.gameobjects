@@ -97,7 +97,7 @@ namespace TestProject.RuntimeTests
 
             // Wait until all objects have spawned.
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == numClients + 1);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == numClients + 1, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, "Did not successfully spawn all expected NetworkObjects");
         }
 
@@ -201,6 +201,18 @@ namespace TestProject.RuntimeTests
 
         private ulong m_SpawnedNetworkObjectId;
 
+        private bool AllClientsSpawnedObject(NetworkManager[] clients)
+        {
+            foreach (var client in clients)
+            {
+                if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedNetworkObjectId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         [UnityTest]
         public IEnumerator RpcOnNetworkSpawn()
         {
@@ -256,28 +268,12 @@ namespace TestProject.RuntimeTests
 
             var serverNetworkObject = NetworkObject.InstantiateAndSpawn(m_Prefab, server);
 
-            m_SpawnedNetworkObjectId = serverNetworkObject.GlobalObjectIdHash;
+            m_SpawnedNetworkObjectId = serverNetworkObject.NetworkObjectId;
 
             // Make sure everyone spawns the object
-            var allClientsSpawnedObject = false;
-            var waitPeriod = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
-            var timeout = Time.realtimeSinceStartup + 4.0f;
-            while (!allClientsSpawnedObject)
-            {
-                if (timeout < Time.realtimeSinceStartup)
-                {
-                    Assert.Fail($"Timed out waiting for all clients to spawn {serverNetworkObject.name}!");
-                }
-                foreach (var client in clients)
-                {
-                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedNetworkObjectId))
-                    {
-                        yield return waitPeriod;
-                        continue;
-                    }
-                }
-                allClientsSpawnedObject = true;
-            }
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => AllClientsSpawnedObject(clients), timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for all clients to spawn {serverNetworkObject.name}!");
 
             // Wait until all objects have spawned.
             const int maxFrames = 240;
