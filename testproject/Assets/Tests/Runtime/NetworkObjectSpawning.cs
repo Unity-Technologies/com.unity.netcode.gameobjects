@@ -32,6 +32,13 @@ namespace TestProject.RuntimeTests
 
         public NetworkObjectSpawning(NetworkTopologyTypes networkTopology, HostOrServer hostOrServer) : base(networkTopology, hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
 
         protected override IEnumerator OnSetup()
         {
@@ -99,6 +106,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnOnSynchronizedNotification([Values] SynchronizeNotificationTypes synchronizeNotificationTypes)
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("In-scene placed NetworkObjects are not supported with hybrid prefabs.");
+            }
+#endif
             m_SceneLoadCompleted = false;
             m_CanStartServerAndClients = true;
             NetworkObjectSpawnerForTests.SpawnAfterInSceneSynchronized = synchronizeNotificationTypes == SynchronizeNotificationTypes.InSceneObjects || synchronizeNotificationTypes == SynchronizeNotificationTypes.Both;
@@ -163,6 +176,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator InstantiateAndSpawn([Values] InstantiateAndSpawnTypes instantiateAndSpawnTypes, [Values] InstantiateAndSpawnContexts instantiateAndSpawnContexts)
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("InstantiateAndSpawn does not select the NetworkManager's world before instantiating a hybrid prefab, so it fails when several worlds share a process.");
+            }
+#endif
             m_CanStartServerAndClients = true;
             Object.DontDestroyOnLoad(m_ObjectToSpawn);
             yield return StartServerAndClients();
