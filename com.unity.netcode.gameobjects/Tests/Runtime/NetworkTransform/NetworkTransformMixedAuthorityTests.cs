@@ -84,12 +84,12 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (!Approximately(authorityRootPosition, cloneRootPosition))
                 {
-                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Root mismatch ({GetVector3Values(authorityRootPosition)})({GetVector3Values(cloneRootPosition)})!");
+                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][{GetDisplayName(networkManager)}] Root mismatch ({GetVector3Values(authorityRootPosition)})({GetVector3Values(cloneRootPosition)})!");
                 }
 
                 if (!Approximately(authorityChildPosition, cloneChildPosition))
                 {
-                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Child mismatch ({GetVector3Values(authorityChildPosition)})({GetVector3Values(cloneChildPosition)})!");
+                    m_ErrorMsg.AppendLine($"[{rootAuthorityMode}Root][{GetDisplayName(networkManager)}] Child mismatch ({GetVector3Values(authorityChildPosition)})({GetVector3Values(cloneChildPosition)})!");
                 }
             }
             return m_ErrorMsg.Length == 0;
@@ -122,7 +122,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         hasNonAuthority |= !networkTransform.CanCommitToTransform;
                     }
-                    Assert.AreEqual(hasNonAuthority, networkManager.NetworkTransformUpdate.ContainsKey(instance.NetworkObjectId), $"[{rootAuthorityMode}Root][Client-{networkManager.LocalClientId}] Unexpected update registration!");
+                    Assert.AreEqual(hasNonAuthority, networkManager.NetworkTransformUpdate.ContainsKey(instance.NetworkObjectId), $"[{rootAuthorityMode}Root][{GetDisplayName(networkManager)}] Unexpected update registration!");
                 }
 
                 for (int iteration = 0; iteration < k_Iterations; iteration++)
