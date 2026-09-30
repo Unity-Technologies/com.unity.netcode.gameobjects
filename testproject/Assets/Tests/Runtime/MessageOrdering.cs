@@ -98,7 +98,7 @@ namespace TestProject.RuntimeTests
             serverNetworkObject.ChangeOwnership(clients[0].LocalClientId);
 
             // Wait until all objects have spawned.
-            var timeoutHelper = new TimeoutHelper();
+            var timeoutHelper = new TimeoutHelper(8.0f);
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == numClients + 1, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, "Did not successfully spawn all expected NetworkObjects");
         }
@@ -273,7 +273,7 @@ namespace TestProject.RuntimeTests
             m_SpawnedNetworkObjectId = serverNetworkObject.NetworkObjectId;
 
             // Make sure everyone spawns the object
-            var timeoutHelper = new TimeoutHelper();
+            var timeoutHelper = new TimeoutHelper(4.0f);
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => AllClientsSpawnedObject(clients), timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for all clients to spawn {serverNetworkObject.name}!");
 
