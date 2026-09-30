@@ -401,7 +401,7 @@ namespace TestProject.RuntimeTests
             }
 
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnectedInvocations == 3);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnectedInvocations == 3, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, "Timed out waiting for clients to be disconnected!");
             Assert.AreEqual(3, m_ClientDisconnectedInvocations);
         }
