@@ -31,6 +31,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 3;
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         public NetworkVariablePermissionTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private GameObject m_TestObjPrefab;
@@ -44,8 +51,10 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            m_TestObjId = SpawnObject(m_TestObjPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>().NetworkObjectId;
-            yield return null;
+            var testObj = SpawnObject(m_TestObjPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
+            m_TestObjId = testObj.NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(testObj);
+            AssertOnTimeout($"Not all clients spawned {testObj.name}!");
         }
 
         private IEnumerator WaitForPositionsAreEqual(NetworkVariable<Vector3> netvar, Vector3 expected)
