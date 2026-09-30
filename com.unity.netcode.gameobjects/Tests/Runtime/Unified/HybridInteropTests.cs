@@ -43,6 +43,7 @@ namespace Unity.Netcode.RuntimeTests
         public int ResimulatedTicks;
         public int PingValue;
 
+        public bool WriteNetworkVariableFromPrediction;
         public bool RecordStampedValue;
         public uint LatestPredictedTick;
         public int EarlyReadsOfNewValue;
@@ -62,6 +63,10 @@ namespace Unity.Netcode.RuntimeTests
             if (RecordStampedValue)
             {
                 RecordStampedValueAtTick(networkTime.ServerTick.TickIndexForValidTick);
+            }
+            if (WriteNetworkVariableFromPrediction && (!GateOnFirstTimeTick || networkTime.IsFirstTimeFullyPredictingTick))
+            {
+                GetComponent<HybridInteropNetworkBehaviour>().OwnerWrittenTick.Value = networkTime.ServerTick.TickIndexForValidTick;
             }
             if (!SendRpcFromPrediction)
             {
@@ -146,6 +151,30 @@ namespace Unity.Netcode.RuntimeTests
         public readonly List<uint> ReceivedPredictionTicks = new List<uint>();
         public int PingValue;
         public NetworkVariable<TickStampedValue> StampedValue = new NetworkVariable<TickStampedValue>();
+        public NetworkVariable<uint> OwnerWrittenTick = new NetworkVariable<uint>(writePerm: NetworkVariableWritePermission.Owner);
+        public int OwnerWrittenTickChanges;
+        public int OwnerWrittenTickDecreases;
+        public bool GhostWasPredictedOnSpawn;
+
+        public override void OnNetworkSpawn()
+        {
+            GhostWasPredictedOnSpawn = GetComponent<GhostObject>().IsPredictedGhost;
+            OwnerWrittenTick.OnValueChanged += OnOwnerWrittenTickChanged;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            OwnerWrittenTick.OnValueChanged -= OnOwnerWrittenTickChanged;
+        }
+
+        private void OnOwnerWrittenTickChanged(uint previous, uint current)
+        {
+            OwnerWrittenTickChanges++;
+            if (current < previous)
+            {
+                OwnerWrittenTickDecreases++;
+            }
+        }
 
         [Rpc(SendTo.Server)]
         public void PredictionTickRpc(uint tick)
@@ -297,6 +326,63 @@ namespace Unity.Netcode.RuntimeTests
             var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
             Assert.AreEqual(0, clientGhost.InconsistentStampedTicks, $"{clientGhost.InconsistentStampedTicks} ticks applied a different stamped value on re-simulation.");
             Assert.AreEqual(HybridInteropNetworkBehaviour.StampedNewValue, clientGhost.StampedValueAtStampTick, "The stamped value was not applied at its stamp tick.");
+        }
+
+        /// <summary>
+        /// A NetworkVariable written from <see cref="GhostBehaviour.PredictionUpdate"/> is written again when older ticks
+        /// re-simulate, so the owner's value moves backwards.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkVariableWrittenFromPredictionUpdateMovesBackwards()
+        {
+            yield return WriteNetworkVariableFromPrediction(false);
+            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            Assert.Greater(clientBehaviour.OwnerWrittenTickDecreases, 0, "Expected re-simulated ticks to write an older tick.");
+        }
+
+        /// <summary>
+        /// Gating the write on <c>IsFirstTimeFullyPredictingTick</c> only moves the value forward.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkVariableWrittenFromPredictionUpdateGatedOnFirstTimeTickOnlyMovesForward()
+        {
+            yield return WriteNetworkVariableFromPrediction(true);
+            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            Assert.AreEqual(0, clientBehaviour.OwnerWrittenTickDecreases, $"The value moved backwards {clientBehaviour.OwnerWrittenTickDecreases} times.");
+        }
+
+        /// <summary>
+        /// NGO ownership and the ghost's N4E owner are separate: an NGO ownership change leaves the ghost owner as it was.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NgoOwnershipChangeDoesNotChangeGhostOwner()
+        {
+            var ghostOwner = m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId;
+            m_ServerInstance.ChangeOwnership(m_ServerNetworkManager.LocalClientId);
+            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+            AssertOnTimeout($"Client never saw the ownership change to Client-{m_ServerNetworkManager.LocalClientId}!");
+            yield return s_DefaultWaitForTick;
+            Assert.AreEqual(ghostOwner, m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId, "The ghost owner changed with the NGO owner.");
+            Assert.AreEqual(ghostOwner, m_ClientInstance.GetComponent<GhostObject>().OwnerNetworkId, "The client's ghost owner changed with the NGO owner.");
+            Assert.IsTrue(m_ClientInstance.GetComponent<GhostObject>().IsPredictedGhost, "The client stopped predicting the ghost.");
+            Debug.Log($"Client ghost was predicted on spawn: {m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>().GhostWasPredictedOnSpawn}");
+        }
+
+        private IEnumerator WriteNetworkVariableFromPrediction(bool gateOnFirstTimeTick)
+        {
+            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
+            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            clientGhost.GateOnFirstTimeTick = gateOnFirstTimeTick;
+            clientGhost.WriteNetworkVariableFromPrediction = true;
+            yield return WaitForConditionOrTimeOut(() => clientBehaviour.OwnerWrittenTickChanges >= k_MinimumPredictionSends);
+            clientGhost.WriteNetworkVariableFromPrediction = false;
+            AssertOnTimeout($"Only {clientBehaviour.OwnerWrittenTickChanges} value changes were written!");
+
+            // Wait for the last write to reach the server, so no NetworkVariable update is still queued at teardown.
+            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            yield return WaitForConditionOrTimeOut(() => serverBehaviour.OwnerWrittenTick.Value == clientBehaviour.OwnerWrittenTick.Value);
+            AssertOnTimeout($"Server value {serverBehaviour.OwnerWrittenTick.Value} never matched the client value {clientBehaviour.OwnerWrittenTick.Value}!");
+            Debug.Log($"Gated: {gateOnFirstTimeTick}, value changes: {clientBehaviour.OwnerWrittenTickChanges}, backwards moves: {clientBehaviour.OwnerWrittenTickDecreases}");
         }
 
         private IEnumerator RecordAcrossStampedValueChange()
