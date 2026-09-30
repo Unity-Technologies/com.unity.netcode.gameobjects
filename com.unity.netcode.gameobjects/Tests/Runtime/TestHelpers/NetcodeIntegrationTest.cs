@@ -323,6 +323,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets the name of the given <see cref="NetworkManager"/> to use in assertion messages:
+        /// - Dedicated server: "Server"
+        /// - Host: "Host"
+        /// - Client: "Client-" followed by its <see cref="NetworkManager.LocalClientId"/>
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the name of</param>
+        /// <returns>The name of the <paramref name="networkManager"/></returns>
+        protected string GetDisplayName(NetworkManager networkManager)
+        {
+            if (networkManager.IsServer)
+            {
+                return networkManager.IsHost ? "Host" : "Server";
+            }
+            return $"Client-{networkManager.LocalClientId}";
+        }
+
+        /// <summary>
         /// Gets the <paramref name="networkManager"/> relative instance of the <see cref="NetworkObject"/> with the given identifier.
         /// </summary>
         /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
@@ -330,7 +347,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
         protected NetworkObject GetManagersInstance(NetworkManager networkManager, ulong networkObjectId)
         {
-            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"Client-{networkManager.LocalClientId} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
+            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"{GetDisplayName(networkManager)} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
             return networkManager.SpawnManager.SpawnedObjects[networkObjectId];
         }
 
