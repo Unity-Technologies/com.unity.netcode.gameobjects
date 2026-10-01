@@ -382,9 +382,10 @@ namespace Unity.Netcode.RuntimeTests
             var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
             clientGhost.GateOnFirstTimeTick = gateOnFirstTimeTick;
             clientGhost.WriteNetworkVariableFromPrediction = true;
-            yield return WaitForConditionOrTimeOut(() => clientBehaviour.OwnerWrittenTickChanges >= k_MinimumPredictionSends);
+            // Ungated, keep writing until a re-simulation has happened, so a backwards move had a chance to occur.
+            yield return WaitForConditionOrTimeOut(() => clientBehaviour.OwnerWrittenTickChanges >= k_MinimumPredictionSends && (gateOnFirstTimeTick || clientBehaviour.OwnerWrittenTickDecreases > 0));
             clientGhost.WriteNetworkVariableFromPrediction = false;
-            AssertOnTimeout($"Only {clientBehaviour.OwnerWrittenTickChanges} value changes were written!");
+            AssertOnTimeout($"Only {clientBehaviour.OwnerWrittenTickChanges} value changes were written, with {clientBehaviour.OwnerWrittenTickDecreases} backwards moves!");
 
             // Wait for the last write to reach the server, so no NetworkVariable update is still queued at teardown.
             var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();

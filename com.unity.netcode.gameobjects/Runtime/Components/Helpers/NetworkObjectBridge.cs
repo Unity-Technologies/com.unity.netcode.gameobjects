@@ -115,7 +115,7 @@ namespace Unity.Netcode
             var ownerNetworkId = default(NetworkId);
             if (ownerClientId == networkManager.LocalClientId)
             {
-                if (networkManager.IsHost)
+                if (networkManager.IsHost && networkManager.NetcodeWorld != null)
                 {
                     ownerNetworkId = networkManager.NetcodeWorld.LocalConnection.NetworkId;
                 }
