@@ -22,6 +22,10 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class PeerDisconnectCallbackTests : NetcodeIntegrationTest
     {
 
@@ -32,6 +36,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private int m_ClientDisconnectCount;
         private int m_PeerDisconnectCount;
