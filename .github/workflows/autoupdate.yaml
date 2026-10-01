@@ -4,6 +4,7 @@ on:
     branches:
       - develop
       - develop-2.0.0
+      - develop-3.x.x
 jobs:
   autoupdate:
     name: auto-update

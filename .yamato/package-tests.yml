@@ -26,7 +26,7 @@
 
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-package_test_-_ngo_{{ editor }}_{{ platform.name }}:
+package_test_-_ngo_{{ platform.name }}_{{ editor }}:
   name : Package Test - NGO [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
