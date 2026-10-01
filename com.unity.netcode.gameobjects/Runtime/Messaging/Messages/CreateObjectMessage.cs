@@ -197,6 +197,13 @@ namespace Unity.Netcode
                         networkManager.Log.ErrorServer(new Context(LogLevel.Developer, $"Failed to deserialize {nameof(NetworkObject)}.").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash).AddInfo(nameof(NetworkObject.NetworkObjectId), serializedObject.NetworkObjectId));
                         return;
                     }
+
+                    // A NetworkObject shown to this client after it migrated into another scene was instantiated in the
+                    // active scene, and the migration was only sent to the clients observing it at the time.
+                    if (networkManager.NetworkConfig.EnableSceneManagement)
+                    {
+                        networkManager.SceneManager.SynchronizeNetworkObjectScene(networkObject);
+                    }
                 }
                 else
                 {

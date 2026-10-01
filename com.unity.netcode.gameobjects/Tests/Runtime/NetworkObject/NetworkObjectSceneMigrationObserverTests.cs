@@ -107,6 +107,27 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// An object shown to a client after it migrated while hidden from that client spawns in the authority's scene.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkShowAfterSceneMigrationSpawnsInAuthorityScene()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var client = GetNonAuthorityNetworkManager();
+
+            var networkObject = SpawnObject(m_PrefabNoObserversSpawn, authority).GetComponent<NetworkObject>();
+            yield return s_DefaultWaitForTick;
+            Object.DontDestroyOnLoad(networkObject.gameObject);
+            yield return s_DefaultWaitForTick;
+
+            networkObject.NetworkShow(client.LocalClientId);
+            yield return WaitForSpawnedOn(client, networkObject);
+
+            var clientInstance = client.SpawnManager.SpawnedObjects[networkObject.NetworkObjectId];
+            Assert.AreEqual(client.SceneManager.DontDestroyOnLoadScene, clientInstance.gameObject.scene, $"[Client-{client.LocalClientId}] {networkObject.name} did not spawn in the authority's scene!");
+        }
+
+        /// <summary>
         /// A late joining client synchronizes an object that is not in the active scene into the authority's scene.
         /// A hybrid prefab instance can spawn after the synchronization completes, once its ghost arrives.
         /// </summary>
