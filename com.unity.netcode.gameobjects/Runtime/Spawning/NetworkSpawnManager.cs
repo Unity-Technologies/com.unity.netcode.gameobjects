@@ -1820,6 +1820,13 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+                    // NGO does not track a parent that Netcode for Entities replicates, so the hierarchy decides the generation.
+                    if (spawnedNetObj.GhostReplicatesParent() && spawnedNetObj.transform.parent != networkObject.transform)
+                    {
+                        continue;
+                    }
+#endif
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
                     spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;

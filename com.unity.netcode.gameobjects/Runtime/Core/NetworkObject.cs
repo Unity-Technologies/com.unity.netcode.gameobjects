@@ -417,6 +417,56 @@ namespace Unity.Netcode
                 GhostObject.ApplyPostTransformMatrixScale(scale);
             }
         }
+
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+        /// <summary>
+        /// When true, Netcode for Entities replicates this instance's parent and NGO parenting stands down.
+        /// </summary>
+        internal bool GhostReplicatesParent()
+        {
+            return HasGhost && GhostObject.ParentReplication;
+        }
+
+        private bool WarnIfGhostReplicatesParent(string methodName)
+        {
+            if (!GhostReplicatesParent())
+            {
+                return false;
+            }
+            var networkManager = NetworkManager;
+            if (networkManager == null || networkManager.LogLevel <= LogLevel.Normal)
+            {
+                NetworkLog.LogWarning($"[{name}] {methodName} was ignored. {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)} is enabled, so " +
+                    $"Netcode for Entities replicates the parent of this hybrid instance. Use {nameof(Transform)}.{nameof(Transform.SetParent)} instead.");
+            }
+            return true;
+        }
+#endif
+
+        /// <summary>
+        /// NGO parenting of a hybrid instance, or under one, can conflict with the ghost's own transform replication.
+        /// </summary>
+        private void LogHybridParentingArtifacts(NetworkObject parentObject)
+        {
+            // The ghost replicates its local transform. With worldPositionStays the authority rebases it at the reparent,
+            // but clients apply ParentSyncMessage ahead of the interpolated snapshot that carries the rebased values.
+            if (HasGhost && m_CachedWorldPositionStays)
+            {
+                NetworkLog.LogWarning($"[{name}] Hybrid instance re-parented with worldPositionStays enabled. Clients apply the new parent before the " +
+                    $"ghost's rebased transform is interpolated, so the object can pop for up to the interpolation delay. Parent with worldPositionStays " +
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+                    $"disabled, or enable {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)}.");
+#else
+                    "disabled to avoid this.");
+#endif
+            }
+
+            if (parentObject != null && parentObject.HasGhost != HasGhost)
+            {
+                NetworkLog.LogWarning($"[{name}] Parented under {parentObject.name}, but only one of them is a hybrid instance. Their transforms are " +
+                    $"synchronized and interpolated on different timelines, so the child can jitter relative to its parent while either one moves.");
+            }
+        }
 #endif
         /// <summary>
         /// This is intentionally private since this is a sealed class.
@@ -2517,6 +2567,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            {
+                return false;
+            }
+#endif
             // If we are removing ourself from a parent
             if (parent == null)
             {
@@ -2537,6 +2593,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            {
+                return false;
+            }
+#endif
             // If we are removing ourself from a parent
             if (parent == null)
             {
@@ -2567,6 +2629,12 @@ namespace Unity.Netcode
         /// <returns>True if the parent was successfully removed, false if the operation failed or the object was already parentless</returns>
         public bool TryRemoveParent(bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            if (WarnIfGhostReplicatesParent(nameof(TryRemoveParent)))
+            {
+                return false;
+            }
+#endif
             return TrySetParent((NetworkObject)null, worldPositionStays);
         }
 
@@ -2578,6 +2646,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            {
+                return false;
+            }
+#endif
             if (!AutoObjectParentSync || !IsSpawned || !NetworkManagerOwner.IsListening)
             {
                 return false;
@@ -2623,6 +2697,14 @@ namespace Unity.Netcode
             {
                 return;
             }
+
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own.
+            if (GhostReplicatesParent())
+            {
+                return;
+            }
+#endif
 
             if (transform.parent == m_CachedParent)
             {
@@ -2705,11 +2787,23 @@ namespace Unity.Netcode
                 }
 
                 m_LatestParent = parentObject.NetworkObjectId;
+#if UNIFIED_NETCODE
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    LogHybridParentingArtifacts(parentObject);
+                }
+#endif
             }
             else
             {
                 m_LatestParent = null;
                 removeParent = m_CachedParent != null;
+#if UNIFIED_NETCODE
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    LogHybridParentingArtifacts(null);
+                }
+#endif
             }
 
             // This can be reset within ApplyNetworkParenting
@@ -2784,6 +2878,14 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+            // NGO never tracked this parent, so applying "no parent" here would undo the one Netcode for Entities replicated.
+            if (GhostReplicatesParent())
+            {
+                return false;
+            }
+#endif
 
             // SPECIAL CASE:
             // The ignoreNotSpawned is a special case scenario where a late joining client has joined
@@ -3576,7 +3678,12 @@ namespace Unity.Netcode
         {
             var obj = new SerializedObject
             {
+#if UNIFIED_NETCODE_PARENT_REPLICATION
+                // The ghost's spawn carries its own parent.
+                HasParent = transform.parent != null && !GhostReplicatesParent(),
+#else
                 HasParent = transform.parent != null,
+#endif
                 WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
