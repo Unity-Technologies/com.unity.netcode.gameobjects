@@ -2253,27 +2253,39 @@ namespace Unity.Netcode
         {
             foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
             {
-                // This is only done for dynamically spawned NetworkObjects
-                // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
-                // then skip it (it will reside in the currently active scene in this scenario on the client-side)
-                if (!networkObject.InScenePlaced && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
-                {
-                    networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
+                SynchronizeNetworkObjectScene(networkObject);
+            }
+        }
 
-                    // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
-                    // and move it to that scene.
-                    if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
+        /// <summary>
+        /// Migrates a single client-side dynamically spawned NetworkObject into the scene it is in on the server-side.
+        /// </summary>
+        /// <remarks>
+        /// Also used for hybrid prefab instances that are part of the initial synchronization but only spawn once
+        /// their ghost arrives, which can be after the synchronization has completed.
+        /// </remarks>
+        internal void SynchronizeNetworkObjectScene(NetworkObject networkObject)
+        {
+            // This is only done for dynamically spawned NetworkObjects
+            // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
+            // then skip it (it will reside in the currently active scene in this scenario on the client-side)
+            if (!networkObject.InScenePlaced && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+            {
+                networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
+
+                // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
+                // and move it to that scene.
+                if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
+                {
+                    if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
                     {
-                        if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
-                        {
-                            var scene = ScenesLoaded[networkObject.SceneOriginHandle];
-                            SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
-                        }
-                        else if (NetworkManager.LogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{networkObject.gameObject.name}] Server - " +
-                                $"client scene mismatch detected! Client-side has no scene loaded with handle ({networkObject.SceneOriginHandle})!");
-                        }
+                        var scene = ScenesLoaded[networkObject.SceneOriginHandle];
+                        SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                    }
+                    else if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{networkObject.gameObject.name}] Server - " +
+                            $"client scene mismatch detected! Client-side has no scene loaded with handle ({networkObject.SceneOriginHandle})!");
                     }
                 }
             }
@@ -2992,6 +3004,26 @@ namespace Unity.Netcode
 
 
         private List<NetworkSceneHandle> m_ScenesToRemoveFromObjectMigration = new();
+        private List<ulong> m_SceneMigrationTargetIds = new();
+
+        private bool ObservesMigratedNetworkObject(ulong clientId)
+        {
+            foreach (var sceneEntry in ObjectsMigratedIntoNewScene)
+            {
+                if (!sceneEntry.Value.TryGetValue(NetworkManager.LocalClientId, out var migratedObjects))
+                {
+                    continue;
+                }
+                foreach (var networkObject in migratedObjects)
+                {
+                    if (networkObject.Observers.Contains(clientId))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// Should be invoked during PostLateUpdate just prior to the NetworkMessageManager processes its outbound message queue.
@@ -3056,13 +3088,30 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Only send to the clients that observe at least one of the migrated NetworkObjects
+            m_SceneMigrationTargetIds.Clear();
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId != NetworkManager.LocalClientId && (NetworkManager.DistributedAuthorityMode || ObservesMigratedNetworkObject(clientId)))
+                {
+                    m_SceneMigrationTargetIds.Add(clientId);
+                }
+            }
+
+            // Distributed authority still sends to the CMB service when there are no other clients
+            if (m_SceneMigrationTargetIds.Count == 0 && !NetworkManager.DistributedAuthorityMode)
+            {
+                ObjectsMigratedIntoNewScene.Clear();
+                return;
+            }
+
             // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
             // SendSceneEventData can throw an exception. We need to wrap this and recover from the exception gracefully.
             try
             {
-                SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.LocalClientId).ToArray());
+                SendSceneEventData(sceneEvent.SceneEventId, m_SceneMigrationTargetIds.ToArray());
             }
             catch (Exception ex)
             {
