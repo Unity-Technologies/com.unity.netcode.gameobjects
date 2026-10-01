@@ -2579,7 +2579,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Initialize it as a prefab
             adapter.InitializeAsPrefab();
 
-            adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            if (ghostMode == GhostMode.Interpolated)
+            {
+                adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            }
+            else
+            {
+                adapter.SupportedGhostModes = GhostModeMask.All;
+                adapter.DefaultGhostMode = ghostMode;
+                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
+            }
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);
@@ -2587,15 +2596,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // GhostBehaviours that are part of a prefab will not invoke Ghost.InternalAcquireEntityReference
             // Add the bridge
             var bridge = gameObject.AddComponent<NetworkObjectBridge>();
-
-            // Set after the bridge is added, since its editor OnValidate resets the supported modes to interpolated.
-            // The prefab is registered when each world is created, so this still applies before the session starts.
-            if (ghostMode != GhostMode.Interpolated)
-            {
-                adapter.SupportedGhostModes = GhostModeMask.All;
-                adapter.DefaultGhostMode = ghostMode;
-                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
-            }
 
             // Now add NGO components
             var no = gameObject.AddComponent<NetworkObject>();

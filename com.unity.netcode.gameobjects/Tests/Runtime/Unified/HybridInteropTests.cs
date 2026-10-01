@@ -240,16 +240,10 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            // Remote methods send through ClientServerBootstrap.ServerWorlds, but each bootstrap constructor clears
-            // that list, and NGO creates one bootstrap per NetworkManager. With several NetworkManagers in one process
-            // only the last one started stays registered, so the server world has to be added back.
-            if (!ClientServerBootstrap.ServerWorlds.Contains(m_ServerNetworkManager.NetcodeWorld))
-            {
-                ClientServerBootstrap.ServerWorlds.Add(m_ServerNetworkManager.NetcodeWorld);
-            }
             var client = m_ClientNetworkManagers[0];
             m_ServerInstance = SpawnObject(m_InteropPrefab, client).GetComponent<NetworkObject>();
-            m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
+            Assert.AreEqual(client.NetcodeWorld.LocalConnection.NetworkId, m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId,
+                "Spawning with an NGO owner did not set the ghost owner!");
             yield return WaitForSpawnedOnAllOrTimeOut(m_ServerInstance);
             AssertOnTimeout($"Timed out waiting for {m_ServerInstance.name} to spawn on all clients!");
             m_ClientInstance = client.SpawnManager.SpawnedObjects[m_ServerInstance.NetworkObjectId];
@@ -352,20 +346,29 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// NGO ownership and the ghost's N4E owner are separate: an NGO ownership change leaves the ghost owner as it was.
+        /// An NGO ownership change also changes the ghost's owner, so the new NGO owner is the one that predicts.
         /// </summary>
         [UnityTest]
-        public IEnumerator NgoOwnershipChangeDoesNotChangeGhostOwner()
+        public IEnumerator NgoOwnershipChangeUpdatesGhostOwner()
         {
-            var ghostOwner = m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId;
+            var client = m_ClientNetworkManagers[0];
+            var serverGhost = m_ServerInstance.GetComponent<GhostObject>();
+            var clientGhost = m_ClientInstance.GetComponent<GhostObject>();
+
+            // The host's own client owns the ghost when the host takes ownership. A server without a local client leaves it unowned.
+            var serverOwnerNetworkId = m_ServerNetworkManager.IsHost ? m_ServerNetworkManager.NetcodeWorld.LocalConnection.NetworkId : default;
             m_ServerInstance.ChangeOwnership(m_ServerNetworkManager.LocalClientId);
-            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-            AssertOnTimeout($"Client never saw the ownership change to Client-{m_ServerNetworkManager.LocalClientId}!");
-            yield return s_DefaultWaitForTick;
-            Assert.AreEqual(ghostOwner, m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId, "The ghost owner changed with the NGO owner.");
-            Assert.AreEqual(ghostOwner, m_ClientInstance.GetComponent<GhostObject>().OwnerNetworkId, "The client's ghost owner changed with the NGO owner.");
-            Assert.IsTrue(m_ClientInstance.GetComponent<GhostObject>().IsPredictedGhost, "The client stopped predicting the ghost.");
-            Debug.Log($"Client ghost was predicted on spawn: {m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>().GhostWasPredictedOnSpawn}");
+            Assert.AreEqual(serverOwnerNetworkId, serverGhost.OwnerNetworkId, "The ghost owner did not follow the NGO owner to the server!");
+            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.OwnerClientId == m_ServerNetworkManager.LocalClientId && clientGhost.OwnerNetworkId.Equals(serverOwnerNetworkId));
+            AssertOnTimeout($"Client never saw the ghost owner change! NGO owner: {m_ClientInstance.OwnerClientId}, ghost owner: {clientGhost.OwnerNetworkId.Value}");
+            Debug.Log($"Client ghost predicted after losing ownership: {clientGhost.IsPredictedGhost}. Predicted on spawn: " +
+                $"{m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>().GhostWasPredictedOnSpawn}");
+
+            var clientNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
+            m_ServerInstance.ChangeOwnership(client.LocalClientId);
+            Assert.AreEqual(clientNetworkId, serverGhost.OwnerNetworkId, "The ghost owner did not follow the NGO owner back to the client!");
+            yield return WaitForConditionOrTimeOut(() => clientGhost.OwnerNetworkId.Equals(clientNetworkId) && clientGhost.IsPredictedGhost);
+            AssertOnTimeout($"The client did not predict the ghost after regaining ownership! Ghost owner: {clientGhost.OwnerNetworkId.Value}, predicted: {clientGhost.IsPredictedGhost}");
         }
 
         private IEnumerator WriteNetworkVariableFromPrediction(bool gateOnFirstTimeTick)

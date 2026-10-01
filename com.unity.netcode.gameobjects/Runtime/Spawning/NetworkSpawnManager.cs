@@ -591,6 +591,12 @@ namespace Unity.Netcode
 
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
+#if UNIFIED_NETCODE
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, clientId);
+            }
+#endif
 
             // Notify lost ownership, update the ownership, then notify gained ownership for the network behaviours
             networkObject.InvokeBehaviourOnOwnershipChanged(originalOwner, clientId);
@@ -1177,6 +1183,7 @@ namespace Unity.Netcode
             if (networkObject.HasGhost)
             {
                 networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, networkObject.OwnerClientId);
             }
 #endif
 

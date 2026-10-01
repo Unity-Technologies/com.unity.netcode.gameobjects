@@ -61,7 +61,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             var client = m_ClientNetworkManagers[0];
             var serverInstance = SpawnObject(m_PredictedPrefab, client).GetComponent<NetworkObject>();
-            serverInstance.GetComponent<GhostObject>().OwnerNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
 
             yield return WaitForSpawnedOnAllOrTimeOut(serverInstance);
             AssertOnTimeout($"Timed out waiting for {serverInstance.name} to spawn on all clients!");

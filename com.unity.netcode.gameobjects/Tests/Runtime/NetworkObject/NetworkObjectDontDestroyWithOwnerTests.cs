@@ -13,10 +13,21 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
     {
         private const int k_NumberObjectsToSpawn = 16;
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         public enum ParentedPass
         {
@@ -278,6 +289,12 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkShowThenClientDisconnects()
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("A scene migration update can reach a client before the hybrid object's ghost has spawned there.");
+            }
+#endif
             var authorityManager = GetAuthorityNetworkManager();
             var networkObject = SpawnObject(m_PrefabNoObserversSpawn, authorityManager).GetComponent<NetworkObject>();
             var longWait = new WaitForSeconds(0.25f);
