@@ -1183,7 +1183,6 @@ namespace Unity.Netcode
             if (networkObject.HasGhost)
             {
                 networkObject.NetworkObjectBridge.NetworkObjectId.Value = networkObject.NetworkObjectId;
-                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, networkObject.OwnerClientId);
             }
 #endif
 
@@ -1309,6 +1308,13 @@ namespace Unity.Netcode
             }
 
             networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
+#if UNIFIED_NETCODE
+            // Before OnNetworkSpawn, so owner-specific initialization sees the ghost owner too.
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, ownerClientId);
+            }
+#endif
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);

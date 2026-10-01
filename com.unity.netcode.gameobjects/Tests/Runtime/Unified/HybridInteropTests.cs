@@ -155,10 +155,13 @@ namespace Unity.Netcode.RuntimeTests
         public int OwnerWrittenTickChanges;
         public int OwnerWrittenTickDecreases;
         public bool GhostWasPredictedOnSpawn;
+        public NetworkId GhostOwnerOnSpawn;
 
         public override void OnNetworkSpawn()
         {
-            GhostWasPredictedOnSpawn = GetComponent<GhostObject>().IsPredictedGhost;
+            var ghost = GetComponent<GhostObject>();
+            GhostWasPredictedOnSpawn = ghost.IsPredictedGhost;
+            GhostOwnerOnSpawn = ghost.OwnerNetworkId;
             OwnerWrittenTick.OnValueChanged += OnOwnerWrittenTickChanged;
         }
 
@@ -242,8 +245,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             var client = m_ClientNetworkManagers[0];
             m_ServerInstance = SpawnObject(m_InteropPrefab, client).GetComponent<NetworkObject>();
-            Assert.AreEqual(client.NetcodeWorld.LocalConnection.NetworkId, m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId,
-                "Spawning with an NGO owner did not set the ghost owner!");
+            var clientNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
+            Assert.AreEqual(clientNetworkId, m_ServerInstance.GetComponent<GhostObject>().OwnerNetworkId, "Spawning with an NGO owner did not set the ghost owner!");
+            Assert.AreEqual(clientNetworkId, m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().GhostOwnerOnSpawn,
+                "The ghost owner was not set yet when OnNetworkSpawn was invoked!");
             yield return WaitForSpawnedOnAllOrTimeOut(m_ServerInstance);
             AssertOnTimeout($"Timed out waiting for {m_ServerInstance.name} to spawn on all clients!");
             m_ClientInstance = client.SpawnManager.SpawnedObjects[m_ServerInstance.NetworkObjectId];
@@ -300,14 +305,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// A NetworkVariable is not rolled back: prediction of a tick before the value's stamp still reads the new value.
+        /// A NetworkVariable is not rolled back: re-simulating a tick can read a different value than its first prediction did.
         /// </summary>
         [UnityTest]
         public IEnumerator NetworkVariableReadDuringPredictionIsNotTickAligned()
         {
             yield return RecordAcrossStampedValueChange();
             var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            Assert.Greater(clientGhost.EarlyReadsOfNewValue, 0, "Expected prediction of ticks before the stamp to read the new value.");
+            Assert.Greater(clientGhost.InconsistentRawTicks, 0, "Expected a re-simulated tick to read a different value than its first prediction.");
         }
 
         /// <summary>

@@ -290,7 +290,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkShowThenClientDisconnects()
         {
 #if UNIFIED_NETCODE
-            if (m_AllPrefabsAsHybrid)
+            if (m_AllPrefabsAsHybrid && !m_UseHost)
             {
                 Assert.Ignore("A scene migration update can reach a client before the hybrid object's ghost has spawned there.");
             }
