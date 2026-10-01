@@ -289,12 +289,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkShowThenClientDisconnects()
         {
-#if UNIFIED_NETCODE
-            if (m_AllPrefabsAsHybrid && !m_UseHost)
-            {
-                Assert.Ignore("A scene migration update can reach a client before the hybrid object's ghost has spawned there.");
-            }
-#endif
             var authorityManager = GetAuthorityNetworkManager();
             var networkObject = SpawnObject(m_PrefabNoObserversSpawn, authorityManager).GetComponent<NetworkObject>();
             var longWait = new WaitForSeconds(0.25f);

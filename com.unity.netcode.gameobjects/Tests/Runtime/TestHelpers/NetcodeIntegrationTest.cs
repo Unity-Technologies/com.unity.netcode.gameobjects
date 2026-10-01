@@ -860,7 +860,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
                 if (networkManager.NetcodeWorld == ghost.World)
                 {
-                    networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    // Like GhostSpawnManager.RegisterGhostBridge, only clients wait for a ghost. Registering the server's
+                    // own instance moved it into the DontDestroyOnLoad scene on a dedicated server, which every client
+                    // was then told about.
+                    if (!networkManager.IsServer)
+                    {
+                        networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    }
                     return;
                 }
             }
