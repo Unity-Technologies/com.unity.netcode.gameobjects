@@ -1535,7 +1535,8 @@ namespace Unity.Netcode
         /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
         /// </remarks>
         /// <param name="clientId">The targeted client</param>
-        public void NetworkShow(ulong clientId)
+        /// <param name="checkVisibility">Whether to check object visibility before showing. Requires <see cref="CheckObjectVisibility"/> to be set.</param>
+        public void NetworkShow(ulong clientId, bool checkVisibility = true)
         {
             if (!IsSpawned)
             {
@@ -1575,9 +1576,9 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+            if (checkVisibility && CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
             {
-                if (NetworkManagerOwner.LogLevel <= LogLevel.Normal)
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
                 }
@@ -1603,7 +1604,8 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="networkObjects">The objects to become "netcode visible" to the targeted client</param>
         /// <param name="clientId">The targeted client</param>
-        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
+        /// <param name="checkVisibility">Whether to check object visibility before showing. Requires <see cref="CheckObjectVisibility"/> to be set.</param>
+        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, bool checkVisibility = true)
         {
             if (networkObjects == null || networkObjects.Count == 0)
             {
@@ -1612,7 +1614,7 @@ namespace Unity.Netcode
             }
             foreach (var networkObject in networkObjects)
             {
-                networkObject.NetworkShow(clientId);
+                networkObject.NetworkShow(clientId, checkVisibility);
             }
         }
 
@@ -1630,7 +1632,8 @@ namespace Unity.Netcode
         /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br />
         /// </remarks>
         /// <param name="clientId">The targeted client</param>
-        public void NetworkHide(ulong clientId)
+        /// <param name="checkVisibility">Whether to check object visibility before hiding. Requires <see cref="CheckObjectVisibility"/> to be set.</param>
+        public void NetworkHide(ulong clientId, bool checkVisibility = true)
         {
             if (!IsSpawned)
             {
@@ -1661,58 +1664,71 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!NetworkManagerOwner.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
+            // If an object was marked for showing to a client, but not yet sent, we can just remove it from the list and not send a destroy message
+            if (NetworkManagerOwner.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
             {
-                if (!Observers.Contains(clientId))
-                {
-                    if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogWarning($"[{name}] {nameof(NetworkObject)} already hidden from Client-{clientId}! (ignoring)");
-                    }
-                    return;
-                }
-                Observers.Remove(clientId);
+                return;
+            }
 
-                var message = new DestroyObjectMessage
+            // If the check visibility is enabled and the CheckObjectVisibility delegate is not null and returns true, log a warning and return
+            if (checkVisibility && CheckObjectVisibility != null && CheckObjectVisibility(clientId))
+            {
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
                 {
-                    NetworkObjectId = NetworkObjectId,
-                    DestroyGameObject = !InScenePlaced,
-                    IsDistributedAuthority = NetworkManagerOwner.DistributedAuthorityMode,
-                    IsTargetedDestroy = NetworkManagerOwner.DistributedAuthorityMode,
-                    TargetClientId = clientId, // Just always populate this value whether we write it or not
-                    DeferredDespawnTick = DeferredDespawnTick,
-                };
-
-                var size = 0;
-                if (NetworkManagerOwner.DistributedAuthorityMode)
-                {
-                    if (!NetworkManagerOwner.DAHost)
-                    {
-                        // Send destroy call to service or DAHost
-                        size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
-                    }
-                    else // DAHost mocking service
-                    {
-                        // Send destroy call
-                        size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
-                        // Broadcast the destroy to all clients so they can update their observers list
-                        foreach (var client in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
-                        {
-                            if (client == clientId || client == NetworkManagerOwner.LocalClientId)
-                            {
-                                continue;
-                            }
-                            size += NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, client);
-                        }
-                    }
+                    NetworkLog.LogWarning($"[NetworkShow] Trying to hide {nameof(NetworkObject)} {name} from client ({clientId}) but {nameof(CheckObjectVisibility)} returned true!");
                 }
-                else
+                return;
+            }
+
+            if (!Observers.Contains(clientId))
+            {
+                if (NetworkManagerOwner.LogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[{name}] {nameof(NetworkObject)} already hidden from Client-{clientId}! (ignoring)");
+                }
+                return;
+            }
+            Observers.Remove(clientId);
+
+            var message = new DestroyObjectMessage
+            {
+                NetworkObjectId = NetworkObjectId,
+                DestroyGameObject = !InScenePlaced,
+                IsDistributedAuthority = NetworkManagerOwner.DistributedAuthorityMode,
+                IsTargetedDestroy = NetworkManagerOwner.DistributedAuthorityMode,
+                TargetClientId = clientId, // Just always populate this value whether we write it or not
+                DeferredDespawnTick = DeferredDespawnTick,
+            };
+
+            var size = 0;
+            if (NetworkManagerOwner.DistributedAuthorityMode)
+            {
+                if (!NetworkManagerOwner.DAHost)
+                {
+                    // Send destroy call to service or DAHost
+                    size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                }
+                else // DAHost mocking service
                 {
                     // Send destroy call
                     size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
+                    // Broadcast the destroy to all clients so they can update their observers list
+                    foreach (var client in NetworkManagerOwner.ConnectionManager.ConnectedClientIds)
+                    {
+                        if (client == clientId || client == NetworkManagerOwner.LocalClientId)
+                        {
+                            continue;
+                        }
+                        size += NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, client);
+                    }
                 }
-                NetworkManagerOwner.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
+            else
+            {
+                // Send destroy call
+                size = NetworkManagerOwner.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
+            }
+            NetworkManagerOwner.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
         }
 
         /// <summary>
@@ -1730,7 +1746,8 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="networkObjects">The <see cref="NetworkObject"/>s that will become "netcode invisible" to the targeted client</param>
         /// <param name="clientId">The targeted client</param>
-        public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
+        /// <param name="checkVisibility">Whether to check object visibility before hiding</param>
+        public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId, bool checkVisibility = true)
         {
             if (networkObjects == null || networkObjects.Count == 0)
             {
@@ -1739,7 +1756,7 @@ namespace Unity.Netcode
             }
             foreach (var networkObject in networkObjects)
             {
-                networkObject.NetworkHide(clientId);
+                networkObject.NetworkHide(clientId, checkVisibility);
             }
         }
 
