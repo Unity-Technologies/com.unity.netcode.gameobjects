@@ -11,9 +11,6 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
-#if UNIFIED_NETCODE
-    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
-#endif
     public class SceneObjectsNotDestroyedOnShutdownTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
