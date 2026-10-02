@@ -26,7 +26,7 @@
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
-  name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
+  name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ platform.architecture }}, {{ editor }}, {% if coreclr_runtime_editors contains editor %}coreclr{% else %}mono{% endif %}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
