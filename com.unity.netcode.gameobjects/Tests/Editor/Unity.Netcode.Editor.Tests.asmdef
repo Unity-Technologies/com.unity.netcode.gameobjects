@@ -36,6 +36,11 @@
             "define": "MULTIPLAYER_TOOLS"
         },
         {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
+        {
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"

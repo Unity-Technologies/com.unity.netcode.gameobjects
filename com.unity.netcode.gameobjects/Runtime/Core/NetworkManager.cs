@@ -1407,12 +1407,31 @@ namespace Unity.Netcode
                 Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetcodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (NetcodeConfig.Global.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
+            if (HybridNetcodeDefaults.IsMissingRequired(NetcodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetcodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetcodeConfig)} cannot be used in hybrid mode: {reason}.").AddTag("Unified"));
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Drives the <see cref="NetcodeConfig"/> tick rates from <see cref="NetworkConfig.TickRate"/> so that ghost
+        /// updates land on the same interval as the rest of Netcode for GameObjects.
+        /// </summary>
+        /// <remarks>
+        /// The editor writes <see cref="HybridNetcodeDefaults.DefaultTickRate"/> when it applies the hybrid defaults,
+        /// because no <see cref="NetworkManager"/> is necessarily loaded at that point. This is where the rate a
+        /// project actually configured gets picked up.
+        /// </remarks>
+        private void UnifiedAlignTickRate()
+        {
+            if (!HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
+            {
+                return;
+            }
+
+            Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
         }
 #endif
 
@@ -1457,6 +1476,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedAlignTickRate();
                 if (LogLevel <= LogLevel.Developer)
                 {
                     Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
@@ -1536,6 +1556,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedAlignTickRate();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
@@ -1610,6 +1631,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedAlignTickRate();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }

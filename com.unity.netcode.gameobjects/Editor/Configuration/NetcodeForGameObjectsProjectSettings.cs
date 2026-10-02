@@ -37,6 +37,19 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         [SerializeField]
         public bool GenerateDefaultNetworkPrefabs = true;
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// The version of the hybrid mode default values already written into this project's NetcodeConfig, or zero
+        /// when they have never been written.
+        /// </summary>
+        /// <remarks>
+        /// A version rather than a flag so a later revision of those values re-applies exactly once. Recording it is
+        /// what keeps them a one-shot: a user who changes them is not overwritten on the next domain reload.
+        /// </remarks>
+        [SerializeField]
+        public int HybridDefaultsVersion;
+#endif
+
         internal void SaveSettings()
         {
             Save(true);

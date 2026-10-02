@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
+#if UNIFIED_NETCODE && !UNIFIED_NETCODE_7_0_0
+using NetcodeConfig = Unity.NetCode.NetCodeConfig;
+#endif
 using UnityEditor;
 using UnityEngine;
 using Directory = UnityEngine.Windows.Directory;
@@ -192,6 +195,10 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                     networkPrefabsPath,
                     GUILayout.Width(s_MaxLabelWidth + 270));
                 GUILayout.EndVertical();
+
+#if UNIFIED_NETCODE
+                DrawHybridSettings(settings);
+#endif
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
             GUILayout.EndVertical();
@@ -205,6 +212,41 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
                 settings.SaveSettings();
             }
         }
+
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Displays the NetcodeConfig the NGO hybrid mode defaults were written into, and offers a way to restore
+        /// those defaults for anyone who has since changed them.
+        /// </summary>
+        /// <param name="settings">The project settings holding the applied-defaults marker.</param>
+        private static void DrawHybridSettings(NetcodeForGameObjectsProjectSettings settings)
+        {
+            GUILayout.BeginVertical("Box");
+            GUILayout.Label("Hybrid (Netcode for Entities)", EditorStyles.boldLabel);
+
+            var config = NetcodeConfig.Global;
+            if (config == null)
+            {
+                EditorGUILayout.HelpBox("No NetcodeConfig has been assigned yet. Open Project Settings > Multiplayer, which creates one, then reload the project.", MessageType.Warning);
+                GUILayout.EndVertical();
+                return;
+            }
+
+            EditorGUILayout.ObjectField(new GUIContent("Applied to", "The NetcodeConfig that Netcode for GameObjects wrote its hybrid mode defaults into."), config, typeof(NetcodeConfig), false);
+
+            if (settings.HybridDefaultsVersion < HybridNetcodeDefaults.Version)
+            {
+                EditorGUILayout.HelpBox("The Netcode for GameObjects hybrid defaults have not been applied to this config yet.", MessageType.Info);
+            }
+
+            if (GUILayout.Button(new GUIContent("Apply Recommended Hybrid Defaults", "Restores the snapshot, interpolation and transport values Netcode for GameObjects recommends for hybrid mode. Applied automatically once; use this to get back to them after changing them.")))
+            {
+                HybridNetcodeConfigApplier.ApplyDefaults(true);
+            }
+
+            GUILayout.EndVertical();
+        }
+#endif
     }
 
     internal class NetcodeSettingsLabel : NetcodeGUISettings
