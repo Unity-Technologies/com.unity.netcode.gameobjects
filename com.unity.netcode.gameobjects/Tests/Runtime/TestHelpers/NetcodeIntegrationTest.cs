@@ -1053,6 +1053,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Provides opportunity to allow child derived classes to
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
+#if UNIFIED_NETCODE
+            // N4E worlds and the unified transport only start when a hybrid prefab is registered.
+            // Without this, a hybrid test case that only spawns players would run as plain NGO.
+            if (m_AllPrefabsAsHybrid && !m_HybridPrefabCreated)
+            {
+                CreateHybridPrefab("UnifiedSessionPrefab");
+            }
+#endif
 
             VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
@@ -1846,6 +1854,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_AllPrefabsAsHybrid)
             {
                 m_PendingPrefabs.Clear();
+                m_HybridPrefabCreated = false;
                 GhostSpawnManager.RegisterPendingGhost = null;
                 CleanupPrefabReferences();
             }
@@ -2584,8 +2593,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Object.Destroy(reference);
             }
         }
+        private bool m_HybridPrefabCreated;
         protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
         {
+            m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
             var gameObject = new GameObject
             {
