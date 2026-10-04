@@ -1218,6 +1218,15 @@ namespace Unity.Netcode
         internal bool IsForwarding;
         private ulong m_OwnerId;
 
+        /// <summary>
+        /// Distributed authority forwards scene migrations through the session owner or the DAHost, so only
+        /// client-server filters them by the target client's observers.
+        /// </summary>
+        private bool IsMigrationSentToTarget(NetworkObject networkObject)
+        {
+            return m_NetworkManager.DistributedAuthorityMode || networkObject.Observers.Contains(TargetClientId);
+        }
+
         private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)
         {
             var sceneManager = m_NetworkManager.SceneManager;
@@ -1241,17 +1250,35 @@ namespace Unity.Netcode
             {
                 // Since these are separated by scene then owner, there could be scenes that have
                 // no changes.
-                if (!sceneHandleObjects.Value.ContainsKey(networkManagerClientId))
+                if (!sceneHandleObjects.Value.TryGetValue(networkManagerClientId, out var migratedObjects))
                 {
                     continue;
                 }
+
+                // A client is only told about the objects it observes, since it has not spawned the others.
+                var objectCount = 0;
+                foreach (var networkObject in migratedObjects)
+                {
+                    if (IsMigrationSentToTarget(networkObject))
+                    {
+                        objectCount++;
+                    }
+                }
+                if (objectCount == 0)
+                {
+                    continue;
+                }
+
                 // Write the scene handle
                 writer.WriteValueSafe(sceneHandleObjects.Key);
                 // Write the number of NetworkObjectIds to expect
-                writer.WriteValueSafe(sceneHandleObjects.Value[networkManagerClientId].Count);
-                foreach (var networkObject in sceneHandleObjects.Value[networkManagerClientId])
+                writer.WriteValueSafe(objectCount);
+                foreach (var networkObject in migratedObjects)
                 {
-                    writer.WriteValueSafe(networkObject.NetworkObjectId);
+                    if (IsMigrationSentToTarget(networkObject))
+                    {
+                        writer.WriteValueSafe(networkObject.NetworkObjectId);
+                    }
                 }
                 entriesWritten++;
             }

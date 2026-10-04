@@ -20,6 +20,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`.
+- Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server.
+
 ### Security
 
 ### Obsolete

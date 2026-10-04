@@ -19,8 +19,12 @@ namespace Unity.Netcode.RuntimeTests
     /// - When <see cref="OwnerPersistence.DestroyWithOwner"/> the server-side player object is destroyed
     /// - When <see cref="OwnerPersistence.DontDestroyWithOwner"/> the server-side player object ownership is transferred back to the server
     /// </summary>
-    [TestFixture(OwnerPersistence.DestroyWithOwner)]
-    [TestFixture(OwnerPersistence.DontDestroyWithOwner)]
+    [TestFixture(OwnerPersistence.DestroyWithOwner, HostOrServer.Host)]
+    [TestFixture(OwnerPersistence.DontDestroyWithOwner, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(OwnerPersistence.DestroyWithOwner, HostOrServer.UnifiedHost)]
+    [TestFixture(OwnerPersistence.DontDestroyWithOwner, HostOrServer.UnifiedHost)]
+#endif
     internal class DisconnectTests : NetcodeIntegrationTest
     {
         public enum OwnerPersistence
@@ -37,6 +41,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         private OwnerPersistence m_OwnerPersistence;
         private ClientDisconnectType m_ClientDisconnectType;
         private bool m_ClientDisconnected;
@@ -46,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
         private ulong m_ClientId;
 
 
-        public DisconnectTests(OwnerPersistence ownerPersistence) : base(HostOrServer.Host)
+        public DisconnectTests(OwnerPersistence ownerPersistence, HostOrServer hostOrServer) : base(hostOrServer)
         {
             m_OwnerPersistence = ownerPersistence;
         }

@@ -860,7 +860,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
                 if (networkManager.NetcodeWorld == ghost.World)
                 {
-                    networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    // Like GhostSpawnManager.RegisterGhostBridge, only clients wait for a ghost. Registering the server's
+                    // own instance moved it into the DontDestroyOnLoad scene on a dedicated server, which every client
+                    // was then told about.
+                    if (!networkManager.IsServer)
+                    {
+                        networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    }
                     return;
                 }
             }
@@ -2554,7 +2560,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
         private bool m_HybridPrefabCreated;
-        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
+        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
         {
             m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
@@ -2579,13 +2585,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Initialize it as a prefab
             adapter.InitializeAsPrefab();
 
-            // TODO: This might be part of the CreateHybridPrefab parameters
-            // For now, just use normal interpolation until we get integration
-            // tests running.
-            // Once we have validated prediction works and have a working manual
-            // test, we can circle back to this (possibly make that a sub-task
-            // with the dependency to prediction manual test).
-            adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            if (ghostMode == GhostMode.Interpolated)
+            {
+                adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            }
+            else
+            {
+                adapter.SupportedGhostModes = GhostModeMask.All;
+                adapter.DefaultGhostMode = ghostMode;
+                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
+            }
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);
