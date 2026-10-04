@@ -9,7 +9,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public class ObjectNameIdentifier : NetworkBehaviour
     {
-        private ulong m_CurrentOwner;
+        private ulong m_RegisteredClientId;
         private ulong m_CurrentNetworkObjectId;
         private bool m_IsRegistered;
 
@@ -45,7 +45,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // This is required otherwise it will try to continue to update the NetworkBehaviour even if
                 // it has been destroyed.
                 m_NetworkObject = NetworkObject;
-                m_CurrentOwner = OwnerClientId;
+                m_RegisteredClientId = NetworkManager.LocalClientId;
                 m_CurrentNetworkObjectId = NetworkObjectId;
 
                 var serverOrClient = IsServer ? "Server" : "Client";
@@ -75,7 +75,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_IsRegistered)
             {
-                NetcodeIntegrationTest.DeregisterNetworkObject(m_CurrentOwner, m_CurrentNetworkObjectId);
+                NetcodeIntegrationTest.DeregisterNetworkObject(m_RegisteredClientId, m_CurrentNetworkObjectId);
                 m_IsRegistered = false;
             }
         }
