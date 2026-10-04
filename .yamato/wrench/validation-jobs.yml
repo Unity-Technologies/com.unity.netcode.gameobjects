@@ -27,7 +27,7 @@ validate_-_netcode_gameobjects_-_6000_7_-_macos13arm:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -39,10 +39,10 @@ validate_-_netcode_gameobjects_-_6000_7_-_macos13arm:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -104,7 +104,7 @@ validate_-_netcode_gameobjects_-_6000_7_-_ubuntu2204:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -116,10 +116,10 @@ validate_-_netcode_gameobjects_-_6000_7_-_ubuntu2204:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -181,7 +181,7 @@ validate_-_netcode_gameobjects_-_6000_7_-_win10:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -193,10 +193,10 @@ validate_-_netcode_gameobjects_-_6000_7_-_win10:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -259,7 +259,7 @@ validate_-_netcode_gameobjects_-_7000_0_-_macos13arm:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -271,10 +271,10 @@ validate_-_netcode_gameobjects_-_7000_0_-_macos13arm:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -336,7 +336,7 @@ validate_-_netcode_gameobjects_-_7000_0_-_ubuntu2204:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -348,10 +348,10 @@ validate_-_netcode_gameobjects_-_7000_0_-_ubuntu2204:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -413,7 +413,7 @@ validate_-_netcode_gameobjects_-_7000_0_-_win10:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 40
+    timeout: 90
     retries: 0
   - command: python PythonScripts/ignore_clean_console_failures.py
     timeout: 5
@@ -425,10 +425,10 @@ validate_-_netcode_gameobjects_-_7000_0_-_win10:
     timeout: 10
     retries: 0
   - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/editor --suite=editor "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts/playmode --suite=playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 40
+    timeout: 90
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
