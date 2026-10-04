@@ -8,21 +8,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [3.1.0] - 2026-10-04
 
-### Added
-
 ### Changed
 
 - Updated Netcode for Entities dependency to 7.1.0
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
-### Obsolete
 
 ## [3.0.0] - 2026-09-14
 
