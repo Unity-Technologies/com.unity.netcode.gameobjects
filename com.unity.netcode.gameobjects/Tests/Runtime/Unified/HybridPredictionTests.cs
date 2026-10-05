@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         public int FirstTimeTicks;
         public int ResimulatedTicks;
 
-        public override void PredictionUpdate(float tickedDeltaTime)
+        public override void PredictionUpdate(PredictionUpdateContext context)
         {
             if (Ghost.World.NetworkTime.IsFirstTimeFullyPredictingTick)
             {
@@ -66,8 +66,8 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Timed out waiting for {serverInstance.name} to spawn on all clients!");
 
             var clientProbe = client.SpawnManager.SpawnedObjects[serverInstance.NetworkObjectId].GetComponent<HybridPredictionProbe>();
-            yield return WaitForConditionOrTimeOut(() => clientProbe.Ghost.IsPredictedGhost && clientProbe.ResimulatedTicks > 0);
-            AssertOnTimeout($"Client never re-simulated {serverInstance.name}! Predicted: {clientProbe.Ghost.IsPredictedGhost}, " +
+            yield return WaitForConditionOrTimeOut(() => clientProbe.Ghost.CanWriteState && clientProbe.ResimulatedTicks > 0);
+            AssertOnTimeout($"Client never re-simulated {serverInstance.name}! Predicted: {clientProbe.Ghost.CanWriteState}, " +
                 $"first-time ticks: {clientProbe.FirstTimeTicks}, re-simulated ticks: {clientProbe.ResimulatedTicks}");
 
             var serverProbe = serverInstance.GetComponent<HybridPredictionProbe>();

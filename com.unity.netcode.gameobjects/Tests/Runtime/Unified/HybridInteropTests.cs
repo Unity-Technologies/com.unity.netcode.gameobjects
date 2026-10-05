@@ -53,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests
         private readonly Dictionary<uint, int> m_RawValueByTick = new Dictionary<uint, int>();
         private readonly Dictionary<uint, int> m_StampedValueByTick = new Dictionary<uint, int>();
 
-        public override void PredictionUpdate(float tickedDeltaTime)
+        public override void PredictionUpdate(PredictionUpdateContext context)
         {
             if (IsServer)
             {
@@ -120,20 +120,20 @@ namespace Unity.Netcode.RuntimeTests
             return 0;
         }
 
-        [Remote(Directionality.ServerToClient)]
+        [RPC(SendDirection.ServerToClient)]
         public void PingToClient(int value)
         {
             PingValue = value;
             GetComponent<HybridInteropNetworkBehaviour>().PingToServerRpc(value + 1);
         }
 
-        [Remote(Directionality.ServerToClient)]
+        [RPC(SendDirection.ServerToClient)]
         public void FinalPingToClient(int value)
         {
             PingValue = value;
         }
 
-        [Remote(Directionality.ClientToServer)]
+        [RPC(SendDirection.ClientToServer)]
         public void PingToServer(int value)
         {
             PingValue = value;
@@ -160,7 +160,7 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             var ghost = GetComponent<GhostObject>();
-            GhostWasPredictedOnSpawn = ghost.IsPredictedGhost;
+            GhostWasPredictedOnSpawn = ghost.CanWriteState;
             GhostOwnerOnSpawn = ghost.OwnerNetworkId;
             OwnerWrittenTick.OnValueChanged += OnOwnerWrittenTickChanged;
         }
@@ -252,7 +252,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForSpawnedOnAllOrTimeOut(m_ServerInstance);
             AssertOnTimeout($"Timed out waiting for {m_ServerInstance.name} to spawn on all clients!");
             m_ClientInstance = client.SpawnManager.SpawnedObjects[m_ServerInstance.NetworkObjectId];
-            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.GetComponent<GhostObject>().IsPredictedGhost);
+            yield return WaitForConditionOrTimeOut(() => m_ClientInstance.GetComponent<GhostObject>().CanWriteState);
             AssertOnTimeout($"{m_ClientInstance.name} never became predicted on the client!");
         }
 
@@ -366,14 +366,14 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(serverOwnerNetworkId, serverGhost.OwnerNetworkId, "The ghost owner did not follow the NGO owner to the server!");
             yield return WaitForConditionOrTimeOut(() => m_ClientInstance.OwnerClientId == m_ServerNetworkManager.LocalClientId && clientGhost.OwnerNetworkId.Equals(serverOwnerNetworkId));
             AssertOnTimeout($"Client never saw the ghost owner change! NGO owner: {m_ClientInstance.OwnerClientId}, ghost owner: {clientGhost.OwnerNetworkId.Value}");
-            Debug.Log($"Client ghost predicted after losing ownership: {clientGhost.IsPredictedGhost}. Predicted on spawn: " +
+            Debug.Log($"Client ghost predicted after losing ownership: {clientGhost.CanWriteState}. Predicted on spawn: " +
                 $"{m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>().GhostWasPredictedOnSpawn}");
 
             var clientNetworkId = client.NetcodeWorld.LocalConnection.NetworkId;
             m_ServerInstance.ChangeOwnership(client.LocalClientId);
             Assert.AreEqual(clientNetworkId, serverGhost.OwnerNetworkId, "The ghost owner did not follow the NGO owner back to the client!");
-            yield return WaitForConditionOrTimeOut(() => clientGhost.OwnerNetworkId.Equals(clientNetworkId) && clientGhost.IsPredictedGhost);
-            AssertOnTimeout($"The client did not predict the ghost after regaining ownership! Ghost owner: {clientGhost.OwnerNetworkId.Value}, predicted: {clientGhost.IsPredictedGhost}");
+            yield return WaitForConditionOrTimeOut(() => clientGhost.OwnerNetworkId.Equals(clientNetworkId) && clientGhost.CanWriteState);
+            AssertOnTimeout($"The client did not predict the ghost after regaining ownership! Ghost owner: {clientGhost.OwnerNetworkId.Value}, predicted: {clientGhost.CanWriteState}");
         }
 
         private IEnumerator WriteNetworkVariableFromPrediction(bool gateOnFirstTimeTick)
