@@ -2560,7 +2560,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
         private bool m_HybridPrefabCreated;
-        private GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
+        internal GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
         {
             m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab

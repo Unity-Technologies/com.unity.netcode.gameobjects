@@ -35,12 +35,6 @@ namespace TestProject.RuntimeTests
 
         public NetworkObjectSceneMigrationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
-        // TODO: [MTT-15430] Fix automatic scene object migration between clients
-        protected override bool UseCMBService()
-        {
-            return true;
-        }
-
         protected override IEnumerator OnSetup()
         {
             m_OriginalActiveScene = SceneManager.GetActiveScene();
