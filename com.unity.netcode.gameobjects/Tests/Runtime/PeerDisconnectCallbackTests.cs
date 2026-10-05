@@ -17,8 +17,6 @@ namespace Unity.Netcode.RuntimeTests
     /// - When a server disconnects a client that:
     /// -- The client detects this disconnection.
     /// -- The server cleans up the transport to NGO client (and vice versa) mappings.
-    /// - When <see cref="DisconnectTests.OwnerPersistence.DestroyWithOwner"/> the server-side player object is destroyed
-    /// - When <see cref="DisconnectTests.OwnerPersistence.DontDestroyWithOwner"/> the server-side player object ownership is transferred back to the server
     /// </summary>
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.Host)]
@@ -28,7 +26,6 @@ namespace Unity.Netcode.RuntimeTests
 #endif
     internal class PeerDisconnectCallbackTests : NetcodeIntegrationTest
     {
-
         public enum ClientDisconnectType
         {
             ServerDisconnectsClient,

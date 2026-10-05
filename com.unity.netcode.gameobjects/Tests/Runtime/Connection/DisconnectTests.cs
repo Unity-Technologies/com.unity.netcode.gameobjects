@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -16,8 +16,6 @@ namespace Unity.Netcode.RuntimeTests
     /// - When a server disconnects a client that:
     /// -- The client detects this disconnection.
     /// -- The server cleans up the transport to NGO client (and vice versa) mappings.
-    /// - When <see cref="OwnerPersistence.DestroyWithOwner"/> the server-side player object is destroyed
-    /// - When <see cref="OwnerPersistence.DontDestroyWithOwner"/> the server-side player object ownership is transferred back to the server
     /// </summary>
     [TestFixture(HostOrServer.Host)]
 #if UNIFIED_NETCODE
@@ -37,10 +35,7 @@ namespace Unity.Netcode.RuntimeTests
             ClientDisconnectsFromServer
         }
 
-        // Each client disconnects with its own owner persistence
-        private static readonly OwnerPersistence[] k_OwnerPersistences = { OwnerPersistence.DestroyWithOwner, OwnerPersistence.DontDestroyWithOwner };
-
-        protected override int NumberOfClients => k_OwnerPersistences.Length;
+        protected override int NumberOfClients => 2;
 
 #if UNIFIED_NETCODE
         protected override bool UseUnifiedTests()
@@ -48,14 +43,12 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 #endif
-
-        private ClientDisconnectType m_ClientDisconnectType;
         private bool m_ClientDisconnected;
         private Dictionary<NetworkManager, ConnectionEventData> m_DisconnectedEvent = new Dictionary<NetworkManager, ConnectionEventData>();
-        private ulong m_DisconnectEventClientId;
         private ulong m_TransportClientId;
         private ulong m_ClientId;
 
+        private GameObject m_TestPrefab;
 
         public DisconnectTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -75,6 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
             }
+            m_TestPrefab = CreateNetworkObjectPrefab("TestObject");
 
             base.OnServerAndClientsCreated();
         }
@@ -137,22 +131,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Conditional check to make sure the client player object no longer exists on the server side
-        /// </summary>
-        private bool DoesServerStillHaveSpawnedPlayerObject()
-        {
-            if (m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientId))
-            {
-                var playerObject = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientId];
-                if (playerObject != null && playerObject.IsSpawned)
-                {
-                    return false;
-                }
-            }
-            return !m_ServerNetworkManager.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == m_ClientId);
-        }
-
-        /// <summary>
         /// Used to compare against when the client-side disconnects
         /// </summary>
         private int m_ExpectedConnectedClientCount;
@@ -160,10 +138,16 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientPlayerDisconnected([Values] ClientDisconnectType clientDisconnectType)
         {
+            // Validates that having an object spawned does not throw an exception when a client is disconnected.
+            var instance = SpawnObject(m_TestPrefab, GetAuthorityNetworkManager());
+
+            yield return WaitForSpawnedOnAllOrTimeOut(instance);
+            AssertOnTimeout($"Failed to spawn {instance.name}!");
+
             for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
                 m_ExpectedConnectedClientCount = m_ServerNetworkManager.ConnectedClients.Count;
-                yield return DisconnectClient(m_ClientNetworkManagers[i], clientDisconnectType, k_OwnerPersistences[i]);
+                yield return DisconnectClient(m_ClientNetworkManagers[i], clientDisconnectType);
             }
 
             // Validate the host-client generates a OnClientDisconnected event when it shuts down.
@@ -193,15 +177,12 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientDisconnected = false;
         }
 
-        private IEnumerator DisconnectClient(NetworkManager clientNetworkManager, ClientDisconnectType clientDisconnectType, OwnerPersistence ownerPersistence)
+        private IEnumerator DisconnectClient(NetworkManager clientNetworkManager, ClientDisconnectType clientDisconnectType)
         {
             m_ClientId = clientNetworkManager.LocalClientId;
-            m_ClientDisconnectType = clientDisconnectType;
-            var context = $"[{ownerPersistence}][Client-{m_ClientId}]";
+            var context = $"[{clientDisconnectType}][Client-{m_ClientId}]";
 
             var serverSideClientPlayer = m_ServerNetworkManager.ConnectionManager.ConnectedClients[m_ClientId].PlayerObject;
-            // The authority reads this when the client disconnects
-            serverSideClientPlayer.DontDestroyWithOwner = ownerPersistence == OwnerPersistence.DontDestroyWithOwner;
 
             bool connectionExists;
             (m_TransportClientId, connectionExists) = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
@@ -244,19 +225,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsIds.Count == m_ExpectedConnectedClientCount, $"{context} Expected connected client identifiers count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClientsIds.Count}!");
                 Assert.IsTrue(m_ServerNetworkManager.ConnectedClients.Count == m_ExpectedConnectedClientCount, $"{context} Expected connected clients count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClients.Count}!");
                 Assert.IsTrue(m_ServerNetworkManager.ConnectedClientsList.Count == m_ExpectedConnectedClientCount, $"{context} Expected connected clients list count to be {m_ExpectedConnectedClientCount} but it was {m_ServerNetworkManager.ConnectedClientsList.Count}!");
-            }
-
-            if (ownerPersistence == OwnerPersistence.DestroyWithOwner)
-            {
-                // When we are destroying with the owner, validate the player object is destroyed on the server side
-                yield return WaitForConditionOrTimeOut(DoesServerStillHaveSpawnedPlayerObject);
-                AssertOnTimeout($"{context} Timed out waiting for client's player object to be destroyed!");
-            }
-            else
-            {
-                // When we are not destroying with the owner, ensure the player object's ownership was transferred back to the server
-                yield return WaitForConditionOrTimeOut(() => serverSideClientPlayer.IsOwnedByServer);
-                AssertOnTimeout($"{context} The client's player object's ownership was not transferred back to the server!");
             }
 
             yield return WaitForConditionOrTimeOut(TransportIdCleanedUp);
