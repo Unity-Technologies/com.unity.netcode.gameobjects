@@ -52,7 +52,7 @@ class ReleaseConfig:
         self.changelog_path = 'com.unity.netcode.gameobjects/CHANGELOG.md'
         self.validation_exceptions_path = './ValidationExceptions.json'
         self.github_repo = 'Unity-Technologies/com.unity.netcode.gameobjects'
-        self.default_repo_branch = 'develop-2.0.0' # Changelog and package version change will be pushed to this branch
+        self.default_repo_branch = 'develop-3.x.x' # Changelog and package version change will be pushed to this branch
         self.yamato_project_id = '1201'
         self.command_to_run_on_release_branch = make_package_release_ready
 

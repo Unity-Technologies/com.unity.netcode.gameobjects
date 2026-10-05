@@ -132,10 +132,9 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
     with open(changelog_path, 'r', encoding='UTF-8') as f:
         changelog_text = f.read()
 
-    # This pattern finds a line starting with '###', followed by its newline,
-    # and then two more lines that contain only whitespace.
+    # This pattern finds a line starting with '###' followed only by blank lines up to the next heading or end of file.
     # The re.MULTILINE flag allows '^' to match the start of each line.
-    pattern = re.compile(r"^###.*\n\n\n", re.MULTILINE)
+    pattern = re.compile(r"^###[^\n]*\n(?:[ \t]*\n)*(?=##|\Z)", re.MULTILINE)
 
     # Replace every match with an empty string. The goal is to remove empty CHANGELOG subsections.
     cleaned_content = pattern.sub('', changelog_text)
