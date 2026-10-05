@@ -38,7 +38,7 @@ namespace TestProject.RuntimeTests
         // TODO: [MTT-15430] Fix automatic scene object migration between clients
         protected override bool UseCMBService()
         {
-            return false;
+            return true;
         }
 
         protected override IEnumerator OnSetup()
