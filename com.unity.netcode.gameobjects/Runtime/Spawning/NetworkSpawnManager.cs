@@ -8,6 +8,10 @@ using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNIFIED_NETCODE
+// Refer to NetworkManager.cs for why N4E's Netcode class gets its own name
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#endif
 
 namespace Unity.Netcode
 {
@@ -959,6 +963,36 @@ namespace Unity.Netcode
             return networkObject;
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Spawns a hybrid instance's ghost in this <see cref="NetworkManager"/>'s world.
+        /// </summary>
+        /// <remarks>
+        /// N4E spawns a ghost into its active world, which is whichever world updated last when several worlds share a process.
+        /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>) so the world can be selected here.
+        /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as it is.
+        /// </remarks>
+        private void SpawnGhost(NetworkObject networkObject)
+        {
+            var ghostObject = networkObject.GhostObject;
+            if (ghostObject == null || ghostObject.IsSpawned || !ghostObject.DelaySpawning)
+            {
+                return;
+            }
+            var entitiesNetcode = EntitiesNetcode.Instance;
+            var previousWorld = entitiesNetcode.m_ActiveWorld;
+            entitiesNetcode.m_ActiveWorld = NetworkManager.NetcodeWorld;
+            try
+            {
+                ghostObject.Spawn();
+            }
+            finally
+            {
+                entitiesNetcode.m_ActiveWorld = previousWorld;
+            }
+        }
+#endif
+
         /// <summary>
         /// Creates a local NetworkObject to be spawned.
         /// </summary>
@@ -1164,6 +1198,13 @@ namespace Unity.Netcode
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
             }
 
+#if UNIFIED_NETCODE
+            // The ghost is spawned before OnNetworkSpawn so that NetworkBehaviours can access it there
+            if (networkObject.HasGhost)
+            {
+                SpawnGhost(networkObject);
+            }
+#endif
 
             if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, playerObject, ownerClientId, destroyWithScene))
             {
