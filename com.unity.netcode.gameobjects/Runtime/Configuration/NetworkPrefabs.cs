@@ -183,10 +183,17 @@ namespace Unity.Netcode
         {
             m_PrefabHashIds.Clear();
             m_Prefabs.Clear();
+#if UNIFIED_NETCODE
+            // Recomputed by the registrations below.
+            HasGhostPrefabs = false;
+#endif
             NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
             {
+                // Initialize runs more than once per session, so unsubscribe first to keep a single subscription.
+                list.OnAdd -= AddTriggeredByNetworkPrefabList;
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
+                list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
                 list.OnRemove += RemoveTriggeredByNetworkPrefabList;
             }
 
@@ -357,11 +364,15 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
         internal const string DistributedAuthorityHybridPrefabError = "Distributed authority does not support hybrid prefabs.";
+        internal const string HybridPrefabOverrideError = "NetworkPrefab overrides are not supported for hybrid prefabs yet.";
 
         internal bool HasGhostPrefabs { get; private set; }
 
         // Set by NetworkManager for the duration of a distributed authority session.
         internal bool RejectGhostPrefabs;
+
+        // Set by NetworkManager for the duration of any session.
+        internal bool RejectGhostOverrides;
 #endif
 
 
@@ -389,7 +400,13 @@ namespace Unity.Netcode
                 // Registering a hybrid prefab mid-session would switch NetworkManager into hybrid mode and stop its send queue.
                 if (RejectGhostPrefabs)
                 {
-                    Debug.LogError($"{DistributedAuthorityHybridPrefabError} {networkPrefab.Prefab.name} was not added.");
+                    Debug.LogError($"{DistributedAuthorityHybridPrefabError} {networkPrefab.GetHybridDebugName()} was not added.");
+                    return false;
+                }
+                // N4E spawns the source prefab on every client, so the override would never be applied.
+                if (RejectGhostOverrides && networkPrefab.Override != NetworkPrefabOverride.None)
+                {
+                    Debug.LogError($"{HybridPrefabOverrideError} {networkPrefab.GetHybridDebugName()} was not added.");
                     return false;
                 }
                 HasGhostPrefabs = true;

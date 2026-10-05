@@ -1271,6 +1271,11 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
             }
 #endif
+#if UNIFIED_NETCODE
+            // Both are cleared in ShutdownInternal.
+            NetworkConfig.Prefabs.RejectGhostPrefabs = DistributedAuthorityMode;
+            NetworkConfig.Prefabs.RejectGhostOverrides = true;
+#endif
 
             MetricsManager.Initialize(this);
 
@@ -1365,7 +1370,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            if (!ValidateDistributedAuthorityPrefabs())
+            if (!ValidateHybridPrefabs())
             {
                 return false;
             }
@@ -1422,37 +1427,49 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Distributed authority does not support hybrid prefabs.<br />
-        /// When the topology is distributed authority:<br />
-        /// - If any registered prefab has a GhostObject: logs an error naming each one and returns false.<br />
-        /// - Otherwise: hybrid prefabs added during the session are rejected.<br />
+        /// Validates the registered hybrid prefabs before a start.<br />
+        /// Logs an error naming each registration and returns false when:<br />
+        /// - A NetworkPrefab override has a hybrid source or target prefab (not supported yet).<br />
+        /// - The topology is distributed authority and any hybrid prefab is registered.<br />
+        /// <see cref="Initialize"/> rejects the same registrations when they are added during the session.<br />
         /// </summary>
-        private bool ValidateDistributedAuthorityPrefabs()
+        private bool ValidateHybridPrefabs()
         {
-            if (NetworkConfig.NetworkTopology != NetworkTopologyTypes.DistributedAuthority)
+            // Registers any prefab list assigned after Awake.
+            NetworkConfig.InitializePrefabs();
+            var prefabs = NetworkConfig.Prefabs;
+            if (!prefabs.HasGhostPrefabs)
             {
                 return true;
             }
 
-            // Registers any prefab list assigned after Awake.
-            NetworkConfig.InitializePrefabs();
-            var prefabs = NetworkConfig.Prefabs;
-            if (prefabs.HasGhostPrefabs)
+            var hybridPrefabNames = new List<string>();
+            var hybridOverrideNames = new List<string>();
+            foreach (var networkPrefab in prefabs.Prefabs)
             {
-                var hybridPrefabNames = new List<string>();
-                foreach (var networkPrefab in prefabs.Prefabs)
+                if (!networkPrefab.HasGhost)
                 {
-                    if (networkPrefab.HasGhost)
-                    {
-                        hybridPrefabNames.Add(networkPrefab.Prefab.name);
-                    }
+                    continue;
                 }
-                Log.Error(new Context(LogLevel.Error, $"{NetworkPrefabs.DistributedAuthorityHybridPrefabError} Remove the GhostObject from these prefabs or use a prefab list without them: {string.Join(", ", hybridPrefabNames)}").AddTag("Unified"));
-                return false;
+                hybridPrefabNames.Add(networkPrefab.GetHybridDebugName());
+                if (networkPrefab.Override != NetworkPrefabOverride.None)
+                {
+                    hybridOverrideNames.Add(networkPrefab.GetHybridDebugName());
+                }
             }
 
-            prefabs.RejectGhostPrefabs = true;
-            return true;
+            var isValid = true;
+            if (hybridOverrideNames.Count > 0)
+            {
+                Log.Error(new Context(LogLevel.Error, $"{NetworkPrefabs.HybridPrefabOverrideError} Remove these overrides: {string.Join(", ", hybridOverrideNames)}").AddTag("Unified"));
+                isValid = false;
+            }
+            if (NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                Log.Error(new Context(LogLevel.Error, $"{NetworkPrefabs.DistributedAuthorityHybridPrefabError} Remove the GhostObject from these prefabs or use a prefab list without them: {string.Join(", ", hybridPrefabNames)}").AddTag("Unified"));
+                isValid = false;
+            }
+            return isValid;
         }
 #endif
 
@@ -1888,6 +1905,7 @@ namespace Unity.Netcode
             if (NetworkConfig != null && NetworkConfig.Prefabs != null)
             {
                 NetworkConfig.Prefabs.RejectGhostPrefabs = false;
+                NetworkConfig.Prefabs.RejectGhostOverrides = false;
             }
 #endif
 

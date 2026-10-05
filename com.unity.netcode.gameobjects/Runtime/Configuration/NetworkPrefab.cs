@@ -270,8 +270,31 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // An override is a hybrid registration when either its source or its target prefab has a GhostObject.
+            HasGhost = (Override == NetworkPrefabOverride.Prefab && SourcePrefabToOverride.GetComponent<NetworkObject>().HasGhost)
+                || (OverridingTargetPrefab.TryGetComponent(out NetworkObject targetNetworkObject) && targetNetworkObject.HasGhost);
+#endif
             return true;
         }
+
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Names the registered prefab, including its override target, for hybrid prefab error messages.
+        /// </summary>
+        internal string GetHybridDebugName()
+        {
+            switch (Override)
+            {
+                case NetworkPrefabOverride.Prefab:
+                    return $"{SourcePrefabToOverride.name} (overridden by {OverridingTargetPrefab.name})";
+                case NetworkPrefabOverride.Hash:
+                    return $"{SourceHashToOverride} (overridden by {OverridingTargetPrefab.name})";
+                default:
+                    return Prefab.name;
+            }
+        }
+#endif
 
         /// <summary>
         /// Returns a string representation of this NetworkPrefab's source and target hash values

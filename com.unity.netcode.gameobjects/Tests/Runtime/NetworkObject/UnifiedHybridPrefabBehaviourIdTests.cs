@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// A hybrid prefab keeps its <see cref="NetworkTransform"/> and <see cref="NetworkRigidbodyBase"/> components inert on the instance.<br />
     /// Validates that every peer assigns the same <see cref="NetworkBehaviour.NetworkBehaviourId"/> values, so Rpcs and NetworkVariable synchronization reach the right behaviour.<br />
-    /// Distributed authority rejects hybrid prefabs (see <see cref="UnifiedHybridPrefabDistributedAuthorityTests"/>).<br />
+    /// Distributed authority rejects hybrid prefabs (see <see cref="UnifiedHybridPrefabValidationTests"/>).<br />
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
     internal class UnifiedHybridPrefabBehaviourIdTests : NetcodeIntegrationTest
@@ -69,7 +69,8 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_Prefab = CreateNetworkObjectPrefab("HybridOrdering");
-            m_Prefab.AddComponent<NetworkTransform>();
+            // Owner authority makes an ungated NetworkRigidbody change the kinematic state on an ownership change.
+            m_Prefab.AddComponent<NetworkTransform>().AuthorityMode = NetworkTransform.AuthorityModes.Owner;
             m_Prefab.AddComponent<Rigidbody>();
             m_Prefab.AddComponent<NetworkRigidbody>();
             m_Prefab.AddComponent<HybridTrailingBehaviour>();
@@ -320,6 +321,40 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
             AssertOnTimeout("The late joining client disagreed about the hybrid prefab's behaviour table!");
+        }
+
+        private bool ValidateOwner(StringBuilder errorLog, ulong ownerClientId)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var ownerOnPeer = networkManager.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].OwnerClientId;
+                if (ownerOnPeer != ownerClientId)
+                {
+                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Owner is Client-{ownerOnPeer} but Client-{ownerClientId} was expected!");
+                }
+            }
+            return errorLog.Length == 0;
+        }
+
+        /// <summary>
+        /// Validates that an ownership change leaves the body kinematic on every peer except the server.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator KinematicStateSurvivesOwnershipChange()
+        {
+            yield return SpawnHybridInstance();
+
+            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
+            AssertOnTimeout("A peer disagreed about the hybrid prefab's behaviour table!");
+
+            var newOwnerClientId = m_ClientNetworkManagers[0].LocalClientId;
+            m_Instance.ChangeOwnership(newOwnerClientId);
+
+            yield return WaitForConditionOrTimeOut(errorLog => ValidateOwner(errorLog, newOwnerClientId));
+            AssertOnTimeout($"Ownership did not change to Client-{newOwnerClientId} on every peer!");
+
+            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
+            AssertOnTimeout("The ownership change altered the hybrid prefab's gated components!");
         }
     }
 }

@@ -1067,7 +1067,12 @@ namespace Unity.Netcode.Components
 
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
-            UpdateOwnershipAuthority();
+#if UNIFIED_NETCODE
+            if (!NetworkObject.HasGhost)
+#endif
+            {
+                UpdateOwnershipAuthority();
+            }
             base.OnOwnershipChanged(previous, current);
         }
 
