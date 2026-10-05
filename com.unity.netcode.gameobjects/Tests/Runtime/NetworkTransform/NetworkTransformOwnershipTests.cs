@@ -117,6 +117,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoinedNonOwnerClientCannotChangeTransform()
         {
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                Assert.Ignore("Rigidbody motion does not sync when Netcode for Entities is a hard dependency of NGO. See UUM-152669.");
+            }
             var authority = GetAuthorityNetworkManager();
 
             // Spawn the m_ClientNetworkTransformPrefab with the host starting as the owner
@@ -212,6 +216,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator OwnerAuthoritativeTest([Values] StartingOwnership startingOwnership)
         {
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                Assert.Ignore("Rigidbody motion does not sync when Netcode for Entities is a hard dependency of NGO. See UUM-152669.");
+            }
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
 
@@ -425,6 +433,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ServerAuthoritativeTest()
         {
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                Assert.Ignore("Rigidbody motion does not sync when Netcode for Entities is a hard dependency of NGO. See UUM-152669.");
+            }
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
 

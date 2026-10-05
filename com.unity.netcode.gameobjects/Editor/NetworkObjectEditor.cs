@@ -1,7 +1,11 @@
 using System.Collections.Generic;
 #if UNIFIED_NETCODE
+#if UNIFIED_NETCODE_7_0_0
+using Unity.Netcode.Editor;
+#else
 using Unity.NetCode;
 using Unity.NetCode.Editor;
+#endif
 #endif
 using UnityEditor;
 using UnityEngine;

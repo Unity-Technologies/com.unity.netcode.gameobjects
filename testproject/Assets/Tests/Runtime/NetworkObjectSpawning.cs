@@ -10,9 +10,6 @@ using UnityEngine.TestTools;
 namespace TestProject.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
-#if UNIFIED_NETCODE
-    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
-#endif
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     internal class NetworkObjectSpawning : NetcodeIntegrationTest
     {

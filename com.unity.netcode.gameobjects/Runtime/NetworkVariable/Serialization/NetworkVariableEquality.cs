@@ -124,7 +124,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal static bool EqualityEqualsHashSet<TValueType>(ref HashSet<TValueType> a, ref HashSet<TValueType> b) where TValueType : IEquatable<TValueType>
+        internal static bool EqualityEqualsHashSet<TValueType>(ref HashSet<TValueType> a, ref HashSet<TValueType> b)
         {
             if (a == null != (b == null))
             {

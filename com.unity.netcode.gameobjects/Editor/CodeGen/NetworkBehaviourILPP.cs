@@ -424,6 +424,19 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     equalityMethod.GenericArguments.Add(type);
                 }
 
+                // A single call violating its constraints makes CoreCLR reject this whole method, dropping every registration in the assembly.
+                if (serializeMethod != null && !serializeMethod.SatisfiesGenericConstraints(out var serializeViolation))
+                {
+                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - {serializeViolation}.");
+                    continue;
+                }
+
+                if (!equalityMethod.SatisfiesGenericConstraints(out var equalityViolation))
+                {
+                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - {equalityViolation}.");
+                    continue;
+                }
+
                 if (serializeMethod != null)
                 {
                     instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(serializeMethod)));

@@ -30,6 +30,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             m_PlayerPrefabs.Clear();
+            m_ChangedPlayerPrefabs.Clear();
             return base.OnTearDown();
         }
 
@@ -47,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (m_DistributedAuthority)
             {
-                networkManager.OnFetchLocalPlayerPrefabToSpawn = FetchPlayerPrefabToSpawn;
+                networkManager.OnFetchLocalPlayerPrefabToSpawn = () => FetchPlayerPrefabToSpawn(networkManager);
             }
             base.OnNewClientCreated(networkManager);
         }
@@ -56,11 +57,10 @@ namespace Unity.Netcode.RuntimeTests
         /// Only for distributed authority mode
         /// </summary>
         /// <returns>a unique player prefab for the player</returns>
-        private GameObject FetchPlayerPrefabToSpawn()
+        private GameObject FetchPlayerPrefabToSpawn(NetworkManager networkManager)
         {
             var prefabObject = GetRandomPlayerPrefab();
-            var clientId = m_ClientNetworkManagers[m_ClientNetworkManagers.Length - 1].LocalClientId;
-            m_ChangedPlayerPrefabs.Add(clientId, prefabObject.GlobalObjectIdHash);
+            m_ChangedPlayerPrefabs.Add(networkManager.LocalClientId, prefabObject.GlobalObjectIdHash);
             return prefabObject.gameObject;
         }
 
@@ -155,9 +155,6 @@ namespace Unity.Netcode.RuntimeTests
         /// Validates the same thing when a client late joins and when a client disconnects.
         /// </summary>
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("ValidateNetworkClients throws duplicate-key ArgumentException on CoreCLR (DAHost), see https://jira.unity3d.com/browse/UUM-149595")]
-#endif
         public IEnumerator ValidateNetworkClients()
         {
             // Validate the initial clients created

@@ -15,7 +15,8 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
-        "Unity.Entities"
+        "Unity.Entities",
+        "Unity.Transforms"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -25,6 +26,11 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [
+        {
+            "name": "com.unity.netcode",
+            "expression": "7.0.0",
+            "define": "UNIFIED_NETCODE_7_0_0"
+        },
         {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
@@ -89,11 +95,6 @@
             "name": "Unity",
             "expression": "6000.5.0a1",
             "define": "SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG"
-        },
-        {
-            "name": "com.unity.netcode",
-            "expression": "1.10.1",
-            "define": "UNIFIED_NETCODE"
         },
         {
             "name": "com.unity.multiplayer.playmode",

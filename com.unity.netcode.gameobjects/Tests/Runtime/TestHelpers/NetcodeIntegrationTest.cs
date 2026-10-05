@@ -7,7 +7,12 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
 #if UNIFIED_NETCODE
+#if UNIFIED_NETCODE_7_0_0
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#else
 using Unity.NetCode;
+using EntitiesNetcode = Unity.NetCode.Netcode;
+#endif
 #endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.RuntimeTests;
@@ -703,6 +708,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InternalOnOneTimeSetup();
         }
 
+#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+        private bool m_PreviousWarnBatchedTicks;
+#endif
+
         private void InternalOnOneTimeSetup()
         {
             Application.runInBackground = true;
@@ -717,6 +726,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
+
+#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+            // Netcode for Entities emits a performance-dependent "Server Tick Batching" warning on loaded CI agents that would fail strict log assertions.
+            m_PreviousWarnBatchedTicks = MultiplayerPlayModePreferences.WarnBatchedTicks;
+            MultiplayerPlayModePreferences.WarnBatchedTicks = false;
+#endif
 
 #if UNITY_INCLUDE_TESTS
             // Provide an external hook to be able to make adjustments to netcode classes prior to running any tests
@@ -998,6 +1013,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Provides opportunity to allow child derived classes to
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
+#if UNIFIED_NETCODE
+            // N4E worlds and the unified transport only start when a hybrid prefab is registered.
+            // Without this, a hybrid test case that only spawns players would run as plain NGO.
+            if (m_AllPrefabsAsHybrid && !m_HybridPrefabCreated)
+            {
+                CreateHybridPrefab("UnifiedSessionPrefab");
+            }
+#endif
 
             VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
@@ -1791,6 +1814,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_AllPrefabsAsHybrid)
             {
                 m_PendingPrefabs.Clear();
+                m_HybridPrefabCreated = false;
                 GhostSpawnManager.RegisterPendingGhost = null;
                 CleanupPrefabReferences();
             }
@@ -1899,6 +1923,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Disable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
+
+#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+            MultiplayerPlayModePreferences.WarnBatchedTicks = m_PreviousWarnBatchedTicks;
+#endif
 
             UnloadRemainingScenes();
 
@@ -2525,8 +2553,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Object.Destroy(reference);
             }
         }
+        private bool m_HybridPrefabCreated;
         protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
         {
+            m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
             var gameObject = new GameObject
             {
@@ -2651,11 +2681,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             else
             {
 #if UNIFIED_NETCODE
-                // TODO-FixMe: NetCode.Netcode.Instance is a singleton and might cause issues
+                // TODO-FixMe: the Netcode instance is a singleton and might cause issues
                 // assigning this.
                 if (networkObjectToSpawn.HasGhost)
                 {
-                    NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+                    EntitiesNetcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
                 }
 #endif
                 networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
@@ -2719,14 +2749,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // This has to happen *before* Instantiate, not after. The hybrid prefab is active, so the clone's
             // GhostObject.Awake runs synchronously inside Object.Instantiate below. The clone is not a prefab
             // (its prefabReference.Prefab points at the prefab, not at itself), so Awake acquires an entity
-            // reference, which resolves the world to spawn into from the Netcode.Instance.m_ActiveWorld singleton.
+            // reference, which resolves the world to spawn into from the EntitiesNetcode.Instance.m_ActiveWorld singleton.
             // N4E's rate managers reassign that singleton on every world update, so by the time a test body runs
             // it points at whichever world updated last - typically a client world - and the spawn is rejected with
             // "You can only spawn a ghost on a server or during prediction on a client."
-            // TODO-UNIFIED: NetCode.Netcode.Instance is a singleton and might cause issues assigning this.
+            // TODO-UNIFIED: the Netcode instance is a singleton and might cause issues assigning this.
             if (prefabNetworkObject.HasGhost)
             {
-                NetCode.Netcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
+                EntitiesNetcode.Instance.m_ActiveWorld = m_ServerNetworkManager.NetcodeWorld;
             }
 #endif
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
