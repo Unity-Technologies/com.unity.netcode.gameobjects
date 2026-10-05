@@ -9,15 +9,12 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// This is a component that is added to the root of all N4E-spawned hybrid prefab instances. It is used to link
     /// <see cref="NetworkObject.SerializedObject"/> the N4E-spawned hybrid prefab instances to the incoming <see cref="CreateObjectMessage"/>
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
 
     [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
-    // Internal: GhostBehaviour is only public when NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, and a public
-    // type cannot derive from an internal one.
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
 #if UNITY_EDITOR
