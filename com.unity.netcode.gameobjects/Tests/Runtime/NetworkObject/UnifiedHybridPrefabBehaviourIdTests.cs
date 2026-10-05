@@ -39,17 +39,10 @@ namespace Unity.Netcode.RuntimeTests
     }
 
     /// <summary>
-    /// A hybrid prefab keeps its <see cref="NetworkTransform"/> and <see cref="NetworkRigidbodyBase"/> components
-    /// and gates their initialization rather than destroying them at runtime.
+    /// A hybrid prefab keeps its <see cref="NetworkTransform"/> and <see cref="NetworkRigidbodyBase"/> components inert on the instance.<br />
+    /// Validates that every peer assigns the same <see cref="NetworkBehaviour.NetworkBehaviourId"/> values, so Rpcs and NetworkVariable synchronization reach the right behaviour.<br />
+    /// Distributed authority rejects hybrid prefabs (see <see cref="UnifiedHybridPrefabDistributedAuthorityTests"/>).<br />
     /// </summary>
-    /// <remarks>
-    /// Destroying them dropped an entry out of <see cref="NetworkObject.ChildNetworkBehaviours"/> while the
-    /// component itself lived until the end of the frame, so the next rebuild renumbered every behaviour that
-    /// followed. Rpcs address a behaviour by <see cref="NetworkBehaviour.NetworkBehaviourId"/> and NetworkVariable
-    /// synchronization is positional within that same collection, so a one entry disagreement misroutes an Rpc
-    /// and corrupts the whole synchronization payload for the object.
-    /// Hybrid prefab spawning is client-server only, so there is no distributed authority case here.
-    /// </remarks>
     [TestFixture(HostOrServer.UnifiedHost)]
     internal class UnifiedHybridPrefabBehaviourIdTests : NetcodeIntegrationTest
     {
@@ -57,9 +50,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private const int k_SynchronizedValue = 0x5AF3;
 
-        // The authored component order, captured from the prefab. Every peer has to reproduce it, and the index
-        // of each entry is the NetworkBehaviourId that peer is expected to have assigned. Read from the prefab
-        // rather than written out here because the integration test helpers author components of their own.
+        // The authored component order, read from the prefab because the test helpers add components of their own.
+        // The index of each entry is the NetworkBehaviourId every peer is expected to assign.
         private Type[] m_AuthoredBehaviourOrder;
 
         private GameObject m_Prefab;
@@ -78,8 +70,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_Prefab = CreateNetworkObjectPrefab("HybridOrdering");
             m_Prefab.AddComponent<NetworkTransform>();
-            // NetworkRigidbody requires the Rigidbody. Adding it explicitly keeps the authored order visible
-            // instead of leaving it to RequireComponent.
             m_Prefab.AddComponent<Rigidbody>();
             m_Prefab.AddComponent<NetworkRigidbody>();
             m_Prefab.AddComponent<HybridTrailingBehaviour>();
@@ -95,8 +85,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// The fixture only tests anything if the trailing behaviour really is authored after the components
-        /// that used to be destroyed at runtime.
+        /// Validates that the trailing behaviour is authored after the gated components.
         /// </summary>
         private void AssertAuthoredOrder()
         {
@@ -116,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
         private IEnumerator SpawnHybridInstance()
         {
             AssertAuthoredOrder();
-            m_Instance = SpawnObject(m_Prefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
+            m_Instance = SpawnObject(m_Prefab, GetAuthorityNetworkManager()).GetComponent<NetworkObject>();
 
             yield return WaitForSpawnedOnAllOrTimeOut(m_Instance);
             AssertOnTimeout($"Failed to spawn {m_Instance.name} on all clients!");
@@ -172,13 +161,20 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// The gated components are still present and still inert.
+        /// The gated components are still present and still inert.<br />
+        /// The body is kinematic on every peer except the server.<br />
         /// </summary>
         private void ValidateGatedComponents(NetworkManager networkManager, NetworkObject instance, StringBuilder errorLog)
         {
             if (instance.GetComponent<NetworkRigidbodyBase>() == null)
             {
                 errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] The {nameof(NetworkRigidbody)} was removed from the instance!");
+            }
+
+            var isKinematic = instance.GetComponent<Rigidbody>().isKinematic;
+            if (isKinematic == networkManager.IsServer)
+            {
+                errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {nameof(Rigidbody.isKinematic)} is {isKinematic} but {!networkManager.IsServer} was expected!");
             }
 
             var networkTransform = instance.GetComponent<NetworkTransform>();
@@ -299,7 +295,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
             AssertOnTimeout("Rebuilding the behaviour table after spawn moved the behaviour ids!");
 
-            // The ids are only worth anything if they still route a message, so exercise the wire too.
             yield return PingFromEveryClient();
         }
 

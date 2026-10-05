@@ -1358,6 +1358,12 @@ namespace Unity.Netcode
                 }
             }
 
+#if UNIFIED_NETCODE
+            if (!ValidateDistributedAuthorityPrefabs())
+            {
+                return false;
+            }
+#endif
             return true;
         }
 
@@ -1406,6 +1412,40 @@ namespace Unity.Netcode
                 Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetCodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
+            return true;
+        }
+
+        /// <summary>
+        /// Distributed authority does not support hybrid prefabs.<br />
+        /// When the topology is distributed authority:<br />
+        /// - If any registered prefab has a GhostObject: logs an error naming each one and returns false.<br />
+        /// - Otherwise: hybrid prefabs added during the session are rejected.<br />
+        /// </summary>
+        private bool ValidateDistributedAuthorityPrefabs()
+        {
+            if (NetworkConfig.NetworkTopology != NetworkTopologyTypes.DistributedAuthority)
+            {
+                return true;
+            }
+
+            // Registers any prefab list assigned after Awake.
+            NetworkConfig.InitializePrefabs();
+            var prefabs = NetworkConfig.Prefabs;
+            if (prefabs.HasGhostPrefabs)
+            {
+                var hybridPrefabNames = new List<string>();
+                foreach (var networkPrefab in prefabs.Prefabs)
+                {
+                    if (networkPrefab.HasGhost)
+                    {
+                        hybridPrefabNames.Add(networkPrefab.Prefab.name);
+                    }
+                }
+                Log.Error(new Context(LogLevel.Error, $"{NetworkPrefabs.DistributedAuthorityHybridPrefabError} Remove the GhostObject from these prefabs or use a prefab list without them: {string.Join(", ", hybridPrefabNames)}").AddTag("Unified"));
+                return false;
+            }
+
+            prefabs.RejectGhostPrefabs = true;
             return true;
         }
 #endif
@@ -1837,6 +1877,11 @@ namespace Unity.Netcode
                 {
                     Log.Exception(ex);
                 }
+            }
+
+            if (NetworkConfig != null && NetworkConfig.Prefabs != null)
+            {
+                NetworkConfig.Prefabs.RejectGhostPrefabs = false;
             }
 #endif
 

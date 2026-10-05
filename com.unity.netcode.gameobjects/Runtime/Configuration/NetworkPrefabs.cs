@@ -356,7 +356,12 @@ namespace Unity.Netcode
         }
 
 #if UNIFIED_NETCODE
+        internal const string DistributedAuthorityHybridPrefabError = "Distributed authority does not support hybrid prefabs.";
+
         internal bool HasGhostPrefabs { get; private set; }
+
+        // Set by NetworkManager for the duration of a distributed authority session.
+        internal bool RejectGhostPrefabs;
 #endif
 
 
@@ -381,6 +386,12 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkPrefab.HasGhost)
             {
+                // Registering a hybrid prefab mid-session would switch NetworkManager into hybrid mode and stop its send queue.
+                if (RejectGhostPrefabs)
+                {
+                    Debug.LogError($"{DistributedAuthorityHybridPrefabError} {networkPrefab.Prefab.name} was not added.");
+                    return false;
+                }
                 HasGhostPrefabs = true;
             }
 #endif

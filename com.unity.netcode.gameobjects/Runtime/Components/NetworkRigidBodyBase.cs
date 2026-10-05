@@ -274,14 +274,12 @@ namespace Unity.Netcode.Components
 #endif
 
 #if UNIFIED_NETCODE
-        // The kinematic state the prefab was authored with, captured before a hybrid prefab's body is
-        // forced kinematic. (see SetHybridKinematicState and OnDestroy)
+        // The authored kinematic state, restored in OnDestroy.
         private bool m_OriginalKinematicState;
 
         /// <summary>
-        /// A hybrid prefab's motion is driven by its GhostObject, so this component must not drive the
-        /// associated <see cref="NetworkTransform"/>. It is left in place rather than destroyed so that
-        /// <see cref="NetworkBehaviour.NetworkBehaviourId"/> values stay identical on every peer.
+        /// A hybrid prefab's motion is driven by its GhostObject, so this component does not drive the <see cref="NetworkTransform"/>.<br />
+        /// The component stays on the instance so <see cref="NetworkBehaviour.NetworkBehaviourId"/> values match on every peer.<br />
         /// </summary>
         /// <returns>true when this is a hybrid prefab and normal initialization should be skipped</returns>
         private bool InitializeHybrid()
@@ -302,9 +300,8 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Only the server simulates a hybrid prefab's body; everywhere else the ghost applies the
-        /// replicated motion. Deferred to spawn because initialization runs during Awake, where an
-        /// in-scene placed instance has no session to ask.
+        /// Makes a hybrid prefab's body kinematic on every peer except the server.<br />
+        /// Invoked at spawn because an in-scene placed instance has no session during Awake.<br />
         /// </summary>
         private void SetHybridKinematicState()
         {
@@ -318,7 +315,6 @@ namespace Unity.Netcode.Components
         public override void OnDestroy()
         {
             base.OnDestroy();
-            // Restore what InitializeHybrid overrode so the body is left as the prefab authored it.
             if (!NetworkObject || !NetworkObject.HasGhost)
             {
                 return;

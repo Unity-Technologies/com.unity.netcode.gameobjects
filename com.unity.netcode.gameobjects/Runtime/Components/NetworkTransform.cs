@@ -1909,7 +1909,7 @@ namespace Unity.Netcode.Components
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
 #if UNIFIED_NETCODE
-            // Writing nothing excludes this instance from the synchronization payload entirely.
+            // Late joining clients receive no transform state for a hybrid prefab.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3563,7 +3563,6 @@ namespace Unity.Netcode.Components
         protected internal override void InternalOnNetworkPostSpawn()
         {
 #if UNIFIED_NETCODE
-            // Nothing was synchronized for a hybrid prefab, so there is nothing to finalize.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3664,8 +3663,6 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
 #if UNIFIED_NETCODE
-            // A hybrid prefab's motion comes from its GhostObject, so this component stays inert. It is
-            // left in place rather than destroyed so NetworkBehaviourId values match on every peer.
             if (NetworkObject.HasGhost)
             {
                 return;
@@ -3763,8 +3760,7 @@ namespace Unity.Netcode.Components
         internal virtual void InternalInitialization(bool isOwnershipChange = false)
         {
 #if UNIFIED_NETCODE
-            // A hybrid prefab's motion comes from its GhostObject, so this component stays inert. It is
-            // left in place rather than destroyed so NetworkBehaviourId values match on every peer.
+            // A hybrid prefab's motion comes from its GhostObject, so this component stays inert but remains on the instance so NetworkBehaviourId values match on every peer.
             if (NetworkObject.HasGhost)
             {
                 return;
