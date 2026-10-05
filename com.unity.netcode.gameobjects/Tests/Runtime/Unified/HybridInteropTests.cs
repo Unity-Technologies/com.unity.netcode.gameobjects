@@ -1,7 +1,5 @@
 #if UNIFIED_NETCODE
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -10,48 +8,16 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// A NetworkVariable value stamped with the tick it applies from, so prediction can apply it tick-aligned.
-    /// </summary>
-    internal struct TickStampedValue : INetworkSerializable, IEquatable<TickStampedValue>
-    {
-        public int Value;
-        public int PreviousValue;
-        public uint Tick;
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref Value);
-            serializer.SerializeValue(ref PreviousValue);
-            serializer.SerializeValue(ref Tick);
-        }
-
-        public bool Equals(TickStampedValue other)
-        {
-            return Value == other.Value && PreviousValue == other.PreviousValue && Tick == other.Tick;
-        }
-    }
-
-    /// <summary>
-    /// The N4E half of the interop prefab: sends NGO RPCs from <see cref="GhostBehaviour.PredictionUpdate"/> and
-    /// relays pings between unified remotes and NGO RPCs.
+    /// The N4E half of the interop prefab: relays pings between unified remotes and NGO RPCs, and sends an NGO RPC or
+    /// writes a NetworkVariable from <see cref="GhostBehaviour.PredictionUpdate"/> on request.
     /// </summary>
     internal partial class HybridInteropGhost : GhostBehaviour
     {
         public bool SendRpcFromPrediction;
-        public bool GateOnFirstTimeTick;
-        public int PredictionSends;
-        public int ResimulatedTicks;
-        public int PingValue;
-
         public bool WriteNetworkVariableFromPrediction;
-        public bool RecordStampedValue;
-        public uint LatestPredictedTick;
-        public int EarlyReadsOfNewValue;
-        public int InconsistentRawTicks;
-        public int InconsistentStampedTicks;
-        public int StampedValueAtStampTick;
-        private readonly Dictionary<uint, int> m_RawValueByTick = new Dictionary<uint, int>();
-        private readonly Dictionary<uint, int> m_StampedValueByTick = new Dictionary<uint, int>();
+        public int PredictionSends;
+        public int PredictionWrites;
+        public int PingValue;
 
         public override void PredictionUpdate(PredictionUpdateContext context)
         {
@@ -59,65 +25,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return;
             }
-            var networkTime = Ghost.World.NetworkTime;
-            if (RecordStampedValue)
+            var networkBehaviour = GetComponent<HybridInteropNetworkBehaviour>();
+            if (SendRpcFromPrediction)
             {
-                RecordStampedValueAtTick(networkTime.ServerTick.TickIndexForValidTick);
+                PredictionSends++;
+                networkBehaviour.PredictionRpc();
             }
-            if (WriteNetworkVariableFromPrediction && (!GateOnFirstTimeTick || networkTime.IsFirstTimeFullyPredictingTick))
+            if (WriteNetworkVariableFromPrediction)
             {
-                GetComponent<HybridInteropNetworkBehaviour>().OwnerWrittenTick.Value = networkTime.ServerTick.TickIndexForValidTick;
+                PredictionWrites++;
+                networkBehaviour.OwnerWrittenValue.Value++;
             }
-            if (!SendRpcFromPrediction)
-            {
-                return;
-            }
-            if (!networkTime.IsFirstTimeFullyPredictingTick)
-            {
-                ResimulatedTicks++;
-                if (GateOnFirstTimeTick)
-                {
-                    return;
-                }
-            }
-            PredictionSends++;
-            GetComponent<HybridInteropNetworkBehaviour>().PredictionTickRpc(networkTime.ServerTick.SerializedData);
-        }
-
-        /// <summary>
-        /// Records, per predicted tick, the raw NetworkVariable value and the value the tick stamp says applies to that tick.
-        /// </summary>
-        private void RecordStampedValueAtTick(uint tick)
-        {
-            var stamped = GetComponent<HybridInteropNetworkBehaviour>().StampedValue.Value;
-            var hasStamp = stamped.Tick != 0;
-            if (hasStamp && tick < stamped.Tick && stamped.Value == HybridInteropNetworkBehaviour.StampedNewValue)
-            {
-                EarlyReadsOfNewValue++;
-            }
-            // The pattern under test: apply the value only when the tick being predicted is at or past its stamp.
-            var applied = hasStamp && tick >= stamped.Tick ? stamped.Value : stamped.PreviousValue;
-            if (hasStamp && tick == stamped.Tick)
-            {
-                StampedValueAtStampTick = applied;
-            }
-            InconsistentRawTicks += RecordValue(m_RawValueByTick, tick, stamped.Value);
-            InconsistentStampedTicks += RecordValue(m_StampedValueByTick, tick, applied);
-            if (tick > LatestPredictedTick)
-            {
-                LatestPredictedTick = tick;
-            }
-        }
-
-        /// <returns>1 if this tick was already predicted with a different value, otherwise 0.</returns>
-        private static int RecordValue(Dictionary<uint, int> valueByTick, uint tick, int value)
-        {
-            if (valueByTick.TryGetValue(tick, out var previous))
-            {
-                return previous == value ? 0 : 1;
-            }
-            valueByTick.Add(tick, value);
-            return 0;
         }
 
         [RPC(SendDirection.ServerToClient)]
@@ -146,14 +64,9 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class HybridInteropNetworkBehaviour : NetworkBehaviour
     {
-        public const int StampedNewValue = 1;
-
-        public readonly List<uint> ReceivedPredictionTicks = new List<uint>();
         public int PingValue;
-        public NetworkVariable<TickStampedValue> StampedValue = new NetworkVariable<TickStampedValue>();
-        public NetworkVariable<uint> OwnerWrittenTick = new NetworkVariable<uint>(writePerm: NetworkVariableWritePermission.Owner);
-        public int OwnerWrittenTickChanges;
-        public int OwnerWrittenTickDecreases;
+        public int PredictionRpcsReceived;
+        public NetworkVariable<int> OwnerWrittenValue = new NetworkVariable<int>(writePerm: NetworkVariableWritePermission.Owner);
         public bool GhostWasPredictedOnSpawn;
         public NetworkId GhostOwnerOnSpawn;
 
@@ -162,27 +75,12 @@ namespace Unity.Netcode.RuntimeTests
             var ghost = GetComponent<GhostObject>();
             GhostWasPredictedOnSpawn = ghost.CanWriteState;
             GhostOwnerOnSpawn = ghost.OwnerNetworkId;
-            OwnerWrittenTick.OnValueChanged += OnOwnerWrittenTickChanged;
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            OwnerWrittenTick.OnValueChanged -= OnOwnerWrittenTickChanged;
-        }
-
-        private void OnOwnerWrittenTickChanged(uint previous, uint current)
-        {
-            OwnerWrittenTickChanges++;
-            if (current < previous)
-            {
-                OwnerWrittenTickDecreases++;
-            }
         }
 
         [Rpc(SendTo.Server)]
-        public void PredictionTickRpc(uint tick)
+        public void PredictionRpc()
         {
-            ReceivedPredictionTicks.Add(tick);
+            PredictionRpcsReceived++;
         }
 
         [Rpc(SendTo.Server)]
@@ -216,15 +114,16 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.UnifiedServer)]
     internal class HybridInteropTests : NetcodeIntegrationTest
     {
-        private const int k_MinimumPredictionSends = 20;
-        private const uint k_StampLeadTicks = 20;
-        private const uint k_TicksPastStamp = 5;
+        // Enough prediction ticks that a second warning would have been logged if it was not limited to one per NetworkBehaviour
+        private const int k_MinimumPredictionCalls = 20;
+        private const string k_PredictionLoopWarning = "Netcode for Entities prediction loop, which is not supported";
 
         protected override int NumberOfClients => 1;
 
         private GameObject m_InteropPrefab;
         private NetworkObject m_ServerInstance;
         private NetworkObject m_ClientInstance;
+        private int m_PredictionLoopWarnings;
 
         public HybridInteropTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -254,28 +153,23 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientInstance = client.SpawnManager.SpawnedObjects[m_ServerInstance.NetworkObjectId];
             yield return WaitForConditionOrTimeOut(() => m_ClientInstance.GetComponent<GhostObject>().CanWriteState);
             AssertOnTimeout($"{m_ClientInstance.name} never became predicted on the client!");
+
+            m_PredictionLoopWarnings = 0;
+            Application.logMessageReceived += OnLogMessageReceived;
         }
 
-        /// <summary>
-        /// An NGO RPC sent from <see cref="GhostBehaviour.PredictionUpdate"/> is sent again for every re-simulated tick.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator RpcFromPredictionUpdateRepeatsForResimulatedTicks()
+        protected override IEnumerator OnTearDown()
         {
-            yield return SendRpcsFromPrediction(false);
-            var duplicates = CountDuplicateTicks();
-            Assert.Greater(duplicates, 0, "Expected re-simulated ticks to send the same tick more than once.");
+            Application.logMessageReceived -= OnLogMessageReceived;
+            return base.OnTearDown();
         }
 
-        /// <summary>
-        /// Gating the send on <c>IsFirstTimeFullyPredictingTick</c> sends each predicted tick once.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator RpcFromPredictionUpdateGatedOnFirstTimeTickSendsEachTickOnce()
+        private void OnLogMessageReceived(string condition, string stackTrace, LogType type)
         {
-            yield return SendRpcsFromPrediction(true);
-            var duplicates = CountDuplicateTicks();
-            Assert.AreEqual(0, duplicates, $"{duplicates} ticks were sent more than once.");
+            if (type == LogType.Warning && condition.Contains(k_PredictionLoopWarning))
+            {
+                m_PredictionLoopWarnings++;
+            }
         }
 
         /// <summary>
@@ -305,49 +199,60 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// A NetworkVariable is not rolled back: re-simulating a tick can read a different value than its first prediction did.
+        /// Sending an NGO RPC from <see cref="GhostBehaviour.PredictionUpdate"/> is not supported and logs one warning per NetworkBehaviour.
         /// </summary>
         [UnityTest]
-        public IEnumerator NetworkVariableReadDuringPredictionIsNotTickAligned()
+        public IEnumerator RpcSentFromPredictionUpdateLogsWarningOnce()
         {
-            yield return RecordAcrossStampedValueChange();
             var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            Assert.Greater(clientGhost.InconsistentRawTicks, 0, "Expected a re-simulated tick to read a different value than its first prediction.");
+            clientGhost.SendRpcFromPrediction = true;
+            yield return WaitForConditionOrTimeOut(() => clientGhost.PredictionSends >= k_MinimumPredictionCalls);
+            clientGhost.SendRpcFromPrediction = false;
+            AssertOnTimeout($"Client prediction only sent {clientGhost.PredictionSends} RPCs!");
+
+            // Wait for the RPCs to reach the server, so none is still queued at teardown.
+            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            yield return WaitForConditionOrTimeOut(() => serverBehaviour.PredictionRpcsReceived == clientGhost.PredictionSends);
+            AssertOnTimeout($"Server received {serverBehaviour.PredictionRpcsReceived} of {clientGhost.PredictionSends} RPCs!");
+
+            Assert.AreEqual(1, m_PredictionLoopWarnings, $"Expected one prediction loop warning for {clientGhost.PredictionSends} RPCs sent from prediction.");
         }
 
         /// <summary>
-        /// Applying a NetworkVariable only from its stamped tick gives every re-simulation of a tick the same value.
+        /// Writing a NetworkVariable from <see cref="GhostBehaviour.PredictionUpdate"/> is not supported and logs one warning per NetworkBehaviour.
         /// </summary>
         [UnityTest]
-        public IEnumerator TickStampedNetworkVariableIsConsistentAcrossResimulation()
+        public IEnumerator NetworkVariableWrittenFromPredictionUpdateLogsWarningOnce()
         {
-            yield return RecordAcrossStampedValueChange();
             var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            Assert.AreEqual(0, clientGhost.InconsistentStampedTicks, $"{clientGhost.InconsistentStampedTicks} ticks applied a different stamped value on re-simulation.");
-            Assert.AreEqual(HybridInteropNetworkBehaviour.StampedNewValue, clientGhost.StampedValueAtStampTick, "The stamped value was not applied at its stamp tick.");
+            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            clientGhost.WriteNetworkVariableFromPrediction = true;
+            yield return WaitForConditionOrTimeOut(() => clientGhost.PredictionWrites >= k_MinimumPredictionCalls);
+            clientGhost.WriteNetworkVariableFromPrediction = false;
+            AssertOnTimeout($"Client prediction only wrote the NetworkVariable {clientGhost.PredictionWrites} times!");
+
+            // Wait for the last write to reach the server, so no NetworkVariable update is still queued at teardown.
+            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            yield return WaitForConditionOrTimeOut(() => serverBehaviour.OwnerWrittenValue.Value == clientBehaviour.OwnerWrittenValue.Value);
+            AssertOnTimeout($"Server value {serverBehaviour.OwnerWrittenValue.Value} never matched the client value {clientBehaviour.OwnerWrittenValue.Value}!");
+
+            Assert.AreEqual(1, m_PredictionLoopWarnings, $"Expected one prediction loop warning for {clientGhost.PredictionWrites} NetworkVariable writes from prediction.");
         }
 
         /// <summary>
-        /// A NetworkVariable written from <see cref="GhostBehaviour.PredictionUpdate"/> is written again when older ticks
-        /// re-simulate, so the owner's value moves backwards.
+        /// The same RPC and NetworkVariable write made outside the prediction loop do not warn.
         /// </summary>
         [UnityTest]
-        public IEnumerator NetworkVariableWrittenFromPredictionUpdateMovesBackwards()
+        public IEnumerator RpcAndNetworkVariableOutsidePredictionLoopDoNotWarn()
         {
-            yield return WriteNetworkVariableFromPrediction(false);
             var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
-            Assert.Greater(clientBehaviour.OwnerWrittenTickDecreases, 0, "Expected re-simulated ticks to write an older tick.");
-        }
+            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
+            clientBehaviour.PredictionRpc();
+            clientBehaviour.OwnerWrittenValue.Value++;
+            yield return WaitForConditionOrTimeOut(() => serverBehaviour.PredictionRpcsReceived == 1 && serverBehaviour.OwnerWrittenValue.Value == clientBehaviour.OwnerWrittenValue.Value);
+            AssertOnTimeout($"Server received {serverBehaviour.PredictionRpcsReceived} RPCs and value {serverBehaviour.OwnerWrittenValue.Value} (client value {clientBehaviour.OwnerWrittenValue.Value})!");
 
-        /// <summary>
-        /// Gating the write on <c>IsFirstTimeFullyPredictingTick</c> only moves the value forward.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator NetworkVariableWrittenFromPredictionUpdateGatedOnFirstTimeTickOnlyMovesForward()
-        {
-            yield return WriteNetworkVariableFromPrediction(true);
-            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
-            Assert.AreEqual(0, clientBehaviour.OwnerWrittenTickDecreases, $"The value moved backwards {clientBehaviour.OwnerWrittenTickDecreases} times.");
+            Assert.AreEqual(0, m_PredictionLoopWarnings, "An RPC or NetworkVariable write made outside the prediction loop logged a prediction loop warning.");
         }
 
         /// <summary>
@@ -374,75 +279,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(clientNetworkId, serverGhost.OwnerNetworkId, "The ghost owner did not follow the NGO owner back to the client!");
             yield return WaitForConditionOrTimeOut(() => clientGhost.OwnerNetworkId.Equals(clientNetworkId) && clientGhost.CanWriteState);
             AssertOnTimeout($"The client did not predict the ghost after regaining ownership! Ghost owner: {clientGhost.OwnerNetworkId.Value}, predicted: {clientGhost.CanWriteState}");
-        }
-
-        private IEnumerator WriteNetworkVariableFromPrediction(bool gateOnFirstTimeTick)
-        {
-            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            var clientBehaviour = m_ClientInstance.GetComponent<HybridInteropNetworkBehaviour>();
-            clientGhost.GateOnFirstTimeTick = gateOnFirstTimeTick;
-            clientGhost.WriteNetworkVariableFromPrediction = true;
-            // Ungated, keep writing until a re-simulation has happened, so a backwards move had a chance to occur.
-            yield return WaitForConditionOrTimeOut(() => clientBehaviour.OwnerWrittenTickChanges >= k_MinimumPredictionSends && (gateOnFirstTimeTick || clientBehaviour.OwnerWrittenTickDecreases > 0));
-            clientGhost.WriteNetworkVariableFromPrediction = false;
-            AssertOnTimeout($"Only {clientBehaviour.OwnerWrittenTickChanges} value changes were written, with {clientBehaviour.OwnerWrittenTickDecreases} backwards moves!");
-
-            // Wait for the last write to reach the server, so no NetworkVariable update is still queued at teardown.
-            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
-            yield return WaitForConditionOrTimeOut(() => serverBehaviour.OwnerWrittenTick.Value == clientBehaviour.OwnerWrittenTick.Value);
-            AssertOnTimeout($"Server value {serverBehaviour.OwnerWrittenTick.Value} never matched the client value {clientBehaviour.OwnerWrittenTick.Value}!");
-            Debug.Log($"Gated: {gateOnFirstTimeTick}, value changes: {clientBehaviour.OwnerWrittenTickChanges}, backwards moves: {clientBehaviour.OwnerWrittenTickDecreases}");
-        }
-
-        private IEnumerator RecordAcrossStampedValueChange()
-        {
-            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            clientGhost.RecordStampedValue = true;
-
-            // Stamp far enough ahead that the value reaches the client before it predicts the stamp tick.
-            var serverTick = m_ServerInstance.GetComponent<GhostObject>().World.NetworkTime.ServerTick.TickIndexForValidTick;
-            var stampTick = serverTick + k_StampLeadTicks;
-            m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().StampedValue.Value = new TickStampedValue
-            {
-                Value = HybridInteropNetworkBehaviour.StampedNewValue,
-                PreviousValue = 0,
-                Tick = stampTick,
-            };
-
-            yield return WaitForConditionOrTimeOut(() => clientGhost.LatestPredictedTick >= stampTick + k_TicksPastStamp);
-            clientGhost.RecordStampedValue = false;
-            AssertOnTimeout($"Client never predicted past tick {stampTick + k_TicksPastStamp}! Latest predicted tick: {clientGhost.LatestPredictedTick}");
-            Debug.Log($"Stamp tick: {stampTick}, early reads of the new value: {clientGhost.EarlyReadsOfNewValue}, " +
-                $"inconsistent raw ticks: {clientGhost.InconsistentRawTicks}, inconsistent stamped ticks: {clientGhost.InconsistentStampedTicks}");
-        }
-
-        private IEnumerator SendRpcsFromPrediction(bool gateOnFirstTimeTick)
-        {
-            var clientGhost = m_ClientInstance.GetComponent<HybridInteropGhost>();
-            clientGhost.GateOnFirstTimeTick = gateOnFirstTimeTick;
-            clientGhost.SendRpcFromPrediction = true;
-            yield return WaitForConditionOrTimeOut(() => clientGhost.PredictionSends >= k_MinimumPredictionSends && clientGhost.ResimulatedTicks > 0);
-            clientGhost.SendRpcFromPrediction = false;
-            AssertOnTimeout($"Client prediction did not send enough RPCs! Sends: {clientGhost.PredictionSends}, re-simulated ticks: {clientGhost.ResimulatedTicks}");
-
-            var serverBehaviour = m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>();
-            yield return WaitForConditionOrTimeOut(() => serverBehaviour.ReceivedPredictionTicks.Count == clientGhost.PredictionSends);
-            AssertOnTimeout($"Server received {serverBehaviour.ReceivedPredictionTicks.Count} of {clientGhost.PredictionSends} RPCs!");
-            Debug.Log($"Gated: {gateOnFirstTimeTick}, sends: {clientGhost.PredictionSends}, re-simulated ticks: {clientGhost.ResimulatedTicks}, duplicate ticks: {CountDuplicateTicks()}");
-        }
-
-        private int CountDuplicateTicks()
-        {
-            var seen = new HashSet<uint>();
-            var duplicates = 0;
-            foreach (var tick in m_ServerInstance.GetComponent<HybridInteropNetworkBehaviour>().ReceivedPredictionTicks)
-            {
-                if (!seen.Add(tick))
-                {
-                    duplicates++;
-                }
-            }
-            return duplicates;
         }
     }
 }

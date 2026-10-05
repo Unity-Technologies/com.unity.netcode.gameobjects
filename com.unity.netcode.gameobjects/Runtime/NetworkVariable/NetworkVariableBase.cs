@@ -281,6 +281,12 @@ namespace Unity.Netcode
 
             if (m_IsDirty)
             {
+#if UNIFIED_NETCODE
+                if (m_NetworkBehaviour != null)
+                {
+                    m_NetworkBehaviour.WarnIfNetworkVariableWrittenInPredictionLoop(Name);
+                }
+#endif
                 MarkNetworkBehaviourDirty();
             }
         }
