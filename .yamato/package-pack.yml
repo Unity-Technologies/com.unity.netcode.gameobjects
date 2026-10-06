@@ -42,6 +42,15 @@ package_pack_-_ngo_{{ platform.name }}:
   variables:
     XRAY_PROFILE: "gold ./pvpExceptions.json rme"
   commands:
+    # Remove ValidationExceptions.json and its .meta file if they exist. For this specific test it's necessary (otherwise we want to keep them since we use those for release).
+{% if platform.name == "win" %}
+    - if exist com.unity.netcode.gameobjects\ValidationExceptions.json del /f /q com.unity.netcode.gameobjects\ValidationExceptions.json
+    - if exist com.unity.netcode.gameobjects\ValidationExceptions.json.meta del /f /q com.unity.netcode.gameobjects\ValidationExceptions.json.meta
+{% else %}
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json.meta
+{% endif %}
+
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
