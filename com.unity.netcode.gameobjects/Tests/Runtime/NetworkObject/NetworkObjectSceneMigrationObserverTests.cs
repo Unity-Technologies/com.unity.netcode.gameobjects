@@ -31,6 +31,14 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
+                /// <summary>
+        /// Rust server needs an update
+        /// </summary>        
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private NetworkObject SpawnAndShow(NetworkManager authority, NetworkManager observer)
         {
             var networkObject = SpawnObject(m_PrefabNoObserversSpawn, authority).GetComponent<NetworkObject>();
