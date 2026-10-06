@@ -12,6 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     /// and that a <see cref="NetworkObject"/> shown after it migrated spawns in the authority's scene.
     /// </summary>
     [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Server)]
     internal class NetworkObjectSceneMigrationObserverTests : NetcodeIntegrationTest
     {
