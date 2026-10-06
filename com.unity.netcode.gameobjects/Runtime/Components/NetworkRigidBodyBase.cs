@@ -278,10 +278,9 @@ namespace Unity.Netcode.Components
         private bool m_OriginalKinematicState;
 
         /// <summary>
-        /// A hybrid prefab's motion is driven by its GhostObject, so this component does not drive the <see cref="NetworkTransform"/>.<br />
-        /// The component stays on the instance so <see cref="NetworkBehaviour.NetworkBehaviourId"/> values match on every peer.<br />
+        /// Skips initialization on a hybrid prefab, whose GhostObject drives its motion. The component stays so <see cref="NetworkBehaviour.NetworkBehaviourId"/> values match on every peer.
         /// </summary>
-        /// <returns>true when this is a hybrid prefab and normal initialization should be skipped</returns>
+        /// <returns>true for a hybrid prefab</returns>
         private bool InitializeHybrid()
         {
             if (NetworkObject == null || !NetworkObject.HasGhost)
@@ -300,8 +299,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Makes a hybrid prefab's body kinematic on every peer except the server.<br />
-        /// Invoked at spawn because an in-scene placed instance has no session during Awake.<br />
+        /// Kinematic on every peer except the server. Called at spawn because an in-scene placed instance has no session during Awake.
         /// </summary>
         private void SetHybridKinematicState()
         {

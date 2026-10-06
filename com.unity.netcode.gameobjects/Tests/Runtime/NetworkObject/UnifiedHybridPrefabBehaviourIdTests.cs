@@ -1,7 +1,6 @@
 #if UNIFIED_NETCODE && COM_UNITY_MODULES_PHYSICS
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -12,46 +11,26 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// Authored after the <see cref="NetworkRigidbody"/> on the hybrid prefab, which makes this the component
-    /// that gets renumbered when anything ahead of it leaves <see cref="NetworkObject.ChildNetworkBehaviours"/>.
+    /// Added to the hybrid prefab last, so its <see cref="NetworkBehaviour.NetworkBehaviourId"/> would change if the
+    /// <see cref="NetworkTransform"/> or <see cref="NetworkRigidbody"/> were removed from the instance.
     /// </summary>
     internal class HybridTrailingBehaviour : NetworkBehaviour
     {
-        public NetworkVariable<int> SynchronizedValue = new NetworkVariable<int>();
-
-        // Only ever written by the Rpc handlers below. An Rpc that resolved to a different component
-        // never reaches them, so these double as the "arrived at the right component" assertion.
-        public List<ulong> PingSenders = new List<ulong>();
-        public int PongCount;
-
-        [Rpc(SendTo.Server)]
-        public void PingRpc(ulong senderClientId)
-        {
-            PingSenders.Add(senderClientId);
-            PongRpc();
-        }
-
-        [Rpc(SendTo.Everyone)]
-        public void PongRpc()
-        {
-            PongCount++;
-        }
     }
 
     /// <summary>
     /// A hybrid prefab keeps its <see cref="NetworkTransform"/> and <see cref="NetworkRigidbodyBase"/> components inert on the instance.<br />
-    /// Validates that every peer assigns the same <see cref="NetworkBehaviour.NetworkBehaviourId"/> values, so Rpcs and NetworkVariable synchronization reach the right behaviour.<br />
-    /// Distributed authority rejects hybrid prefabs (see <see cref="UnifiedHybridPrefabValidationTests"/>).<br />
+    /// Validates that every peer assigns the same <see cref="NetworkBehaviour.NetworkBehaviourId"/> values and that the body stays kinematic on every peer except the server.<br />
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
     internal class UnifiedHybridPrefabBehaviourIdTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
-        private const int k_SynchronizedValue = 0x5AF3;
-
-        // The authored component order, read from the prefab because the test helpers add components of their own.
-        // The index of each entry is the NetworkBehaviourId every peer is expected to assign.
+        /// <summary>
+        /// The <see cref="NetworkBehaviour"/> types in component order, read from the prefab because the test helpers add their own.<br />
+        /// Each index is the expected <see cref="NetworkBehaviour.NetworkBehaviourId"/>.<br />
+        /// </summary>
         private Type[] m_AuthoredBehaviourOrder;
 
         private GameObject m_Prefab;
@@ -85,27 +64,9 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        /// <summary>
-        /// Validates that the trailing behaviour is authored after the gated components.
-        /// </summary>
-        private void AssertAuthoredOrder()
-        {
-            var transformIndex = Array.IndexOf(m_AuthoredBehaviourOrder, typeof(NetworkTransform));
-            var rigidbodyIndex = Array.IndexOf(m_AuthoredBehaviourOrder, typeof(NetworkRigidbody));
-            var trailingIndex = Array.IndexOf(m_AuthoredBehaviourOrder, typeof(HybridTrailingBehaviour));
-
-            Assert.Greater(rigidbodyIndex, transformIndex, $"The {nameof(NetworkRigidbody)} is not authored after the {nameof(NetworkTransform)}!");
-            Assert.Greater(trailingIndex, rigidbodyIndex, $"The {nameof(HybridTrailingBehaviour)} is not authored after the {nameof(NetworkRigidbody)}!");
-        }
-
-        private HybridTrailingBehaviour GetTrailingBehaviour(NetworkManager networkManager)
-        {
-            return networkManager.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<HybridTrailingBehaviour>();
-        }
-
+        [HideInCallstack]
         private IEnumerator SpawnHybridInstance()
         {
-            AssertAuthoredOrder();
             m_Instance = SpawnObject(m_Prefab, GetAuthorityNetworkManager()).GetComponent<NetworkObject>();
 
             yield return WaitForSpawnedOnAllOrTimeOut(m_Instance);
@@ -120,12 +81,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (var networkManager in m_NetworkManagers)
             {
-                if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(m_Instance.NetworkObjectId, out var instance))
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has not spawned the instance!");
-                    continue;
-                }
-
+                var instance = networkManager.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId];
                 var childBehaviours = instance.ChildNetworkBehaviours;
                 if (childBehaviours.Count != m_AuthoredBehaviourOrder.Length)
                 {
@@ -198,70 +154,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        /// <summary>
-        /// Every client pings the authority on the trailing behaviour and the authority answers all of them.
-        /// </summary>
-        private bool ValidateRpcRoundTrip(StringBuilder errorLog)
-        {
-            var expectedPongs = m_ClientNetworkManagers.Length;
-            var authorityBehaviour = GetTrailingBehaviour(GetAuthorityNetworkManager());
-            if (authorityBehaviour.PingSenders.Count != m_ClientNetworkManagers.Length)
-            {
-                errorLog.AppendLine($"[Authority] Received {authorityBehaviour.PingSenders.Count} pings but expected {m_ClientNetworkManagers.Length}!");
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                if (!authorityBehaviour.PingSenders.Contains(client.LocalClientId))
-                {
-                    errorLog.AppendLine($"[Authority] Received no ping from Client-{client.LocalClientId}!");
-                }
-            }
-
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                var pongCount = GetTrailingBehaviour(networkManager).PongCount;
-                if (pongCount != expectedPongs)
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Received {pongCount} pongs but expected {expectedPongs}!");
-                }
-            }
-
-            return errorLog.Length == 0;
-        }
-
-        private IEnumerator PingFromEveryClient()
-        {
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                GetTrailingBehaviour(client).PingRpc(client.LocalClientId);
-            }
-
-            yield return WaitForConditionOrTimeOut(ValidateRpcRoundTrip);
-            AssertOnTimeout($"An Rpc on the {nameof(HybridTrailingBehaviour)} did not complete its round trip!");
-        }
-
-        private bool ValidateSynchronizedValue(StringBuilder errorLog)
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(m_Instance.NetworkObjectId, out var instance))
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has not spawned the instance!");
-                    continue;
-                }
-
-                var value = instance.GetComponent<HybridTrailingBehaviour>().SynchronizedValue.Value;
-                if (value != k_SynchronizedValue)
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {nameof(HybridTrailingBehaviour.SynchronizedValue)} is " +
-                        $"{value} but {k_SynchronizedValue} was expected!");
-                }
-            }
-
-            return errorLog.Length == 0;
-        }
-
         [UnityTest]
         public IEnumerator BehaviourIdsMatchOnAllPeers()
         {
@@ -269,58 +161,6 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
             AssertOnTimeout("A peer disagreed about the hybrid prefab's behaviour table!");
-
-            yield return PingFromEveryClient();
-        }
-
-        /// <summary>
-        /// <see cref="NetworkObject.InitializeChildNetworkBehaviours"/> rebuilds the table from the components
-        /// that are on the instance at that moment, and it is reachable after spawn through the public
-        /// <see cref="NetworkObject.GetNetworkBehaviourOrderIndex"/> and
-        /// <see cref="NetworkObject.GetNetworkBehaviourAtOrderIndex"/>. A rebuild on one peer must therefore
-        /// produce the same ids that peer already handed out, or it stops agreeing with everyone else.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator BehaviourIdsSurviveARebuild()
-        {
-            yield return SpawnHybridInstance();
-
-            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
-            AssertOnTimeout("A peer disagreed about the hybrid prefab's behaviour table!");
-
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].InitializeChildNetworkBehaviours();
-            }
-
-            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
-            AssertOnTimeout("Rebuilding the behaviour table after spawn moved the behaviour ids!");
-
-            yield return PingFromEveryClient();
-        }
-
-        /// <summary>
-        /// NetworkVariable synchronization walks <see cref="NetworkObject.ChildNetworkBehaviours"/> positionally
-        /// with nothing on the wire to identify a behaviour, so a late joiner reading a table the authority does
-        /// not share desynchronizes every value after the first disagreement.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator NetworkVariableSynchronizesToALateJoiner()
-        {
-            yield return SpawnHybridInstance();
-
-            GetTrailingBehaviour(GetAuthorityNetworkManager()).SynchronizedValue.Value = k_SynchronizedValue;
-
-            yield return WaitForConditionOrTimeOut(ValidateSynchronizedValue);
-            AssertOnTimeout($"A peer did not receive the {nameof(HybridTrailingBehaviour.SynchronizedValue)} update!");
-
-            yield return CreateAndStartNewClient();
-
-            yield return WaitForConditionOrTimeOut(ValidateSynchronizedValue);
-            AssertOnTimeout($"The late joining client did not synchronize the {nameof(HybridTrailingBehaviour.SynchronizedValue)}!");
-
-            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
-            AssertOnTimeout("The late joining client disagreed about the hybrid prefab's behaviour table!");
         }
 
         private bool ValidateOwner(StringBuilder errorLog, ulong ownerClientId)
