@@ -41,6 +41,14 @@ namespace TestProject.RuntimeTests
             return base.OnSetup();
         }
 
+        /// <summary>
+        /// Rust server needs an update
+        /// </summary>        
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override void OnCreatePlayerPrefab()
         {
             Object.DontDestroyOnLoad(m_PlayerPrefab);
