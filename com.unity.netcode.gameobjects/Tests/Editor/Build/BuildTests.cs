@@ -15,6 +15,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         // Increased the Build test timeout from 3 to 10 minutes.
         [Timeout(900000)]
         [Test]
+        [Ignore("Disabled until we remove experimental unified netcode defines. Tracked by MTT-15432.")]
         public void BasicBuildTest()
         {
             var execAssembly = Assembly.GetExecutingAssembly();

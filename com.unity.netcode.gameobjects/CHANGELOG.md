@@ -15,6 +15,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Updated Netcode for Entities dependency to 7.1.0
+
 ### Deprecated
 
 ### Removed
