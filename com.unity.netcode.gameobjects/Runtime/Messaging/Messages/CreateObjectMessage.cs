@@ -232,6 +232,12 @@ namespace Unity.Netcode
                             networkManager.Log.ErrorServer(new Context(LogLevel.Developer, $"Failed to deserialize {nameof(NetworkObject)}.").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), serializedObject.Hash).AddInfo(nameof(NetworkObject.NetworkObjectId), serializedObject.NetworkObjectId));
                             return;
                         }
+
+                        // Same as client-server: the migration was only sent to the clients observing it at the time
+                        if (networkManager.NetworkConfig.EnableSceneManagement)
+                        {
+                            networkManager.SceneManager.SynchronizeNetworkObjectScene(networkObject);
+                        }
                     }
 
                     // DA - NGO CMB SERVICE NOTES:

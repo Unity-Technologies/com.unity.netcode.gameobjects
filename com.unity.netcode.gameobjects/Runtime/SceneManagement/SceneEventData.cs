@@ -1219,12 +1219,15 @@ namespace Unity.Netcode
         private ulong m_OwnerId;
 
         /// <summary>
-        /// Distributed authority forwards scene migrations through the session owner or the DAHost, so only
-        /// client-server filters them by the target client's observers.
+        /// Whether a migrated <see cref="NetworkObject"/> is sent to the target client: only when the target observes it.
         /// </summary>
+        /// <remarks>
+        /// The CMB service keeps the session state, so its own copy includes every migrated NetworkObject.
+        /// A forwarded migration was already filtered by the owner that sent it.
+        /// </remarks>
         private bool IsMigrationSentToTarget(NetworkObject networkObject)
         {
-            return m_NetworkManager.DistributedAuthorityMode || networkObject.Observers.Contains(TargetClientId);
+            return IsForwarding || (m_NetworkManager.CMBServiceConnection && TargetClientId == NetworkManager.ServerClientId) || networkObject.Observers.Contains(TargetClientId);
         }
 
         private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)

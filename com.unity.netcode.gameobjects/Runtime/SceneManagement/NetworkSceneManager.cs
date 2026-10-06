@@ -3098,14 +3098,14 @@ namespace Unity.Netcode
             m_SceneMigrationTargetIds.Clear();
             foreach (var clientId in NetworkManager.ConnectedClientsIds)
             {
-                if (clientId != NetworkManager.LocalClientId && (NetworkManager.DistributedAuthorityMode || ObservesMigratedNetworkObject(clientId)))
+                if (clientId != NetworkManager.LocalClientId && ObservesMigratedNetworkObject(clientId))
                 {
                     m_SceneMigrationTargetIds.Add(clientId);
                 }
             }
 
-            // Distributed authority still sends to the CMB service when there are no other clients
-            if (m_SceneMigrationTargetIds.Count == 0 && !NetworkManager.DistributedAuthorityMode)
+            // The CMB service is still sent the migration when no other client observes it
+            if (m_SceneMigrationTargetIds.Count == 0 && !NetworkManager.CMBServiceConnection)
             {
                 ObjectsMigratedIntoNewScene.Clear();
                 return;
