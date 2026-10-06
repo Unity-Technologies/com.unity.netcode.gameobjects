@@ -3098,7 +3098,7 @@ namespace Unity.Netcode
                 }
             }
 
-            // The CMB service is still sent the migration when no other client observes it
+            // The session owner still sends the CMB service its copy when no other client observes the migrated objects
             if (m_SceneMigrationTargetIds.Count == 0 && !NetworkManager.CMBServiceConnection)
             {
                 ObjectsMigratedIntoNewScene.Clear();
