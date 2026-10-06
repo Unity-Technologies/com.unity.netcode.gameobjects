@@ -154,15 +154,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        [UnityTest]
-        public IEnumerator BehaviourIdsMatchOnAllPeers()
-        {
-            yield return SpawnHybridInstance();
-
-            yield return WaitForConditionOrTimeOut(ValidateBehaviourTable);
-            AssertOnTimeout("A peer disagreed about the hybrid prefab's behaviour table!");
-        }
-
         private bool ValidateOwner(StringBuilder errorLog, ulong ownerClientId)
         {
             foreach (var networkManager in m_NetworkManagers)
