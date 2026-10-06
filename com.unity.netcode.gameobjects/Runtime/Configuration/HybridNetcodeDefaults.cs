@@ -17,10 +17,9 @@ namespace Unity.Netcode
     /// </remarks>
     internal static class HybridNetcodeDefaults
     {
-        // A hybrid ghost costs ~4.87 bytes per snapshot, so 4096 carries ~840 of them at the full tick rate, which
-        // covers the 200-1000 moving instances projects typically run. This is a cap and not a cost: measured at 512
-        // instances the snapshot averages 2489 bytes and never reaches the cap. N4E's own default is one MTU, which
-        // round-robins above ~230 ghosts - 13.5Hz against a 30Hz tick at 512 instances, against 30Hz here.
+        // A hybrid ghost costs ~4.87 bytes per snapshot, so this carries ~840 of them at the full tick rate, which
+        // covers the 200-1000 moving instances projects typically run. A cap and not a cost: below that count the
+        // snapshot never reaches it. N4E's own default is one MTU, which round-robins above ~230 ghosts.
         internal const int SnapshotPacketSize = 4096;
 
         /// <summary>

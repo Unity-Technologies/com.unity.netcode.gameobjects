@@ -34,13 +34,11 @@ namespace Unity.Netcode
             {
                 Instance = this;
             }
+
             AutoConnectPort = Port;
 
-            // Deliberately not calling base.Initialize. Entities selects the most derived ICustomBootstrap, so this
-            // type is the only one it instantiates whenever UNIFIED_NETCODE is set, and Netcode for Entities' own
-            // Initialize is never reached on its own. Its entire body is the EnableClientServerBootstrap check plus
-            // CreateDefaultClientServerWorlds, and NetworkManager owns world creation here, so calling it only gives
-            // Netcode for Entities a chance to create worlds this bootstrap would then have to reject.
+            // NetworkManager owns world creation here, so base.Initialize is deliberately not called: it would
+            // let Netcode for Entities create worlds this bootstrap then has to reject.
 
             if (networkManager != null)
             {

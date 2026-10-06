@@ -35,9 +35,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ApprovalFailureType = approvalFailureType;
         }
 
-        // ClientDoesNotRequest has no hybrid case: the server schedules its disconnect reason into Netcode for
-        // Entities' outgoing RPC buffer and then tears the connection down in the same call, before RpcSystem
-        // transmits it. Restore the fixture once the hybrid disconnect defers to a simulation tick.
+        // ClientDoesNotRequest has no hybrid case: the server tears the connection down before Netcode for
+        // Entities transmits its disconnect reason. Restore the fixture with the fix.
         protected override bool UseUnifiedTests()
         {
             return true;

@@ -37,7 +37,6 @@ namespace Unity.Netcode.GameObjects.Editor.Configuration
         [SerializeField]
         public bool GenerateDefaultNetworkPrefabs = true;
 
-
         internal void SaveSettings()
         {
             Save(true);
