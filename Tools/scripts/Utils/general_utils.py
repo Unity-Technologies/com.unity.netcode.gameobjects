@@ -132,13 +132,20 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
     with open(changelog_path, 'r', encoding='UTF-8') as f:
         changelog_text = f.read()
 
-    # This pattern finds a line starting with '###', followed by its newline,
-    # and then two more lines that contain only whitespace.
+    # This pattern finds a line starting with '###' followed only by blank lines up to the next heading or end of section.
     # The re.MULTILINE flag allows '^' to match the start of each line.
-    pattern = re.compile(r"^###.*\n\n\n", re.MULTILINE)
+    pattern = re.compile(r"^###[^\n]*\n(?:[ \t]*\n)*(?=##|\Z)", re.MULTILINE)
 
-    # Replace every match with an empty string. The goal is to remove empty CHANGELOG subsections.
-    cleaned_content = pattern.sub('', changelog_text)
+    # Replace every match within the [Unreleased] section with an empty string. The goal is to remove empty CHANGELOG subsections.
+    # Released sections are left untouched since some of them use '###' for their version heading.
+    cleaned_content = changelog_text
+    unreleased_section = re.search(r'(?ms)^## \[Unreleased\].*?(?=^## \[|\Z)', changelog_text)
+    if unreleased_section:
+        cleaned_content = (
+            changelog_text[:unreleased_section.start()] +
+            pattern.sub('', unreleased_section.group(0)) +
+            changelog_text[unreleased_section.end():]
+        )
 
     if version_header_to_find_if_exists in changelog_text:
         warnings.warn(f"A changelog entry for version '{new_version}' already exists. The script will just remove Unreleased section and its content.")
