@@ -22,7 +22,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
+- Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`. (#4185)
+- Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server. (#4185)
+- Issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
 
 ### Security
 
