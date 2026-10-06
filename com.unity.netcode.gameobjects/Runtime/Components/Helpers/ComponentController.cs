@@ -396,17 +396,21 @@ namespace Unity.Netcode.Components
         }
 
         /// <inheritdoc/>
-        /// <remarks>
-        /// If overriding this method, it is required that you invoke this base method.
-        /// </remarks>
+        // TODO: Not used anymore
         public override void OnDestroy()
+        {
+            base.OnDestroy();
+        }
+
+
+        internal override void InternalOnDestroy()
         {
             if (m_CoroutineObject.IsRunning)
             {
                 StopCoroutine(m_CoroutineObject.Coroutine);
                 m_CoroutineObject.IsRunning = false;
             }
-            base.OnDestroy();
+            base.InternalOnDestroy();
         }
 
         /// <summary>
