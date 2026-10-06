@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
             FailValidation,
         }
         private PlayerCreation m_PlayerCreation;
-        private bool m_ClientDisconnected;
+        private bool m_ClientDisconnectReasonValidated;
         private Vector3 m_ExpectedPosition;
         private Quaternion m_ExpectedRotation;
 
@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ExpectedRotation = Quaternion.Euler(GetRandomVector3(-359.98f, 359.98f));
             }
 
-            m_ClientDisconnected = false;
+            m_ClientDisconnectReasonValidated = false;
             m_BypassConnectionTimeout = m_PlayerCreation == PlayerCreation.FailValidation;
             m_Validated.Clear();
             m_ValidationToken = string.Empty;
@@ -117,7 +117,7 @@ namespace Unity.Netcode.RuntimeTests
         private void Client_OnClientDisconnectCallback(ulong clientId)
         {
             m_ClientNetworkManagers[0].OnClientDisconnectCallback -= Client_OnClientDisconnectCallback;
-            m_ClientDisconnected = m_ClientNetworkManagers[0].LocalClientId == clientId;
+            m_ClientDisconnectReasonValidated = m_ClientNetworkManagers[0].LocalClientId == clientId && m_ClientNetworkManagers[0].ConnectionManager.ServerDisconnectReason.Contains(k_InvalidToken);
         }
 
         private bool ClientAndHostValidated(StringBuilder errorLog)
@@ -129,24 +129,12 @@ namespace Unity.Netcode.RuntimeTests
             }
             if (m_PlayerCreation == PlayerCreation.FailValidation)
             {
-                // The disconnect callback fires from the transport event, which can arrive ahead of the
-                // DisconnectReasonMessage that populates ServerDisconnectReason. Latching both checks into one bool
-                // and unsubscribing meant an early callback failed the test for good, and reported only which bool
-                // was false. Both are polled here instead, which also names the reason that did arrive.
-                if (!m_ClientDisconnected)
+                if (!m_ClientDisconnectReasonValidated)
                 {
-                    errorLog.AppendLine($"{nameof(m_ClientDisconnected)} is false!");
-                    return false;
+                    errorLog.AppendLine($"{nameof(m_ClientDisconnectReasonValidated)} is false!");
                 }
 
-                var disconnectReason = m_ClientNetworkManagers[0].ConnectionManager.ServerDisconnectReason;
-                if (string.IsNullOrEmpty(disconnectReason) || !disconnectReason.Contains(k_InvalidToken))
-                {
-                    errorLog.AppendLine($"Client-{m_ClientNetworkManagers[0].LocalClientId} disconnect reason '{disconnectReason}' did not contain '{k_InvalidToken}'!");
-                    return false;
-                }
-
-                return true;
+                return m_ClientDisconnectReasonValidated;
             }
             else
             {
