@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Rust server needs an update
-        /// </summary>        
+        /// </summary>
         protected override bool UseCMBService()
         {
             return false;
