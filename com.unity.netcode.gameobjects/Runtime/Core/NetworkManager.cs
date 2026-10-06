@@ -1416,22 +1416,24 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Drives the <see cref="NetcodeConfig"/> tick rates from <see cref="NetworkConfig.TickRate"/> so that ghost
-        /// updates land on the same interval as the rest of Netcode for GameObjects.
+        /// Writes the <see cref="NetcodeConfig"/> values NGO drives into the in-memory global config, just before
+        /// the world is created from it.
         /// </summary>
         /// <remarks>
-        /// The editor writes <see cref="HybridNetcodeDefaults.DefaultTickRate"/> when it applies the hybrid defaults,
-        /// because no <see cref="NetworkManager"/> is necessarily loaded at that point. This is where the rate a
-        /// project actually configured gets picked up.
+        /// Netcode for Entities copies the config into its world singletons once, at world creation, so this is the
+        /// point where it takes effect. Nothing here touches the asset on disk.
         /// </remarks>
-        private void UnifiedAlignTickRate()
+        private void UnifiedApplyNetcodeConfig()
         {
-            if (!HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
+            if (HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
             {
-                return;
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
             }
 
-            Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
+            if (NetworkConfig.AutoConfigureSnapshotSize && HybridNetcodeDefaults.ApplySnapshotPacketSize(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} snapshot packet size has been set to {HybridNetcodeDefaults.SnapshotPacketSize}. Disable {nameof(NetworkConfig)}.{nameof(NetworkConfig.AutoConfigureSnapshotSize)} to manage it yourself.").AddTag("Unified"));
+            }
         }
 #endif
 
@@ -1476,7 +1478,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                UnifiedAlignTickRate();
+                UnifiedApplyNetcodeConfig();
                 if (LogLevel <= LogLevel.Developer)
                 {
                     Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
@@ -1556,7 +1558,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                UnifiedAlignTickRate();
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
@@ -1631,7 +1633,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
-                UnifiedAlignTickRate();
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }

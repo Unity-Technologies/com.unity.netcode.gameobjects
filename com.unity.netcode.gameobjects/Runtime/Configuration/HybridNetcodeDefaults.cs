@@ -1,83 +1,35 @@
 #if UNIFIED_NETCODE
 #if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
 using NetcodeConfig = Unity.NetCode.NetCodeConfig;
 #endif
 
 namespace Unity.Netcode
 {
     /// <summary>
-    /// The <see cref="NetcodeConfig"/> values NGO needs when running in hybrid mode (i.e. Netcode for Entities is
+    /// The <see cref="NetcodeConfig"/> values NGO drives when running in hybrid mode (i.e. Netcode for Entities is
     /// installed and a registered network prefab carries a <see cref="GhostObject"/>).
     /// </summary>
     /// <remarks>
     /// This lives in the runtime assembly rather than the editor one because <see cref="NetcodeConfig.HostWorldModeSelection"/>
     /// is internal to Netcode for Entities, and Unity.Netcode.Runtime is the only NGO assembly it grants InternalsVisibleTo to.
-    /// Nothing here touches the AssetDatabase; the editor-side applier drives all of it.
+    /// Nothing is written to the asset on disk: <see cref="NetworkManager"/> writes the in-memory config just before
+    /// world creation, and Netcode for Entities seeds its world singletons from it at that point.
     /// </remarks>
     internal static class HybridNetcodeDefaults
     {
-        /// <summary>
-        /// Bump whenever <see cref="ApplyRecommended"/> changes so that an upgrading project re-applies exactly once.
-        /// Persisted as NetcodeForGameObjectsProjectSettings.HybridDefaultsVersion.
-        /// </summary>
-        internal const int Version = 2;
-
-        // Mirrors NetworkConfig.TickRate's default. The editor writes the defaults before any NetworkManager is
-        // necessarily loaded, so it has nothing to read the real rate from. NetworkManager re-aligns the config when a
-        // session carrying ghost prefabs starts, which is what makes writing a fixed value here safe.
-        internal const uint DefaultTickRate = 30;
-
-        // Tuned against 2000 GenericPhysicsBallNGO instances in the ngo-examples project. A hybrid ghost costs ~4.87
-        // bytes per snapshot, so 4096 carries ~840 of them at the full tick rate. This is a cap and not a cost:
-        // below that count it puts no more on the wire than the N4E default would. Kept small because a snapshot is
-        // sent unreliably: losing any one of its fragments loses the whole snapshot.
+        // A hybrid ghost costs ~4.87 bytes per snapshot, so 4096 carries ~840 of them at the full tick rate, which
+        // covers the 200-1000 moving instances projects typically run. This is a cap and not a cost: measured at 512
+        // instances the snapshot averages 2489 bytes and never reaches the cap. N4E's own default is one MTU, which
+        // round-robins above ~230 ghosts - 13.5Hz against a 30Hz tick at 512 instances, against 30Hz here.
         internal const int SnapshotPacketSize = 4096;
 
-        // A ceiling on despawn bytes, not a reservation, so unused headroom is free. 0.2 is also N4E's clamp minimum.
-        internal const float PercentReservedForDespawn = 0.2f;
-
-        // Expressed in milliseconds rather than net ticks deliberately. N4E rounds this up to whole network ticks, so
-        // it holds >= 50ms of interpolation buffer at any tick rate. The net-tick form does not: 2 net ticks is 66.7ms
-        // at 30Hz but only 33.3ms at 60Hz, and 33.3ms is the buffer the stress test stuttered at.
-        internal const uint InterpolationTimeMS = 50;
-
-        internal const float InterpolationDelayMaxDeltaTicksFraction = 0.15f;
-        internal const float InterpolationTimeScaleMin = 0.9f;
-        internal const float InterpolationTimeScaleMax = 1.33f;
-
-        // A full snapshot fragments into ~3 datagrams and each fragment consumes a queue slot.
-        internal const int ClientQueueCapacity = 128;
-
         /// <summary>
-        /// Applies the two settings hybrid mode cannot run without.
+        /// Drives N4E's tick rates from <see cref="NetworkConfig.TickRate"/>.
         /// </summary>
-        /// <param name="config">The config to correct.</param>
-        /// <returns>True if anything changed.</returns>
-        internal static bool ApplyRequired(NetcodeConfig config)
-        {
-            var changed = false;
-
-            // NetworkManager gates the world spin-up, so N4E must not bootstrap worlds on its own.
-            if (config.EnableClientServerBootstrap != NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
-            {
-                config.EnableClientServerBootstrap = NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap;
-                changed = true;
-            }
-
-            if (config.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
-            {
-                config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.SingleWorld;
-                changed = true;
-            }
-
-            return changed;
-        }
-
-        /// <summary>
-        /// Drives N4E's tick rates from <see cref="NetworkConfig.TickRate"/> so that ghost transform updates land on
-        /// the same interval NGO uses for everything else.
-        /// </summary>
+        /// <remarks>
+        /// Not cosmetic: NGO's own send queues are flushed by a system in N4E's SimulationSystemGroup, which steps at
+        /// SimulationTickRate, so a rate below <see cref="NetworkConfig.TickRate"/> starves NGO's outbound traffic.
+        /// </remarks>
         /// <param name="config">The config to correct.</param>
         /// <param name="tickRate">The owning <see cref="NetworkManager"/>'s configured tick rate.</param>
         /// <returns>True if anything changed.</returns>
@@ -90,38 +42,26 @@ namespace Unity.Netcode
             }
 
             // Both are written: leaving NetworkTickRate at 0 would track SimulationTickRate anyway, but writing it
-            // keeps the two visibly locked in the inspector, which is the invariant InterpolationTimeMS relies on.
+            // keeps the two visibly locked in the inspector.
             config.ClientServerTickRate.SimulationTickRate = rate;
             config.ClientServerTickRate.NetworkTickRate = rate;
             return true;
         }
 
         /// <summary>
-        /// Applies the full NGO-recommended set: <see cref="ApplyRequired"/>, <see cref="ApplyTickRate"/>, and the
-        /// values tuned against the stress test.
+        /// Raises N4E's snapshot packet size to <see cref="SnapshotPacketSize"/>.
         /// </summary>
         /// <param name="config">The config to correct.</param>
-        /// <param name="tickRate">The owning <see cref="NetworkManager"/>'s configured tick rate.</param>
         /// <returns>True if anything changed.</returns>
-        internal static bool ApplyRecommended(NetcodeConfig config, uint tickRate)
+        internal static bool ApplySnapshotPacketSize(NetcodeConfig config)
         {
-            var changed = ApplyRequired(config);
-            changed |= ApplyTickRate(config, tickRate);
+            if (config.GhostSendSystemData.DefaultSnapshotPacketSize == SnapshotPacketSize)
+            {
+                return false;
+            }
 
-            changed |= Set(ref config.GhostSendSystemData.DefaultSnapshotPacketSize, SnapshotPacketSize);
-            changed |= Set(ref config.GhostSendSystemData.PercentReservedForDespawnMessages, PercentReservedForDespawn);
-
-            // The net-tick form has to be cleared or it wins over the millisecond form.
-            changed |= Set(ref config.ClientTickRate.InterpolationTimeNetTicks, 0u);
-            changed |= Set(ref config.ClientTickRate.InterpolationTimeMS, InterpolationTimeMS);
-            changed |= Set(ref config.ClientTickRate.InterpolationDelayMaxDeltaTicksFraction, InterpolationDelayMaxDeltaTicksFraction);
-            changed |= Set(ref config.ClientTickRate.InterpolationTimeScaleMin, InterpolationTimeScaleMin);
-            changed |= Set(ref config.ClientTickRate.InterpolationTimeScaleMax, InterpolationTimeScaleMax);
-
-            changed |= Set(ref config.ClientSendQueueCapacity, ClientQueueCapacity);
-            changed |= Set(ref config.ClientReceiveQueueCapacity, ClientQueueCapacity);
-
-            return changed;
+            config.GhostSendSystemData.DefaultSnapshotPacketSize = SnapshotPacketSize;
+            return true;
         }
 
         /// <summary>
@@ -138,26 +78,8 @@ namespace Unity.Netcode
                 return true;
             }
 
-            if (config.EnableClientServerBootstrap != NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)
-            {
-                reason = $"{nameof(NetcodeConfig.EnableClientServerBootstrap)} must be {nameof(NetcodeConfig.AutomaticBootstrapSetting.DisableAutomaticBootstrap)} because {nameof(NetworkManager)} owns world creation in hybrid mode";
-                return true;
-            }
-
             reason = null;
             return false;
-        }
-
-        private static bool Set<T>(ref T target, T value)
-            where T : System.IEquatable<T>
-        {
-            if (target.Equals(value))
-            {
-                return false;
-            }
-
-            target = value;
-            return true;
         }
     }
 }

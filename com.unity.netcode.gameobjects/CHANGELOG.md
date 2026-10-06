@@ -10,8 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added additional section under Project Settings > Multiplayer > Netcode for GameObjects, shown when Netcode for Entities is installed and provides users a way to restore the recommended settings. (#4144)
-- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session with `GhostObject` prefabs is started, so ghost updates land on the same (relative) interval as the rest of Netcode for GameObjects. (#4144)
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
+- Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which raises the Netcode for Entities snapshot packet size when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
 
 ### Changed
 
@@ -21,7 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated and did not check that automatic bootstrapping was disabled. (#4144)
+- Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
 
 ### Security
 

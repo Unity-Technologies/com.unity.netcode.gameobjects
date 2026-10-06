@@ -35,6 +35,11 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+
         // Delta-compression baselines need several snapshots to settle; the first ones are much larger.
         private const int k_WarmupSnapshots = 30;
         private const int k_SampleSnapshots = 100;
