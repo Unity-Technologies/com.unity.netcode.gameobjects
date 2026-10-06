@@ -31,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-                /// <summary>
+        /// <summary>
         /// Rust server needs an update
         /// </summary>        
         protected override bool UseCMBService()
