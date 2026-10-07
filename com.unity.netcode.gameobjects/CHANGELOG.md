@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
+- Issue where a hybrid mode session failed to start unless `NetcodeConfig.EnableClientServerBootstrap` was set to `DisableAutomaticBootstrap`. Netcode for GameObjects creates the world itself and no longer needs that setting changed. (#4144)
 
 ### Security
 

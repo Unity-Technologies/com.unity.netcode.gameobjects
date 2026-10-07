@@ -48,7 +48,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Raises N4E's snapshot packet size to <see cref="SnapshotPacketSize"/>.
+        /// Sets N4E's snapshot packet size to <see cref="SnapshotPacketSize"/>.
         /// </summary>
         /// <param name="config">The config to correct.</param>
         /// <returns>True if anything changed.</returns>
