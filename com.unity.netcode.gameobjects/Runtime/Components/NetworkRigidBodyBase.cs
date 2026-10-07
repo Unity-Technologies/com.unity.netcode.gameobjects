@@ -21,13 +21,6 @@ namespace Unity.Netcode.Components
         internal bool NetworkRigidbodyBaseExpanded;
 #endif
 
-        // TODO-UNIFIED:
-        // Provide an option to automatically remove the NetworkRigidbodyBase component at runtime if it is a hybrid prefab that is spawned since this
-        // component is primarily used for the Rigidbody interpolation and extrapolation features of NetworkTransform which are not relevant for a hybrid
-        // prefab that is spawned since it will be using N4E's built in interpolation and extrapolation features. This greatly improves performance on
-        // the client side. If using N4E prediction or distributed authority mode, then Rigibody and any component derived from this should always be used.
-
-
         /// <summary>
         /// When enabled, the associated <see cref="NetworkTransform"/> will use the Rigidbody/Rigidbody2D to apply and synchronize changes in position, rotation, and
         /// allows for the use of Rigidbody interpolation/extrapolation.
@@ -133,6 +126,13 @@ namespace Unity.Netcode.Components
                 NetworkTransform = GetComponent<NetworkTransform>();
             }
 
+#if UNIFIED_NETCODE
+            if (InitializeHybrid())
+            {
+                return;
+            }
+#endif
+
             if (NetworkTransform != null)
             {
                 NetworkTransform.RegisterRigidbody(this);
@@ -184,6 +184,13 @@ namespace Unity.Netcode.Components
                 NetworkTransform = GetComponent<NetworkTransform>();
             }
 
+#if UNIFIED_NETCODE
+            if (InitializeHybrid())
+            {
+                return;
+            }
+#endif
+
             if (NetworkTransform != null)
             {
                 NetworkTransform.RegisterRigidbody(this);
@@ -201,11 +208,6 @@ namespace Unity.Netcode.Components
 #endif
 
 #if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
-#if UNIFIED_NETCODE
-        // Used to keep track of the original kinematic state upon awake.
-        // (see OnDestroy below)
-        private bool m_OriginalKinematicState;
-#endif
         /// <summary>
         /// Initializes the networked Rigidbody based on the <see cref="RigidbodyTypes"/>
         /// passed in as a parameter.
@@ -248,6 +250,13 @@ namespace Unity.Netcode.Components
                 NetworkTransform = GetComponent<NetworkTransform>();
             }
 
+#if UNIFIED_NETCODE
+            if (InitializeHybrid())
+            {
+                return;
+            }
+#endif
+
             if (NetworkTransform != null)
             {
                 NetworkTransform.RegisterRigidbody(this);
@@ -259,31 +268,68 @@ namespace Unity.Netcode.Components
 
             if (AutoUpdateKinematicState)
             {
-#if UNIFIED_NETCODE
-                // Keep track of the original kinematic state. (see OnDestroy)
-                m_OriginalKinematicState = IsKinematic();
+                SetIsKinematic(true);
+            }
+        }
 #endif
+
+#if UNIFIED_NETCODE
+        // The authored kinematic state, restored in OnDestroy.
+        private bool m_OriginalKinematicState;
+
+        /// <summary>
+        /// Skips initialization on a hybrid prefab, whose GhostObject drives its motion. The component stays so <see cref="NetworkBehaviour.NetworkBehaviourId"/> values match on every peer.
+        /// </summary>
+        /// <returns>true for a hybrid prefab</returns>
+        private bool InitializeHybrid()
+        {
+            if (NetworkObject == null || !NetworkObject.HasGhost)
+            {
+                return false;
+            }
+
+            // Clears any registration left behind by a prior Initialize call.
+            if (NetworkTransform != null)
+            {
+                NetworkTransform.UnregisterRigidbody();
+            }
+
+            m_OriginalKinematicState = IsKinematic();
+            return true;
+        }
+
+        /// <summary>
+        /// Kinematic on every peer except the server. Called at spawn because an in-scene placed instance has no session during Awake.
+        /// </summary>
+        private void SetHybridKinematicState()
+        {
+            if (!m_LocalNetworkManager.IsServer)
+            {
                 SetIsKinematic(true);
             }
         }
 
-#if UNIFIED_NETCODE
+        /// <inheritdoc/>
         public override void OnDestroy()
         {
             base.OnDestroy();
-            // If the user has left this component on their prefab and this is a hybrid prefab,
-            // then we want to set the rigid body back to its original kinematic settings since
-            // we are automatically destroying these components at runtime when it is a hybrid
-            // prefab that is spawned.
-            if (NetworkObject && NetworkObject.HasGhost)
+            if (!NetworkObject || !NetworkObject.HasGhost)
             {
-                if (m_InternalRigidbody || m_InternalRigidbody2D)
-                {
-                    SetIsKinematic(m_OriginalKinematicState);
-                }
+                return;
+            }
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            if (m_InternalRigidbody || m_InternalRigidbody2D)
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            if (m_InternalRigidbody)
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            if (m_InternalRigidbody2D)
+#endif
+            {
+                SetIsKinematic(m_OriginalKinematicState);
             }
         }
-#endif
 #endif
         internal Vector3 GetAdjustedPositionThreshold()
         {
@@ -1019,7 +1065,12 @@ namespace Unity.Netcode.Components
 
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
-            UpdateOwnershipAuthority();
+#if UNIFIED_NETCODE
+            if (!NetworkObject.HasGhost)
+#endif
+            {
+                UpdateOwnershipAuthority();
+            }
             base.OnOwnershipChanged(previous, current);
         }
 
@@ -1062,6 +1113,13 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
+#if UNIFIED_NETCODE
+            if (NetworkObject.HasGhost)
+            {
+                SetHybridKinematicState();
+                return;
+            }
+#endif
             m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
             m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();

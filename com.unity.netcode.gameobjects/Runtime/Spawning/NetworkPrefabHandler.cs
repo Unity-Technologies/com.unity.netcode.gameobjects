@@ -32,7 +32,7 @@ namespace Unity.Netcode
         /// </summary>
         private readonly Dictionary<uint, uint> m_PrefabInstanceToPrefabAsset = new Dictionary<uint, uint>();
 
-        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab) => $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.name}\"";
+        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab) => $"{nameof(NetworkPrefab)} \"{networkPrefab.GetDebugName()}\"";
 
         /// <summary>
         /// Use a <see cref="GameObject"/> to register a class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface with the <see cref="NetworkPrefabHandler"/>
