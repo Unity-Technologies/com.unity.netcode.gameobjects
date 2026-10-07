@@ -2532,7 +2532,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected GameObject CreateNetworkObjectPrefab(string baseName)
         {
 #if UNIFIED_NETCODE
-            if (m_AllPrefabsAsHybrid)
+            return CreateNetworkObjectPrefab(baseName, m_AllPrefabsAsHybrid);
+        }
+
+        /// <summary>
+        /// Creates a hybrid prefab only when <paramref name="asHybrid"/> is true, so a unified test can create a NetworkObject-only prefab.
+        /// </summary>
+        /// <param name="baseName">the basic name to be used for each instance</param>
+        /// <param name="asHybrid">when true, the prefab also has a GhostObject</param>
+        /// <returns>The <see cref="GameObject"/> assigned to the new NetworkPrefab entry</returns>
+        protected GameObject CreateNetworkObjectPrefab(string baseName, bool asHybrid)
+        {
+            if (asHybrid)
             {
                 return CreateHybridPrefab(baseName, true);
             }

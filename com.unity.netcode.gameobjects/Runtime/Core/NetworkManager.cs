@@ -1271,6 +1271,9 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
             }
 #endif
+#if UNIFIED_NETCODE
+            NetworkConfig.Prefabs.OnSessionStarting(DistributedAuthorityMode);
+#endif
 
             MetricsManager.Initialize(this);
 
@@ -1364,6 +1367,12 @@ namespace Unity.Netcode
                 }
             }
 
+#if UNIFIED_NETCODE
+            if (!NetworkConfig.InitializePrefabsForStart())
+            {
+                return false;
+            }
+#endif
             return true;
         }
 
