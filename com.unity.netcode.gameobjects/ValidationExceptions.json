@@ -1,0 +1,15 @@
+﻿{
+  "ErrorExceptions": [
+    {
+      "ValidationTest": "NDA Keyword Validation",
+      "ExceptionMessage": "#if UNITY_7000_0_OR_NEWER",
+      "PackageVersion": "3.1.1"
+    },
+    {
+      "ValidationTest": "NDA Keyword Validation",
+      "ExceptionMessage": "File 'Editor/InScenePlacedProcessor.cs' contains deny-listed keyword pattern '(?<!BestPracticeUnderstandingPerformanceIn)unity[ _]*7' It must not be published",
+      "PackageVersion": "3.1.1"
+    }
+  ],
+  "WarningExceptions": []
+}

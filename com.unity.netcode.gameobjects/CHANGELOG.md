@@ -18,9 +18,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
+
 ### Security
 
 ### Obsolete
+
+## [3.1.0] - 2026-10-04
+
+### Changed
+
+- Updated Netcode for Entities dependency to 7.1.0
 
 ## [3.0.0] - 2026-09-14
 

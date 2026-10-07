@@ -10,10 +10,7 @@
     # 2. For all unified editors (currently a single pinned alpha, see project.metafile)
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # TODO: N4E is now a hard dependency, so the manifest swap only pins the N4E version and the two
-  #       manifests can be collapsed into one.
-  # This job is deliberately not part of the PR checks: N4E 7.0.0 ships the unified API behind its own
-  #       experimental define, so nothing in the shipping configuration compiles it.
+  # manifest-unified.json takes N4E from unity/unity trunk, so this job can break on N4E changes made outside NGO.
 
 #------------------------------------------------------------------------------------
 
@@ -37,7 +34,7 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    # Swap in the manifest that pins the N4E version the unified API is written against.
+    # Swap in the manifest that takes N4E from unity/unity trunk Workspace/com.unity.netcode.
     - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
     # Turn the unified API on. UNIFIED_NETCODE is opt-in, and N4E keeps its GameObject bridge internal
     # until NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, so both are needed here and nowhere else.
