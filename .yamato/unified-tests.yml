@@ -10,7 +10,7 @@
     # 2. For all unified editors (currently a single pinned alpha, see project.metafile)
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # manifest-unified.json takes N4E from unity/unity trunk, so this job can break on N4E changes made outside NGO.
+  # testproject takes N4E from unity/unity trunk, so this job can break on N4E changes made outside NGO.
 
 #------------------------------------------------------------------------------------
 
@@ -34,11 +34,8 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    # Swap in the manifest that takes N4E from unity/unity trunk Workspace/com.unity.netcode.
-    - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
-    # Turn the unified API on. UNIFIED_NETCODE is opt-in, and N4E keeps its GameObject bridge internal
-    # until NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, so both are needed here and nowhere else.
-    - sed -i "s/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL;UNIFIED_NETCODE;OUT_OF_BAND_RPC/" {{ project.path }}/ProjectSettings/ProjectSettings.asset
+    # Turn the unified API on. UNIFIED_NETCODE is opt-in and needed here and nowhere else.
+    - sed -i "s/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;UNIFIED_NETCODE/" {{ project.path }}/ProjectSettings/ProjectSettings.asset
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:

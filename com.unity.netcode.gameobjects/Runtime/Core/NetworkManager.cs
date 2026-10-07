@@ -25,7 +25,7 @@ using Unity.Netcode.Runtime;
 // - TestProject has been updated to include N4E.
 // - TestProject and Runtime tests have been updated to use UnifiedHost.
 // Remove the conditional compilation and just use the namespace.
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
 using Unity.Netcode.Unified;
 #endif
 using UnityEngine;
@@ -1256,7 +1256,7 @@ namespace Unity.Netcode
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
             // TODO-FixMe:
             // We assign transport at this point to preceed the NetworkConnectionManager
             // being initialized. However, HasGhostPrefabs might not be set at this point

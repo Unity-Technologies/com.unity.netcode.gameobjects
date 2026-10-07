@@ -1,6 +1,3 @@
-#if UNIFIED_NETCODE && !NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL
-#error UNIFIED_NETCODE also requires NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL: Netcode for Entities keeps its GameObject bridge (GhostObject, GhostBehaviour, GhostField) internal until that define is set.
-#endif
 #if UNIFIED_NETCODE
 using System;
 using Unity.Entities;

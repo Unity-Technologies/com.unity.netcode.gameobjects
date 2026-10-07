@@ -17,8 +17,6 @@ namespace Unity.Netcode
 
     [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
     //BREAK --- Fix this on UNIFIED side 1st
-    // Internal: GhostBehaviour is only public when NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, and a public
-    // type cannot derive from an internal one.
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
         // DefaultExecutionOrder
