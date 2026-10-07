@@ -28,7 +28,7 @@ namespace Unity.Netcode.RuntimeTests
 #if UNIFIED_NETCODE
         protected override bool UseUnifiedTests()
         {
-            return true;
+            return false;
         }
 #endif
 
