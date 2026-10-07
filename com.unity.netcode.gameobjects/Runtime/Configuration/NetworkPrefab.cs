@@ -29,6 +29,7 @@ namespace Unity.Netcode
     /// Class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
+    [System.Diagnostics.DebuggerDisplay("{GetDebugName()}")]
     public class NetworkPrefab
     {
         /// <summary>
@@ -154,7 +155,8 @@ namespace Unity.Netcode
         /// <returns>True if the NetworkPrefab is valid and ready for use, false otherwise</returns>
         public bool Validate(int index = -1)
         {
-            NetworkObject networkObject;
+            // Null for a hash override.
+            NetworkObject networkObject = null;
             if (Override == NetworkPrefabOverride.None)
             {
                 if (Prefab == null)
@@ -270,7 +272,41 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // N4E spawns the ghost's own prefab on every client, so the override would never be applied.
+            if ((networkObject != null && networkObject.HasGhost)
+                || (OverridingTargetPrefab.TryGetComponent(out NetworkObject targetNetworkObject) && targetNetworkObject.HasGhost))
+            {
+                NetworkLog.LogError($"{HybridPrefabOverrideError} {GetDebugName()} (entry will be ignored).");
+                return false;
+            }
+#endif
             return true;
+        }
+
+#if UNIFIED_NETCODE
+        internal const string HybridPrefabOverrideError = "NetworkPrefab overrides are not supported for hybrid prefabs yet.";
+#endif
+
+        /// <summary>
+        /// Names the prefab, including its override target, for logs and the debugger.
+        /// </summary>
+        internal string GetDebugName()
+        {
+            switch (Override)
+            {
+                case NetworkPrefabOverride.Prefab:
+                    return $"{GetName(SourcePrefabToOverride)} (overridden by {GetName(OverridingTargetPrefab)})";
+                case NetworkPrefabOverride.Hash:
+                    return $"{SourceHashToOverride} (overridden by {GetName(OverridingTargetPrefab)})";
+                default:
+                    return GetName(Prefab);
+            }
+        }
+
+        private static string GetName(GameObject prefab)
+        {
+            return prefab != null ? prefab.name : "null";
         }
 
         /// <summary>

@@ -402,6 +402,17 @@ namespace Unity.Netcode
             Prefabs.Initialize();
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Registers any prefab list assigned after Awake, and returns false for a distributed authority session with a hybrid prefab registered.
+        /// </summary>
+        internal bool InitializePrefabsForStart()
+        {
+            InitializePrefabs();
+            return NetworkTopology != NetworkTopologyTypes.DistributedAuthority || Prefabs.ValidateForDistributedAuthority();
+        }
+#endif
+
         [NonSerialized]
         private bool m_DidWarnOldPrefabList = false;
 

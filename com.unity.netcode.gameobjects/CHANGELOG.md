@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
 - Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
 
 ### Security
