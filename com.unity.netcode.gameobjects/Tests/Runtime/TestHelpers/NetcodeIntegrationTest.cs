@@ -7,12 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
 #if UNIFIED_NETCODE
-#if UNIFIED_NETCODE_7_0_0
 using EntitiesNetcode = Unity.Netcode.Netcode;
-#else
-using Unity.NetCode;
-using EntitiesNetcode = Unity.NetCode.Netcode;
-#endif
 #endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.RuntimeTests;
@@ -708,7 +703,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InternalOnOneTimeSetup();
         }
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
         private bool m_PreviousWarnBatchedTicks;
 #endif
 
@@ -727,7 +722,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
             // Netcode for Entities emits a performance-dependent "Server Tick Batching" warning on loaded CI agents that would fail strict log assertions.
             m_PreviousWarnBatchedTicks = MultiplayerPlayModePreferences.WarnBatchedTicks;
             MultiplayerPlayModePreferences.WarnBatchedTicks = false;
@@ -1924,7 +1919,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Disable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
             MultiplayerPlayModePreferences.WarnBatchedTicks = m_PreviousWarnBatchedTicks;
 #endif
 

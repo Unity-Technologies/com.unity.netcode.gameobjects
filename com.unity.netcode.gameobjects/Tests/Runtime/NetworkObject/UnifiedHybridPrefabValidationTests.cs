@@ -12,6 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Validates the hybrid prefab registrations that are rejected:<br />
     /// - Any hybrid prefab in a distributed authority session. The start fails, and one added during the session is not registered.<br />
+    /// - A hybrid prefab added during a session that started without hybrid prefabs. It is not registered.<br />
     /// - A NetworkPrefab override with a hybrid source or target prefab, in any topology. The entry is ignored.<br />
     /// </summary>
     /// <remarks>
@@ -127,6 +128,26 @@ namespace Unity.Netcode.RuntimeTests
             networkManager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
             networkManager.AddNetworkPrefab(m_HybridPrefab);
             Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(m_HybridPrefab), "The hybrid prefab was rejected after a failed distributed authority start!");
+        }
+
+        [UnityTest]
+        public IEnumerator HybridPrefabAddedAfterStartIsRejected()
+        {
+            var networkManager = CreateNetworkManager(NetworkTopologyTypes.ClientServer);
+            var prefabs = networkManager.NetworkConfig.Prefabs;
+            Assert.IsTrue(networkManager.StartHost(), "Failed to start the session!");
+
+            LogAssert.Expect(LogType.Error, new Regex($"{Regex.Escape(NetworkPrefabs.HybridPrefabAfterStartError)}.*{m_HybridPrefab.name}"));
+            networkManager.AddNetworkPrefab(m_HybridPrefab);
+            Assert.IsFalse(prefabs.Contains(m_HybridPrefab), "The hybrid prefab was registered during a session that started without hybrid prefabs!");
+            Assert.IsFalse(prefabs.HasGhostPrefabs, $"{nameof(NetworkPrefabs.HasGhostPrefabs)} was set during the session!");
+
+            networkManager.Shutdown();
+            yield return WaitForConditionOrTimeOut(() => !networkManager.IsListening);
+            AssertOnTimeout("The session did not shut down!");
+
+            networkManager.AddNetworkPrefab(m_HybridPrefab);
+            Assert.IsTrue(prefabs.Contains(m_HybridPrefab), "The hybrid prefab was rejected after the session ended!");
         }
 
         [Test]

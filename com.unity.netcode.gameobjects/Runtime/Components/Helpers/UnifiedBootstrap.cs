@@ -1,9 +1,6 @@
 #if UNIFIED_NETCODE
 using System;
 using Unity.Entities;
-#if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,6 +10,11 @@ namespace Unity.Netcode
     /// Handles the bootstrap process for both client and server in unified mode. This is used to create the world and set it on the
     /// NetworkManager during initialization.
     /// </summary>
+    /// <remarks>
+    /// Only <see cref="NetworkManager"/> creates it, and only for a session with hybrid prefabs. Without the attribute,
+    /// Entities would pick it as the startup bootstrap for every project, replacing Netcode for Entities' own.
+    /// </remarks>
+    [DisableBootstrapOverrides]
     internal class UnifiedBootstrap : ClientServerBootstrap
     {
         public static UnifiedBootstrap Instance { get; private set; }

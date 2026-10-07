@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-#if UNIFIED_NETCODE && !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode

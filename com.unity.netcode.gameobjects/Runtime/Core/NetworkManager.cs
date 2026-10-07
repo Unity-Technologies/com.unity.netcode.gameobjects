@@ -6,15 +6,8 @@ using Unity.Collections;
 using Unity.Entities;
 // N4E's own Netcode class cannot be aliased as "Netcode": inside namespace Unity.Netcode that name
 // resolves to the enclosing Unity.Netcode namespace before any file-scope alias is considered, so it gets
-// its own name here. 6.7.0 additionally keeps the config and world types under the older Unity.NetCode
-// casing, aliased to the 7.0.0 spellings so the use sites below read the same either way.
-#if UNIFIED_NETCODE_7_0_0
+// its own name here.
 using EntitiesNetcode = Unity.Netcode.Netcode;
-#else
-using EntitiesNetcode = Unity.NetCode.Netcode;
-using NetcodeConfig = Unity.NetCode.NetCodeConfig;
-using NetcodeWorld = Unity.NetCode.NetcodeWorld;
-#endif
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Timing;
@@ -1399,10 +1392,9 @@ namespace Unity.Netcode
                 EntitiesNetcode.Reset();
             }
 
-            /// !! Initialize worlds here !!
-            /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
+            TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
-            DefaultWorldInitialization.Initialize("Default World", false);
+            new UnifiedBootstrap().Initialize("Default World");
         }
 
         /// <summary>
