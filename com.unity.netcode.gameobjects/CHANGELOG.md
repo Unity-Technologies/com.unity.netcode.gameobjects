@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
 - Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
 
 ### Security
