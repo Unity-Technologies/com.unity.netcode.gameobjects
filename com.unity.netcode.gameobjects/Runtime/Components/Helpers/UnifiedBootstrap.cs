@@ -3,6 +3,7 @@
 #endif
 #if UNIFIED_NETCODE
 using System;
+using System.Collections.Generic;
 using Unity.Entities;
 #if !UNIFIED_NETCODE_7_0_0
 using Unity.NetCode;
@@ -27,6 +28,32 @@ namespace Unity.Netcode
 
         private static int s_WorldCounter = 0;
 
+        // Every ClientServerBootstrap constructor clears N4E's ServerWorlds and ClientWorlds, and each NetworkManager
+        // creates its own bootstrap, so the worlds created for other NetworkManagers are registered again.
+        private static readonly List<NetcodeWorld> s_CreatedWorlds = new List<NetcodeWorld>();
+
+        private static void RegisterCreatedWorlds()
+        {
+            for (int i = s_CreatedWorlds.Count - 1; i >= 0; i--)
+            {
+                var world = s_CreatedWorlds[i];
+                if (!world.IsCreated)
+                {
+                    s_CreatedWorlds.RemoveAt(i);
+                    continue;
+                }
+                // A single world host is registered as both a server and a client world, the same as N4E does.
+                if (world.IsServer() && !ServerWorlds.Contains(world))
+                {
+                    ServerWorlds.Add(world);
+                }
+                if (world.IsClient() && !ClientWorlds.Contains(world))
+                {
+                    ClientWorlds.Add(world);
+                }
+            }
+        }
+
         public override bool Initialize(string defaultWorldName)
         {
             var networkManager = CurrentNetworkManagerForInitialization;
@@ -42,6 +69,7 @@ namespace Unity.Netcode
 
             if (networkManager != null)
             {
+                RegisterCreatedWorlds();
                 Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
                 s_WorldCounter++;
                 LastCreatedWorld = networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}")
@@ -67,6 +95,7 @@ namespace Unity.Netcode
                 }
 
                 networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
+                s_CreatedWorlds.Add(networkManager.NetcodeWorld);
             }
             else
             {

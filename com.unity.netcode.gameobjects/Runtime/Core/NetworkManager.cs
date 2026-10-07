@@ -1271,6 +1271,9 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
             }
 #endif
+#if UNIFIED_NETCODE
+            NetworkConfig.Prefabs.OnSessionStarting(DistributedAuthorityMode);
+#endif
 
             MetricsManager.Initialize(this);
 
@@ -1364,6 +1367,12 @@ namespace Unity.Netcode
                 }
             }
 
+#if UNIFIED_NETCODE
+            if (!NetworkConfig.InitializePrefabsForStart())
+            {
+                return false;
+            }
+#endif
             return true;
         }
 
@@ -1858,8 +1867,11 @@ namespace Unity.Netcode
             {
                 try
                 {
-                    // Dispose of all worlds
-                    World.DisposeAllWorlds();
+                    // Dispose only this NetworkManager's world. Other NetworkManagers in the same process keep theirs.
+                    if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+                    {
+                        NetcodeWorld.Dispose();
+                    }
                     // Clear the world assigned from previous session
                     NetcodeWorld = null;
                 }
