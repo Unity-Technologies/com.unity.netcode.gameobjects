@@ -217,7 +217,11 @@ namespace Unity.Netcode.Unified
 
         internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer)
         {
-            var connectionInfo = m_Connections[connectionId];
+            // The connection is removed on disconnect, which can be ahead of its last messages.
+            if (!m_Connections.TryGetValue(connectionId, out ConnectionInfo connectionInfo))
+            {
+                return;
+            }
 
             using var arr = FixedBytes1280.ToNativeArray(buffer);
             var reader = new DataStreamReader(arr);
@@ -370,6 +374,8 @@ namespace Unity.Netcode.Unified
                 GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
                 GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
             );
+            // Removed before notifying, so the shutdown this triggers does not notify again from DisconnectLocalClient.
+            m_Connections.Remove(connectionEvent.Id.Value);
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
@@ -436,7 +442,7 @@ namespace Unity.Netcode.Unified
         public override void DisconnectLocalClient()
         {
             // Remove the connection 1st (the world might not be available)
-            m_Connections.Remove((int)ServerClientId);
+            var wasConnected = m_Connections.Remove((int)ServerClientId);
 
             // TODO-FIX-REVIEW-ME:
             // This was causing errors to occur upon shutdown during an integration test.
@@ -458,6 +464,13 @@ namespace Unity.Netcode.Unified
             }
             m_NetworkManager.NetcodeWorld.RequestDisconnectFromServer();
 
+            // N4E reports the disconnect a frame or more later, after NGO's shutdown has stopped listening, so the
+            // client would never be notified. Notify now, as UnityTransport does, and ignore N4E's later event.
+            m_NetworkManager.NetcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
+            if (wasConnected)
+            {
+                InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, default, m_RealTimeProvider.RealTimeSinceStartup);
+            }
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
@@ -475,7 +488,12 @@ namespace Unity.Netcode.Unified
 
         public override void Shutdown()
         {
-
+            var netcodeWorld = m_NetworkManager != null ? m_NetworkManager.NetcodeWorld : null;
+            if (netcodeWorld != null)
+            {
+                netcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
+                netcodeWorld.OnConnectionEvent -= OnServerConnectionEvent;
+            }
         }
     }
 }

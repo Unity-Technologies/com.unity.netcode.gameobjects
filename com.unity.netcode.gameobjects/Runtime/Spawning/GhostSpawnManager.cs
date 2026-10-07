@@ -146,6 +146,12 @@ namespace Unity.Netcode
             }
             var networkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, reader, m_NetworkManager);
 
+            // The synchronization moved the other NetworkObjects into their server-side scenes before this one spawned
+            if (networkObject != null)
+            {
+                m_NetworkManager.SceneManager.SynchronizeNetworkObjectScene(networkObject);
+            }
+
             // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
             //if (serializedObject.IsSceneObject)
             //{

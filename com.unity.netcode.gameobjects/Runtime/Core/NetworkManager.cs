@@ -1835,8 +1835,11 @@ namespace Unity.Netcode
             {
                 try
                 {
-                    // Dispose of all worlds
-                    World.DisposeAllWorlds();
+                    // Dispose only this NetworkManager's world. Other NetworkManagers in the same process keep theirs.
+                    if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+                    {
+                        NetcodeWorld.Dispose();
+                    }
                     // Clear the world assigned from previous session
                     NetcodeWorld = null;
                 }

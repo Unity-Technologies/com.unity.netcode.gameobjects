@@ -13,10 +13,21 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
     {
         private const int k_NumberObjectsToSpawn = 16;
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         public enum ParentedPass
         {
