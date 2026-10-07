@@ -1881,6 +1881,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ComponentFactory.Deregister<IRealTimeProvider>();
             }
 
+#if UNIFIED_NETCODE
+            // A test that takes its HostOrServer as a method parameter sets m_AllPrefabsAsHybrid from the test
+            // body, but SetUp runs before that: without this the next case creates a hybrid prefab nobody asked
+            // for, and the server start sweep rejects it as an unregistered NetworkObject.
+            m_AllPrefabsAsHybrid = m_FixtureAllPrefabsAsHybrid;
+#endif
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
@@ -2520,6 +2526,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
 #if UNIFIED_NETCODE
         protected bool m_AllPrefabsAsHybrid = false;
+
+        // What the fixture was constructed with, restored after every test case.
+        private bool m_FixtureAllPrefabsAsHybrid;
 #endif
 
         /// <summary>
@@ -2885,6 +2894,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
             m_AllPrefabsAsHybrid = (hostOrServer == HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+            m_FixtureAllPrefabsAsHybrid = m_AllPrefabsAsHybrid;
             // If this is a hybrid prefab test case and the environment variable to run the unified tests
             // is set, then perform the m_UseUnifiedTests check.
             if (m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())
