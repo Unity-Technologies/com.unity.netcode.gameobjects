@@ -4,6 +4,7 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Unified;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -13,6 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Validates the hybrid prefab registrations that are rejected:<br />
     /// - Any hybrid prefab in a distributed authority session. The start fails, and one added during the session is not registered.<br />
     /// - A hybrid prefab added during a session that started without hybrid prefabs. It is not registered.<br />
+    /// - A hybrid player prefab counts toward hybrid mode before the session starts, so distributed authority rejects it.<br />
     /// - A NetworkPrefab override with a hybrid source or target prefab, in any topology. The entry is ignored.<br />
     /// </summary>
     /// <remarks>
@@ -148,6 +150,31 @@ namespace Unity.Netcode.RuntimeTests
 
             networkManager.AddNetworkPrefab(m_HybridPrefab);
             Assert.IsTrue(prefabs.Contains(m_HybridPrefab), "The hybrid prefab was rejected after the session ended!");
+        }
+
+        /// <summary>
+        /// A hybrid <see cref="NetworkConfig.PlayerPrefab"/> that is in no prefab list still decides hybrid mode before the session starts.
+        /// </summary>
+        [Test]
+        public void HybridPlayerPrefabCountsBeforeStart()
+        {
+            var networkManager = CreateNetworkManager(NetworkTopologyTypes.DistributedAuthority);
+            networkManager.NetworkConfig.PlayerPrefab = m_HybridPrefab;
+            LogAssert.Expect(LogType.Error, new Regex($"{Regex.Escape(NetworkPrefabs.DistributedAuthorityHybridPrefabError)}.*{m_HybridPrefab.name}"));
+            Assert.IsFalse(networkManager.StartHost(), "Started a distributed authority session with a hybrid player prefab!");
+
+            networkManager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
+            // Only the registration is under test. The fixture cannot map a player ghost spawned by a NetworkManager it did not start.
+            networkManager.NetworkConfig.ConnectionApproval = true;
+            networkManager.ConnectionApprovalCallback = (request, response) =>
+            {
+                response.Approved = true;
+                response.CreatePlayerObject = false;
+            };
+            Assert.IsTrue(networkManager.StartHost(), "Failed to start a session with a hybrid player prefab!");
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(m_HybridPrefab), "The hybrid player prefab was not registered!");
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.HasGhostPrefabs, $"The hybrid player prefab did not set {nameof(NetworkPrefabs.HasGhostPrefabs)}!");
+            Assert.IsInstanceOf<UnifiedNetcodeTransport>(networkManager.NetworkConfig.NetworkTransport, "The session did not switch to the unified transport!");
         }
 
         [Test]

@@ -1361,7 +1361,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            if (!NetworkConfig.InitializePrefabsForStart())
+            if (!NetworkConfig.InitializePrefabsForStart(PrefabHandler))
             {
                 return false;
             }
