@@ -95,7 +95,7 @@ test_platforms:
           larger_flavor: m1.mac
           standalone: IOS
           base: mac
-          architecture: x64
+          architecture: arm64
           target_architecture: arm64
     mobile_test:
         - name: android
