@@ -62,7 +62,7 @@ namespace Unity.Netcode
         /// one MTU, which round-robins above roughly 230 GhostObjects and drops their update rate well below
         /// <see cref="TickRate"/>. Turn this off to keep whatever the NetcodeConfig asset specifies.
         /// </remarks>
-        [Tooltip("When enabled, Netcode for GameObjects sets the Netcode for Entities snapshot packet size at session start so GhostObjects keep updating at the tick rate. Disable to manage it yourself in the NetcodeConfig asset.")]
+        [Tooltip("When enabled, the N4E snapshot size defaults to 4096 bytes and is automatically configured during runtime. This setting is a measured estimate for a project that uses the default tick rate of 30 and could have roughly 200-1000 spawned hybrid prefab instances. When this setting is disabled, the snapshot size is defined by the NetcodeConfig file.")]
         public bool AutoConfigureSnapshotSize = true;
 #endif
 
