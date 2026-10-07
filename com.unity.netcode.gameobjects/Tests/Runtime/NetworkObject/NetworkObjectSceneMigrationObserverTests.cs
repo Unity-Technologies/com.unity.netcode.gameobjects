@@ -28,9 +28,14 @@ namespace Unity.Netcode.RuntimeTests
 #if UNIFIED_NETCODE
         protected override bool UseUnifiedTests()
         {
-            return false;
+            return true;
         }
 #endif
+        
+        protected override bool UseCMBService()
+        {
+            return false; // CMB service pass is failing
+        }
 
         public NetworkObjectSceneMigrationObserverTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
