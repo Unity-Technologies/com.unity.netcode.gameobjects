@@ -18,6 +18,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
+
 ### Security
 
 ### Obsolete
