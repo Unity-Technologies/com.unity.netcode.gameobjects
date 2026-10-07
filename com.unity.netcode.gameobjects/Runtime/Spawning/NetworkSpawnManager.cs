@@ -981,27 +981,27 @@ namespace Unity.Netcode
             }
             else
 #endif
-            // If scene management is disabled or the NetworkObject was dynamically spawned
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
-            {
-                networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
-            }
-            else // Get the in-scene placed NetworkObject
-            {
-                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
-                if (networkObject == null)
+                // If scene management is disabled or the NetworkObject was dynamically spawned
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
                 {
-                    NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
-                    return null;
+                    networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
                 }
+                else // Get the in-scene placed NetworkObject
+                {
+                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
+                    if (networkObject == null)
+                    {
+                        NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
+                        return null;
+                    }
 
-                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
-                // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (!networkObject.gameObject.activeInHierarchy)
-                {
-                    networkObject.gameObject.SetActive(true);
+                    // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
+                    // NetworkBehaviours will have their OnNetworkSpawn method invoked
+                    if (!networkObject.gameObject.activeInHierarchy)
+                    {
+                        networkObject.gameObject.SetActive(true);
+                    }
                 }
-            }
             if (networkObject == null)
             {
                 return null;

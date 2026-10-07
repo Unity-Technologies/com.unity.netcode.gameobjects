@@ -164,7 +164,7 @@ namespace Unity.Netcode.Unified
             NetworkManager.MessageManager.ProcessSendQueues();
 
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach(var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
+            foreach (var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
             {
                 var connectionId = networkId.ValueRO.Value;
                 DynamicBuffer<TransportRpcData> rpcs = EntityManager.GetBuffer<TransportRpcData>(entity);
@@ -175,7 +175,7 @@ namespace Unity.Netcode.Unified
                     {
                         Transport.DispatchMessage(connectionId, buffer);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Debug.LogException(e);
                     }
