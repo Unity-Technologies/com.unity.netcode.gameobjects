@@ -488,7 +488,7 @@ namespace Unity.Netcode.Unified
 
         public override void Shutdown()
         {
-            var netcodeWorld = m_NetworkManager != null ? m_NetworkManager.NetcodeWorld : null;
+            var netcodeWorld = m_NetworkManager?.NetcodeWorld;
             if (netcodeWorld != null)
             {
                 netcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
