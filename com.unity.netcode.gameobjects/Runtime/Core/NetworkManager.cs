@@ -1425,12 +1425,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Writes the <see cref="NetcodeConfig"/> values NGO drives into the in-memory global config, just before
-        /// the world is created from it.
+        /// Invoked before creating the world for a hybrid mode session to assure the required NetcodeConfig settings are applied.
         /// </summary>
         /// <remarks>
         /// Netcode for Entities copies the config into its world singletons once, at world creation, so this is the
-        /// point where it takes effect. Nothing here touches the asset on disk.
+        /// point where it takes effect. This occurs during runtime to avoid modification of the NetcodeConfig asset.
         /// </remarks>
         private void UnifiedApplyNetcodeConfig()
         {
