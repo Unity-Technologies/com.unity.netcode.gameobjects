@@ -337,6 +337,46 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets the name of the given <see cref="NetworkManager"/> to use in assertion messages:
+        /// - Dedicated server: "Server"
+        /// - Host: "Host"
+        /// - Client: "Client-" followed by its <see cref="NetworkManager.LocalClientId"/>
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the name of</param>
+        /// <returns>The name of the <paramref name="networkManager"/></returns>
+        protected string GetDisplayName(NetworkManager networkManager)
+        {
+            if (networkManager.IsServer)
+            {
+                return networkManager.IsHost ? "Host" : "Server";
+            }
+            return $"Client-{networkManager.LocalClientId}";
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the <see cref="NetworkObject"/> with the given identifier.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObjectId">The identifier of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, ulong networkObjectId)
+        {
+            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"{GetDisplayName(networkManager)} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
+            return networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the given <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObject">Any instance of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            return GetManagersInstance(networkManager, networkObject.NetworkObjectId);
+        }
+
+        /// <summary>
         /// Contains each client relative set of player NetworkObject instances
         /// [Client Relative set of player instances][The player instance ClientId][The player instance's NetworkObject]
         /// Example:
@@ -1876,6 +1916,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ComponentFactory.Deregister<IRealTimeProvider>();
             }
 
+#if UNIFIED_NETCODE
+            // A test that takes its HostOrServer as a method parameter sets m_AllPrefabsAsHybrid from the test
+            // body, but SetUp runs before that: without this the next case creates a hybrid prefab nobody asked
+            // for, and the server start sweep rejects it as an unregistered NetworkObject.
+            m_AllPrefabsAsHybrid = m_FixtureAllPrefabsAsHybrid;
+#endif
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
@@ -2515,6 +2561,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
 #if UNIFIED_NETCODE
         protected bool m_AllPrefabsAsHybrid = false;
+
+        // What the fixture was constructed with, restored after every test case.
+        private bool m_FixtureAllPrefabsAsHybrid;
 #endif
 
         /// <summary>
@@ -2880,6 +2929,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
             m_AllPrefabsAsHybrid = (hostOrServer == HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+            m_FixtureAllPrefabsAsHybrid = m_AllPrefabsAsHybrid;
             // If this is a hybrid prefab test case and the environment variable to run the unified tests
             // is set, then perform the m_UseUnifiedTests check.
             if (m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())

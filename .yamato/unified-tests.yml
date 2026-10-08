@@ -34,7 +34,7 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor --arch {{ platform.architecture }}
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:

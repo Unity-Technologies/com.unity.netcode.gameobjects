@@ -1408,12 +1408,32 @@ namespace Unity.Netcode
                 Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetcodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (NetcodeConfig.Global.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
+            if (HybridNetcodeDefaults.IsMissingRequired(NetcodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetcodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetcodeConfig)} cannot be used in hybrid mode: {reason}.").AddTag("Unified"));
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Invoked before creating the world for a hybrid mode session to assure the required NetcodeConfig settings are applied.
+        /// </summary>
+        /// <remarks>
+        /// Netcode for Entities copies the config into its world singletons once, at world creation, so this is the
+        /// point where it takes effect. This occurs during runtime to avoid modification of the NetcodeConfig asset.
+        /// </remarks>
+        private void UnifiedApplyNetcodeConfig()
+        {
+            if (HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
+            }
+
+            if (NetworkConfig.AutoConfigureSnapshotSize && HybridNetcodeDefaults.ApplySnapshotPacketSize(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} snapshot packet size has been set to {HybridNetcodeDefaults.SnapshotPacketSize}. Disable {nameof(NetworkConfig)}.{nameof(NetworkConfig.AutoConfigureSnapshotSize)} to manage it yourself.").AddTag("Unified"));
+            }
         }
 #endif
 
@@ -1458,6 +1478,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 if (LogLevel <= LogLevel.Developer)
                 {
                     Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
@@ -1537,6 +1558,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
@@ -1611,6 +1633,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
