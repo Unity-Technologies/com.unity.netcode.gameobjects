@@ -342,6 +342,46 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets the name of the given <see cref="NetworkManager"/> to use in assertion messages:
+        /// - Dedicated server: "Server"
+        /// - Host: "Host"
+        /// - Client: "Client-" followed by its <see cref="NetworkManager.LocalClientId"/>
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the name of</param>
+        /// <returns>The name of the <paramref name="networkManager"/></returns>
+        protected string GetDisplayName(NetworkManager networkManager)
+        {
+            if (networkManager.IsServer)
+            {
+                return networkManager.IsHost ? "Host" : "Server";
+            }
+            return $"Client-{networkManager.LocalClientId}";
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the <see cref="NetworkObject"/> with the given identifier.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObjectId">The identifier of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, ulong networkObjectId)
+        {
+            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"{GetDisplayName(networkManager)} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
+            return networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the given <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObject">Any instance of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            return GetManagersInstance(networkManager, networkObject.NetworkObjectId);
+        }
+
+        /// <summary>
         /// Contains each client relative set of player NetworkObject instances
         /// [Client Relative set of player instances][The player instance ClientId][The player instance's NetworkObject]
         /// Example:
@@ -860,7 +900,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
                 if (networkManager.NetcodeWorld == ghost.World)
                 {
-                    networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    // Like GhostSpawnManager.RegisterGhostBridge, only clients wait for a ghost. Registering the server's
+                    // own instance moved it into the DontDestroyOnLoad scene on a dedicated server, which every client
+                    // was then told about.
+                    if (!networkManager.IsServer)
+                    {
+                        networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    }
                     return;
                 }
             }
@@ -2565,7 +2611,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
         private bool m_HybridPrefabCreated;
-        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
+        internal GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
         {
             m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
@@ -2590,13 +2636,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Initialize it as a prefab
             adapter.InitializeAsPrefab();
 
-            // TODO: This might be part of the CreateHybridPrefab parameters
-            // For now, just use normal interpolation until we get integration
-            // tests running.
-            // Once we have validated prediction works and have a working manual
-            // test, we can circle back to this (possibly make that a sub-task
-            // with the dependency to prediction manual test).
-            adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            if (ghostMode == GhostMode.Interpolated)
+            {
+                adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            }
+            else
+            {
+                adapter.SupportedGhostModes = GhostModeMask.All;
+                adapter.DefaultGhostMode = ghostMode;
+                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
+            }
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);

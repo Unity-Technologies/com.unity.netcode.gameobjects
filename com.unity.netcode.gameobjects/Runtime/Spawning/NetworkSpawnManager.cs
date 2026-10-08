@@ -591,6 +591,12 @@ namespace Unity.Netcode
 
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
+#if UNIFIED_NETCODE
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, clientId);
+            }
+#endif
 
             // Notify lost ownership, update the ownership, then notify gained ownership for the network behaviours
             networkObject.InvokeBehaviourOnOwnershipChanged(originalOwner, clientId);
@@ -1302,6 +1308,13 @@ namespace Unity.Netcode
             }
 
             networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
+#if UNIFIED_NETCODE
+            // Before OnNetworkSpawn, so owner-specific initialization sees the ghost owner too.
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, ownerClientId);
+            }
+#endif
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);

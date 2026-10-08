@@ -9,22 +9,27 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// TODO-UNIFIED: Needs further peer review and exploring alternate ways of handling this.
     /// This is a component that is added to the root of all N4E-spawned hybrid prefab instances. It is used to link
     /// <see cref="NetworkObject.SerializedObject"/> the N4E-spawned hybrid prefab instances to the incoming <see cref="CreateObjectMessage"/>
     /// specific to the N4E-spawned hybrid prefab instance that has the matching <see cref="NetworkObjectId"/>.
     /// </summary>
 
     [DefaultExecutionOrder(GhostObject.ExecutionOrder + 1)]
-    //BREAK --- Fix this on UNIFIED side 1st
-    // Internal: GhostBehaviour is only public when NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, and a public
-    // type cannot derive from an internal one.
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
-        // DefaultExecutionOrder
-        // TODO: Define a const for the value used on GhostObject and use that value
-        // to set the execution order so if it changes on GhostObject it updates here.
 #if UNITY_EDITOR
+        private void Reset()
+        {
+            // Start users with just interpolation (they can adjust this if they want prediction)
+            // to make the initial transition less problematic for users.
+            // Only set when the bridge is first added, so a user's prediction setting is kept.
+            var ghostAdapter = GetComponent<GhostObject>();
+            if (ghostAdapter != null)
+            {
+                ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            }
+        }
+
         private void OnValidate()
         {
             hideFlags = HideFlags.HideInInspector;
@@ -34,10 +39,6 @@ namespace Unity.Netcode
             {
                 return;
             }
-
-            // Start users with just interpolation (they can adjust this if they want prediction)
-            // to make the initial transition less problematic for users.
-            ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
 
 #if COM_UNITY_MODULES_PHYSICS
             var rigidBody = GetComponent<Rigidbody>();
@@ -87,6 +88,41 @@ namespace Unity.Netcode
         internal void ApplyScale(Vector3 scale)
         {
             Ghost.ApplyPostTransformMatrixScale(scale);
+        }
+
+        /// <summary>
+        /// Keeps the ghost's owner in step with the <see cref="NetworkObject"/> owner, so an owner-predicted
+        /// ghost is predicted by the NGO owner.
+        /// </summary>
+        /// <remarks>Only the server can assign a ghost owner; N4E replicates it to clients.</remarks>
+        /// <param name="networkManager">The server's <see cref="NetworkManager"/>.</param>
+        /// <param name="ownerClientId">The new NGO owner.</param>
+        internal void UpdateGhostOwner(NetworkManager networkManager, ulong ownerClientId)
+        {
+            if (!networkManager.IsServer || !Ghost.HasOwner)
+            {
+                return;
+            }
+
+            // Owned by the server with no local client means no client owns the ghost.
+            var ownerNetworkId = default(NetworkId);
+            if (ownerClientId == networkManager.LocalClientId)
+            {
+                if (networkManager.IsHost && networkManager.NetcodeWorld != null)
+                {
+                    ownerNetworkId = networkManager.NetcodeWorld.LocalConnection.NetworkId;
+                }
+            }
+            else
+            {
+                // The unified transport id is the client's N4E network id.
+                var (transportId, found) = networkManager.ConnectionManager.ClientIdToTransportId(ownerClientId);
+                if (found)
+                {
+                    ownerNetworkId = new NetworkId { Value = (int)transportId };
+                }
+            }
+            Ghost.OwnerNetworkId = ownerNetworkId;
         }
     }
 
