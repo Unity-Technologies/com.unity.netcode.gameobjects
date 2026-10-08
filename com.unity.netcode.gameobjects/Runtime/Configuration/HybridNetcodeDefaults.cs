@@ -35,7 +35,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            // Both are written because you can set NetworkTickRate to 0 which N4E would then use SimulationTickRate. 
+            // Both are written because you can set NetworkTickRate to 0 which N4E would then use SimulationTickRate.
             // Keeping both locked in at NGO's tick rate (runtime only) assures there can be no deviation.
             config.ClientServerTickRate.SimulationTickRate = rate;
             config.ClientServerTickRate.NetworkTickRate = rate;
