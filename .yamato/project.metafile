@@ -44,7 +44,7 @@ test_platforms:
           flavor: b1.large
           standalone: StandaloneLinux64
           architecture: x64
-          coreclr_component: linux-coreclr # This component is only needed for 6000.7 editor where CoreCLR is not yet the default
+          # no coreclr_component: unity-downloader-cli has no Linux CoreCLR player for 6000.7, so those coreclr jobs are skipped
     desktop:
         - name: ubuntu
           type: Unity::VM
@@ -54,7 +54,7 @@ test_platforms:
           larger_flavor: b1.xlarge
           standalone: StandaloneLinux64
           architecture: x64
-          coreclr_component: linux-coreclr # This component is only needed for 6000.7 editor where CoreCLR is not yet the default
+          # no coreclr_component: unity-downloader-cli has no Linux CoreCLR player for 6000.7, so those coreclr jobs are skipped
         - name: win
           type: Unity::VM
           image: package-ci/win10:v4
@@ -95,7 +95,7 @@ test_platforms:
           larger_flavor: m1.mac
           standalone: IOS
           base: mac
-          architecture: arm64
+          architecture: x64 # package-ci/macos-13:v4 without a model is an Intel VM
           target_architecture: arm64
     mobile_test:
         - name: android
@@ -208,11 +208,11 @@ validation_editors:
         - trunk
     all:
         - 6000.7
-        - dfdad7ed5522da345003b66ed78dc5e725357037
+        - d10b18af948ab4eec1d5a72341d5243157a0dd72
         - trunk
     standards:
         - 6000.7.0b1
-    pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
+    pinnedTrunk:  d10b18af948ab4eec1d5a72341d5243157a0dd72
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
@@ -229,12 +229,12 @@ mono_editors:
 # Editors whose desktop players support CoreCLR (experimental in 6000.7)
 coreclr_editors:
   - 6000.7
-  - dfdad7ed5522da345003b66ed78dc5e725357037
+  - d10b18af948ab4eec1d5a72341d5243157a0dd72
   - trunk
 
 # Editors that themselves run on CoreCLR instead of Mono, so editor and in-editor playmode tests run on CoreCLR
 coreclr_runtime_editors:
-  - dfdad7ed5522da345003b66ed78dc5e725357037
+  - d10b18af948ab4eec1d5a72341d5243157a0dd72
   - trunk
 
 

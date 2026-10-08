@@ -34,6 +34,7 @@
 {% assign supported = true -%}
 {% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if supported -%}
 cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : CMB Service Test - NGO {{ project.name }} - [{{ platform.name }}, {{ platform.architecture }}, {{ editor }}, {{ backend }}]

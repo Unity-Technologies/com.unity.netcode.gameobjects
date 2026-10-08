@@ -36,6 +36,7 @@
 {% assign supported = true -%}
 {% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if supported -%}
 desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ platform.architecture }}, {{ editor }}, {{ backend }}]
@@ -76,6 +77,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% assign supported = true -%}
 {% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
 {% if supported -%}
 desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ platform.architecture }}, {{ editor }}, {{ backend }}]
