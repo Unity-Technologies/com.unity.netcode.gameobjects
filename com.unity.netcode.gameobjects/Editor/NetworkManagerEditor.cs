@@ -207,6 +207,12 @@ namespace Unity.Netcode.GameObjects.Editor
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();
 
+#if UNIFIED_NETCODE
+                EditorGUILayout.LabelField("Hybrid Settings", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_AutoConfigureSnapshotSizeProperty);
+                EditorGUILayout.Space();
+#endif
+
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
@@ -230,9 +236,7 @@ namespace Unity.Netcode.GameObjects.Editor
                     }
                 }
                 EditorGUILayout.PropertyField(m_TickRateProperty);
-#if UNIFIED_NETCODE
-                EditorGUILayout.PropertyField(m_AutoConfigureSnapshotSizeProperty);
-#endif
+
                 EditorGUILayout.PropertyField(m_SpawnTimeOutProperty);
                 EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
                 if (m_NetworkManager.NetworkConfig.ConnectionApproval)
