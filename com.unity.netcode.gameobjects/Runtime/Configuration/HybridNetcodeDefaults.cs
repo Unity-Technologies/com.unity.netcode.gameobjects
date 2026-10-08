@@ -6,30 +6,25 @@ using NetcodeConfig = Unity.NetCode.NetCodeConfig;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// The <see cref="NetcodeConfig"/> values NGO drives when running in hybrid mode (i.e. Netcode for Entities is
-    /// installed and a registered network prefab carries a <see cref="GhostObject"/>).
+    /// This handles applying two <see cref="NetcodeConfig"/> settings NGO requires and an optional recommended snapshot size when running in hybrid mode.
     /// </summary>
     /// <remarks>
-    /// This lives in the runtime assembly rather than the editor one because <see cref="NetcodeConfig.HostWorldModeSelection"/>
-    /// is internal to Netcode for Entities, and Unity.Netcode.Runtime is the only NGO assembly it grants InternalsVisibleTo to.
-    /// Nothing is written to the asset on disk: <see cref="NetworkManager"/> writes the in-memory config just before
-    /// world creation, and Netcode for Entities seeds its world singletons from it at that point.
+    /// This intentionally does not modify the <see cref="NetcodeConfig"/> asset to preserve the default settings and/or any user adjustments other than the ones required.
     /// </remarks>
     internal static class HybridNetcodeDefaults
     {
         // A hybrid ghost costs ~4.87 bytes per snapshot, so this carries ~840 of them at the full tick rate, which
-        // covers the 200-1000 moving instances projects typically run. A cap and not a cost: below that count the
-        // snapshot never reaches it. N4E's own default is one MTU, which round-robins above ~230 ghosts.
+        // covers the 200-1000 moving instances projects typically run. The default MTU size will round-robin at around ~230 instances.
         internal const int SnapshotPacketSize = 4096;
 
         /// <summary>
-        /// Drives N4E's tick rates from <see cref="NetworkConfig.TickRate"/>.
+        /// Assures N4E's tick rate matches NGO's <see cref="NetworkConfig.TickRate"/> setting.
         /// </summary>
         /// <remarks>
         /// Not cosmetic: NGO's own send queues are flushed by a system in N4E's SimulationSystemGroup, which steps at
         /// SimulationTickRate, so a rate below <see cref="NetworkConfig.TickRate"/> starves NGO's outbound traffic.
         /// </remarks>
-        /// <param name="config">The config to correct.</param>
+        /// <param name="config">The configuration to determine if NGO's tick rate should be applied.</param>
         /// <param name="tickRate">The owning <see cref="NetworkManager"/>'s configured tick rate.</param>
         /// <returns>True if anything changed.</returns>
         internal static bool ApplyTickRate(NetcodeConfig config, uint tickRate)
@@ -40,8 +35,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            // Both are written: leaving NetworkTickRate at 0 would track SimulationTickRate anyway, but writing it
-            // keeps the two visibly locked in the inspector.
+            // Both are written because you can set NetworkTickRate to 0 which N4E would then use SimulationTickRate. 
+            // Keeping both locked in at NGO's tick rate (runtime only) assures there can be no deviation.
             config.ClientServerTickRate.SimulationTickRate = rate;
             config.ClientServerTickRate.NetworkTickRate = rate;
             return true;
@@ -64,11 +59,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Reports the first required setting that is still wrong, for the runtime start-up check.
+        /// Determines if the NetcodeConfig about to be used to start a session meets the required settings.
         /// </summary>
-        /// <param name="config">The config to inspect.</param>
+        /// <param name="config">The config to check.</param>
         /// <param name="reason">Populated with a user-facing description of what is wrong.</param>
-        /// <returns>True when <paramref name="config"/> cannot support hybrid mode as-is.</returns>
+        /// <returns>True when <paramref name="config"/> is not configured correctly.</returns>
         internal static bool IsMissingRequired(NetcodeConfig config, out string reason)
         {
             if (config.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
