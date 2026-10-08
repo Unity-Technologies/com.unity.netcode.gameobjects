@@ -11,7 +11,6 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(ApprovalTimedOutTypes.ClientDoesNotRequest)]
 #if UNIFIED_NETCODE
     [TestFixture(ApprovalTimedOutTypes.ServerDoesNotRespond, HostOrServer.UnifiedHost)]
-    [TestFixture(ApprovalTimedOutTypes.ClientDoesNotRequest, HostOrServer.UnifiedHost)]
 #endif
     internal class ConnectionApprovalTimeoutTests : NetcodeIntegrationTest
     {
@@ -36,6 +35,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ApprovalFailureType = approvalFailureType;
         }
 
+        // ClientDoesNotRequest has no hybrid case: the server tears the connection down before Netcode for
+        // Entities transmits its disconnect reason. Restore the fixture with the fix.
         protected override bool UseUnifiedTests()
         {
             return true;

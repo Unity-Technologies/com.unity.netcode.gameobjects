@@ -63,11 +63,9 @@ namespace Unity.Netcode
             }
 
             AutoConnectPort = Port;
-            if (base.Initialize(defaultWorldName))
-            {
-                Debug.LogError($"[{nameof(UnifiedBootstrap)}] Auto-bootstrap is enabled!!! This will break the POC!");
-                return true;
-            }
+
+            // NetworkManager owns world creation here, so base.Initialize is deliberately not called: it would
+            // let Netcode for Entities create worlds this bootstrap then has to reject.
 
             if (networkManager != null)
             {
