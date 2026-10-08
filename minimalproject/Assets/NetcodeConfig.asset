@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: NetcodeConfig
   m_EditorClassIdentifier: Unity.NetCode::Unity.NetCode.NetCodeConfig
   IsGlobalConfig: 1
-  EnableClientServerBootstrap: 1
+  EnableClientServerBootstrap: 0
   ClientServerTickRate:
     SimulationTickRate: 60
     PredictedFixedStepSimulationTickRatio: 1
