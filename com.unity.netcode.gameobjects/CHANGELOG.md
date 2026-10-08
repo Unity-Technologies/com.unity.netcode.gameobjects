@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Renamed the Editor assembly definition files to match their assembly names. Assembly names and GUIDs are unchanged. (#4187)
+
 ### Deprecated
 
 ### Removed
