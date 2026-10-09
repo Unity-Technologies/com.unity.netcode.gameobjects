@@ -12,10 +12,10 @@ namespace Unity.Netcode
     /// NetworkManager during initialization.
     /// </summary>
     /// <remarks>
-    /// Only <see cref="NetworkManager"/> creates it, and only for a session with hybrid prefabs. Without the attribute,
-    /// Entities would pick it as the startup bootstrap for every project, replacing Netcode for Entities' own.
+    /// Entities picks this as the startup bootstrap, which only creates a local world. Do not add
+    /// [DisableBootstrapOverrides]: Netcode for Entities' own bootstrap would then run and, unless automatic
+    /// bootstrapping is disabled, create a host world that holds the port a hybrid session listens on.
     /// </remarks>
-    [DisableBootstrapOverrides]
     internal class UnifiedBootstrap : ClientServerBootstrap
     {
         public static UnifiedBootstrap Instance { get; private set; }
