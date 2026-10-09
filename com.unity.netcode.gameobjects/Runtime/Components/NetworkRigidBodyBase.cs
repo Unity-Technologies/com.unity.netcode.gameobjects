@@ -289,7 +289,10 @@ namespace Unity.Netcode.Components
             }
 
             // Clears any registration left behind by a prior Initialize call.
-            NetworkTransform?.UnregisterRigidbody();
+            if (NetworkTransform)
+            {
+                NetworkTransform.UnregisterRigidbody();
+            }
 
             m_OriginalKinematicState = IsKinematic();
             return true;
