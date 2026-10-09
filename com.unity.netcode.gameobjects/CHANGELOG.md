@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
+- Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
+
 ### Changed
 
 - Renamed the Editor assembly definition files to match their assembly names. Assembly names and GUIDs are unchanged. (#4187)
@@ -24,6 +27,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server. (#4176)
 - Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
 - Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
+- Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
+- Issue where a hybrid mode session failed to start unless `NetcodeConfig.EnableClientServerBootstrap` was set to `DisableAutomaticBootstrap`. Netcode for GameObjects creates the world itself and no longer needs that setting changed. (#4144)
 
 ### Security
 
