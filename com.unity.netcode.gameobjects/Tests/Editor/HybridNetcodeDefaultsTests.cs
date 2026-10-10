@@ -1,8 +1,5 @@
 #if UNIFIED_NETCODE
 using NUnit.Framework;
-#if !UNIFIED_NETCODE_7_0_0
-using NetcodeConfig = Unity.NetCode.NetCodeConfig;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode.GameObjects.EditorTests

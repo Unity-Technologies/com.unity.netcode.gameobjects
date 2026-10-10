@@ -289,7 +289,7 @@ namespace Unity.Netcode.Components
             }
 
             // Clears any registration left behind by a prior Initialize call.
-            if (NetworkTransform != null)
+            if (NetworkTransform)
             {
                 NetworkTransform.UnregisterRigidbody();
             }

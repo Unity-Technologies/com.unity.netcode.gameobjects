@@ -37,8 +37,8 @@
         },
         {
             "name": "com.unity.netcode",
-            "expression": "7.0.0",
-            "define": "UNIFIED_NETCODE_7_0_0"
+            "expression": "7.2.0",
+            "define": "UNIFIED_NETCODE"
         },
         {
             "name": "Unity",
