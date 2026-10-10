@@ -323,7 +323,73 @@ namespace Unity.Netcode.Components
 
         private readonly Dictionary<int, AnimatorControllerParameter> m_ParameterToNameLookup = new Dictionary<int, AnimatorControllerParameter>();
 
-        private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
+        private void AddTransitionStateInfo(int layerIndex, AnimatorState originatingState, AnimatorState destinationState, AnimatorStateTransition transition, AnimatorControllerParameter parameter, int transitionIndex)
+        {
+            var transitionInfo = new TransitionStateInfo()
+            {
+                Layer = layerIndex,
+                OriginatingState = originatingState.nameHash,
+                DestinationState = destinationState.nameHash,
+                TransitionDuration = transition.duration,
+                TriggerNameHash = parameter.nameHash,
+                TransitionIndex = transitionIndex
+            };
+            TransitionStateInfoList.Add(transitionInfo);
+        }
+
+        private void AddStateMachineDestinations(int layerIndex, AnimatorState originatingState, AnimatorStateMachine destinationStateMachine, AnimatorStateTransition transition,
+            AnimatorControllerParameter parameter, int transitionIndex, HashSet<AnimatorStateMachine> visitedStateMachines)
+        {
+            if (!visitedStateMachines.Add(destinationStateMachine))
+            {
+                return;
+            }
+
+            if (destinationStateMachine.defaultState != null)
+            {
+                AddTransitionStateInfo(layerIndex, originatingState, destinationStateMachine.defaultState, transition, parameter, transitionIndex);
+            }
+
+            foreach (var entryTransition in destinationStateMachine.entryTransitions)
+            {
+                if (entryTransition.destinationState != null)
+                {
+                    AddTransitionStateInfo(layerIndex, originatingState, entryTransition.destinationState, transition, parameter, transitionIndex);
+                }
+                else if (entryTransition.destinationStateMachine != null)
+                {
+                    AddStateMachineDestinations(layerIndex, originatingState, entryTransition.destinationStateMachine, transition, parameter, transitionIndex, visitedStateMachines);
+                }
+            }
+        }
+
+        private void AddExitTransitionStateInfo(int layerIndex, AnimatorState originatingState, AnimatorStateMachine exitingStateMachine, AnimatorStateTransition transition,
+            AnimatorControllerParameter parameter, int transitionIndex, List<AnimatorStateMachine> parentStateMachines, int parentIndex)
+        {
+            if (parentIndex < 0)
+            {
+                return;
+            }
+
+            var parentStateMachine = parentStateMachines[parentIndex];
+            foreach (var stateMachineTransition in parentStateMachine.GetStateMachineTransitions(exitingStateMachine))
+            {
+                if (stateMachineTransition.destinationState != null)
+                {
+                    AddTransitionStateInfo(layerIndex, originatingState, stateMachineTransition.destinationState, transition, parameter, transitionIndex);
+                }
+                else if (stateMachineTransition.destinationStateMachine != null)
+                {
+                    AddStateMachineDestinations(layerIndex, originatingState, stateMachineTransition.destinationStateMachine, transition, parameter, transitionIndex, new HashSet<AnimatorStateMachine>());
+                }
+                else if (stateMachineTransition.isExit)
+                {
+                    AddExitTransitionStateInfo(layerIndex, originatingState, parentStateMachine, transition, parameter, transitionIndex, parentStateMachines, parentIndex - 1);
+                }
+            }
+        }
+
+        private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine, List<AnimatorStateMachine> parentStateMachines = null)
         {
             for (int y = 0; y < stateMachine.states.Length; y++)
             {
@@ -355,25 +421,15 @@ namespace Unity.Netcode.Components
                             {
                                 case AnimatorControllerParameterType.Trigger:
                                     {
-                                        if (transition.destinationStateMachine != null)
+                                        if (transition.destinationState != null)
                                         {
-                                            var destinationStateMachine = transition.destinationStateMachine;
-                                            ParseStateMachineStates(layerIndex, ref animatorController, ref destinationStateMachine);
+                                            AddTransitionStateInfo(layerIndex, animatorState, transition.destinationState, transition, parameter, z);
                                         }
-                                        else if (transition.destinationState != null)
+                                        else if (transition.isExit)
                                         {
-                                            var transitionInfo = new TransitionStateInfo()
-                                            {
-                                                Layer = layerIndex,
-                                                OriginatingState = animatorState.nameHash,
-                                                DestinationState = transition.destinationState.nameHash,
-                                                TransitionDuration = transition.duration,
-                                                TriggerNameHash = parameter.nameHash,
-                                                TransitionIndex = z
-                                            };
-                                            TransitionStateInfoList.Add(transitionInfo);
+                                            AddExitTransitionStateInfo(layerIndex, animatorState, stateMachine, transition, parameter, z, parentStateMachines, parentStateMachines != null ? parentStateMachines.Count - 1 : -1);
                                         }
-                                        else
+                                        else if (transition.destinationStateMachine == null)
                                         {
                                             Debug.LogError($"[{name}][Conditional Transition for {animatorState.name}] Conditional triggered transition has neither a DestinationState nor a DestinationStateMachine! This transition is not likely to synchronize properly. " +
                                                 $"Please file a GitHub issue about this error with details about your Animator's setup.");
@@ -386,6 +442,14 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
+            }
+
+            var childStateMachineParents = parentStateMachines != null ? new List<AnimatorStateMachine>(parentStateMachines) : new List<AnimatorStateMachine>();
+            childStateMachineParents.Add(stateMachine);
+            foreach (var childStateMachine in stateMachine.stateMachines)
+            {
+                var nestedStateMachine = childStateMachine.stateMachine;
+                ParseStateMachineStates(layerIndex, ref animatorController, ref nestedStateMachine, childStateMachineParents);
             }
         }
 
