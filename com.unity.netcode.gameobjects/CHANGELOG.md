@@ -10,16 +10,35 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [3.1.1] - 2026-10-11
+
+### Added
+
 - Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
 - Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
 
 ### Changed
 
 - Renamed the Editor assembly definition files to match their assembly names. Assembly names and GUIDs are unchanged. (#4187)
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -29,10 +48,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
 - Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
 - Issue where a hybrid mode session failed to start unless `NetcodeConfig.EnableClientServerBootstrap` was set to `DisableAutomaticBootstrap`. Netcode for GameObjects creates the world itself and no longer needs that setting changed. (#4144)
-
-### Security
-
-### Obsolete
 
 ## [3.1.0] - 2026-10-04
 
