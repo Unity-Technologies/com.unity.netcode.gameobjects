@@ -1,7 +1,4 @@
 #if UNIFIED_NETCODE
-#if !UNIFIED_NETCODE_7_0_0
-using NetcodeConfig = Unity.NetCode.NetCodeConfig;
-#endif
 
 namespace Unity.Netcode
 {

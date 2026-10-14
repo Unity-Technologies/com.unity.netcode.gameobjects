@@ -1,13 +1,7 @@
-#if UNIFIED_NETCODE && !NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL
-#error UNIFIED_NETCODE also requires NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL: Netcode for Entities keeps its GameObject bridge (GhostObject, GhostBehaviour, GhostField) internal until that define is set.
-#endif
 #if UNIFIED_NETCODE
 using System;
 using System.Collections.Generic;
 using Unity.Entities;
-#if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -17,6 +11,11 @@ namespace Unity.Netcode
     /// Handles the bootstrap process for both client and server in unified mode. This is used to create the world and set it on the
     /// NetworkManager during initialization.
     /// </summary>
+    /// <remarks>
+    /// Entities picks this as the startup bootstrap, which only creates a local world. Do not add
+    /// [DisableBootstrapOverrides]: Netcode for Entities' own bootstrap would then run and, unless automatic
+    /// bootstrapping is disabled, create a host world that holds the port a hybrid session listens on.
+    /// </remarks>
     internal class UnifiedBootstrap : ClientServerBootstrap
     {
         public static UnifiedBootstrap Instance { get; private set; }

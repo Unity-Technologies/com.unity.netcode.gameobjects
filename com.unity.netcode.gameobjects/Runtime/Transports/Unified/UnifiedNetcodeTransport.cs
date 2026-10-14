@@ -1,4 +1,4 @@
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
 using System;
 using System.Collections.Generic;
 using Unity.Burst;
@@ -6,10 +6,6 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-#if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-using NetcodeConnectionEvent = Unity.NetCode.NetCodeConnectionEvent;
-#endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -168,7 +164,7 @@ namespace Unity.Netcode.Unified
             NetworkManager.MessageManager.ProcessSendQueues();
 
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach(var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
+            foreach (var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
             {
                 var connectionId = networkId.ValueRO.Value;
                 DynamicBuffer<TransportRpcData> rpcs = EntityManager.GetBuffer<TransportRpcData>(entity);
@@ -179,7 +175,7 @@ namespace Unity.Netcode.Unified
                     {
                         Transport.DispatchMessage(connectionId, buffer);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Debug.LogException(e);
                     }
@@ -492,7 +488,7 @@ namespace Unity.Netcode.Unified
 
         public override void Shutdown()
         {
-            var netcodeWorld = m_NetworkManager != null ? m_NetworkManager.NetcodeWorld : null;
+            var netcodeWorld = m_NetworkManager ? m_NetworkManager.NetcodeWorld : null;
             if (netcodeWorld != null)
             {
                 netcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;

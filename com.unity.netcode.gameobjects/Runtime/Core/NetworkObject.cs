@@ -7,9 +7,6 @@ using System.Text;
 using Unity.Netcode.Components;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
-#if UNIFIED_NETCODE && !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 
 #if UNITY_EDITOR
 using UnityEditor;

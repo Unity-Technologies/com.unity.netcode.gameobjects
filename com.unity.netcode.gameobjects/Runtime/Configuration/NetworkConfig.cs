@@ -404,11 +404,13 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
         /// <summary>
-        /// Registers any prefab list assigned after Awake, and returns false for a distributed authority session with a hybrid prefab registered.
+        /// Registers any prefab list assigned after Awake and the <see cref="PlayerPrefab"/>, and returns false for a distributed authority session with a hybrid prefab registered.
         /// </summary>
-        internal bool InitializePrefabsForStart()
+        internal bool InitializePrefabsForStart(NetworkPrefabHandler prefabHandler)
         {
             InitializePrefabs();
+            // A player prefab outside the prefab lists still decides hybrid mode, so it is registered before the session starts.
+            prefabHandler.RegisterPlayerPrefab();
             return NetworkTopology != NetworkTopologyTypes.DistributedAuthority || Prefabs.ValidateForDistributedAuthority();
         }
 #endif

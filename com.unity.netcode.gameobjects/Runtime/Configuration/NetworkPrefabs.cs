@@ -173,7 +173,7 @@ namespace Unity.Netcode
                 list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
             }
 #if UNIFIED_NETCODE
-            m_RejectGhostPrefabs = false;
+            m_GhostPrefabRejection = null;
 #endif
         }
 
@@ -367,18 +367,20 @@ namespace Unity.Netcode
 
 #if UNIFIED_NETCODE
         internal const string DistributedAuthorityHybridPrefabError = "Distributed authority does not support hybrid prefabs.";
+        internal const string HybridPrefabAfterStartError = "Hybrid prefabs must be registered before the NetworkManager starts.";
 
         internal bool HasGhostPrefabs { get; private set; }
 
-        // Cleared in Shutdown.
-        private bool m_RejectGhostPrefabs;
+        // The error a hybrid prefab added during the session is rejected with, or null. Cleared in Shutdown.
+        private string m_GhostPrefabRejection;
 
         /// <summary>
-        /// A distributed authority session rejects hybrid prefabs added while it runs.
+        /// Hybrid mode is decided when the session starts. A distributed authority session, or one that started without
+        /// hybrid prefabs, rejects hybrid prefabs added while it runs.
         /// </summary>
         internal void OnSessionStarting(bool distributedAuthority)
         {
-            m_RejectGhostPrefabs = distributedAuthority;
+            m_GhostPrefabRejection = distributedAuthority ? DistributedAuthorityHybridPrefabError : HasGhostPrefabs ? null : HybridPrefabAfterStartError;
         }
 
         /// <summary>
@@ -426,9 +428,9 @@ namespace Unity.Netcode
             if (networkPrefab.HasGhost)
             {
                 // Registering a hybrid prefab mid-session would switch NetworkManager into hybrid mode and stop its send queue.
-                if (m_RejectGhostPrefabs)
+                if (m_GhostPrefabRejection != null)
                 {
-                    Debug.LogError($"{DistributedAuthorityHybridPrefabError} {networkPrefab.GetDebugName()} was not added.");
+                    Debug.LogError($"{m_GhostPrefabRejection} {networkPrefab.GetDebugName()} was not added.");
                     return false;
                 }
                 HasGhostPrefabs = true;
