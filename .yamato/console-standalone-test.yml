@@ -88,8 +88,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --arch {{ platform.architecture }}
-    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend=il2cpp --testproject={{ project.path }} --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
