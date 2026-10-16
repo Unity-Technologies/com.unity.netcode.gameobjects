@@ -260,8 +260,9 @@ namespace Unity.Netcode.GameObjects.Timing
                 return true;
             }
 
-            // Stop on the desired offset rather than step past it, or a converged clock alternates between running
-            // fast and slow by the whole ratio every frame, and everything rendered from it judders.
+            // Move each offset toward its target by at most AdjustmentRatio of this frame's delta, stopping once it gets there.
+            // Stepping the full amount every frame overshot the target, so a synced clock alternated between running fast and
+            // slow, and anything driven by it juddered.
             var maximumStep = deltaTimeSec * AdjustmentRatio;
             m_CurrentLocalTimeOffset += Math.Clamp(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset, -maximumStep, maximumStep);
             m_CurrentServerTimeOffset += Math.Clamp(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset, -maximumStep, maximumStep);

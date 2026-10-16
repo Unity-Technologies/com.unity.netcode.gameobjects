@@ -30,7 +30,7 @@ namespace Unity.Netcode.Components
     /// </summary>
     internal struct HybridNetworkManager : IComponentData
     {
-        public UnityObjectRef<NetworkManager> Value;
+        public UnityObjectRef<NetworkManager> NetworkManager;
     }
 
     // Created only in client and server worlds, and updated only in one a NetworkManager created for a hybrid session.
@@ -53,7 +53,9 @@ namespace Unity.Netcode.Components
         {
             var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().Value.Value;
+            var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().NetworkManager.Value;
+            // The world outlives its NetworkManager if ShutdownInternal throws before disposing it.
+            var isShuttingDown = !networkManager || networkManager.ShutdownInProgress || !networkManager.IsListening;
             foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
                 commandBuffer.RemoveComponent<ConnectionState>(entity);
@@ -85,7 +87,7 @@ namespace Unity.Netcode.Components
             }
 
             // If we have any pending connections
-            if (m_NewConnections.Count > 0)
+            if (!isShuttingDown && m_NewConnections.Count > 0)
             {
                 foreach (var entry in m_NewConnections)
                 {
@@ -112,7 +114,7 @@ namespace Unity.Netcode.Components
 
             // If the local NetworkManager is shutting down or no longer connected, then
             // make sure we have disconnected all known connections.
-            if (networkManager.ShutdownInProgress || !networkManager.IsListening)
+            if (isShuttingDown)
             {
                 foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
                 {

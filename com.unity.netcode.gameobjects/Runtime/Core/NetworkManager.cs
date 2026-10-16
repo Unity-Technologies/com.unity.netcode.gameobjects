@@ -1399,7 +1399,7 @@ namespace Unity.Netcode
             if (NetcodeWorld != null && NetcodeWorld.IsCreated)
             {
                 var entityManager = NetcodeWorld.EntityManager;
-                entityManager.AddComponentData(entityManager.CreateEntity(), new HybridNetworkManager { Value = this });
+                entityManager.AddComponentData(entityManager.CreateEntity(), new HybridNetworkManager { NetworkManager = this });
             }
         }
 
