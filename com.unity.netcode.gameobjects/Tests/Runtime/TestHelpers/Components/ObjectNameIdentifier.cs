@@ -81,17 +81,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <inheritdoc/>
-        public override void OnLostOwnership()
+        protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             DeRegisterNetworkObject();
             RegisterAndLabelNetworkObject();
-        }
-
-        /// <inheritdoc/>
-        public override void OnGainedOwnership()
-        {
-            DeRegisterNetworkObject();
-            RegisterAndLabelNetworkObject();
+            base.OnOwnershipChanged(previous, current);
         }
 
         /// <inheritdoc/>
