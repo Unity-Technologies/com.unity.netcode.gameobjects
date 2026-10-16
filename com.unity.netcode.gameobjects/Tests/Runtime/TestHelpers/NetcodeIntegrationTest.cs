@@ -2992,7 +2992,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-                if (scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName)) {
+                if (scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
+                {
                     testRunnerScene = scene;
                     continue;
                 }
