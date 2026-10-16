@@ -23,7 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where a client's `LocalTime` and `ServerTime` alternated every frame between running faster and slower than real time by `NetworkTimeSystem.AdjustmentRatio` once they reached the server's time, making interpolated objects judder at higher ratios.
+- Issue where a client's clock kept alternating between running slightly fast and slightly slow on every frame, even after it had synchronized with the server. Interpolated objects juddered (a periodic motion artifact caused by mismatched frame rates): they moved in uneven steps instead of smoothly. Barely noticeable at the default `NetworkTimeSystem.AdjustmentRatio`, and clearly visible at higher values.
 - Issue where the IL post-processor could not resolve core library types, such as `Guid` and `List<T>`, in assemblies compiled against .NET reference assemblies, for example when targeting .NET 10. Those split the core library across `System.Runtime`, `System.Collections` and other assemblies.
 - Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
 - Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`. (#4176)
