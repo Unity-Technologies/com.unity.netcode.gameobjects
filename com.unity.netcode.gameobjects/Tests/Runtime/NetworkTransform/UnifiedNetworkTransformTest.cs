@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Text;
 using NUnit.Framework;
+using Unity.Entities;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -99,6 +100,25 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidatePosition);
             AssertOnTimeout($"A client failed to synchronize the changed position: {GetVector3Values(newPos)}!");
             VerboseDebug("Test Passed!");
+        }
+
+        /// <summary>
+        /// Validates that each <see cref="NetworkManager"/>'s world updates the connections of that
+        /// <see cref="NetworkManager"/> alone.
+        /// </summary>
+        [Test]
+        public void EachWorldUpdatesConnectionsForItsOwnNetworkManager()
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var world = networkManager.NetcodeWorld;
+                Assert.IsNotNull(world, $"[Client-{networkManager.LocalClientId}] Has no world!");
+                Assert.IsNotNull(world.GetExistingSystemManaged<UnifiedUpdateConnections>(), $"[{world.Name}] Has no {nameof(UnifiedUpdateConnections)} system!");
+                using var query = world.EntityManager.CreateEntityQuery(typeof(HybridNetworkManager));
+                Assert.AreEqual(1, query.CalculateEntityCount(), $"[{world.Name}] Does not have exactly one {nameof(HybridNetworkManager)}!");
+                var bound = query.GetSingleton<HybridNetworkManager>().Value.Value;
+                Assert.AreSame(networkManager, bound, $"[{world.Name}] Is bound to another {nameof(NetworkManager)}!");
+            }
         }
     }
 }

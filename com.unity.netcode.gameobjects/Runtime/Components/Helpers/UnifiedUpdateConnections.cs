@@ -25,95 +25,100 @@ namespace Unity.Netcode.Components
         }
     }
 
+    /// <summary>
+    /// The <see cref="NetworkManager"/> a hybrid session's world was created for, as a singleton in that world.
+    /// </summary>
+    internal struct HybridNetworkManager : IComponentData
+    {
+        public UnityObjectRef<NetworkManager> Value;
+    }
+
+    // Created only in client and server worlds, and updated only in one a NetworkManager created for a hybrid session.
+    [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation)]
     internal partial class UnifiedUpdateConnections : SystemBase
     {
         private List<NetcodeConnection> m_TempConnections = new List<NetcodeConnection>();
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
 
-        // A copy of NetworkManager.Instances, which a callback below could change. Searching the scene for them
-        // instead costs time in proportion to every MonoBehaviour in it, every frame.
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
+        private EntityQuery m_HybridNetworkManagerQuery;
+
+        protected override void OnCreate()
+        {
+            m_HybridNetworkManagerQuery = GetEntityQuery(ComponentType.ReadOnly<HybridNetworkManager>());
+            RequireForUpdate(m_HybridNetworkManagerQuery);
+        }
 
         protected override void OnUpdate()
         {
             var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            m_NetworkManagers.Clear();
-            m_NetworkManagers.AddRange(NetworkManager.Instances);
-            foreach (var networkManager in m_NetworkManagers)
+            var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().Value.Value;
+            foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
-                if (networkManager == null || !networkManager.gameObject.activeInHierarchy)
+                commandBuffer.RemoveComponent<ConnectionState>(entity);
+                m_TempConnections.Add(new NetcodeConnection
                 {
-                    continue;
+                    World = World,
+                    Entity = entity,
+                    NetworkId = networkId.Value
+                });
+            }
+
+            foreach (var con in m_TempConnections)
+            {
+                NetworkManager.OnNetCodeDisconnect?.Invoke(con);
+            }
+
+            m_TempConnections.Clear();
+
+            // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
+            foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>()
+                         .WithNone<NetworkStreamInGame>().WithEntityAccess())
+            {
+                if (!m_NewConnections.ContainsKey(networkId.Value))
+                {
+                    var newConnection = new NetcodeConnection
+                    { World = World, Entity = entity, NetworkId = networkId.Value };
+                    m_NewConnections.Add(networkId.Value, newConnection);
+                }
+            }
+
+            // If we have any pending connections
+            if (m_NewConnections.Count > 0)
+            {
+                foreach (var entry in m_NewConnections)
+                {
+                    // Server: always connect
+                    // Client: wait until we have synchronized before announcing we are ready to receive snapshots
+                    if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
+                    {
+                        // Set the connection in-game
+                        commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
+                        commandBuffer.AddComponent(entry.Value.Entity, default(ConnectionState));
+                        NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
+                        m_TempConnections.Add(entry.Value);
+                    }
                 }
 
-                foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
+                // Remove any connections that have "gone in-game".
+                foreach (var connection in m_TempConnections)
+                {
+                    m_NewConnections.Remove(connection.NetworkId);
+                }
+            }
+
+            m_TempConnections.Clear();
+
+            // If the local NetworkManager is shutting down or no longer connected, then
+            // make sure we have disconnected all known connections.
+            if (networkManager.ShutdownInProgress || !networkManager.IsListening)
+            {
+                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);
-                    m_TempConnections.Add(new NetcodeConnection
-                    {
-                        World = World,
-                        Entity = entity,
-                        NetworkId = networkId.Value
-                    });
-                }
-
-                foreach (var con in m_TempConnections)
-                {
-                    NetworkManager.OnNetCodeDisconnect?.Invoke(con);
-                }
-
-                m_TempConnections.Clear();
-
-                // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
-                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>()
-                             .WithNone<NetworkStreamInGame>().WithEntityAccess())
-                {
-                    if (!m_NewConnections.ContainsKey(networkId.Value))
-                    {
-                        var newConnection = new NetcodeConnection
-                        { World = World, Entity = entity, NetworkId = networkId.Value };
-                        m_NewConnections.Add(networkId.Value, newConnection);
-                    }
-                }
-
-                // If we have any pending connections
-                if (m_NewConnections.Count > 0)
-                {
-                    foreach (var entry in m_NewConnections)
-                    {
-                        // Server: always connect
-                        // Client: wait until we have synchronized before announcing we are ready to receive snapshots
-                        if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
-                        {
-                            // Set the connection in-game
-                            commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
-                            commandBuffer.AddComponent(entry.Value.Entity, default(ConnectionState));
-                            NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
-                            m_TempConnections.Add(entry.Value);
-                        }
-                    }
-
-                    // Remove any connections that have "gone in-game".
-                    foreach (var connection in m_TempConnections)
-                    {
-                        m_NewConnections.Remove(connection.NetworkId);
-                    }
-                }
-
-                m_TempConnections.Clear();
-
-                // If the local NetworkManager is shutting down or no longer connected, then
-                // make sure we have disconnected all known connections.
-                if (networkManager.ShutdownInProgress || !networkManager.IsListening)
-                {
-                    foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
-                    {
-                        commandBuffer.RemoveComponent<ConnectionState>(entity);
-                        NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
-                        { World = World, Entity = entity, NetworkId = networkId.Value });
-                    }
+                    NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
+                    { World = World, Entity = entity, NetworkId = networkId.Value });
                 }
             }
             commandBuffer.Playback(EntityManager);

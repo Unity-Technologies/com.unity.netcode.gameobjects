@@ -44,7 +44,6 @@ namespace Unity.Netcode
         private static void ResetStaticsOnLoad()
         {
             Singleton = null;
-            Instances.Clear();
             OnInstantiated = null;
             OnDestroying = null;
             OnSingletonReady = null;
@@ -900,12 +899,6 @@ namespace Unity.Netcode
         /// </summary>
         public static NetworkManager Singleton { get; private set; }
 
-        /// <summary>
-        /// Every <see cref="NetworkManager"/> from <c>Awake</c> to <c>OnDestroy</c>, for code that has to visit them
-        /// all without searching the scene.
-        /// </summary>
-        internal static readonly List<NetworkManager> Instances = new List<NetworkManager>();
-
         internal static event Action OnSingletonReady;
 
         /// <summary>
@@ -1091,7 +1084,6 @@ namespace Unity.Netcode
 
         private void Awake()
         {
-            Instances.Add(this);
             if (Log == null)
             {
                 Log = new ContextualLogger(this, false);
@@ -1403,6 +1395,12 @@ namespace Unity.Netcode
             TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             new UnifiedBootstrap().Initialize("Default World");
+
+            if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+            {
+                var entityManager = NetcodeWorld.EntityManager;
+                entityManager.AddComponentData(entityManager.CreateEntity(), new HybridNetworkManager { Value = this });
+            }
         }
 
         /// <summary>
@@ -1979,7 +1977,6 @@ namespace Unity.Netcode
             {
                 Singleton = null;
             }
-            Instances.Remove(this);
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= ModeChanged;
 #endif
