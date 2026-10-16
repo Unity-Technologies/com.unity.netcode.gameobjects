@@ -61,7 +61,7 @@ cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}
     # run_cmb_service.sh builds and starts a release version of the full CMB service (along with the limited echo server)
     - ./Tools/CI/service.cmb/run_cmb_service.sh -e $ECHO_SERVER_PORT -s $CMB_SERVICE_PORT -l artifacts
 
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --extra-player-arg=-batchmode --extra-player-arg=-nographics --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:

@@ -90,7 +90,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
   commands:
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --extra-player-arg=-batchmode --extra-player-arg=-nographics --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
