@@ -64,6 +64,26 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManager.OnDestroying -= NetworkManager_OnDestroying;
         }
 
+        /// <summary>
+        /// Validates that <see cref="NetworkManager.Instances"/> holds each <see cref="NetworkManager"/> from Awake
+        /// until it is destroyed.
+        /// </summary>
+        [Test]
+        public void InstancesHoldsEachNetworkManagerUntilDestroyed()
+        {
+            var first = new GameObject("InstancesFirst").AddComponent<NetworkManager>();
+            var second = new GameObject("InstancesSecond").AddComponent<NetworkManager>();
+            Assert.IsTrue(NetworkManager.Instances.Contains(first), $"The first {nameof(NetworkManager)} is not in {nameof(NetworkManager.Instances)}!");
+            Assert.IsTrue(NetworkManager.Instances.Contains(second), $"The second {nameof(NetworkManager)} is not in {nameof(NetworkManager.Instances)}!");
+
+            Object.DestroyImmediate(first.gameObject);
+            Assert.IsFalse(NetworkManager.Instances.Contains(first), $"The destroyed {nameof(NetworkManager)} is still in {nameof(NetworkManager.Instances)}!");
+            Assert.IsTrue(NetworkManager.Instances.Contains(second), $"Destroying one {nameof(NetworkManager)} removed another from {nameof(NetworkManager.Instances)}!");
+
+            Object.DestroyImmediate(second.gameObject);
+            Assert.IsFalse(NetworkManager.Instances.Contains(second), $"The destroyed {nameof(NetworkManager)} is still in {nameof(NetworkManager.Instances)}!");
+        }
+
         private void NetworkManager_OnInstantiated(NetworkManager networkManager)
         {
             m_Instantiated = true;

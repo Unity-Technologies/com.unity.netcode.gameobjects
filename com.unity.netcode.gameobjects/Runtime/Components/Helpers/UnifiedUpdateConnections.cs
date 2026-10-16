@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
@@ -32,12 +31,23 @@ namespace Unity.Netcode.Components
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
 
+        // A copy of NetworkManager.Instances, which a callback below could change. Searching the scene for them
+        // instead costs time in proportion to every MonoBehaviour in it, every frame.
+        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
+
         protected override void OnUpdate()
         {
             var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var networkManager in Object.FindObjectsByType<NetworkManager>())
+            m_NetworkManagers.Clear();
+            m_NetworkManagers.AddRange(NetworkManager.Instances);
+            foreach (var networkManager in m_NetworkManagers)
             {
+                if (networkManager == null || !networkManager.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
                 foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);
