@@ -29,16 +29,16 @@ namespace Unity.Netcode
 
         // Every ClientServerBootstrap constructor clears N4E's ServerWorlds and ClientWorlds, and each NetworkManager
         // creates its own bootstrap, so the worlds created for other NetworkManagers are registered again.
-        private static readonly List<NetcodeWorld> s_CreatedWorlds = new List<NetcodeWorld>();
+        private static readonly List<NetcodeWorld> k_CreatedWorlds = new List<NetcodeWorld>();
 
         private static void RegisterCreatedWorlds()
         {
-            for (int i = s_CreatedWorlds.Count - 1; i >= 0; i--)
+            for (int i = k_CreatedWorlds.Count - 1; i >= 0; i--)
             {
-                var world = s_CreatedWorlds[i];
+                var world = k_CreatedWorlds[i];
                 if (!world.IsCreated)
                 {
-                    s_CreatedWorlds.RemoveAt(i);
+                    k_CreatedWorlds.RemoveAt(i);
                     continue;
                 }
                 // A single world host is registered as both a server and a client world, the same as N4E does.
@@ -94,7 +94,7 @@ namespace Unity.Netcode
                 }
 
                 networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
-                s_CreatedWorlds.Add(networkManager.NetcodeWorld);
+                k_CreatedWorlds.Add(networkManager.NetcodeWorld);
             }
             else
             {
