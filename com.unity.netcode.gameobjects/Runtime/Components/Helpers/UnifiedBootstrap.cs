@@ -71,8 +71,7 @@ namespace Unity.Netcode
                 RegisterCreatedWorlds();
                 Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
                 s_WorldCounter++;
-                LastCreatedWorld = networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}")
-                    : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+                LastCreatedWorld = CreateWorld(networkManager);
 
                 if (LastCreatedWorld == null)
                 {
@@ -104,6 +103,34 @@ namespace Unity.Netcode
             OnInitialized?.Invoke();
 
             return true;
+        }
+
+        /// <summary>
+        /// Creates the world a <see cref="NetworkManager"/> runs its hybrid session in.
+        /// </summary>
+        /// <remarks>
+        /// A server, host or not, runs in a single world host, except in a dedicated server build, where Netcode for
+        /// Entities cannot create a world that is also a client. A build for only one side cannot run a host.
+        /// </remarks>
+        private static World CreateWorld(NetworkManager networkManager)
+        {
+#if UNITY_SERVER && !UNITY_EDITOR
+            if (networkManager.IsClient)
+            {
+                Debug.LogError($"[{nameof(UnifiedBootstrap)}] A dedicated server build cannot start a {(networkManager.IsServer ? "host" : "client")} in hybrid mode.");
+                return null;
+            }
+            return CreateServerWorld($"ServerWorld-{s_WorldCounter}");
+#elif UNITY_CLIENT && !UNITY_EDITOR
+            if (networkManager.IsServer)
+            {
+                Debug.LogError($"[{nameof(UnifiedBootstrap)}] A client only build cannot start a {(networkManager.IsClient ? "host" : "server")} in hybrid mode. Set the Netcode for Entities client build target to ClientAndServer.");
+                return null;
+            }
+            return CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+#else
+            return networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}") : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+#endif
         }
 
         ~UnifiedBootstrap()
