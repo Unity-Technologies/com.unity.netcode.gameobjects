@@ -478,27 +478,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             try
             {
-                NetworkManager sessionAuthority = null;
-                // Shutdown clients first
+                // Shutdown the server which forces clients to disconnect
                 foreach (var networkManager in NetworkManagerInstances)
                 {
-                    if (networkManager.LocalClient.IsSessionOwner || networkManager.IsServer)
+                    if (networkManager != null && networkManager.IsListening)
                     {
-                        sessionAuthority = networkManager;
-                    }
-                    else
-                    {
-                        networkManager.Shutdown();
+                        networkManager?.Shutdown();
                         s_Hooks.Remove(networkManager);
                     }
-                }
-
-                // Shutdown the server/session owner last
-                // This avoids session owner election when running CMB tests
-                if (sessionAuthority != null)
-                {
-                    sessionAuthority.Shutdown();
-                    s_Hooks.Remove(sessionAuthority);
                 }
 
                 // Destroy the network manager instances
