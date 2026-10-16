@@ -260,8 +260,11 @@ namespace Unity.Netcode.GameObjects.Timing
                 return true;
             }
 
-            m_CurrentLocalTimeOffset += deltaTimeSec * (m_DesiredLocalTimeOffset > m_CurrentLocalTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
-            m_CurrentServerTimeOffset += deltaTimeSec * (m_DesiredServerTimeOffset > m_CurrentServerTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
+            // Stop on the desired offset rather than step past it, or a converged clock alternates between running
+            // fast and slow by the whole ratio every frame, and everything rendered from it judders.
+            var maximumStep = deltaTimeSec * AdjustmentRatio;
+            m_CurrentLocalTimeOffset += Math.Clamp(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset, -maximumStep, maximumStep);
+            m_CurrentServerTimeOffset += Math.Clamp(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset, -maximumStep, maximumStep);
 
             return false;
         }

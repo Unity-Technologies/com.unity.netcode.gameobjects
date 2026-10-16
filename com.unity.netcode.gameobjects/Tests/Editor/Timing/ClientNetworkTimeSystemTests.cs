@@ -139,6 +139,36 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         /// <summary>
+        /// Tests that once the clock reaches the offset it is adjusting towards, it advances at the real rate on every
+        /// frame instead of alternating between faster and slower.
+        /// </summary>
+        [Test]
+        public void ConvergedClockAdvancesAtRealRate([Values(0.01d, 0.1d)] double adjustmentRatio)
+        {
+            const double deltaTime = 1.0d / 60.0d;
+            double receivedServerTime = 2;
+            var timeSystem = new NetworkTimeSystem(0.05d, 0.05d, 0.1d, adjustmentRatio);
+            timeSystem.Reset(receivedServerTime, 0.1d);
+            // Moves the desired offset, within the hard reset threshold, so the clock has to adjust to it first.
+            receivedServerTime += 0.01d;
+            timeSystem.Sync(receivedServerTime, 0.1d);
+
+            for (int i = 0; i < 600; i++)
+            {
+                timeSystem.Advance(deltaTime);
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                var localTime = timeSystem.LocalTime;
+                var serverTime = timeSystem.ServerTime;
+                timeSystem.Advance(deltaTime);
+                Assert.AreEqual(deltaTime, timeSystem.LocalTime - localTime, 1e-9d, $"Local time advanced at the wrong rate on frame {i}.");
+                Assert.AreEqual(deltaTime, timeSystem.ServerTime - serverTime, 1e-9d, $"Server time advanced at the wrong rate on frame {i}.");
+            }
+        }
+
+        /// <summary>
         /// Tests whether time resets when there is a huge spike in RTT and is able to stabilize again.
         /// </summary>
         [Test]
