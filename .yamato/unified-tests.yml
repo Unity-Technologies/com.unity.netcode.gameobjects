@@ -22,7 +22,8 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    # TEMPORARY (#4195): b1.xlarge to test whether b1.large memory pressure causes the unified connect timeouts. Revert before merge.
+    flavor: b1.xlarge
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
