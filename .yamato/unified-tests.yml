@@ -22,8 +22,7 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    # TEMPORARY (#4195): b1.xlarge to test whether b1.large memory pressure causes the unified connect timeouts. Revert before merge.
-    flavor: b1.xlarge
+    flavor: {{ platform.flavor }}
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
@@ -35,7 +34,8 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor --arch {{ platform.architecture }}
+    # TEMPORARY (#4195): pinned to 6000.7.0b4 on b1.large to test whether 6000.7.0b6 raised memory use. Revert before merge.
+    - unity-downloader-cli --fast --wait -u 6000.7.0b4 -c Editor --arch {{ platform.architecture }}
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
