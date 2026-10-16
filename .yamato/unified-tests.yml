@@ -38,7 +38,9 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     # Import and compile testproject in its own editor session first. The IL post-processor and compiler processes it starts
     # otherwise stay resident for the whole test pass and, on this agent, leave too little memory for the tests.
     - mkdir -p warmup
-    - .Editor/Unity -batchmode -nographics -logFile warmup/editor.log -projectPath {{ project.path }} -quit
+    # -releaseCodeOptimization pins the Release configuration the test runner compiles. An editor whose code optimization
+    # preference is Debug would otherwise build the other configuration, and the test session would recompile everything.
+    - .Editor/Unity -batchmode -nographics -releaseCodeOptimization -logFile warmup/editor.log -projectPath {{ project.path }} -quit
     # Stop any build processes that outlive the warm-up editor, then list what is left so the job log shows it.
     - dotnet build-server shutdown || true
     - pkill -f Unity.ILPP.Runner || true
