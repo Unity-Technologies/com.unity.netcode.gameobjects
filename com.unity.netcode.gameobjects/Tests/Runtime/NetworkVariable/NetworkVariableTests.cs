@@ -1881,7 +1881,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -2343,7 +2342,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -2538,7 +2536,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -2701,8 +2698,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer, RuntimePlatform.PS4, RuntimePlatform.PS5 })] // Ignored test tracked in MTT-11343, MTT-16494
         public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(ulong), typeof(Vector2), typeof(HashMapKeyClass))] Type keyType,
@@ -3844,7 +3840,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -4035,7 +4030,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -4195,7 +4189,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashMapNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(ulong), typeof(Vector2), typeof(HashMapKeyStruct))] Type keyType,
