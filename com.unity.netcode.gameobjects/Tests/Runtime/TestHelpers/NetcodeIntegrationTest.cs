@@ -2983,12 +2983,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private const float k_SceneUnloadTimeout = 5.0f;
         private readonly List<AsyncOperation> m_PendingSceneUnloads = new List<AsyncOperation>();
 
-        private void UnloadRemainingScenes()
+        /// <returns>true if any scene (other than the test runner scene) is still loading and could not be unloaded yet</returns>
+        private bool UnloadRemainingScenes()
         {
             // Unload any remaining scenes loaded but the test runner scene
             // Note: Some tests only unload the server-side instance, and this
             // just assures no currently loaded scenes will impact the next test
             Scene testRunnerScene = default;
+            var sceneStillLoading = false;
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
@@ -2997,7 +2999,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     testRunnerScene = scene;
                     continue;
                 }
-                if (!scene.IsValid() || !scene.isLoaded || !OnCanSceneCleanUpUnload(scene))
+                if (scene.IsValid() && !scene.isLoaded)
+                {
+                    // Can't unload a scene that is still loading
+                    sceneStillLoading = true;
+                    continue;
+                }
+                if (!scene.IsValid() || !OnCanSceneCleanUpUnload(scene))
                 {
                     continue;
                 }
@@ -3019,6 +3027,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
 
             }
+
+            return sceneStillLoading;
         }
 
         /// <summary>
@@ -3031,9 +3041,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             while (true)
             {
                 // Pick up any scenes that finished loading after the clean up started
-                UnloadRemainingScenes();
+                var sceneStillLoading = UnloadRemainingScenes();
 
-                if (m_PendingSceneUnloads.All(c => c.isDone))
+                // Keep waiting while a scene is still loading so it can be unloaded once it finishes loading
+                if (!sceneStillLoading && m_PendingSceneUnloads.All(c => c.isDone))
                 {
                     break;
                 }
