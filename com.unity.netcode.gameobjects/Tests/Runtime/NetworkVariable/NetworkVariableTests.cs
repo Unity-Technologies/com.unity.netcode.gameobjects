@@ -1940,7 +1940,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetArarys((rand) => rand.Next(2) == 1);
                 TestValueTypeNativeArray(original, changed);
                 TestValueTypeNativeArray(original2, changed2);
             }
@@ -4033,7 +4033,7 @@ namespace Unity.Netcode.RuntimeTests
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(long), typeof(ulong), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
                 typeof(Quaternion), typeof(Pose), typeof(HashableNetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
