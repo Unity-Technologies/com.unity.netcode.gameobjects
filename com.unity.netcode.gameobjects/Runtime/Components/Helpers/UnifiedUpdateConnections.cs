@@ -51,7 +51,6 @@ namespace Unity.Netcode.Components
 
         protected override void OnUpdate()
         {
-            var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
             var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().NetworkManager.Value;
             // The world outlives its NetworkManager if ShutdownInternal throws before disposing it.
@@ -75,14 +74,17 @@ namespace Unity.Netcode.Components
             m_TempConnections.Clear();
 
             // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
-            foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>()
-                         .WithNone<NetworkStreamInGame>().WithEntityAccess())
+            if (!isShuttingDown)
             {
-                if (!m_NewConnections.ContainsKey(networkId.Value))
+                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>()
+                             .WithNone<NetworkStreamInGame>().WithEntityAccess())
                 {
-                    var newConnection = new NetcodeConnection
-                    { World = World, Entity = entity, NetworkId = networkId.Value };
-                    m_NewConnections.Add(networkId.Value, newConnection);
+                    if (!m_NewConnections.ContainsKey(networkId.Value))
+                    {
+                        var newConnection = new NetcodeConnection
+                        { World = World, Entity = entity, NetworkId = networkId.Value };
+                        m_NewConnections.Add(networkId.Value, newConnection);
+                    }
                 }
             }
 
@@ -116,7 +118,8 @@ namespace Unity.Netcode.Components
             // make sure we have disconnected all known connections.
             if (isShuttingDown)
             {
-                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
+                // Only connections that went in-game have ConnectionState, which is removed here, so each is reported once.
+                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<ConnectionState>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);
                     NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
