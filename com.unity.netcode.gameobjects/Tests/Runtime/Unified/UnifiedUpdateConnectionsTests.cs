@@ -21,8 +21,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Validates that a session without ghost prefabs leaves no world with a <see cref="UnifiedUpdateConnections"/>
-        /// system.
+        /// Validates that no world has a <see cref="UnifiedUpdateConnections"/> system when the session has no ghost prefabs.
         /// </summary>
         [UnityTest]
         public IEnumerator NoWorldUpdatesConnectionsWithoutGhostPrefabs()

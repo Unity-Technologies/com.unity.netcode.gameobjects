@@ -26,14 +26,14 @@ namespace Unity.Netcode.Components
     }
 
     /// <summary>
-    /// The <see cref="NetworkManager"/> a hybrid session's world was created for, as a singleton in that world.
+    /// This is used to track the <see cref="NetworkManager"/>, as a singleton, when running a hybrid session.
     /// </summary>
     internal struct HybridNetworkManager : IComponentData
     {
         public UnityObjectRef<NetworkManager> NetworkManager;
     }
 
-    // Created only in client and server worlds, and updated only in one a NetworkManager created for a hybrid session.
+    // Only exists in client and server worlds, and only updates in a world created for a hybrid session.
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation)]
     internal partial class UnifiedUpdateConnections : SystemBase
     {
@@ -53,7 +53,7 @@ namespace Unity.Netcode.Components
         {
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
             var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().NetworkManager.Value;
-            // The world outlives its NetworkManager if ShutdownInternal throws before disposing it.
+            // A missing NetworkManager counts as shutting down: the world outlives it if ShutdownInternal throws before disposing the world.
             var isShuttingDown = !networkManager || networkManager.ShutdownInProgress || !networkManager.IsListening;
             foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
@@ -118,7 +118,7 @@ namespace Unity.Netcode.Components
             // make sure we have disconnected all known connections.
             if (isShuttingDown)
             {
-                // Only connections that went in-game have ConnectionState, which is removed here, so each is reported once.
+                // Only in-game connections have ConnectionState, and removing it here means each one is only reported once.
                 foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<ConnectionState>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);

@@ -102,8 +102,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Validates that each <see cref="NetworkManager"/>'s world updates the connections of that
-        /// <see cref="NetworkManager"/> alone.
+        /// Validates that each <see cref="NetworkManager"/>'s world only updates that <see cref="NetworkManager"/>'s connections.
         /// </summary>
         [Test]
         public void EachWorldUpdatesConnectionsForItsOwnNetworkManager()

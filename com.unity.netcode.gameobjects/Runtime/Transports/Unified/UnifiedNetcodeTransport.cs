@@ -476,7 +476,7 @@ namespace Unity.Netcode.Unified
         public override ulong GetCurrentRtt(ulong clientId)
         {
             var (transportId, _) = m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
-            // A message handled after the connection was removed (for example while shutting down) has no RTT, as with UnityTransport.
+            // Returns 0 when the connection was already removed (for example while shutting down), the same as UnityTransport.
             return m_Connections.TryGetValue((int)transportId, out ConnectionInfo connectionInfo) ? (ulong)connectionInfo.Connection.RTT : 0;
         }
 

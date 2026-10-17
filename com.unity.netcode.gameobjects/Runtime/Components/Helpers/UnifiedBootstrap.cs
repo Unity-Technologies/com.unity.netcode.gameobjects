@@ -107,11 +107,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Creates the world a <see cref="NetworkManager"/> runs its hybrid session in.
+        /// Creates the world used by a <see cref="NetworkManager"/>'s hybrid session.
         /// </summary>
         /// <remarks>
-        /// A server, host or not, runs in a single world host, except in a dedicated server build, where Netcode for
-        /// Entities cannot create a world that is also a client. A build for only one side cannot run a host.
+        /// A server or host uses a single world host. A dedicated server build uses a server-only world instead, because
+        /// Netcode for Entities cannot create a client world there. A build that only targets the client or the server
+        /// cannot start a host.
         /// </remarks>
         private static World CreateWorld(NetworkManager networkManager)
         {
