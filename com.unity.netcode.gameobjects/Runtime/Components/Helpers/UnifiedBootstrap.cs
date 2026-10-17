@@ -71,16 +71,17 @@ namespace Unity.Netcode
                 RegisterCreatedWorlds();
                 Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
                 s_WorldCounter++;
-                LastCreatedWorld = CreateWorld(networkManager);
+                var world = CreateWorld(networkManager);
+                LastCreatedWorld = world;
 
-                if (LastCreatedWorld == null)
+                if (world == null)
                 {
                     s_WorldCounter--;
                     Debug.LogError($"[{nameof(UnifiedBootstrap)}] World is null!");
                     return false;
                 }
 
-                if (!LastCreatedWorld.IsCreated)
+                if (!world.IsCreated)
                 {
                     s_WorldCounter--;
                     Debug.LogError($"[{nameof(UnifiedBootstrap)}] World was not created!");
@@ -89,10 +90,10 @@ namespace Unity.Netcode
 
                 if (networkManager.LogLevel <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Created world: {LastCreatedWorld.Name} / {LastCreatedWorld.SequenceNumber}");
+                    NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Created world: {world.Name} / {world.SequenceNumber}");
                 }
 
-                networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
+                networkManager.NetcodeWorld = (NetcodeWorld)world;
                 s_CreatedWorlds.Add(networkManager.NetcodeWorld);
             }
             else
@@ -131,12 +132,6 @@ namespace Unity.Netcode
 #else
             return networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}") : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
 #endif
-        }
-
-        ~UnifiedBootstrap()
-        {
-            LastCreatedWorld = null;
-            Instance = null;
         }
     }
 }
