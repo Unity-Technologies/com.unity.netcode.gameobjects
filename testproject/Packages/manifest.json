@@ -1,7 +1,6 @@
 {
   "disableProjectUpdate": false,
   "dependencies": {
-    "com.unity.addressables": "4.0.1",
     "com.unity.ai.navigation": "2.0.14",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.40",
