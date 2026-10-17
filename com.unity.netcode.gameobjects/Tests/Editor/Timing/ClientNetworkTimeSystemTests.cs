@@ -139,8 +139,8 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         /// <summary>
-        /// Tests that once the clock reaches the offset it is adjusting towards, it advances at the real rate on every
-        /// frame instead of alternating between faster and slower.
+        /// Validates that once the clock has caught up with a time sync, its local and server time both advance by
+        /// exactly the frame's delta time on every frame, instead of alternating between slightly fast and slightly slow.
         /// </summary>
         [Test]
         public void ConvergedClockAdvancesAtRealRate([Values(0.01d, 0.1d)] double adjustmentRatio)
@@ -149,7 +149,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             double receivedServerTime = 2;
             var timeSystem = new NetworkTimeSystem(0.05d, 0.05d, 0.1d, adjustmentRatio);
             timeSystem.Reset(receivedServerTime, 0.1d);
-            // Moves the desired offset, within the hard reset threshold, so the clock has to adjust to it first.
+            // A sync 10 ms ahead, below the hard reset threshold, makes the clock catch up gradually instead of resetting.
             receivedServerTime += 0.01d;
             timeSystem.Sync(receivedServerTime, 0.1d);
 
