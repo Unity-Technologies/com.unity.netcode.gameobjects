@@ -1395,6 +1395,12 @@ namespace Unity.Netcode
             TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             new UnifiedBootstrap().Initialize("Default World");
+
+            if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+            {
+                var entityManager = NetcodeWorld.EntityManager;
+                entityManager.AddComponentData(entityManager.CreateEntity(), new HybridNetworkManager { NetworkManager = this });
+            }
         }
 
         /// <summary>

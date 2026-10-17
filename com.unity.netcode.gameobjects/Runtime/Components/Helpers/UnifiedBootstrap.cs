@@ -71,17 +71,17 @@ namespace Unity.Netcode
                 RegisterCreatedWorlds();
                 Debug.Log($"Starting a world for {(networkManager.IsServer ? "Host" : "Client")}");
                 s_WorldCounter++;
-                LastCreatedWorld = networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}")
-                    : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+                var world = CreateWorld(networkManager);
+                LastCreatedWorld = world;
 
-                if (LastCreatedWorld == null)
+                if (world == null)
                 {
                     s_WorldCounter--;
                     Debug.LogError($"[{nameof(UnifiedBootstrap)}] World is null!");
                     return false;
                 }
 
-                if (!LastCreatedWorld.IsCreated)
+                if (!world.IsCreated)
                 {
                     s_WorldCounter--;
                     Debug.LogError($"[{nameof(UnifiedBootstrap)}] World was not created!");
@@ -90,10 +90,10 @@ namespace Unity.Netcode
 
                 if (networkManager.LogLevel <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Created world: {LastCreatedWorld.Name} / {LastCreatedWorld.SequenceNumber}");
+                    NetworkLog.LogInfo($"[{nameof(UnifiedBootstrap)}] Created world: {world.Name} / {world.SequenceNumber}");
                 }
 
-                networkManager.NetcodeWorld = (NetcodeWorld)LastCreatedWorld;
+                networkManager.NetcodeWorld = (NetcodeWorld)world;
                 s_CreatedWorlds.Add(networkManager.NetcodeWorld);
             }
             else
@@ -106,10 +106,33 @@ namespace Unity.Netcode
             return true;
         }
 
-        ~UnifiedBootstrap()
+        /// <summary>
+        /// Creates the world used by a <see cref="NetworkManager"/>'s hybrid session.
+        /// </summary>
+        /// <remarks>
+        /// A server or host uses a single world host. A dedicated server build uses a server-only world instead, because
+        /// Netcode for Entities cannot create a client world there. A build that only targets the client or the server
+        /// cannot start a host.
+        /// </remarks>
+        private static World CreateWorld(NetworkManager networkManager)
         {
-            LastCreatedWorld = null;
-            Instance = null;
+#if UNITY_SERVER && !UNITY_EDITOR
+            if (networkManager.IsClient)
+            {
+                Debug.LogError($"[{nameof(UnifiedBootstrap)}] A dedicated server build cannot start a {(networkManager.IsServer ? "host" : "client")} in hybrid mode.");
+                return null;
+            }
+            return CreateServerWorld($"ServerWorld-{s_WorldCounter}");
+#elif UNITY_CLIENT && !UNITY_EDITOR
+            if (networkManager.IsServer)
+            {
+                Debug.LogError($"[{nameof(UnifiedBootstrap)}] A client only build cannot start a {(networkManager.IsClient ? "host" : "server")} in hybrid mode. Set the Netcode for Entities client build target to ClientAndServer.");
+                return null;
+            }
+            return CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+#else
+            return networkManager.IsServer ? CreateSingleWorldHost($"HostSingleWorld-{s_WorldCounter}") : CreateClientWorld($"ClientWorld-{s_WorldCounter}");
+#endif
         }
     }
 }

@@ -35,11 +35,24 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor --arch {{ platform.architecture }}
+    # Import and compile testproject in its own editor session first. The IL post-processor and compiler processes it starts
+    # otherwise stay resident for the whole test pass and, on this agent, leave too little memory for the tests.
+    - mkdir -p warmup
+    # -releaseCodeOptimization pins the Release configuration the test runner compiles. An editor whose code optimization
+    # preference is Debug would otherwise build the other configuration, and the test session would recompile everything.
+    - .Editor/Unity -batchmode -nographics -releaseCodeOptimization -logFile warmup/editor.log -projectPath {{ project.path }} -quit
+    # Stop any build processes that outlive the warm-up editor, then list what is left so the job log shows it.
+    - dotnet build-server shutdown || true
+    - pkill -f Unity.ILPP.Runner || true
+    - pkill -f VBCSCompiler || true
+    - pkill -f bee_backend || true
+    - ps -eo rss,comm --sort=-rss | head -15
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
+        - "warmup/**/*"
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks
 {% endfor -%}
