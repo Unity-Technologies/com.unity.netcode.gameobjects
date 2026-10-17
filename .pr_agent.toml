@@ -4,6 +4,5 @@
 # https://developer.portal.internal.unity.com/catalog/default/component/u-pr/docs/configuration/automatic_runs/
 
 [github_app]
-handle_pr_actions = ['opened', 'ready_for_review']  # PR events that auto-run pr_commands
 pr_commands       = ["/harness-review"]             # what runs on those events
 reviewer_commands = ["/harness-review"]             # what runs when @u-pr is added as reviewer

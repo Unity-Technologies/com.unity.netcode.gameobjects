@@ -49,7 +49,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}{% if backend == "coreclr" %}{% unless coreclr_runtime_editors contains editor %} -c {{ platform.coreclr_component }} {% endunless %}{% endif %} --arch {{ platform.architecture }}
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*;TestProject.RuntimeTests.*" --playergraphicsapi=Null --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
     players:
       paths:
@@ -90,8 +90,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}{% if backend == "coreclr" %}{% unless coreclr_runtime_editors contains editor %} -c {{ platform.coreclr_component }} {% endunless %}{% endif %} --arch {{ platform.architecture }}
-    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --extra-player-arg=-batchmode --extra-player-arg=-nographics --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:

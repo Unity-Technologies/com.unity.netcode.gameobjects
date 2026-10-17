@@ -9,7 +9,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public class ObjectNameIdentifier : NetworkBehaviour
     {
-        private ulong m_CurrentOwner;
+        private ulong m_RegisteredLocalClientId;
         private ulong m_CurrentNetworkObjectId;
         private bool m_IsRegistered;
 
@@ -45,18 +45,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // This is required otherwise it will try to continue to update the NetworkBehaviour even if
                 // it has been destroyed.
                 m_NetworkObject = NetworkObject;
-                m_CurrentOwner = OwnerClientId;
+                m_RegisteredLocalClientId = NetworkManager.LocalClientId;
                 m_CurrentNetworkObjectId = NetworkObjectId;
 
                 var serverOrClient = IsServer ? "Server" : "Client";
                 if (NetworkObject.IsPlayerObject)
                 {
-                    gameObject.name = NetworkManager.LocalClientId == OwnerClientId ? $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}-Local{m_OriginalName}" :
-                        $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}- On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
+                    gameObject.name = m_RegisteredLocalClientId == OwnerClientId ? $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}-Local{m_OriginalName}" :
+                        $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}- On{serverOrClient}{k_TagInfoStart}{m_RegisteredLocalClientId}{k_TagInfoStop}";
                 }
                 else
                 {
-                    gameObject.name = $"{m_OriginalName}{k_TagInfoStart}{NetworkObjectId}{k_TagInfoStop}-On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
+                    gameObject.name = $"{m_OriginalName}{k_TagInfoStart}{NetworkObjectId}{k_TagInfoStop}-On{serverOrClient}{k_TagInfoStart}{m_RegisteredLocalClientId}{k_TagInfoStop}";
                 }
 
                 // Don't add the player objects to the global list of NetworkObjects
@@ -75,7 +75,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_IsRegistered)
             {
-                NetcodeIntegrationTest.DeregisterNetworkObject(m_CurrentOwner, m_CurrentNetworkObjectId);
+                NetcodeIntegrationTest.DeregisterNetworkObject(m_RegisteredLocalClientId, m_CurrentNetworkObjectId);
                 m_IsRegistered = false;
             }
         }
