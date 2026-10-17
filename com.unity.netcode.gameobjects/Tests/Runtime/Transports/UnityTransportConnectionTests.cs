@@ -132,6 +132,7 @@ namespace Unity.Netcode.RuntimeTests
 #if HOSTNAME_RESOLUTION_AVAILABLE
         // Check connection with a single client (hostname).
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.PS4, RuntimePlatform.PS5 })] // Ignored test tracked in MTT-16494
         public IEnumerator ConnectSingleClient_Hostname()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
