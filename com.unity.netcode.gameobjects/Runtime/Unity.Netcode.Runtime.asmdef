@@ -32,11 +32,6 @@
             "define": "UNIFIED_NETCODE"
         },
         {
-            "name": "com.unity.netcode",
-            "expression": "7.0.1",
-            "define": "UNIFIED_NETCODE_PARENT_REPLICATION"
-        },
-        {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"

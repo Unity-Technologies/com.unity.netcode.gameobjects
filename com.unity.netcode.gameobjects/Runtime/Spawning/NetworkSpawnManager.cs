@@ -1820,7 +1820,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-#if UNIFIED_NETCODE_PARENT_REPLICATION
+#if UNIFIED_NETCODE
                     // NGO does not track a parent that Netcode for Entities replicates, so the hierarchy decides the generation.
                     if (spawnedNetObj.GhostReplicatesParent() && spawnedNetObj.transform.parent != networkObject.transform)
                     {

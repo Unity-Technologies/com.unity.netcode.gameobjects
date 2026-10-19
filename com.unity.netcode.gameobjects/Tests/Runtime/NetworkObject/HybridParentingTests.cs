@@ -42,10 +42,8 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_HybridPrefab = CreateNetworkObjectPrefab("HybridParentingObject");
             m_NonHybridPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab("NonHybridParentingObject", GetAuthorityNetworkManager(), m_ClientNetworkManagers);
-#if UNIFIED_NETCODE_PARENT_REPLICATION
             // N4E reads this when each world registers the prefab, so it is set before the session starts.
             m_HybridPrefab.GetComponent<GhostObject>().ParentReplication = TestContext.CurrentContext.Test.Name.StartsWith("ParentReplication_");
-#endif
             if (TestContext.CurrentContext.Test.Name.StartsWith("NgoParenting_HostSmoothing_"))
             {
                 // What NetworkObjectBridge sets on a hybrid prefab with a Rigidbody.
@@ -198,7 +196,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(ChildAtWorldPositionOnAllInstances(errors, k_ChildPosition), errors.ToString());
         }
 
-#if UNIFIED_NETCODE_PARENT_REPLICATION
         [UnityTest]
         public IEnumerator ParentReplication_NgoEntryPoints_WarnAndExit()
         {
@@ -287,7 +284,6 @@ namespace Unity.Netcode.RuntimeTests
             });
             AssertOnTimeout("Timed out waiting for the child to survive at the root on all instances!");
         }
-#endif
     }
 }
 #endif
