@@ -1947,7 +1947,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetArarys((rand) => rand.Next(2) == 1);
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBool);
                 TestValueTypeNativeArray(original, changed);
                 TestValueTypeNativeArray(original2, changed2);
             }
