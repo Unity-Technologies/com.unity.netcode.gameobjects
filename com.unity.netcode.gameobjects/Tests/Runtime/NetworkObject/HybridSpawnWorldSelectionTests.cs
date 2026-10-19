@@ -9,7 +9,7 @@ using EntitiesNetcode = Unity.Netcode.Netcode;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// N4E spawns a ghost into its active world, which is whichever world updated last when several worlds share a process.
+    /// N4E spawns a ghost into its active world, which is the world currently updating, or the server world between world updates.
     /// Validates that a hybrid instance's ghost is spawned in the spawning <see cref="NetworkManager"/>'s world anyway.
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
@@ -49,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Makes a client's world N4E's active world, as it is when that client's world updated last.
+        /// Makes a client's world N4E's active world, as it is while that client's world updates.
         /// </summary>
         private void MakeClientWorldActive()
         {
@@ -85,10 +85,38 @@ namespace Unity.Netcode.RuntimeTests
             yield return AssertGhostSpawnedInServerWorld(instance, nameof(NetworkObject.Spawn));
         }
 
+        /// <summary>
+        /// Makes a client's world active right before the server instantiates a player.
+        /// </summary>
+        /// <remarks>
+        /// N4E makes the server world active again after each client world update, and the server approves a
+        /// connection outside of any world update, so making the client world active from the test body has no effect.
+        /// </remarks>
+        private class ClientWorldActivePlayerHandler : INetworkPrefabInstanceHandler
+        {
+            private readonly HybridSpawnWorldSelectionTests m_Test;
+
+            public ClientWorldActivePlayerHandler(HybridSpawnWorldSelectionTests test)
+            {
+                m_Test = test;
+            }
+
+            public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+            {
+                m_Test.MakeClientWorldActive();
+                return Object.Instantiate(m_Test.m_PlayerPrefab, position, rotation).GetComponent<NetworkObject>();
+            }
+
+            public void Destroy(NetworkObject networkObject)
+            {
+                Object.Destroy(networkObject.gameObject);
+            }
+        }
+
         [UnityTest]
         public IEnumerator LateJoinPlayerSpawnsGhostInServerWorld()
         {
-            MakeClientWorldActive();
+            m_ServerNetworkManager.PrefabHandler.AddHandler(m_PlayerPrefab, new ClientWorldActivePlayerHandler(this));
             yield return CreateAndStartNewClient();
             var newClient = m_ClientNetworkManagers[m_ClientNetworkManagers.Length - 1];
             var playerObject = m_ServerNetworkManager.ConnectionManager.ConnectedClients[newClient.LocalClientId].PlayerObject;

@@ -968,7 +968,7 @@ namespace Unity.Netcode
         /// Spawns a hybrid instance's ghost in this <see cref="NetworkManager"/>'s world.
         /// </summary>
         /// <remarks>
-        /// N4E spawns a ghost into its active world, which is whichever world updated last when several worlds share a process.
+        /// N4E spawns a ghost into its active world, which is the world currently updating, or the server world between world updates.
         /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>) so the world can be selected here.
         /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as it is.
         /// </remarks>
