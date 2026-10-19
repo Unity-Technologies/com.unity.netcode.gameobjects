@@ -476,7 +476,8 @@ namespace Unity.Netcode.Unified
         public override ulong GetCurrentRtt(ulong clientId)
         {
             var (transportId, _) = m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
-            return (ulong)m_Connections[(int)transportId].Connection.RTT;
+            // Returns 0 when the connection was already removed (for example while shutting down), the same as UnityTransport.
+            return m_Connections.TryGetValue((int)transportId, out ConnectionInfo connectionInfo) ? (ulong)connectionInfo.Connection.RTT : 0;
         }
 
         public override void Initialize(NetworkManager networkManager = null)
