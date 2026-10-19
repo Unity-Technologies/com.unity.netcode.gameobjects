@@ -1,0 +1,473 @@
+using System;
+using System.Collections;
+using System.Linq;
+using System.Threading.Tasks;
+using NUnit.Framework;
+using Unity.Netcode.GameObjects.Editor.Cli;
+using Unity.Netcode.GameObjects.Editor.Configuration;
+using Unity.Netcode.Transports.UTP;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace Unity.Netcode.GameObjects.EditorTests
+{
+    /// <summary>
+    /// Covers the query layer behind the netcode.gameobjects CLI commands. It lives in the editor assembly and
+    /// compiles without com.unity.pipeline, so these run in every test configuration.
+    /// </summary>
+    internal class NgoCliQueriesTests
+    {
+        private const string k_Folder = "Assets/NgoCliTests";
+        private const string k_ListPath = k_Folder + "/CliTestPrefabs.asset";
+
+        private bool m_GenerateDefaultNetworkPrefabs;
+        private string m_DefaultNetworkPrefabsPath;
+
+        [SetUp]
+        public void SetUp()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            m_GenerateDefaultNetworkPrefabs = settings.GenerateDefaultNetworkPrefabs;
+            m_DefaultNetworkPrefabsPath = NetworkPrefabProcessor.DefaultNetworkPrefabsPath;
+            // Register prefabs explicitly in these tests, into a list of their own.
+            settings.GenerateDefaultNetworkPrefabs = false;
+            if (!AssetDatabase.IsValidFolder(k_Folder))
+            {
+                AssetDatabase.CreateFolder("Assets", "NgoCliTests");
+            }
+            NetworkPrefabProcessor.DefaultNetworkPrefabsPath = k_ListPath;
+            ResetSimulator();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs = m_GenerateDefaultNetworkPrefabs;
+            NetworkPrefabProcessor.DefaultNetworkPrefabsPath = m_DefaultNetworkPrefabsPath;
+            AssetDatabase.DeleteAsset(k_Folder);
+            ResetSimulator();
+        }
+
+        private static void ResetSimulator()
+        {
+            NgoCliSimulator.Enabled = false;
+            NgoCliSimulator.Preset = "None";
+            NgoCliSimulator.DelayMs = 0;
+            NgoCliSimulator.JitterMs = 0;
+            NgoCliSimulator.DropPercent = 0;
+            NgoCliSimulator.SetBlackout(false);
+        }
+
+        private static GameObject CreatePrefab(string name, params Type[] components)
+        {
+            var gameObject = new GameObject(name, components);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(gameObject, $"{k_Folder}/{name}.prefab");
+            UnityEngine.Object.DestroyImmediate(gameObject);
+            return prefab;
+        }
+
+        private static NetworkManager CreateManager(NetworkTopologyTypes topology = NetworkTopologyTypes.ClientServer, int port = 7777)
+        {
+            NgoCliQueries.CreateNetworkManager("NetworkManager", topology, "127.0.0.1", port, false);
+            return NgoCliQueries.FindManagers().Single();
+        }
+
+        // --- Status and resolution ---
+
+        [Test]
+        public void Status_WithoutManager_NamesTheNextStep()
+        {
+            var status = NgoCliQueries.GetStatus();
+
+            Assert.IsFalse(status.IsPlaying);
+            CollectionAssert.IsEmpty(status.Managers);
+            StringAssert.Contains("create_network_manager", status.Hint);
+        }
+
+        [Test]
+        public void Status_InEditMode_ReportsTheConfiguration()
+        {
+            CreateManager(port: 7801);
+
+            var manager = NgoCliQueries.GetStatus().Managers.Single();
+
+            Assert.AreEqual("none", manager.Role);
+            Assert.IsFalse(manager.IsListening);
+            Assert.AreEqual("ClientServer", manager.Topology);
+            Assert.AreEqual(nameof(UnityTransport), manager.Transport.Type);
+            Assert.AreEqual(7801, manager.Transport.Port);
+            Assert.IsNull(manager.LocalClientId, "Runtime values are null outside play mode.");
+        }
+
+        [Test]
+        public void RuntimeQueries_OutsidePlayMode_AskForPlayMode()
+        {
+            CreateManager();
+
+            var error = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.ListClients(null));
+            StringAssert.Contains("editor.playmode start", error.Message);
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.ListObjects(null, null, -1, 10));
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.StartLagSpike(100));
+        }
+
+        [Test]
+        public void ResolveManager_PicksByNameOrAsksWhenAmbiguous()
+        {
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.ResolveManager(null));
+
+            var first = new GameObject("ServerManager").AddComponent<NetworkManager>();
+            var second = new GameObject("ClientManager").AddComponent<NetworkManager>();
+
+            Assert.AreSame(second, NgoCliQueries.ResolveManager("client"));
+            var ambiguous = Assert.Throws<ArgumentException>(() => NgoCliQueries.ResolveManager(null));
+            StringAssert.Contains("ServerManager", ambiguous.Message);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.ResolveManager("Nope"));
+            Assert.AreSame(first, NgoCliQueries.ResolveManager("ServerManager"));
+        }
+
+        // --- Authoring ---
+
+        [Test]
+        public void CreateNetworkManager_SetsUpTransportAndTopology()
+        {
+            var dryRun = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, true);
+            Assert.IsFalse(dryRun.Created);
+            CollectionAssert.IsEmpty(NgoCliQueries.FindManagers(), "dry_run changes nothing.");
+            Assert.IsTrue(dryRun.Notes.Any(n => n.Contains("Distributed authority")));
+
+            var result = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, false);
+            Assert.IsTrue(result.Created);
+
+            var manager = NgoCliQueries.FindManagers().Single();
+            var transport = (UnityTransport)manager.NetworkConfig.NetworkTransport;
+            Assert.AreSame(manager.GetComponent<UnityTransport>(), transport);
+            Assert.AreEqual(NetworkTopologyTypes.DistributedAuthority, manager.NetworkConfig.NetworkTopology);
+            Assert.AreEqual("10.0.0.5", transport.ConnectionData.Address);
+            Assert.AreEqual(9000, transport.ConnectionData.Port);
+
+            var again = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.ClientServer, "127.0.0.1", 7777, false));
+            StringAssert.Contains("already have a NetworkManager", again.Message);
+        }
+
+        [Test]
+        public void MakePrefab_AddsANetworkObjectWithAPrefabId()
+        {
+            CreatePrefab("Plain");
+            var path = $"{k_Folder}/Plain.prefab";
+
+            var dryRun = NgoCliQueries.MakePrefab(path, true);
+            Assert.IsFalse(dryRun.AddedNetworkObject);
+            Assert.IsNull(AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponent<NetworkObject>());
+
+            var result = NgoCliQueries.MakePrefab("Plain", false);
+            Assert.IsTrue(result.AddedNetworkObject);
+            var networkObject = AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponent<NetworkObject>();
+            Assert.IsNotNull(networkObject);
+            if (result.PrefabIdHash.HasValue)
+            {
+                Assert.AreEqual(networkObject.GlobalObjectIdHash, (uint)result.PrefabIdHash.Value);
+            }
+
+            Assert.IsTrue(NgoCliQueries.MakePrefab(path, false).AlreadyNetworkObject);
+        }
+
+        [Test]
+        public void RegisterPrefab_AddsOnceAndListsIt()
+        {
+            var prefab = CreatePrefab("Networked", typeof(NetworkObject));
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+
+            var dryRun = NgoCliQueries.RegisterPrefab("Networked", k_ListPath, true);
+            Assert.IsFalse(dryRun.Registered);
+            Assert.IsFalse(list.Contains(prefab));
+
+            var result = NgoCliQueries.RegisterPrefab("Networked", k_ListPath, false);
+            Assert.IsTrue(result.Registered);
+            Assert.IsTrue(list.Contains(prefab));
+
+            var again = NgoCliQueries.RegisterPrefab($"{k_Folder}/Networked.prefab", null, false);
+            Assert.IsTrue(again.AlreadyRegistered, "With no NetworkManager, the default list (here the test list) is the target.");
+
+            var listed = NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists.Single();
+            Assert.AreEqual(k_ListPath, listed.Path);
+            Assert.AreEqual($"{k_Folder}/Networked.prefab", listed.Prefabs.Single().Path);
+        }
+
+        [Test]
+        public void RegisterPrefab_WithoutNetworkObject_PointsToMakePrefab()
+        {
+            CreatePrefab("Plain");
+
+            var error = Assert.Throws<ArgumentException>(() => NgoCliQueries.RegisterPrefab("Plain", null, false));
+            StringAssert.Contains("make_prefab", error.Message);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.RegisterPrefab("NoSuchPrefab", null, false));
+        }
+
+        [Test]
+        public void AuditPrefabs_FindsSetupProblems()
+        {
+            CreatePrefab("Orphan", typeof(Components.NetworkTransform));
+            var nested = new GameObject("Nested", typeof(NetworkObject));
+            new GameObject("Child", typeof(NetworkObject)).transform.SetParent(nested.transform);
+            PrefabUtility.SaveAsPrefabAsset(nested, $"{k_Folder}/Nested.prefab");
+            UnityEngine.Object.DestroyImmediate(nested);
+            CreatePrefab("Unregistered", typeof(NetworkObject));
+            CreatePrefab("NotNetworked");
+
+            var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
+            var codes = result.Issues.Select(i => (i.Code, i.Asset)).ToList();
+
+            var found = string.Join(", ", codes);
+            CollectionAssert.Contains(codes, ("BEHAVIOUR_WITHOUT_NETWORKOBJECT", $"{k_Folder}/Orphan.prefab"), found);
+            CollectionAssert.Contains(codes, ("NESTED_NETWORKOBJECT", $"{k_Folder}/Nested.prefab"), found);
+            CollectionAssert.Contains(codes, ("NOT_REGISTERED", $"{k_Folder}/Unregistered.prefab"), found);
+            Assert.AreEqual(result.Issues.Count(i => i.Severity == "error"), result.Errors);
+            Assert.AreEqual(3, result.PrefabsScanned, $"The prefab without netcode scripts isn't loaded. Found: {found}");
+
+            var truncated = NgoCliQueries.AuditPrefabs(k_Folder, 1);
+            Assert.AreEqual(1, truncated.Issues.Count);
+            Assert.IsTrue(truncated.Truncated);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.AuditPrefabs("Assets/NoSuchFolder", 10));
+
+            // Without a NetworkManager open, the project audit still checks the prefabs and says so.
+            var all = NgoCliQueries.Audit("all", k_Folder, 50, null);
+            Assert.AreEqual(3, all.PrefabsScanned);
+            Assert.AreEqual(0, all.ManagersChecked);
+            Assert.AreEqual("NO_NETWORKMANAGER", all.Issues[0].Code);
+            Assert.IsTrue(all.Issues.Skip(1).All(i => i.Area == "prefabs"));
+            Assert.AreEqual(result.Warnings + 1, all.Warnings);
+            Assert.IsNull(NgoCliQueries.Audit("prefabs", k_Folder, 50, null).ManagersChecked);
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Audit("config", null, 50, null), "Asking for the NetworkManager checks needs one.");
+        }
+
+        // --- Config ---
+
+        [Test]
+        public void GetConfig_ReportsSnakeCaseFields()
+        {
+            CreateManager(port: 7802);
+
+            var config = NgoCliQueries.GetConfig(null);
+
+            Assert.AreEqual(30u, config.NetworkConfig["tick_rate"]);
+            Assert.AreEqual("ClientServer", config.NetworkConfig["network_topology"]);
+            Assert.IsTrue(config.NetworkConfig.ContainsKey("use_cmb_service"));
+            CollectionAssert.Contains(config.SettableFields, "port");
+            CollectionAssert.Contains(config.SettableFields, "log_level");
+            Assert.AreEqual(7802, config.Transport.Port);
+        }
+
+        [Test]
+        public void SetConfig_ValidatesAndApplies()
+        {
+            var manager = CreateManager();
+
+            var dryRun = NgoCliQueries.SetConfig("tick_rate", "60", null, true);
+            Assert.AreEqual(30u, dryRun.Previous);
+            Assert.AreEqual(30u, manager.NetworkConfig.TickRate, "dry_run changes nothing.");
+
+            NgoCliQueries.SetConfig("tick_rate", "60", null, false);
+            Assert.AreEqual(60u, manager.NetworkConfig.TickRate);
+            NgoCliQueries.SetConfig("connection_approval", "true", null, false);
+            Assert.IsTrue(manager.NetworkConfig.ConnectionApproval);
+            NgoCliQueries.SetConfig("network_topology", "distributedauthority", null, false);
+            Assert.AreEqual(NetworkTopologyTypes.DistributedAuthority, manager.NetworkConfig.NetworkTopology);
+            NgoCliQueries.SetConfig("port", "9100", null, false);
+            Assert.AreEqual(9100, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port);
+
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("tick_rate", "0", null, false));
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("tick_rate", "fast", null, false));
+            var unknown = Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("no_such_field", "1", null, false));
+            StringAssert.Contains("tick_rate", unknown.Message);
+
+            Undo.PerformUndo();
+            Assert.AreEqual(7777, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port, "Each change is its own undo step.");
+            Assert.AreEqual(60u, manager.NetworkConfig.TickRate);
+        }
+
+        [Test]
+        public void SetConfig_LogLevel_ChangesTheManager()
+        {
+            var manager = CreateManager();
+
+            var result = NgoCliQueries.SetConfig("log_level", "developer", null, false);
+
+            Assert.AreEqual("Normal", result.Previous);
+            Assert.AreEqual(LogLevel.Developer, manager.LogLevel);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("log_level", "Verbose", null, false));
+        }
+
+        [Test]
+        public void ValidateConfig_ReportsMissingTransportAndDistributedAuthorityService()
+        {
+            var manager = CreateManager(NetworkTopologyTypes.DistributedAuthority);
+            manager.NetworkConfig.NetworkTransport = null;
+
+            var audit = NgoCliQueries.Audit("config", null, 50, null);
+            var codes = audit.Issues.Select(i => i.Code).ToList();
+
+            Assert.AreEqual(1, audit.ManagersChecked);
+            Assert.IsTrue(audit.Issues.All(i => i.Area == "config"));
+            CollectionAssert.Contains(codes, "NO_TRANSPORT");
+            CollectionAssert.Contains(codes, "DA_WITHOUT_SERVICE");
+            CollectionAssert.Contains(codes, "NO_NETWORK_PREFABS");
+            CollectionAssert.Contains(codes, "SCENE_NOT_SAVED", "Scene management is on in an unsaved scene, which opens a dialog in play mode.");
+        }
+
+        [Test]
+        public void ToSnakeCase_KeepsAcronymsTogether()
+        {
+            Assert.AreEqual("tick_rate", NgoCliQueries.ToSnakeCase("TickRate"));
+            Assert.AreEqual("use_cmb_service", NgoCliQueries.ToSnakeCase("UseCMBService"));
+            Assert.AreEqual("rpc_hash_size", NgoCliQueries.ToSnakeCase("RpcHashSize"));
+        }
+
+        // --- Simulator ---
+
+        [Test]
+        public void SetSimulator_StoresValuesForTheNextSession()
+        {
+            var result = NgoCliQueries.SetSimulator(true, null, 120, 15, 3);
+
+            Assert.IsFalse(result.Previous.Enabled);
+            Assert.IsTrue(result.Current.Enabled);
+            Assert.AreEqual(NgoCliSimulator.CustomPreset, result.Current.Preset);
+            Assert.AreEqual(120, result.Current.PacketDelayMs);
+            Assert.AreEqual(15, result.Current.PacketJitterMs);
+            Assert.AreEqual(3, result.Current.PacketDropPercent);
+            CollectionAssert.IsEmpty(result.AppliedLiveTo);
+
+            var partial = NgoCliQueries.SetSimulator(true, null, -1, -1, 10);
+            Assert.AreEqual(120, partial.Current.PacketDelayMs, "-1 leaves a value unchanged.");
+            Assert.AreEqual(10, partial.Current.PacketDropPercent);
+
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetSimulator(true, null, 5000, -1, -1));
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetSimulator(true, "NoSuchPreset", -1, -1, -1));
+        }
+
+        [Test]
+        public void SimulatorPresets_ComeFromMultiplayerTools()
+        {
+            var presets = NgoCliQueries.ListSimulatorPresets();
+            if (!NgoCliQueries.MultiplayerToolsInstalled)
+            {
+                CollectionAssert.IsEmpty(presets.Presets);
+                StringAssert.Contains("com.unity.multiplayer.tools", presets.Note);
+                return;
+            }
+
+            Assert.IsNotEmpty(presets.Presets);
+            var preset = presets.Presets.First(p => p.PacketDelayMs > 0);
+            var result = NgoCliQueries.SetSimulator(true, preset.Name.ToUpperInvariant(), -1, -1, -1);
+            Assert.AreEqual(preset.Name, result.Current.Preset);
+            Assert.AreEqual(preset.PacketDelayMs, result.Current.PacketDelayMs);
+
+            // Preset names carry bracketed details; the name before them is enough.
+            var detailed = presets.Presets.FirstOrDefault(p => p.Name.Contains(" ["));
+            if (detailed != null)
+            {
+                var shortName = detailed.Name.Substring(0, detailed.Name.IndexOf(" [", StringComparison.Ordinal));
+                Assert.AreEqual(detailed.Name, NgoCliQueries.SetSimulator(true, shortName, -1, -1, -1).Current.Preset);
+            }
+        }
+
+        // --- A running host ---
+
+        /// <summary>
+        /// Starts a host in play mode and drives the runtime queries against it. Play mode is entered without a
+        /// domain or scene reload so the scene and prefab set up here survive.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RunningHost_SupportsTheRuntimeQueries()
+        {
+            var enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
+            var enterPlayModeOptions = EditorSettings.enterPlayModeOptions;
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
+            try
+            {
+                var prefab = CreatePrefab("CliSpawnable", typeof(NetworkObject));
+                var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                AssetDatabase.CreateAsset(list, k_ListPath);
+                NgoCliQueries.RegisterPrefab("CliSpawnable", k_ListPath, false);
+                var manager = CreateManager(port: (ushort)UnityEngine.Random.Range(20000, 40000));
+                manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
+                manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
+                // The unsaved test scene isn't in the build, which with scene management on opens a dialog in play mode.
+                manager.NetworkConfig.EnableSceneManagement = false;
+
+                yield return new EnterPlayMode();
+
+                var started = NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1);
+                Assert.AreEqual("host", started.Status.Role);
+                Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1));
+
+                var ready = NgoCliQueries.WaitReadyAsync(null, 0, 10);
+                yield return WaitFor(ready);
+                Assert.IsTrue(ready.Result.Ready, ready.Result.Reason);
+
+                var client = NgoCliQueries.ListClients(null).Clients.Single();
+                Assert.AreEqual(0, client.ClientId);
+                Assert.IsTrue(client.IsLocal);
+
+                var spawned = NgoCliQueries.Spawn("CliSpawnable", new[] { 1f, 2f, 3f }, -1, false, null);
+                var id = spawned.Object.NetworkObjectId;
+                CollectionAssert.AreEqual(new[] { 1f, 2f, 3f }, spawned.Object.Position);
+                Assert.AreEqual(1, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
+                var detail = NgoCliQueries.GetObject(id, null);
+                Assert.AreEqual(0, detail.OwnerClientId);
+                Assert.AreEqual("The server or host.", detail.Ownership.WhoCanChange);
+                Assert.Throws<ArgumentException>(() => NgoCliQueries.GetObject(id + 1000, null));
+
+                var unchanged = NgoCliQueries.ChangeOwner(id, 0, null);
+                Assert.AreEqual(0, unchanged.Owner);
+                Assert.Throws<ArgumentException>(() => NgoCliQueries.ChangeOwner(id, 42, null));
+                Assert.Throws<ArgumentException>(() => NgoCliQueries.Kick(0, null, null), "The host can't kick its own client.");
+
+                var simulator = NgoCliQueries.SetSimulator(true, null, 50, 0, 0);
+                CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
+                var timeout = NgoCliQueries.SetTimeout(true);
+                Assert.IsTrue(timeout.Current.TimeoutActive);
+                NgoCliQueries.SetTimeout(false);
+
+                var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
+                yield return WaitFor(stats);
+                Assert.AreEqual("host", stats.Result.Role);
+                Assert.GreaterOrEqual(stats.Result.Frames, 1);
+
+                var despawned = NgoCliQueries.Despawn(id, true, null);
+                Assert.IsTrue(despawned.Despawned);
+                Assert.AreEqual(0, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
+
+                NgoCliQueries.Stop(null, false);
+                yield return null;
+                yield return null;
+
+                yield return new ExitPlayMode();
+            }
+            finally
+            {
+                EditorSettings.enterPlayModeOptionsEnabled = enterPlayModeOptionsEnabled;
+                EditorSettings.enterPlayModeOptions = enterPlayModeOptions;
+            }
+        }
+
+        private static IEnumerator WaitFor(Task task)
+        {
+            var deadline = EditorApplication.timeSinceStartup + 20;
+            while (!task.IsCompleted && EditorApplication.timeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+            Assert.IsTrue(task.IsCompleted, "The query didn't finish.");
+            if (task.IsFaulted)
+            {
+                throw task.Exception.InnerException;
+            }
+        }
+    }
+}

@@ -1,0 +1,470 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.Netcode.Transports.UTP;
+using UnityEditor;
+using UnityEngine;
+
+namespace Unity.Netcode.GameObjects.Editor.Cli
+{
+    internal static partial class NgoCliQueries
+    {
+        internal enum SessionMode
+        {
+            Host,
+            Server,
+            Client,
+        }
+
+        // --- Start / stop ---
+
+        /// <summary>
+        /// Starts the NetworkManager as host, server or client, optionally pointing its UnityTransport at another
+        /// address and port first. Returns once the start call returns; use <see cref="WaitReadyAsync"/> to wait
+        /// for the connection.
+        /// </summary>
+        internal static SessionResult Start(SessionMode mode, string managerFilter, string address, int port)
+        {
+            RequireDefined(mode, "mode");
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException("Requires play mode. Enter it with editor.playmode start first.");
+            }
+            if (port > ushort.MaxValue)
+            {
+                throw new ArgumentException($"port must be between 1 and {ushort.MaxValue} (or -1 to keep the configured port).");
+            }
+
+            var manager = ResolveManager(managerFilter);
+            if (manager.IsListening || manager.ShutdownInProgress)
+            {
+                throw new InvalidOperationException($"{manager.name} is already running as {GetRole(manager)}. Stop it first with netcode.gameobjects.session stop.");
+            }
+
+            var result = new SessionResult { Action = "start" };
+            if (!string.IsNullOrWhiteSpace(address) || port > 0)
+            {
+                if (manager.NetworkConfig.NetworkTransport is not UnityTransport utp)
+                {
+                    throw new ArgumentException("address and port can only be set on a UnityTransport. Configure your transport directly.");
+                }
+                var data = utp.ConnectionData;
+                utp.SetConnectionData(string.IsNullOrWhiteSpace(address) ? data.Address : address.Trim(), port > 0 ? (ushort)port : data.Port, data.ServerListenAddress);
+                result.Notes.Add($"Transport set to {utp.ConnectionData.Address}:{utp.ConnectionData.Port} for this session.");
+            }
+
+            bool started;
+            using (var errors = new LogCapture())
+            {
+                started = mode switch
+                {
+                    SessionMode.Host => manager.StartHost(),
+                    SessionMode.Server => manager.StartServer(),
+                    _ => manager.StartClient(),
+                };
+                if (!started)
+                {
+                    throw new InvalidOperationException($"{manager.name} failed to start as {mode.ToString().ToLowerInvariant()}{errors.Describe()}");
+                }
+            }
+
+            result.Status = DescribeManager(manager);
+            if (mode == SessionMode.Client)
+            {
+                result.Notes.Add("The client is connecting. Wait for it with netcode.gameobjects.session wait_ready.");
+            }
+            return result;
+        }
+
+        internal static SessionResult Stop(string managerFilter, bool discardMessageQueue)
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(NotPlayingMessage);
+            }
+            var manager = ResolveManager(managerFilter);
+            var result = new SessionResult { Action = "stop" };
+            if (!manager.IsListening && !manager.ShutdownInProgress)
+            {
+                result.Notes.Add($"{manager.name} wasn't running.");
+            }
+            else
+            {
+                manager.Shutdown(discardMessageQueue);
+                result.Notes.Add("Shutdown finishes on the next network update; netcode.gameobjects status shows when it's done.");
+            }
+            result.Status = DescribeManager(manager);
+            return result;
+        }
+
+        /// <summary>Disconnects a remote client from the server or host.</summary>
+        internal static SessionResult Kick(long clientId, string reason, string managerFilter)
+        {
+            var manager = ResolveRunningManager(managerFilter);
+            if (!manager.IsServer)
+            {
+                throw new InvalidOperationException($"{manager.name} is a {GetRole(manager)}; only the server or host can disconnect other clients. Run the command against the server's editor, or stop this client with netcode.gameobjects.session stop.");
+            }
+            if (clientId < 0 || !manager.ConnectedClientsIds.Contains((ulong)clientId))
+            {
+                throw new ArgumentException($"No connected client {clientId}. Connected: {string.Join(", ", manager.ConnectedClientsIds)}. List them with netcode.gameobjects list_clients.");
+            }
+            if ((ulong)clientId == manager.LocalClientId)
+            {
+                throw new ArgumentException("That's the host's own client. Stop the host with netcode.gameobjects.session stop instead.");
+            }
+
+            manager.DisconnectClient((ulong)clientId, string.IsNullOrWhiteSpace(reason) ? null : reason);
+            var result = new SessionResult { Action = "kick", Status = DescribeManager(manager) };
+            result.Notes.Add($"Client {clientId} disconnected. Its objects are despawned or redistributed according to DontDestroyWithOwner.");
+            return result;
+        }
+
+        /// <summary>
+        /// Shuts a client down and starts it again with the same transport settings, then waits for it to be
+        /// connected and approved.
+        /// </summary>
+        internal static async Task<WaitReadyResult> ReconnectAsync(string managerFilter, float timeoutSeconds)
+        {
+            ValidateTimeout(timeoutSeconds);
+            var manager = ResolveRunningManager(managerFilter);
+            if (manager.IsServer)
+            {
+                throw new InvalidOperationException($"{manager.name} is the {GetRole(manager)}. reconnect is for clients; restart a server with netcode.gameobjects.session stop, then start.");
+            }
+
+            var started = EditorApplication.timeSinceStartup;
+            manager.Shutdown();
+            await WaitUntilAsync(() => !manager.IsListening && !manager.ShutdownInProgress, timeoutSeconds, "the client to shut down");
+
+            using (var errors = new LogCapture())
+            {
+                if (!manager.StartClient())
+                {
+                    throw new InvalidOperationException($"{manager.name} shut down but failed to start again{errors.Describe()}");
+                }
+            }
+
+            var remaining = timeoutSeconds - (float)(EditorApplication.timeSinceStartup - started);
+            var ready = await WaitReadyAsync(manager, Math.Max(remaining, 0.1f), 0);
+            ready.WaitedSeconds = EditorApplication.timeSinceStartup - started;
+            return ready;
+        }
+
+        /// <summary>
+        /// Waits until the manager is ready: a client connected and approved, or a server or host listening with
+        /// at least <paramref name="minClients"/> remote clients.
+        /// </summary>
+        internal static Task<WaitReadyResult> WaitReadyAsync(string managerFilter, int minClients, float timeoutSeconds)
+        {
+            ValidateTimeout(timeoutSeconds);
+            if (minClients < 0)
+            {
+                throw new ArgumentException("min_clients must be 0 or more.");
+            }
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(NotPlayingMessage);
+            }
+            return WaitReadyAsync(ResolveManager(managerFilter), timeoutSeconds, minClients);
+        }
+
+        private static Task<WaitReadyResult> WaitReadyAsync(NetworkManager manager, float timeoutSeconds, int minClients)
+        {
+            var completion = new TaskCompletionSource<WaitReadyResult>();
+            var start = EditorApplication.timeSinceStartup;
+            var deadline = start + timeoutSeconds;
+
+            WaitReadyResult Build(bool ready, bool timedOut, string reason) => new WaitReadyResult
+            {
+                Ready = ready,
+                TimedOut = timedOut,
+                Reason = reason,
+                WaitedSeconds = EditorApplication.timeSinceStartup - start,
+                Status = manager != null ? DescribeManager(manager) : null,
+            };
+
+            void Tick()
+            {
+                try
+                {
+                    if (!EditorApplication.isPlaying || manager == null)
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetResult(Build(false, false, "Play mode stopped."));
+                        return;
+                    }
+
+                    var reason = ReadyBlocker(manager, minClients);
+                    if (reason == null)
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetResult(Build(true, false, null));
+                    }
+                    else if (EditorApplication.timeSinceStartup >= deadline)
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetResult(Build(false, true, reason));
+                    }
+                }
+                catch (Exception e)
+                {
+                    EditorApplication.update -= Tick;
+                    completion.TrySetException(e);
+                }
+            }
+
+            EditorApplication.update += Tick;
+            return completion.Task;
+        }
+
+        /// <summary>Why the manager isn't ready yet, or null when it is.</summary>
+        private static string ReadyBlocker(NetworkManager manager, int minClients)
+        {
+            if (manager.ShutdownInProgress)
+            {
+                return "Shutting down.";
+            }
+            if (!manager.IsListening)
+            {
+                return string.IsNullOrEmpty(manager.DisconnectReason)
+                    ? "Not running. Start it with netcode.gameobjects.session start."
+                    : $"Not running. Last disconnect reason: {manager.DisconnectReason}";
+            }
+            if (manager.IsServer)
+            {
+                var remote = manager.ConnectedClientsIds.Count(id => id != manager.LocalClientId);
+                return remote >= minClients ? null : $"{remote} of {minClients} remote client(s) connected.";
+            }
+            if (!manager.IsConnectedClient)
+            {
+                return manager.IsApproved ? "Approved, synchronizing." : "Connecting.";
+            }
+            if (manager.DistributedAuthorityMode && minClients > 0)
+            {
+                var others = manager.ConnectedClientsIds.Count(id => id != manager.LocalClientId);
+                return others >= minClients ? null : $"{others} of {minClients} other client(s) in the session.";
+            }
+            return null;
+        }
+
+        // --- Spawn / despawn / ownership ---
+
+        internal static SpawnResult Spawn(string prefab, float[] position, long owner, bool playerObject, string managerFilter)
+        {
+            var manager = ResolveRunningManager(managerFilter);
+            var prefabAsset = ResolvePrefab(prefab);
+            if (prefabAsset.GetComponent<NetworkObject>() == null)
+            {
+                throw new ArgumentException($"{AssetDatabase.GetAssetPath(prefabAsset)} has no NetworkObject on its root. Add one with netcode.gameobjects make_prefab.");
+            }
+            if (position != null && position.Length != 3)
+            {
+                throw new ArgumentException("position must be three numbers, e.g. [0, 1, 0].");
+            }
+            if (!manager.DistributedAuthorityMode && !manager.IsServer)
+            {
+                throw new InvalidOperationException($"{manager.name} is a client. With a client-server topology only the server or host spawns; run the command against the server's editor.");
+            }
+
+            var result = new SpawnResult { Manager = manager.name, Prefab = AssetDatabase.GetAssetPath(prefabAsset) };
+            var ownerId = owner < 0 ? (manager.DistributedAuthorityMode ? manager.LocalClientId : NetworkManager.ServerClientId) : (ulong)owner;
+            if (manager.DistributedAuthorityMode && ownerId != manager.LocalClientId)
+            {
+                result.Notes.Add($"Distributed authority spawns are owned by the spawning client; owner {owner} is ignored. Transfer it afterwards with netcode.gameobjects change_owner.");
+            }
+            if (owner >= 0 && !manager.ConnectedClientsIds.Contains(ownerId))
+            {
+                throw new ArgumentException($"No connected client {owner}. List them with netcode.gameobjects list_clients.");
+            }
+
+            var spawnPosition = position != null ? new Vector3(position[0], position[1], position[2]) : prefabAsset.transform.position;
+            NetworkObject spawned;
+            using (var errors = new LogCapture())
+            {
+                // Spawn errors are logged rather than thrown; report them as the command's error.
+                spawned = NetworkObject.InstantiateAndSpawn(prefabAsset, manager, ownerId, isPlayerObject: playerObject, position: spawnPosition, rotation: prefabAsset.transform.rotation);
+                if (spawned == null || !spawned.IsSpawned)
+                {
+                    throw new InvalidOperationException($"Spawning {prefabAsset.name} failed{errors.Describe()} Is it registered? Check with netcode.gameobjects list_prefabs.");
+                }
+            }
+            result.Object = Describe(manager, spawned);
+            return result;
+        }
+
+        internal static DespawnResult Despawn(long networkObjectId, bool destroy, string managerFilter)
+        {
+            var manager = ResolveRunningManager(managerFilter);
+            var networkObject = FindSpawnedObject(manager, networkObjectId);
+            if (!networkObject.HasAuthority)
+            {
+                throw new InvalidOperationException(manager.DistributedAuthorityMode
+                    ? $"{networkObject.name} is owned by client {networkObject.OwnerClientId}; in distributed authority only its owner can despawn it. Run the command against that client's editor."
+                    : $"{manager.name} is a client; only the server or host can despawn. Run the command against the server's editor.");
+            }
+
+            var result = new DespawnResult { Manager = manager.name, NetworkObjectId = networkObjectId, Name = networkObject.name };
+            using (var errors = new LogCapture())
+            {
+                try
+                {
+                    networkObject.Despawn(destroy);
+                }
+                catch (NotSupportedException e)
+                {
+                    throw new InvalidOperationException($"{networkObject.name} can't be despawned without destroying it: {e.Message} Retry with destroy true.");
+                }
+                if (networkObject != null && networkObject.IsSpawned)
+                {
+                    throw new InvalidOperationException($"Despawning {networkObject.name} failed{errors.Describe()}");
+                }
+            }
+            result.Despawned = true;
+            result.Destroyed = destroy;
+            return result;
+        }
+
+        internal static OwnershipChangeResult ChangeOwner(long networkObjectId, long newOwner, string managerFilter)
+        {
+            var manager = ResolveRunningManager(managerFilter);
+            var networkObject = FindSpawnedObject(manager, networkObjectId);
+            if (newOwner < 0)
+            {
+                throw new ArgumentException("owner must be a client id (0 or more). List them with netcode.gameobjects list_clients.");
+            }
+            if (!manager.ConnectedClientsIds.Contains((ulong)newOwner))
+            {
+                throw new ArgumentException($"No connected client {newOwner}. List them with netcode.gameobjects list_clients.");
+            }
+            if (!manager.DistributedAuthorityMode && !manager.IsServer)
+            {
+                throw new InvalidOperationException($"{manager.name} is a client; with a client-server topology only the server or host changes ownership. Run the command against the server's editor.");
+            }
+
+            var result = new OwnershipChangeResult
+            {
+                Manager = manager.name,
+                NetworkObjectId = networkObjectId,
+                Name = networkObject.name,
+                PreviousOwner = (long)networkObject.OwnerClientId,
+                Topology = manager.NetworkConfig.NetworkTopology.ToString(),
+            };
+            if (networkObject.OwnerClientId == (ulong)newOwner)
+            {
+                result.Owner = newOwner;
+                result.Notes.Add($"Client {newOwner} already owns it.");
+                return result;
+            }
+
+            using (var errors = new LogCapture())
+            {
+                if (!manager.DistributedAuthorityMode && (ulong)newOwner == NetworkManager.ServerClientId)
+                {
+                    networkObject.RemoveOwnership();
+                }
+                else
+                {
+                    networkObject.ChangeOwnership((ulong)newOwner);
+                }
+
+                if (!manager.DistributedAuthorityMode && networkObject.OwnerClientId != (ulong)newOwner)
+                {
+                    throw new InvalidOperationException($"Ownership of {networkObject.name} didn't change{errors.Describe()}");
+                }
+                if (manager.DistributedAuthorityMode && errors.HasErrors)
+                {
+                    throw new InvalidOperationException($"Ownership of {networkObject.name} didn't change{errors.Describe()} Check its ownership flags with netcode.gameobjects get_object.");
+                }
+            }
+
+            result.Owner = (long)networkObject.OwnerClientId;
+            if (manager.DistributedAuthorityMode && networkObject.OwnerClientId != (ulong)newOwner)
+            {
+                result.Notes.Add("Distributed authority applies the change through the session; check it with netcode.gameobjects get_object.");
+            }
+            return result;
+        }
+
+        // --- Helpers ---
+
+        private static void ValidateTimeout(float timeoutSeconds)
+        {
+            if (timeoutSeconds <= 0 || timeoutSeconds > 600)
+            {
+                throw new ArgumentException("timeout must be between 1 and 600 seconds.");
+            }
+        }
+
+        private static Task WaitUntilAsync(Func<bool> condition, float timeoutSeconds, string what)
+        {
+            var completion = new TaskCompletionSource<bool>();
+            var deadline = EditorApplication.timeSinceStartup + timeoutSeconds;
+
+            void Tick()
+            {
+                try
+                {
+                    if (condition())
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetResult(true);
+                    }
+                    else if (!EditorApplication.isPlaying)
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetException(new InvalidOperationException($"Play mode stopped while waiting for {what}."));
+                    }
+                    else if (EditorApplication.timeSinceStartup >= deadline)
+                    {
+                        EditorApplication.update -= Tick;
+                        completion.TrySetException(new TimeoutException($"Timed out waiting for {what}."));
+                    }
+                }
+                catch (Exception e)
+                {
+                    EditorApplication.update -= Tick;
+                    completion.TrySetException(e);
+                }
+            }
+
+            EditorApplication.update += Tick;
+            return completion.Task;
+        }
+
+        /// <summary>
+        /// Collects warnings and errors logged while it's open. Netcode for GameObjects reports most refused
+        /// operations through its log rather than exceptions, so commands use this to return the reason.
+        /// </summary>
+        private sealed class LogCapture : IDisposable
+        {
+            private readonly List<string> m_Messages = new List<string>();
+
+            internal LogCapture()
+            {
+                Application.logMessageReceived += OnLog;
+            }
+
+            internal bool HasErrors { get; private set; }
+
+            private void OnLog(string message, string stackTrace, LogType type)
+            {
+                if (type == LogType.Log)
+                {
+                    return;
+                }
+                if (type != LogType.Warning)
+                {
+                    HasErrors = true;
+                }
+                m_Messages.Add(message);
+            }
+
+            /// <summary>": message; message." for an error message, or "." when nothing was logged.</summary>
+            internal string Describe() => m_Messages.Count == 0 ? "." : ": " + string.Join("; ", m_Messages.Distinct()) + ".";
+
+            public void Dispose() => Application.logMessageReceived -= OnLog;
+        }
+    }
+}
