@@ -18,6 +18,8 @@ namespace Unity.Netcode.GameObjects.Editor
         public bool UsedCMBService;
         public string Transport;
         public NetworkConfig NetworkConfig;
+        public int NgoSpawnCount;
+        public int HybridSpawnCount;
     }
 
     /// <summary>
@@ -124,6 +126,12 @@ namespace Unity.Netcode.GameObjects.Editor
                 return;
             }
             recentSession.UsedCMBService = networkManager.CMBServiceConnection;
+            var spawnManager = networkManager.SpawnManager;
+            if (spawnManager != null)
+            {
+                recentSession.HybridSpawnCount = spawnManager.HybridSpawnCount;
+                recentSession.NgoSpawnCount = spawnManager.SpawnCount - spawnManager.HybridSpawnCount;
+            }
             recentSession.SessionStopped = true;
             RecentSessions[lastIndex] = recentSession;
         }
@@ -220,6 +228,8 @@ namespace Unity.Netcode.GameObjects.Editor
                 NetworkTransport = networkSession.Transport,
                 EnableSceneManagement = networkSession.NetworkConfig.EnableSceneManagement,
                 TickRate = (int)networkSession.NetworkConfig.TickRate,
+                NgoSpawnCount = networkSession.NgoSpawnCount,
+                HybridSpawnCount = networkSession.HybridSpawnCount,
             };
             return networkManagerAnalytics;
         }

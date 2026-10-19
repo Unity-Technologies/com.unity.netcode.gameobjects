@@ -34,6 +34,12 @@ namespace Unity.Netcode
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
+#if UNITY_EDITOR
+        // Spawns this peer made or received during the session, reported by the editor analytics.
+        internal int SpawnCount;
+        internal int HybridSpawnCount;
+#endif
+
         /// <summary>
         /// Use to get all NetworkObjects owned by a client
         /// Ownership to Objects Table Format:
@@ -1313,11 +1319,17 @@ namespace Unity.Netcode
             if (networkObject.HasGhost)
             {
                 networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, ownerClientId);
+#if UNITY_EDITOR
+                HybridSpawnCount++;
+#endif
             }
 #endif
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
+#if UNITY_EDITOR
+            SpawnCount++;
+#endif
             networkObject.ApplyNetworkParenting();
 
             NetworkObject.CheckOrphanChildren();
