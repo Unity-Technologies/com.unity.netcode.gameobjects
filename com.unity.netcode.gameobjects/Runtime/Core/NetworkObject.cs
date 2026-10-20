@@ -442,19 +442,85 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// NGO parenting of a hybrid instance, or under one, can conflict with the ghost's own transform replication.
+        /// NGO parenting of a hybrid instance only supports worldPositionStays disabled.
+        /// </summary>
+        /// <remarks>
+        /// The ghost replicates its local transform. With worldPositionStays the authority rebases it at the reparent, but clients
+        /// apply ParentSyncMessage ahead of the interpolated snapshot that carries the rebased values, so the object pops.
+        /// </remarks>
+        /// <returns>true when the parent change is rejected</returns>
+        private bool RejectHybridWorldPositionStays(bool worldPositionStays)
+        {
+            if (!HasGhost || !worldPositionStays || GhostObject.ParentReplication)
+            {
+                return false;
+            }
+            var networkManager = NetworkManager;
+            if (networkManager == null || networkManager.LogLevel <= LogLevel.Error)
+            {
+                NetworkLog.LogError($"[{name}] Hybrid instances can only be parented with worldPositionStays disabled. Use {nameof(TrySetParent)} " +
+                    $"or {nameof(TryRemoveParent)} with worldPositionStays set to false, or enable {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)}.");
+            }
+            return true;
+        }
+
+        // The parent and local transform before a parent change, so a direct Transform parent change can be told apart and reverted.
+        private Transform m_HybridParentBeforeChange;
+        private Vector3 m_HybridLocalPositionBeforeChange;
+        private Quaternion m_HybridLocalRotationBeforeChange;
+        private Vector3 m_HybridLocalScaleBeforeChange;
+        // Above the round-trip error SetParent leaves behind, same as GhostObject.
+        private const float k_LocalSpaceEpsilon = 1e-4f;
+        private const float k_LocalSpaceAngleEpsilon = 0.01f;
+        private bool m_RevertingHybridParent;
+
+        private void OnBeforeTransformParentChanged()
+        {
+            // The revert's own SetParent must not overwrite the values it is restoring.
+            if (!HasGhost || m_RevertingHybridParent)
+            {
+                return;
+            }
+            var currentTransform = transform;
+            m_HybridParentBeforeChange = currentTransform.parent;
+            m_HybridLocalPositionBeforeChange = currentTransform.localPosition;
+            m_HybridLocalRotationBeforeChange = currentTransform.localRotation;
+            m_HybridLocalScaleBeforeChange = currentTransform.localScale;
+        }
+
+        /// <summary>
+        /// A parent change that kept the local transform was made with worldPositionStays disabled.
+        /// </summary>
+        private bool HybridLocalTransformKept()
+        {
+            var currentTransform = transform;
+            return Vector3.Distance(currentTransform.localPosition, m_HybridLocalPositionBeforeChange) <= k_LocalSpaceEpsilon
+                && Quaternion.Angle(currentTransform.localRotation, m_HybridLocalRotationBeforeChange) <= k_LocalSpaceAngleEpsilon
+                && Vector3.Distance(currentTransform.localScale, m_HybridLocalScaleBeforeChange) <= k_LocalSpaceEpsilon;
+        }
+
+        private void RevertHybridParentChange()
+        {
+            m_RevertingHybridParent = true;
+            try
+            {
+                var currentTransform = transform;
+                currentTransform.SetParent(m_HybridParentBeforeChange, false);
+                currentTransform.localPosition = m_HybridLocalPositionBeforeChange;
+                currentTransform.localRotation = m_HybridLocalRotationBeforeChange;
+                currentTransform.localScale = m_HybridLocalScaleBeforeChange;
+            }
+            finally
+            {
+                m_RevertingHybridParent = false;
+            }
+        }
+
+        /// <summary>
+        /// A hybrid instance parented under a non-hybrid one, or the reverse, can jitter relative to its parent.
         /// </summary>
         private void LogHybridParentingArtifacts(NetworkObject parentObject)
         {
-            // The ghost replicates its local transform. With worldPositionStays the authority rebases it at the reparent,
-            // but clients apply ParentSyncMessage ahead of the interpolated snapshot that carries the rebased values.
-            if (HasGhost && m_CachedWorldPositionStays)
-            {
-                NetworkLog.LogWarning($"[{name}] Hybrid instance re-parented with worldPositionStays enabled. Clients apply the new parent before the " +
-                    $"ghost's rebased transform is interpolated, so the object can pop for up to the interpolation delay. Parent with worldPositionStays " +
-                    $"disabled, or enable {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)}.");
-            }
-
             if (parentObject != null && parentObject.HasGhost != HasGhost)
             {
                 NetworkLog.LogWarning($"[{name}] Parented under {parentObject.name}, but only one of them is a hybrid instance. Their transforms are " +
@@ -2641,7 +2707,7 @@ namespace Unity.Netcode
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
 #if UNIFIED_NETCODE
-            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)) || RejectHybridWorldPositionStays(worldPositionStays))
             {
                 return false;
             }
@@ -2693,8 +2759,8 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own.
-            if (GhostReplicatesParent())
+            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own, and for a reverted one.
+            if (GhostReplicatesParent() || m_RevertingHybridParent)
             {
                 return;
             }
@@ -2755,6 +2821,22 @@ namespace Unity.Netcode
                 return;
             }
 
+#if UNIFIED_NETCODE
+            // A direct Transform parent change does not pass a worldPositionStays value, so it is read from whether the local transform was kept.
+            if (HasGhost && !AuthorityAppliedParenting && !GhostObject.ParentReplication)
+            {
+                if (HybridLocalTransformKept())
+                {
+                    m_CachedWorldPositionStays = false;
+                }
+                else if (RejectHybridWorldPositionStays(true))
+                {
+                    RevertHybridParentChange();
+                    return;
+                }
+            }
+#endif
+
             var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
@@ -2792,12 +2874,6 @@ namespace Unity.Netcode
             {
                 m_LatestParent = null;
                 removeParent = m_CachedParent != null;
-#if UNIFIED_NETCODE
-                if (networkManager.LogLevel <= LogLevel.Developer)
-                {
-                    LogHybridParentingArtifacts(null);
-                }
-#endif
             }
 
             // This can be reset within ApplyNetworkParenting

@@ -1,6 +1,7 @@
 #if UNIFIED_NETCODE
 using System.Collections;
 using System.Text;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -9,19 +10,15 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// NGO parenting of hybrid prefab instances: the developer warnings when NGO handles it, and NGO standing down when
+    /// NGO parenting of hybrid prefab instances: the worldPositionStays rejection and the mixed timelines warning when NGO handles it, and NGO standing down when
     /// <see cref="GhostObject"/> parent replication handles it.
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
     [TestFixture(HostOrServer.UnifiedServer)]
     internal class HybridParentingTests : NetcodeIntegrationTest
     {
-        private const string k_WorldPositionStaysWarning = "re-parented with worldPositionStays enabled";
+        private const string k_WorldPositionStaysError = "can only be parented with worldPositionStays disabled";
         private const string k_MixedTimelinesWarning = "only one of them is a hybrid instance";
-        private const float k_PositionTolerance = 0.01f;
-        // Off the origin, so that the child's local position changes when it is reparented with worldPositionStays.
-        private static readonly Vector3 k_ParentPosition = new Vector3(0f, 1.25f, 0f);
-        private static readonly Vector3 k_ChildPosition = new Vector3(0f, 1.25f, 3f);
 
         protected override int NumberOfClients => 2;
 
@@ -44,11 +41,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NonHybridPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab("NonHybridParentingObject", GetAuthorityNetworkManager(), m_ClientNetworkManagers);
             // N4E reads this when each world registers the prefab, so it is set before the session starts.
             m_HybridPrefab.GetComponent<GhostObject>().ParentReplication = TestContext.CurrentContext.Test.Name.StartsWith("ParentReplication_");
-            if (TestContext.CurrentContext.Test.Name.StartsWith("NgoParenting_HostSmoothing_"))
-            {
-                // What NetworkObjectBridge sets on a hybrid prefab with a Rigidbody.
-                m_HybridPrefab.GetComponent<GhostObject>().SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
-            }
             foreach (var networkManager in m_NetworkManagers)
             {
                 networkManager.LogLevel = LogLevel.Developer;
@@ -101,33 +93,62 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// With worldPositionStays enabled, clients apply the new parent ahead of the ghost's rebased local transform.
-        /// Disabled, the replicated local transform does not change at the reparent, so nothing is logged.
+        /// Validates that NGO parenting of a hybrid instance is rejected with worldPositionStays enabled, since clients would apply the
+        /// new parent before the ghost's rebased local transform and the object would pop, and that it works with worldPositionStays disabled.
         /// </summary>
         [UnityTest]
-        public IEnumerator NgoParenting_WorldPositionStays_WarnsOnlyWhenEnabled([Values] bool worldPositionStays)
+        public IEnumerator NgoParenting_WorldPositionStays_RejectedWhenEnabled([Values] bool worldPositionStays)
         {
             yield return SpawnParentAndChild(m_HybridPrefab);
-            m_Warnings.Clear();
-            Application.logMessageReceived += OnLogMessageReceived;
-            try
+            if (worldPositionStays)
             {
-                Assert.IsTrue(m_Child.TrySetParent(m_Parent, worldPositionStays), $"{nameof(NetworkObject.TrySetParent)} failed!");
-                yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, true));
-                AssertOnTimeout("Timed out waiting for the child to be parented on all instances!");
-
-                Assert.IsTrue(m_Child.TryRemoveParent(worldPositionStays), $"{nameof(NetworkObject.TryRemoveParent)} failed!");
-                yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, false));
-                AssertOnTimeout("Timed out waiting for the child to be moved to the root on all instances!");
-            }
-            finally
-            {
-                Application.logMessageReceived -= OnLogMessageReceived;
+                LogAssert.Expect(LogType.Error, new Regex(k_WorldPositionStaysError));
+                Assert.IsFalse(m_Child.TrySetParent(m_Parent, true), $"{nameof(NetworkObject.TrySetParent)} should be rejected!");
+                yield return WaitForTicks(GetAuthorityNetworkManager(), 5);
+                var errors = new StringBuilder();
+                Assert.IsTrue(ChildParentedOnAllInstances(errors, false), errors.ToString());
+                yield break;
             }
 
-            // Once for the parent and once for its removal, on the authority only.
-            Assert.AreEqual(worldPositionStays ? 2 : 0, WarningCount(k_WorldPositionStaysWarning), m_Warnings.ToString());
-            Assert.AreEqual(0, WarningCount(k_MixedTimelinesWarning), m_Warnings.ToString());
+            Assert.IsTrue(m_Child.TrySetParent(m_Parent, false), $"{nameof(NetworkObject.TrySetParent)} failed!");
+            yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, true));
+            AssertOnTimeout("Timed out waiting for the child to be parented on all instances!");
+
+            Assert.IsTrue(m_Child.TryRemoveParent(false), $"{nameof(NetworkObject.TryRemoveParent)} failed!");
+            yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, false));
+            AssertOnTimeout("Timed out waiting for the child to be moved to the root on all instances!");
+        }
+
+        /// <summary>
+        /// Validates that a direct parent change of a hybrid instance on the authority (<see cref="Transform.parent"/> or
+        /// <see cref="Transform.SetParent(Transform, bool)"/>) is replicated when it keeps the local transform, and is otherwise
+        /// reverted to the previous parent and local transform.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NgoParenting_DirectTransformParentChange([Values] bool worldPositionStays)
+        {
+            yield return SpawnParentAndChild(m_HybridPrefab);
+            // Off the parent's position, so that a worldPositionStays reparent changes the local position.
+            m_Parent.transform.position = new Vector3(0f, 1.25f, 0f);
+            m_Child.transform.position = new Vector3(0f, 1.25f, 3f);
+            var childTransform = m_Child.transform;
+            var localPosition = childTransform.localPosition;
+            if (worldPositionStays)
+            {
+                LogAssert.Expect(LogType.Error, new Regex(k_WorldPositionStaysError));
+                childTransform.parent = m_Parent.transform;
+                Assert.IsNull(childTransform.parent, "The parent change should have been reverted!");
+                Assert.AreEqual(localPosition, childTransform.localPosition, "The revert should restore the local position!");
+                yield return WaitForTicks(GetAuthorityNetworkManager(), 5);
+                var errors = new StringBuilder();
+                Assert.IsTrue(ChildParentedOnAllInstances(errors, false), errors.ToString());
+                yield break;
+            }
+
+            childTransform.SetParent(m_Parent.transform, false);
+            Assert.IsFalse(m_Child.WorldPositionStays(), "A parent change that kept the local transform should be sent without worldPositionStays!");
+            yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, true));
+            AssertOnTimeout("Timed out waiting for the child to be parented on all instances!");
         }
 
         /// <summary>
@@ -151,49 +172,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Assert.AreEqual(1, WarningCount(k_MixedTimelinesWarning), m_Warnings.ToString());
-            Assert.AreEqual(0, WarningCount(k_WorldPositionStaysWarning), m_Warnings.ToString());
-        }
-
-        private bool ChildAtWorldPositionOnAllInstances(StringBuilder errorLog, Vector3 expected)
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                var position = networkManager.SpawnManager.SpawnedObjects[m_Child.NetworkObjectId].transform.position;
-                if (Vector3.Distance(expected, position) > k_PositionTolerance)
-                {
-                    errorLog.AppendLine($"[Client-{networkManager.LocalClientId}] {m_Child.name} is at {position}, expected {expected}.");
-                }
-            }
-            return errorLog.Length == 0;
-        }
-
-        /// <summary>
-        /// Under host smoothing N4E restores the entity's local transform onto the GameObject every frame, so a
-        /// worldPositionStays reparent made through NGO must still reach the entity, or the child moves by the parent's offset.
-        /// </summary>
-        [UnityTest]
-        [Ignore("Needs the N4E fix that syncs a reparent made without parent replication to the entity: the child settles at the parent's offset.")]
-        public IEnumerator NgoParenting_HostSmoothing_WorldPositionStays_KeepsWorldPosition()
-        {
-            yield return SpawnParentAndChild(m_HybridPrefab);
-            // Placed through the entity, since host smoothing reverts a direct transform write.
-            var parentGhost = m_Parent.GetComponent<GhostObject>();
-            parentGhost.Position = k_ParentPosition;
-            parentGhost.PublishTransform();
-            var childGhost = m_Child.GetComponent<GhostObject>();
-            childGhost.Position = k_ChildPosition;
-            childGhost.PublishTransform();
-            yield return WaitForConditionOrTimeOut(errorLog => ChildAtWorldPositionOnAllInstances(errorLog, k_ChildPosition));
-            AssertOnTimeout("Timed out waiting for the child to reach its start position on all instances!");
-
-            Assert.IsTrue(m_Child.TrySetParent(m_Parent, true), $"{nameof(NetworkObject.TrySetParent)} failed!");
-            yield return WaitForConditionOrTimeOut(errorLog => ChildParentedOnAllInstances(errorLog, true));
-            AssertOnTimeout("Timed out waiting for the child to be parented on all instances!");
-            // The displacement appears on the first restore after the reparent and then holds, so a settled check catches it.
-            yield return WaitForTicks(GetAuthorityNetworkManager(), 10);
-
-            var errors = new StringBuilder();
-            Assert.IsTrue(ChildAtWorldPositionOnAllInstances(errors, k_ChildPosition), errors.ToString());
         }
 
         [UnityTest]
@@ -243,8 +221,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Application.logMessageReceived -= OnLogMessageReceived;
             }
-
-            Assert.AreEqual(0, WarningCount(k_WorldPositionStaysWarning), m_Warnings.ToString());
         }
 
         /// <summary>
