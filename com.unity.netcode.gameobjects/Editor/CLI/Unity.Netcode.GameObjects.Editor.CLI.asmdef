@@ -21,7 +21,7 @@
     "versionDefines": [
         {
             "name": "com.unity.pipeline",
-            "expression": "0.9.0",
+            "expression": "0.9.0-exp.1",
             "define": "UNITY_PIPELINE_PACKAGE_AVAILABLE"
         }
     ],
