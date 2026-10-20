@@ -77,7 +77,7 @@ preview_apv_-_6000_0_-_macos13:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -136,7 +136,7 @@ preview_apv_-_6000_0_-_ubuntu2204:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -196,7 +196,7 @@ preview_apv_-_6000_0_-_win10:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -255,7 +255,7 @@ preview_apv_-_6000_3_-_macos13:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -314,7 +314,7 @@ preview_apv_-_6000_3_-_ubuntu2204:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -374,7 +374,7 @@ preview_apv_-_6000_3_-_win10:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -434,7 +434,7 @@ preview_apv_-_6000_6_-_macos13arm:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -493,7 +493,7 @@ preview_apv_-_6000_6_-_ubuntu2204:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
@@ -553,7 +553,7 @@ preview_apv_-_6000_6_-_win10:
     UNITY_LICENSING_SERVER_DELETE_ULF: 0
     UNITY_LICENSING_SERVER_TOOLSET: pro
     UPMPVP_CONTEXT_WRENCH: 3.12.1.0
-    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-20_6ace78b5de8cf4671628832afa80f64bddc76883d89b9781fa19478b4bb33732.zip
+    WRENCH_LOCALAPV_URL: https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-3-24_1493dea1e0eb932938365a4a53ec2091ec007ceec57eea844d15a058eddedc9f.zip
   metadata:
     Job Maintainers: '#rm-packageworks'
     Wrench: 3.12.1.0
