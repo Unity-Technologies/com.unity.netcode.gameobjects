@@ -1,5 +1,6 @@
 #if UNIFIED_NETCODE
 using System.Collections;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -9,8 +10,8 @@ using EntitiesNetcode = Unity.Netcode.Netcode;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// N4E spawns a ghost into its active world, which is the world currently updating, or the server world between world updates.
-    /// Validates that a hybrid instance's ghost is spawned in the spawning <see cref="NetworkManager"/>'s world anyway.
+    /// Validates that a hybrid instance's ghost spawns in the spawning <see cref="NetworkManager"/>'s world,
+    /// even when another world is N4E's active world.
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
     [TestFixture(HostOrServer.UnifiedServer)]
@@ -27,8 +28,13 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        // The harness checks for a client's player as soon as it connects, and a hybrid player spawns on the client only once its ghost arrives.
-        // LateJoinPlayerSpawnsGhostInServerWorld waits for it instead.
+        /// <summary>
+        /// Disables the harness check for each client's player when the client connects.
+        /// </summary>
+        /// <remarks>
+        /// A hybrid player spawns on a client only once its ghost arrives. <see cref="LateJoinPlayerSpawnsGhostInServerWorld"/> waits for it instead.
+        /// </remarks>
+        /// <returns>false</returns>
         protected override bool ShouldCheckForSpawnedPlayers()
         {
             return false;
@@ -48,12 +54,10 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        /// <summary>
-        /// Makes a client's world N4E's active world, as it is while that client's world updates.
-        /// </summary>
-        private void MakeClientWorldActive()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void MakeWorldActive(NetworkManager networkManager)
         {
-            EntitiesNetcode.Instance.m_ActiveWorld = m_ClientNetworkManagers[0].NetcodeWorld;
+            EntitiesNetcode.Instance.m_ActiveWorld = networkManager.NetcodeWorld;
         }
 
         private IEnumerator AssertGhostSpawnedInServerWorld(NetworkObject serverInstance, string context)
@@ -69,7 +73,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator InstantiateAndSpawnSpawnsGhostInServerWorld()
         {
-            MakeClientWorldActive();
+            MakeWorldActive(m_ClientNetworkManagers[0]);
             var serverInstance = m_ServerNetworkManager.SpawnManager.InstantiateAndSpawn(m_HybridPrefab.GetComponent<NetworkObject>());
             yield return AssertGhostSpawnedInServerWorld(serverInstance, nameof(NetworkSpawnManager.InstantiateAndSpawn));
         }
@@ -77,7 +81,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator InstantiateThenSpawnSpawnsGhostInServerWorld()
         {
-            MakeClientWorldActive();
+            MakeWorldActive(m_ClientNetworkManagers[0]);
             var instance = Object.Instantiate(m_HybridPrefab).GetComponent<NetworkObject>();
             Assert.IsFalse(instance.GhostObject.IsSpawned, "The ghost was spawned when it was instantiated, before its NetworkObject was spawned!");
             instance.NetworkManagerOwner = m_ServerNetworkManager;
@@ -89,8 +93,8 @@ namespace Unity.Netcode.RuntimeTests
         /// Makes a client's world active right before the server instantiates a player.
         /// </summary>
         /// <remarks>
-        /// N4E makes the server world active again after each client world update, and the server approves a
-        /// connection outside of any world update, so making the client world active from the test body has no effect.
+        /// N4E makes the server world active again after each client world update. The server approves a connection outside
+        /// of any world update. Making the client world active from the test body would therefore not reach the player spawn.
         /// </remarks>
         private class ClientWorldActivePlayerHandler : INetworkPrefabInstanceHandler
         {
@@ -103,7 +107,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
-                m_Test.MakeClientWorldActive();
+                MakeWorldActive(m_Test.m_ClientNetworkManagers[0]);
                 return Object.Instantiate(m_Test.m_PlayerPrefab, position, rotation).GetComponent<NetworkObject>();
             }
 

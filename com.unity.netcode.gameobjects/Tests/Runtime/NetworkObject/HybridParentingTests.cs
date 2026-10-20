@@ -10,8 +10,9 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// NGO parenting of hybrid prefab instances: the worldPositionStays rejection and the mixed timelines warning when NGO handles it, and NGO standing down when
-    /// <see cref="GhostObject"/> parent replication handles it.
+    /// Validates NGO parenting of hybrid prefab instances:
+    /// - When NGO handles the parenting, worldPositionStays is rejected and a mixed hierarchy logs a warning.
+    /// - When <see cref="GhostObject.ParentReplication"/> is enabled, NGO parenting is disabled and N4E replicates the parent.
     /// </summary>
     [TestFixture(HostOrServer.UnifiedHost)]
     [TestFixture(HostOrServer.UnifiedServer)]
@@ -39,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_HybridPrefab = CreateNetworkObjectPrefab("HybridParentingObject");
             m_NonHybridPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab("NonHybridParentingObject", GetAuthorityNetworkManager(), m_ClientNetworkManagers);
-            // N4E reads this when each world registers the prefab, so it is set before the session starts.
+            // N4E reads this when each world registers the prefab. It must be set before the session starts.
             m_HybridPrefab.GetComponent<GhostObject>().ParentReplication = TestContext.CurrentContext.Test.Name.StartsWith("ParentReplication_");
             foreach (var networkManager in m_NetworkManagers)
             {
@@ -93,8 +94,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Validates that NGO parenting of a hybrid instance is rejected with worldPositionStays enabled, since clients would apply the
-        /// new parent before the ghost's rebased local transform and the object would pop, and that it works with worldPositionStays disabled.
+        /// Validates that NGO parenting of a hybrid instance is rejected when worldPositionStays is enabled, and works when it is disabled.
         /// </summary>
         [UnityTest]
         public IEnumerator NgoParenting_WorldPositionStays_RejectedWhenEnabled([Values] bool worldPositionStays)
@@ -120,15 +120,15 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Validates that a direct parent change of a hybrid instance on the authority (<see cref="Transform.parent"/> or
-        /// <see cref="Transform.SetParent(Transform, bool)"/>) is replicated when it keeps the local transform, and is otherwise
-        /// reverted to the previous parent and local transform.
+        /// Validates a direct parent change (<see cref="Transform.parent"/> or <see cref="Transform.SetParent(Transform, bool)"/>) of a hybrid instance on the authority:
+        /// - When it keeps the local transform, it is replicated.
+        /// - Otherwise, it is reverted to the previous parent and local transform.
         /// </summary>
         [UnityTest]
         public IEnumerator NgoParenting_DirectTransformParentChange([Values] bool worldPositionStays)
         {
             yield return SpawnParentAndChild(m_HybridPrefab);
-            // Off the parent's position, so that a worldPositionStays reparent changes the local position.
+            // The child is placed away from the parent, so a worldPositionStays reparent changes its local position.
             m_Parent.transform.position = new Vector3(0f, 1.25f, 0f);
             m_Child.transform.position = new Vector3(0f, 1.25f, 3f);
             var childTransform = m_Child.transform;
@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// A hybrid child under a non-hybrid parent mixes N4E snapshot and NGO transform timelines.
+        /// Validates that a hybrid child parented under a non-hybrid parent logs the mixed timelines warning.
         /// </summary>
         [UnityTest]
         public IEnumerator NgoParenting_UnderNonHybridParent_WarnsMixedTimelines()
@@ -198,8 +198,8 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// N4E replicates a <see cref="Transform.SetParent(Transform, bool)"/> made on the authority. Were NGO still handling
-        /// the change, clients would revert it and log an error, which fails the test.
+        /// Validates that N4E replicates a <see cref="Transform.SetParent(Transform, bool)"/> made on the authority.
+        /// If NGO still handled the change, clients would revert it and log an error, which fails the test.
         /// </summary>
         [UnityTest]
         public IEnumerator ParentReplication_TransformSetParent_ReplicatesWithoutNgo([Values] bool worldPositionStays)
@@ -224,7 +224,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// NGO still moves first generation children to the root when their parent is despawned, and N4E replicates that.
+        /// Validates that NGO still moves first generation children to the root when their parent is despawned, and that N4E replicates it.
         /// </summary>
         [UnityTest]
         [Ignore("Intermittent: a client can apply the parent's despawn before the replicated unparent, destroying the child with it.")]

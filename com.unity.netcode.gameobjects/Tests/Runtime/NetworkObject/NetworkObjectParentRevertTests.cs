@@ -15,7 +15,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     internal class NetworkObjectParentRevertTests : NetcodeIntegrationTest
     {
-        // Off the child's position, so that a parent change with worldPositionStays disabled moves the child.
+        // The parent is placed away from the child, so a parent change with worldPositionStays disabled moves the child.
         private static readonly Vector3 k_ParentPosition = new Vector3(5f, 1.25f, 0f);
         private static readonly Vector3 k_ChildPosition = new Vector3(0f, 1.25f, 3f);
 

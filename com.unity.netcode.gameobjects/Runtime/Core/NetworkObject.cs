@@ -419,7 +419,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// When true, Netcode for Entities replicates this instance's parent and NGO parenting stands down.
+        /// Returns true when N4E replicates this instance's parent. NGO parenting is disabled for the instance in that case.
         /// </summary>
         internal bool GhostReplicatesParent()
         {
@@ -445,8 +445,8 @@ namespace Unity.Netcode
         /// NGO parenting of a hybrid instance only supports worldPositionStays disabled.
         /// </summary>
         /// <remarks>
-        /// The ghost replicates its local transform. With worldPositionStays the authority rebases it at the reparent, but clients
-        /// apply ParentSyncMessage ahead of the interpolated snapshot that carries the rebased values, so the object pops.
+        /// The ghost replicates its local transform. With worldPositionStays enabled, the authority rebases that local transform when it reparents.
+        /// Clients apply the ParentSyncMessage before the snapshot with the rebased values arrives, so the object pops.
         /// </remarks>
         /// <returns>true when the parent change is rejected</returns>
         private bool RejectHybridWorldPositionStays(bool worldPositionStays)
@@ -464,12 +464,12 @@ namespace Unity.Netcode
             return true;
         }
 
-        // Above the round-trip error SetParent leaves behind, same as GhostObject.
+        // Same tolerances as GhostObject. They are above the error a SetParent round trip leaves behind.
         private const float k_LocalSpaceEpsilon = 1e-4f;
         private const float k_LocalSpaceAngleEpsilon = 0.01f;
 
         /// <summary>
-        /// A parent change that kept the local transform was made with worldPositionStays disabled.
+        /// Returns true when the parent change kept the local transform. A change that keeps it was made with worldPositionStays disabled.
         /// </summary>
         private bool LocalTransformKeptByParentChange()
         {
@@ -480,7 +480,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// A hybrid instance parented under a non-hybrid one, or the reverse, can jitter relative to its parent.
+        /// Logs a warning when a hybrid instance is parented under a non-hybrid one, or the reverse. The child can jitter relative to its parent.
         /// </summary>
         private void LogHybridParentingArtifacts(NetworkObject parentObject)
         {
@@ -2543,7 +2543,7 @@ namespace Unity.Netcode
 
         private void OnBeforeTransformParentChanged()
         {
-            // The revert's own SetParent must not overwrite the values it is restoring.
+            // Skips the parent change RevertParentChange makes, so the values it restores are not overwritten.
             if (m_RevertingParentChange)
             {
                 return;
@@ -2558,8 +2558,8 @@ namespace Unity.Netcode
         /// Restores the cached parent and the local transform from before the parent change.
         /// </summary>
         /// <remarks>
-        /// Setting <see cref="Transform.parent"/> keeps the world position, so it only restores the original pose when the change also kept
-        /// the world position. Restoring the local transform under the cached parent works for either worldPositionStays value.
+        /// Setting <see cref="Transform.parent"/> keeps the world position. That only restores the original pose when the change also kept the world position.
+        /// Restoring the local transform under the cached parent works for either worldPositionStays value.
         /// </remarks>
         private void RevertParentChange()
         {
@@ -2765,7 +2765,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own.
+            // No warning: this also runs for the parent changes N4E applies.
             if (GhostReplicatesParent())
             {
                 return;
@@ -2828,7 +2828,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            // A direct Transform parent change does not pass a worldPositionStays value, so it is read from whether the local transform was kept.
+            // A direct Transform parent change has no worldPositionStays value. It is derived from whether the local transform was kept.
             if (HasGhost && !AuthorityAppliedParenting && !GhostObject.ParentReplication)
             {
                 if (LocalTransformKeptByParentChange())
@@ -2956,7 +2956,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            // NGO never tracked this parent, so applying "no parent" here would undo the one Netcode for Entities replicated.
+            // NGO does not track this parent. Applying "no parent" here would undo the parent N4E replicated.
             if (GhostReplicatesParent())
             {
                 return false;

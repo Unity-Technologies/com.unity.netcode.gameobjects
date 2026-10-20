@@ -2652,7 +2652,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 adapter.DefaultGhostMode = ghostMode;
                 adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
             }
-            // Same as NetworkObjectBridge.OnValidate, which does not run for a prefab created at runtime
+            // Same as NetworkObjectBridge.OnValidate, which does not run for a prefab created at runtime.
             adapter.DelaySpawning = true;
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy

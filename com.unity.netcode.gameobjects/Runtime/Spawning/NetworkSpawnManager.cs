@@ -968,9 +968,9 @@ namespace Unity.Netcode
         /// Spawns a hybrid instance's ghost in this <see cref="NetworkManager"/>'s world.
         /// </summary>
         /// <remarks>
-        /// N4E spawns a ghost into its active world, which is the world currently updating, or the server world between world updates.
-        /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>) so the world can be selected here.
-        /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as it is.
+        /// N4E spawns a ghost into its active world, which is not always this NetworkManager's world.
+        /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>), so the world can be selected here.
+        /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as is.
         /// </remarks>
         private void SpawnGhost(NetworkObject networkObject)
         {
@@ -1199,7 +1199,7 @@ namespace Unity.Netcode
             }
 
 #if UNIFIED_NETCODE
-            // The ghost is spawned before OnNetworkSpawn so that NetworkBehaviours can access it there
+            // The ghost is spawned before OnNetworkSpawn, so NetworkBehaviours can access it there.
             if (networkObject.HasGhost)
             {
                 SpawnGhost(networkObject);
@@ -1821,7 +1821,7 @@ namespace Unity.Netcode
                         continue;
                     }
 #if UNIFIED_NETCODE
-                    // NGO does not track a parent that Netcode for Entities replicates, so the hierarchy decides the generation.
+                    // NGO does not track a parent that N4E replicates. The hierarchy determines the generation instead.
                     if (spawnedNetObj.GhostReplicatesParent() && spawnedNetObj.transform.parent != networkObject.transform)
                     {
                         continue;
