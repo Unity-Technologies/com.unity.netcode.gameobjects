@@ -1171,6 +1171,18 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // Only registering a hybrid prefab before the session starts puts the NetworkManager in hybrid mode.
+            if (networkObject.HasGhost && !NetworkManager.NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"{NetworkPrefabs.HybridSpawnWithoutHybridPrefabsError} {networkObject.name} was not spawned.");
+                }
+                return false;
+            }
+#endif
+
             if (playerObject && networkObject.InScenePlaced)
             {
                 NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
