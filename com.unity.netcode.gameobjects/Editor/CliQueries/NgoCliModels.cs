@@ -313,6 +313,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
     {
         public SimulatorSettings Settings;
         public bool MultiplayerToolsInstalled;
+        /// <summary>True when the installed Multiplayer Tools has the Network Simulator and its presets (2.0 or later).</summary>
+        public bool NetworkSimulatorAvailable;
         public List<string> NetworkSimulatorComponents = new List<string>();
         public List<string> LiveTransports = new List<string>();
         public string AppliesWhen;

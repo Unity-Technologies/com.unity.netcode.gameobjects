@@ -33,6 +33,11 @@
             "define": "MULTIPLAYER_TOOLS"
         },
         {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "2.0.0",
+            "define": "MULTIPLAYER_TOOLS_NETWORK_SIMULATOR"
+        },
+        {
             "name": "com.unity.modules.animation",
             "expression": "",
             "define": "COM_UNITY_MODULES_ANIMATION"

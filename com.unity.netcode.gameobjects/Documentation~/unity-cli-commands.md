@@ -2,7 +2,7 @@
 
 Drive Netcode for GameObjects from the command line, a CI job or an AI agent with the Unity CLI. The commands set up a NetworkManager and network prefabs, start and stop sessions, inspect connected clients and spawned objects, simulate poor network conditions, and sample network traffic.
 
-The commands are available when the project has the `com.unity.pipeline` package (version 0.9.0-exp.1 or later). Without it, nothing extra is compiled. Run them against an open Editor as `unity command <group> <name> [arguments]`; `unity command --list` shows every command with its arguments.
+The commands are available when the project has the `com.unity.pipeline` package (version 0.9.0-exp.1 or later). Without it, the commands aren't compiled. Run them against an open Editor as `unity command <group> <name> [arguments]`; `unity command --list` shows every command with its arguments.
 
 ## Typical workflow
 
@@ -55,13 +55,13 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 
 ### netcode.gameobjects.simulator
 
-The simulator applies packet delay, jitter and loss to UnityTransport through its simulator pipeline stage, which is available in the Editor and development builds. Settings last for the Editor session and also apply to sessions started later.
+The simulator applies packet delay, jitter and loss to UnityTransport through its simulator pipeline stage, which is available in the Editor and development builds. Settings last for the Editor session and also apply to sessions started later. Once the simulator, `timeout` and `lag_spike` are all off, the transport gets its own simulator settings back.
 
 | **Command** | **Description** |
 | :--- | :--- |
 | `get` | The current simulated conditions. |
 | `set` | Set a preset and/or packet delay, jitter and loss. |
-| `list_presets` | Network condition presets. They come from the Multiplayer Tools package. |
+| `list_presets` | Network condition presets. They come from the Multiplayer Tools package (2.0 or later). |
 | `lag_spike` | Drop every packet for a short time. |
 | `timeout` | Drop every packet until turned off, so connections time out. |
 

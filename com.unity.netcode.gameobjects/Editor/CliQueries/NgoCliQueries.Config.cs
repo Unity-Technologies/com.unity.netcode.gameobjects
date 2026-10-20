@@ -93,6 +93,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                         {
                             throw new ArgumentException($"{name} is a UnityTransport setting, and {manager.name} uses {manager.NetworkConfig.NetworkTransport?.GetType().Name ?? "no transport"}.");
                         }
+                        RequireDirectConnection(utp, name);
                         var data = utp.ConnectionData;
                         target = utp;
                         if (name == k_Port)
@@ -104,21 +105,21 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                             }
                             result.Previous = (int)data.Port;
                             result.Value = (int)port;
-                            apply = () => utp.SetConnectionData(data.Address, port, data.ServerListenAddress);
+                            apply = () => SetConnectionAddress(utp, data.Address, port, data.ServerListenAddress);
                         }
                         else if (name == k_Address)
                         {
                             var address = RequireText(value, name);
                             result.Previous = data.Address;
                             result.Value = address;
-                            apply = () => utp.SetConnectionData(address, data.Port, data.ServerListenAddress);
+                            apply = () => SetConnectionAddress(utp, address, data.Port, data.ServerListenAddress);
                         }
                         else
                         {
                             var listen = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
                             result.Previous = data.ServerListenAddress;
                             result.Value = listen;
-                            apply = () => utp.SetConnectionData(data.Address, data.Port, listen);
+                            apply = () => SetConnectionAddress(utp, data.Address, data.Port, listen);
                         }
                         break;
                     }
@@ -152,7 +153,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     {
                         var configField = SettableConfigFields().FirstOrDefault(f => ToSnakeCase(f.Name) == name) ?? throw new ArgumentException($"Unknown field '{field}'. Settable: {string.Join(", ", GetConfig(managerFilter).SettableFields)}.");
                         var parsed = ParseValue(configField.FieldType, value, name);
-                        ValidateConfigValue(name, parsed, result.Notes);
+                        ValidateConfigValue(configField.Name, name, parsed, result.Notes);
                         target = manager;
                         var previous = configField.GetValue(manager.NetworkConfig);
                         result.Previous = previous is Enum ? previous.ToString() : previous;
@@ -180,19 +181,19 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return result;
         }
 
-        private static void ValidateConfigValue(string name, object value, List<string> notes)
+        private static void ValidateConfigValue(string fieldName, string name, object value, List<string> notes)
         {
-            switch (name)
+            switch (fieldName)
             {
-                case "tick_rate" when (uint)value == 0 || (uint)value > 1000:
+                case nameof(NetworkConfig.TickRate) when (uint)value == 0 || (uint)value > 1000:
                     throw new ArgumentException("tick_rate must be between 1 and 1000.");
-                case "tick_rate" when (uint)value > 120:
+                case nameof(NetworkConfig.TickRate) when (uint)value > 120:
                     notes.Add("Tick rates above 120 cost a lot of bandwidth and CPU; 30 to 60 is typical.");
                     break;
-                case "network_topology" when (NetworkTopologyTypes)value == NetworkTopologyTypes.DistributedAuthority:
+                case nameof(NetworkConfig.NetworkTopology) when (NetworkTopologyTypes)value == NetworkTopologyTypes.DistributedAuthority:
                     notes.Add("Distributed authority needs a session service (use_cmb_service, e.g. through the Multiplayer Services SDK) or a distributed authority host.");
                     break;
-                case "client_connection_buffer_timeout" or "load_scene_timeout" or "time_resync_interval" when (int)value < 1:
+                case nameof(NetworkConfig.ClientConnectionBufferTimeout) or nameof(NetworkConfig.LoadSceneTimeOut) or nameof(NetworkConfig.TimeResyncInterval) when (int)value < 1:
                     throw new ArgumentException($"{name} must be at least 1.");
             }
         }
@@ -218,14 +219,15 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 result.Issues.Add(new AuditIssue { Severity = severity, Code = code, Asset = asset, Message = message });
             }
 
-            var managers = string.IsNullOrWhiteSpace(managerFilter) ? FindManagers() : new List<NetworkManager> { ResolveManager(managerFilter) };
+            var all = FindManagers();
+            var managers = string.IsNullOrWhiteSpace(managerFilter) ? all : new List<NetworkManager> { ResolveManager(managerFilter, all) };
             if (managers.Count == 0)
             {
                 throw new InvalidOperationException(NoManagerMessage);
             }
-            if (FindManagers().Count > 1)
+            if (all.Count > 1)
             {
-                Add("warning", "SEVERAL_NETWORKMANAGERS", null, $"{FindManagers().Count} NetworkManagers in the open scenes. Only one becomes NetworkManager.Singleton; keep one per session.");
+                Add("warning", "SEVERAL_NETWORKMANAGERS", null, $"{all.Count} NetworkManagers in the open scenes. Only one becomes NetworkManager.Singleton; keep one per session.");
             }
 
             foreach (var manager in managers)

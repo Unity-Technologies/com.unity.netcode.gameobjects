@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEngine;
@@ -346,12 +348,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         }
 
         /// <summary>
-        /// Picks the NetworkManager a command targets: the one whose name or hierarchy path contains
-        /// <paramref name="filter"/>, else the only one, else the running singleton.
+        /// Picks the NetworkManager a command targets: the one named <paramref name="filter"/> (or with that
+        /// hierarchy path), else the one whose hierarchy path contains it, else the only one, else the running singleton.
         /// </summary>
-        internal static NetworkManager ResolveManager(string filter)
+        internal static NetworkManager ResolveManager(string filter, List<NetworkManager> managers = null)
         {
-            var managers = FindManagers();
+            managers ??= FindManagers();
             if (managers.Count == 0)
             {
                 throw new InvalidOperationException(NoManagerMessage);
@@ -360,9 +362,15 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             if (!string.IsNullOrWhiteSpace(filter))
             {
                 var trimmed = filter.Trim();
-                var matches = managers.Where(m =>
-                    string.Equals(m.name, trimmed, StringComparison.OrdinalIgnoreCase)
-                    || GetHierarchyPath(m.transform).IndexOf(trimmed, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                var paths = managers.Select(m => (manager: m, path: GetHierarchyPath(m.transform))).ToList();
+                // An exact name or hierarchy path wins over a partial match: "Server" picks Server, not ServerBrowser.
+                var matches = paths.Where(p =>
+                    string.Equals(p.manager.name, trimmed, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(p.path, trimmed, StringComparison.OrdinalIgnoreCase)).Select(p => p.manager).ToList();
+                if (matches.Count == 0)
+                {
+                    matches = paths.Where(p => p.path.IndexOf(trimmed, StringComparison.OrdinalIgnoreCase) >= 0).Select(p => p.manager).ToList();
+                }
                 if (matches.Count == 1)
                 {
                     return matches[0];
@@ -399,6 +407,45 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new InvalidOperationException(NotListeningMessage);
             }
             return manager;
+        }
+
+        /// <summary>
+        /// Sets a UnityTransport's address, port and listen address. Unlike UnityTransport.SetConnectionData, this
+        /// keeps the protocol (Relay or direct) and the WebSocket path, and leaves an empty listen address empty.
+        /// </summary>
+        internal static void SetConnectionAddress(UnityTransport utp, string address, ushort port, string listenAddress)
+        {
+            var data = utp.ConnectionData;
+            data.Address = address;
+            data.Port = port;
+            data.ServerListenAddress = listenAddress ?? string.Empty;
+            utp.ConnectionData = data;
+        }
+
+        /// <summary>
+        /// The listen address for a server that clients reach at <paramref name="address"/>: empty (loopback) for a
+        /// loopback address, otherwise every interface, so clients on other machines can connect.
+        /// </summary>
+        internal static string DefaultListenAddress(string address)
+        {
+            if (string.Equals(address, "localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+            if (IPAddress.TryParse(address, out var ip))
+            {
+                return IPAddress.IsLoopback(ip) ? string.Empty : ip.AddressFamily == AddressFamily.InterNetworkV6 ? "::" : "0.0.0.0";
+            }
+            return "0.0.0.0";
+        }
+
+        /// <summary>Throws when the transport connects through Relay, which ignores the address and port.</summary>
+        internal static void RequireDirectConnection(UnityTransport utp, string setting)
+        {
+            if (utp.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+            {
+                throw new InvalidOperationException($"{utp.name}'s UnityTransport connects through Relay, which ignores {setting}: the server comes from the Relay allocation (SetRelayServerData). Set the transport's protocol to UnityTransport to connect directly.");
+            }
         }
 
         internal static string GetHierarchyPath(Transform transform)
