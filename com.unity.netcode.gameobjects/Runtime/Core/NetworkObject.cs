@@ -469,7 +469,7 @@ namespace Unity.Netcode
         private const float k_LocalSpaceAngleEpsilon = 0.01f;
 
         /// <summary>
-        /// Returns true when the parent change kept the local transform. A change that keeps it was made with worldPositionStays disabled.
+        /// Returns true when parenting occurred with world position stays set to false.
         /// </summary>
         private bool LocalTransformKeptByParentChange()
         {
@@ -480,7 +480,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Logs a warning when a hybrid instance is parented under a non-hybrid one, or the reverse. The child can jitter relative to its parent.
+        /// Logs a warning when a hybrid instance is parented under a non-hybrid one or vice versa.
         /// </summary>
         private void LogHybridParentingArtifacts(NetworkObject parentObject)
         {
@@ -2535,7 +2535,7 @@ namespace Unity.Netcode
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
-        // The local transform before a parent change, restored when the change is reverted.
+        // The local transform's state before a parent change. These values are used if the parent change is reverted.
         private Vector3 m_LocalPositionBeforeParentChange;
         private Quaternion m_LocalRotationBeforeParentChange;
         private Vector3 m_LocalScaleBeforeParentChange;
@@ -2555,7 +2555,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Restores the cached parent and the local transform from before the parent change.
+        /// Restores the cached parent and the local transform prior to the parent change.
         /// </summary>
         /// <remarks>
         /// Setting <see cref="Transform.parent"/> keeps the world position. That only restores the original pose when the change also kept the world position.
