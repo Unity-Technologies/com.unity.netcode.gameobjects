@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Unity.Netcode.GameObjects.Editor.Cli;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Utilities;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -58,7 +59,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             NgoCliSimulator.DelayMs = 0;
             NgoCliSimulator.JitterMs = 0;
             NgoCliSimulator.DropPercent = 0;
-            NgoCliSimulator.SetBlackout(false);
+            NgoCliSimulator.SetTimeout(false);
         }
 
         private static GameObject CreatePrefab(string name, params Type[] components)
@@ -126,6 +127,10 @@ namespace Unity.Netcode.GameObjects.EditorTests
             StringAssert.Contains("ServerManager", ambiguous.Message);
             Assert.Throws<ArgumentException>(() => NgoCliQueries.ResolveManager("Nope"));
             Assert.AreSame(first, NgoCliQueries.ResolveManager("ServerManager"));
+
+            var longer = new GameObject("ServerManager2").AddComponent<NetworkManager>();
+            Assert.AreSame(first, NgoCliQueries.ResolveManager("ServerManager"), "An exact name wins over a partial match.");
+            Assert.AreSame(longer, NgoCliQueries.ResolveManager("ServerManager2"));
         }
 
         // --- Authoring ---
@@ -147,6 +152,10 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.AreEqual(NetworkTopologyTypes.DistributedAuthority, manager.NetworkConfig.NetworkTopology);
             Assert.AreEqual("10.0.0.5", transport.ConnectionData.Address);
             Assert.AreEqual(9000, transport.ConnectionData.Port);
+            Assert.AreEqual("0.0.0.0", transport.ConnectionData.ServerListenAddress, "A server for a remote address listens on every interface.");
+            Assert.AreEqual(string.Empty, NgoCliQueries.DefaultListenAddress("127.0.0.1"));
+            Assert.AreEqual(string.Empty, NgoCliQueries.DefaultListenAddress("localhost"));
+            Assert.AreEqual("::", NgoCliQueries.DefaultListenAddress("2001:db8::1"));
 
             var again = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.ClientServer, "127.0.0.1", 7777, false));
             StringAssert.Contains("already have a NetworkManager", again.Message);
@@ -276,9 +285,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.IsTrue(manager.NetworkConfig.ConnectionApproval);
             NgoCliQueries.SetConfig("network_topology", "distributedauthority", null, false);
             Assert.AreEqual(NetworkTopologyTypes.DistributedAuthority, manager.NetworkConfig.NetworkTopology);
+            var transport = (UnityTransport)manager.NetworkConfig.NetworkTransport;
+            Assert.AreEqual(string.Empty, transport.ConnectionData.ServerListenAddress, "The listen address isn't set to the connect address.");
+            transport.ConnectionData.WebSocketPath = "/game";
             NgoCliQueries.SetConfig("port", "9100", null, false);
-            Assert.AreEqual(9100, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port);
+            Assert.AreEqual(9100, transport.ConnectionData.Port);
+            Assert.AreEqual("/game", transport.ConnectionData.WebSocketPath, "Other connection settings are kept.");
 
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("load_scene_time_out", "0", null, false));
             Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("tick_rate", "0", null, false));
             Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("tick_rate", "fast", null, false));
             var unknown = Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("no_such_field", "1", null, false));
@@ -287,6 +301,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Undo.PerformUndo();
             Assert.AreEqual(7777, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port, "Each change is its own undo step.");
             Assert.AreEqual(60u, manager.NetworkConfig.TickRate);
+
+            var serialized = new SerializedObject(transport);
+            serialized.FindProperty("m_ProtocolType").enumValueIndex = (int)UnityTransport.ProtocolType.RelayUnityTransport;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            var relay = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.SetConfig("port", "9200", null, false));
+            StringAssert.Contains("Relay", relay.Message);
         }
 
         [Test]
@@ -353,7 +373,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         public void SimulatorPresets_ComeFromMultiplayerTools()
         {
             var presets = NgoCliQueries.ListSimulatorPresets();
-            if (!NgoCliQueries.MultiplayerToolsInstalled)
+            if (presets.Source == null)
             {
                 CollectionAssert.IsEmpty(presets.Presets);
                 StringAssert.Contains("com.unity.multiplayer.tools", presets.Note);
@@ -428,11 +448,25 @@ namespace Unity.Netcode.GameObjects.EditorTests
                 Assert.Throws<ArgumentException>(() => NgoCliQueries.ChangeOwner(id, 42, null));
                 Assert.Throws<ArgumentException>(() => NgoCliQueries.Kick(0, null, null), "The host can't kick its own client.");
 
+                var driver = ((UnityTransport)NgoCliQueries.ResolveManager(null).NetworkConfig.NetworkTransport).GetNetworkDriver();
+                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var original);
                 var simulator = NgoCliQueries.SetSimulator(true, null, 50, 0, 0);
                 CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
+                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var applied);
+                Assert.AreEqual(50, applied.PacketDelayMs);
+
                 var timeout = NgoCliQueries.SetTimeout(true);
                 Assert.IsTrue(timeout.Current.TimeoutActive);
+                var spike = NgoCliQueries.StartLagSpike(10);
+                Assert.IsTrue(spike.Current.TimeoutActive, "A lag spike leaves the timeout on.");
+                yield return WaitForCondition(() => !NgoCliSimulator.LagSpikeActive);
+                Assert.IsFalse(NgoCliSimulator.LagSpikeActive);
+                Assert.IsTrue(NgoCliQueries.GetSimulator().Settings.TimeoutActive, "The timeout outlasts the lag spike.");
                 NgoCliQueries.SetTimeout(false);
+
+                NgoCliQueries.SetSimulator(false, null, -1, -1, -1);
+                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
+                Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
 
                 var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
                 yield return WaitFor(stats);
@@ -456,13 +490,18 @@ namespace Unity.Netcode.GameObjects.EditorTests
             }
         }
 
-        private static IEnumerator WaitFor(Task task)
+        private static IEnumerator WaitForCondition(Func<bool> condition)
         {
             var deadline = EditorApplication.timeSinceStartup + 20;
-            while (!task.IsCompleted && EditorApplication.timeSinceStartup < deadline)
+            while (!condition() && EditorApplication.timeSinceStartup < deadline)
             {
                 yield return null;
             }
+        }
+
+        private static IEnumerator WaitFor(Task task)
+        {
+            yield return WaitForCondition(() => task.IsCompleted);
             Assert.IsTrue(task.IsCompleted, "The query didn't finish.");
             if (task.IsFaulted)
             {

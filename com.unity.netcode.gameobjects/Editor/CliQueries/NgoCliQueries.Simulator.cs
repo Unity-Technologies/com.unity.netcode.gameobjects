@@ -6,7 +6,7 @@ using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
 using UnityEditor;
 using UnityEngine;
-#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
 using Unity.Multiplayer.Tools.NetworkSimulator.Runtime;
 #endif
 
@@ -18,6 +18,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
     /// the same mechanism Multiplayer Tools' Network Simulator uses. Settings last for the editor session and are
     /// applied to drivers created later, so they can be set before entering play mode.
     /// </summary>
+    /// <remarks>
+    /// No driver is touched until the CLI turns the simulator, a timeout or a lag spike on. Each driver's own
+    /// simulator parameters (from the transport or a Network Simulator component) are saved before the first
+    /// override and put back once all three are off.
+    /// </remarks>
     [InitializeOnLoad]
     internal static class NgoCliSimulator
     {
@@ -54,13 +59,28 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             set => SessionState.SetInt(k_Prefix + "DropPercent", value);
         }
 
-        /// <summary>True while every packet is dropped (timeout or lag spike).</summary>
-        internal static bool Blackout { get; private set; }
+        /// <summary>True while every packet is dropped until the timeout is turned off.</summary>
+        internal static bool TimeoutActive { get; private set; }
         private static double s_LagSpikeEnd;
 
         internal static bool LagSpikeActive => s_LagSpikeEnd > 0;
 
         internal static int LagSpikeMsLeft => s_LagSpikeEnd > 0 ? Math.Max(0, (int)((s_LagSpikeEnd - EditorApplication.timeSinceStartup) * 1000)) : 0;
+
+        /// <summary>True while every packet is dropped (timeout or lag spike).</summary>
+        internal static bool Blackout => TimeoutActive || LagSpikeActive;
+
+        private static bool Active => Enabled || Blackout;
+
+        /// <summary>A driver's own simulator parameters, saved before the CLI first overrides them.</summary>
+        private struct Baseline
+        {
+            public SimulatorUtility.Parameters Stage;
+            public NetworkSimulatorParameter Global;
+        }
+
+        // Keyed by the id UnityTransport passes to TransportInitialized (see TransportId).
+        private static readonly Dictionary<int, Baseline> s_Baselines = new Dictionary<int, Baseline>();
 
         static NgoCliSimulator()
         {
@@ -72,37 +92,32 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void SubscribeToDrivers()
         {
-#if UNITY_6000_2_OR_NEWER
-            UnityTransport.OnDriverInitialized -= OnDriverInitialized;
-            UnityTransport.OnDriverInitialized += OnDriverInitialized;
-#endif
+            UnityTransport.TransportInitialized -= OnTransportInitialized;
+            UnityTransport.TransportInitialized += OnTransportInitialized;
         }
 
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
-            if (change == PlayModeStateChange.EnteredPlayMode)
+            if (change == PlayModeStateChange.EnteredPlayMode && Active)
             {
-                SubscribeToDrivers();
                 // Drivers created before the subscription (a NetworkManager started in Awake) still get the settings.
                 ApplyToLiveTransports();
             }
             else if (change == PlayModeStateChange.ExitingPlayMode)
             {
-                Blackout = false;
+                TimeoutActive = false;
                 s_LagSpikeEnd = 0;
                 EditorApplication.update -= EndLagSpikeWhenDue;
+                s_Baselines.Clear();
             }
         }
 
-#if UNITY_6000_2_OR_NEWER
-        private static void OnDriverInitialized(EntityId transportId, NetworkDriver driver)
+        private static void OnTransportInitialized(int transportId, NetworkDriver driver)
         {
-            if (Enabled || Blackout)
-            {
-                Apply(driver);
-            }
+            // A new driver starts from its transport's own settings.
+            s_Baselines.Remove(transportId);
+            Apply(transportId, driver);
         }
-#endif
 
         /// <summary>The UnityTransports in the open scenes whose driver is running.</summary>
         internal static List<UnityTransport> LiveTransports()
@@ -122,13 +137,26 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return transports;
         }
 
+        /// <summary>
+        /// The id UnityTransport passes to TransportInitialized and TransportDisposed for this transport. Mirrors
+        /// UnityTransport's own computation; keep the two in step.
+        /// </summary>
+        private static int TransportId(UnityTransport utp)
+        {
+#if UNITY_6000_2_OR_NEWER
+            return utp.GetEntityId().GetHashCode();
+#else
+            return utp.GetInstanceID();
+#endif
+        }
+
         /// <summary>Pushes the current settings to every running driver and returns the transports updated.</summary>
-        internal static List<string> ApplyToLiveTransports()
+        internal static List<string> ApplyToLiveTransports(List<UnityTransport> live = null, bool clearBlackout = false)
         {
             var applied = new List<string>();
-            foreach (var utp in LiveTransports())
+            foreach (var utp in live ?? LiveTransports())
             {
-                if (Apply(utp.GetNetworkDriver()))
+                if (Apply(TransportId(utp), utp.GetNetworkDriver(), clearBlackout))
                 {
                     applied.Add(NgoCliQueries.GetHierarchyPath(utp.transform));
                 }
@@ -136,41 +164,73 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return applied;
         }
 
-        private static bool Apply(NetworkDriver driver)
+        /// <summary>
+        /// Overrides the driver's simulator parameters while the CLI simulator, a timeout or a lag spike is on,
+        /// and restores the saved ones once none is. Returns false when the driver was left alone.
+        /// </summary>
+        /// <param name="clearBlackout">
+        /// With nothing saved and nothing on, still lift a blackout (100% loss both ways) left on the driver, e.g.
+        /// after a script recompile in play mode reset the saved state.
+        /// </param>
+        private static bool Apply(int transportId, NetworkDriver driver, bool clearBlackout = false)
         {
-            if (!driver.IsCreated || !driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var parameters))
+            if (!driver.IsCreated || !driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var stage))
             {
                 return false;
             }
-            var on = Enabled;
-            parameters.PacketDelayMs = on ? DelayMs : 0;
-            parameters.PacketJitterMs = on ? JitterMs : 0;
-            parameters.PacketDropPercentage = on ? DropPercent : 0;
-            parameters.PacketDropInterval = 0;
-            driver.ModifySimulatorStageParameters(parameters);
-
-            var loss = Blackout ? 100f : 0f;
-            driver.ModifyNetworkSimulatorParameters(new NetworkSimulatorParameter
+            if (!s_Baselines.TryGetValue(transportId, out var baseline))
             {
-                ReceivePacketLossPercent = loss,
-                SendPacketLossPercent = loss,
-            });
+                if (!Active)
+                {
+                    return clearBlackout && ClearLeftoverBlackout(driver);
+                }
+                driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var global);
+                baseline = new Baseline { Stage = stage, Global = global };
+                s_Baselines[transportId] = baseline;
+            }
+
+            stage = baseline.Stage;
+            if (Enabled)
+            {
+                stage.PacketDelayMs = DelayMs;
+                stage.PacketJitterMs = JitterMs;
+                stage.PacketDropPercentage = DropPercent;
+                stage.PacketDropInterval = 0;
+            }
+            driver.ModifySimulatorStageParameters(stage);
+
+            var parameters = baseline.Global;
+            if (Blackout)
+            {
+                parameters.ReceivePacketLossPercent = 100f;
+                parameters.SendPacketLossPercent = 100f;
+            }
+            driver.ModifyNetworkSimulatorParameters(parameters);
+            if (!Active)
+            {
+                // Restored the driver's own settings.
+                s_Baselines.Remove(transportId);
+            }
             return true;
         }
 
-        internal static void SetBlackout(bool on)
+        private static bool ClearLeftoverBlackout(NetworkDriver driver)
         {
-            Blackout = on;
-            if (!on)
+            if (!driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var global)
+                || global.ReceivePacketLossPercent < 100f || global.SendPacketLossPercent < 100f)
             {
-                s_LagSpikeEnd = 0;
-                EditorApplication.update -= EndLagSpikeWhenDue;
+                return false;
             }
+            global.ReceivePacketLossPercent = 0f;
+            global.SendPacketLossPercent = 0f;
+            driver.ModifyNetworkSimulatorParameters(global);
+            return true;
         }
+
+        internal static void SetTimeout(bool on) => TimeoutActive = on;
 
         internal static void StartLagSpike(int durationMs)
         {
-            Blackout = true;
             s_LagSpikeEnd = EditorApplication.timeSinceStartup + durationMs / 1000.0;
             EditorApplication.update -= EndLagSpikeWhenDue;
             EditorApplication.update += EndLagSpikeWhenDue;
@@ -184,8 +244,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             EditorApplication.update -= EndLagSpikeWhenDue;
             s_LagSpikeEnd = 0;
-            Blackout = false;
-            ApplyToLiveTransports();
+            // A timeout that's on keeps dropping packets.
+            ApplyToLiveTransports(clearBlackout: true);
         }
 
         internal static SimulatorSettings Snapshot() => new SimulatorSettings
@@ -195,7 +255,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             PacketDelayMs = DelayMs,
             PacketJitterMs = JitterMs,
             PacketDropPercent = DropPercent,
-            TimeoutActive = Blackout && !LagSpikeActive,
+            TimeoutActive = TimeoutActive,
             LagSpikeMsLeft = LagSpikeMsLeft,
         };
     }
@@ -208,12 +268,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 Settings = NgoCliSimulator.Snapshot(),
                 MultiplayerToolsInstalled = MultiplayerToolsInstalled,
+                NetworkSimulatorAvailable = NetworkSimulatorAvailable,
                 LiveTransports = NgoCliSimulator.LiveTransports().Select(t => GetHierarchyPath(t.transform)).ToList(),
                 AppliesWhen = EditorApplication.isPlaying
                     ? "Now, to the live transports listed, and to transports started later in this editor session."
                     : "When a transport starts in play mode, for the rest of this editor session.",
             };
-#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
             foreach (var component in FindObjects.ByType<NetworkSimulator>(includeInactive: false))
             {
                 result.NetworkSimulatorComponents.Add($"{component.gameObject.scene.name}/{GetHierarchyPath(component.transform)}");
@@ -248,7 +309,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 var presets = ListSimulatorPresets().Presets;
                 if (presets.Count == 0)
                 {
-                    throw new ArgumentException("Presets come from Multiplayer Tools, which isn't installed (package add com.unity.multiplayer.tools). Pass delay_ms, jitter_ms and drop_percent instead.");
+                    throw new ArgumentException($"{PresetsUnavailableReason} Pass delay_ms, jitter_ms and drop_percent instead.");
                 }
                 chosen = MatchPreset(presets, preset.Trim()) ?? throw new ArgumentException($"Unknown preset '{preset}'. Presets: {string.Join(", ", presets.Select(p => p.Name))}.");
             }
@@ -283,16 +344,17 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 NgoCliSimulator.Preset = NgoCliSimulator.CustomPreset;
             }
 
-            result.AppliedLiveTo = NgoCliSimulator.ApplyToLiveTransports();
+            var live = NgoCliSimulator.LiveTransports();
+            result.AppliedLiveTo = NgoCliSimulator.ApplyToLiveTransports(live);
             result.Current = NgoCliSimulator.Snapshot();
             result.AppliesWhen = result.AppliedLiveTo.Count > 0
                 ? "Now, for the listed transports, and to transports started later in this editor session."
                 : "When a transport starts in play mode, for the rest of this editor session.";
-            if (EditorApplication.isPlaying && result.AppliedLiveTo.Count == 0 && NgoCliSimulator.LiveTransports().Count > 0)
+            if (enable && result.AppliedLiveTo.Count == 0 && live.Count > 0)
             {
                 result.Notes.Add("The running transports have no simulator stage (it's compiled into the editor and development builds only).");
             }
-#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
             if (FindObjects.ByType<NetworkSimulator>(includeInactive: false).Length > 0)
             {
                 result.Notes.Add("A Multiplayer Tools Network Simulator component is in the scene; it reapplies its own preset when that preset changes.");
@@ -325,7 +387,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         internal static SimulatorPresetListResult ListSimulatorPresets()
         {
-#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
             var result = new SimulatorPresetListResult { Source = "com.unity.multiplayer.tools" };
             foreach (var preset in NetworkSimulatorPresets.Values)
             {
@@ -344,12 +406,15 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return new SimulatorPresetListResult
             {
                 Source = null,
-                Note = "Presets come from Multiplayer Tools (package add com.unity.multiplayer.tools). Without it, set delay_ms, jitter_ms and drop_percent directly.",
+                Note = $"{PresetsUnavailableReason} Without them, set delay_ms, jitter_ms and drop_percent directly.",
             };
 #endif
         }
 
-        /// <summary>Drops every packet for <paramref name="durationMs"/>, then restores the simulator settings.</summary>
+        /// <summary>
+        /// Drops every packet for <paramref name="durationMs"/>, then restores the simulator settings. A timeout
+        /// that's on keeps dropping packets after the spike.
+        /// </summary>
         internal static SimulatorResult StartLagSpike(int durationMs)
         {
             if (durationMs < 10 || durationMs > 120_000)
@@ -373,8 +438,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 RequireLiveTransports("simulate a timeout");
             }
             var result = new SimulatorResult { Previous = NgoCliSimulator.Snapshot() };
-            NgoCliSimulator.SetBlackout(enable);
-            result.AppliedLiveTo = NgoCliSimulator.ApplyToLiveTransports();
+            NgoCliSimulator.SetTimeout(enable);
+            result.AppliedLiveTo = NgoCliSimulator.ApplyToLiveTransports(clearBlackout: !enable);
             result.Current = NgoCliSimulator.Snapshot();
             result.AppliesWhen = enable
                 ? "Now. Every packet is dropped until netcode.gameobjects.simulator timeout false; connections time out after the transport's disconnect timeout."
@@ -393,6 +458,23 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new InvalidOperationException($"No running UnityTransport to {action} on. Start a session with netcode.gameobjects.session start.");
             }
         }
+
+        /// <summary>True when Multiplayer Tools has the Network Simulator and its presets (2.0 or later).</summary>
+        internal static bool NetworkSimulatorAvailable
+        {
+            get
+            {
+#if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        private static string PresetsUnavailableReason => MultiplayerToolsInstalled
+            ? "Presets come from the Network Simulator in Multiplayer Tools 2.0 or later; the installed version is older (upgrade com.unity.multiplayer.tools)."
+            : "Presets come from Multiplayer Tools 2.0 or later, which isn't installed (package add com.unity.multiplayer.tools).";
 
         internal static bool MultiplayerToolsInstalled
         {

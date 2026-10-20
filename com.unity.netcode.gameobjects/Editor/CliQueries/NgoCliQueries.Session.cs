@@ -49,8 +49,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 {
                     throw new ArgumentException("address and port can only be set on a UnityTransport. Configure your transport directly.");
                 }
+                RequireDirectConnection(utp, "address and port");
                 var data = utp.ConnectionData;
-                utp.SetConnectionData(string.IsNullOrWhiteSpace(address) ? data.Address : address.Trim(), port > 0 ? (ushort)port : data.Port, data.ServerListenAddress);
+                SetConnectionAddress(utp, string.IsNullOrWhiteSpace(address) ? data.Address : address.Trim(), port > 0 ? (ushort)port : data.Port, data.ServerListenAddress);
                 result.Notes.Add($"Transport set to {utp.ConnectionData.Address}:{utp.ConnectionData.Port} for this session.");
             }
 
@@ -269,12 +270,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             var result = new SpawnResult { Manager = manager.name, Prefab = AssetDatabase.GetAssetPath(prefabAsset) };
-            var ownerId = owner < 0 ? (manager.DistributedAuthorityMode ? manager.LocalClientId : NetworkManager.ServerClientId) : (ulong)owner;
-            if (manager.DistributedAuthorityMode && ownerId != manager.LocalClientId)
+            var ownerId = manager.DistributedAuthorityMode ? manager.LocalClientId : owner < 0 ? NetworkManager.ServerClientId : (ulong)owner;
+            if (manager.DistributedAuthorityMode && owner >= 0 && (ulong)owner != manager.LocalClientId)
             {
                 result.Notes.Add($"Distributed authority spawns are owned by the spawning client; owner {owner} is ignored. Transfer it afterwards with netcode.gameobjects change_owner.");
             }
-            if (owner >= 0 && !manager.ConnectedClientsIds.Contains(ownerId))
+            else if (owner >= 0 && !IsValidOwner(manager, ownerId))
             {
                 throw new ArgumentException($"No connected client {owner}. List them with netcode.gameobjects list_clients.");
             }
@@ -334,7 +335,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 throw new ArgumentException("owner must be a client id (0 or more). List them with netcode.gameobjects list_clients.");
             }
-            if (!manager.ConnectedClientsIds.Contains((ulong)newOwner))
+            if (!IsValidOwner(manager, (ulong)newOwner))
             {
                 throw new ArgumentException($"No connected client {newOwner}. List them with netcode.gameobjects list_clients.");
             }
@@ -369,31 +370,33 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     networkObject.ChangeOwnership((ulong)newOwner);
                 }
 
-                if (!manager.DistributedAuthorityMode && networkObject.OwnerClientId != (ulong)newOwner)
+                // The change applies immediately when allowed; refusals are only logged at the Developer log level.
+                if (networkObject.OwnerClientId != (ulong)newOwner)
                 {
-                    throw new InvalidOperationException($"Ownership of {networkObject.name} didn't change{errors.Describe()}");
-                }
-                if (manager.DistributedAuthorityMode && errors.HasErrors)
-                {
-                    throw new InvalidOperationException($"Ownership of {networkObject.name} didn't change{errors.Describe()} Check its ownership flags with netcode.gameobjects get_object.");
+                    throw new InvalidOperationException($"Ownership of {networkObject.name} didn't change{errors.Describe()}" + (manager.DistributedAuthorityMode
+                        ? " It may be locked, need a request, not be transferable or be session-owner only; check its ownership flags with netcode.gameobjects get_object."
+                        : ""));
                 }
             }
 
             result.Owner = (long)networkObject.OwnerClientId;
-            if (manager.DistributedAuthorityMode && networkObject.OwnerClientId != (ulong)newOwner)
-            {
-                result.Notes.Add("Distributed authority applies the change through the session; check it with netcode.gameobjects get_object.");
-            }
             return result;
         }
 
         // --- Helpers ---
 
+        /// <summary>A connected client, or with a client-server topology the server itself (a dedicated server isn't a client).</summary>
+        private static bool IsValidOwner(NetworkManager manager, ulong clientId)
+        {
+            return manager.ConnectedClientsIds.Contains(clientId)
+                || (!manager.DistributedAuthorityMode && clientId == NetworkManager.ServerClientId);
+        }
+
         private static void ValidateTimeout(float timeoutSeconds)
         {
             if (timeoutSeconds <= 0 || timeoutSeconds > 600)
             {
-                throw new ArgumentException("timeout must be between 1 and 600 seconds.");
+                throw new ArgumentException("timeout must be more than 0 and at most 600 seconds.");
             }
         }
 

@@ -72,7 +72,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             manager.NetworkConfig ??= new NetworkConfig();
             manager.NetworkConfig.NetworkTransport = transport;
             manager.NetworkConfig.NetworkTopology = topology;
-            transport.SetConnectionData(result.Address, (ushort)port);
+            var listenAddress = DefaultListenAddress(result.Address);
+            SetConnectionAddress(transport, result.Address, (ushort)port, listenAddress);
+            if (!string.IsNullOrEmpty(listenAddress))
+            {
+                result.Notes.Add($"A server listens on every interface ({listenAddress}) so clients can reach it at {result.Address}. Change it with netcode.gameobjects.config set listen_address.");
+            }
             EditorUtility.SetDirty(manager);
             EditorUtility.SetDirty(transport);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -239,7 +244,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             var defaultList = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(defaultPath);
             if (defaultList == null)
             {
-                notes.Add($"Created the default list at {defaultPath}. Attach it to your NetworkManager's Network Prefabs Lists (or let netcode.gameobjects create_network_manager do it).");
+                notes.Add($"{(dryRun ? "Would create" : "Created")} the default list at {defaultPath}. Attach it to your NetworkManager's Network Prefabs Lists (or let netcode.gameobjects create_network_manager do it).");
                 if (dryRun)
                 {
                     return null;
