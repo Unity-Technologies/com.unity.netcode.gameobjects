@@ -2,7 +2,7 @@
 
 Drive Netcode for GameObjects from the command line, a CI job or an AI agent with the Unity CLI. The commands set up a NetworkManager and network prefabs, start and stop sessions, inspect connected clients and spawned objects, simulate poor network conditions, and sample network traffic.
 
-The commands are available when the project has the `com.unity.pipeline` package (version 0.9.0 or later). Without it, nothing extra is compiled. Run them against an open Editor as `unity command <group> <name> [arguments]`; `unity command --list` shows every command with its arguments.
+The commands are available when the project has the `com.unity.pipeline` package (version 0.9.0-exp.1 or later). Without it, nothing extra is compiled. Run them against an open Editor as `unity command <group> <name> [arguments]`; `unity command --list` shows every command with its arguments.
 
 ## Typical workflow
 
