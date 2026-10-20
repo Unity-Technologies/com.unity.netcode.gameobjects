@@ -464,56 +464,19 @@ namespace Unity.Netcode
             return true;
         }
 
-        // The parent and local transform before a parent change, so a direct Transform parent change can be told apart and reverted.
-        private Transform m_HybridParentBeforeChange;
-        private Vector3 m_HybridLocalPositionBeforeChange;
-        private Quaternion m_HybridLocalRotationBeforeChange;
-        private Vector3 m_HybridLocalScaleBeforeChange;
         // Above the round-trip error SetParent leaves behind, same as GhostObject.
         private const float k_LocalSpaceEpsilon = 1e-4f;
         private const float k_LocalSpaceAngleEpsilon = 0.01f;
-        private bool m_RevertingHybridParent;
-
-        private void OnBeforeTransformParentChanged()
-        {
-            // The revert's own SetParent must not overwrite the values it is restoring.
-            if (!HasGhost || m_RevertingHybridParent)
-            {
-                return;
-            }
-            var currentTransform = transform;
-            m_HybridParentBeforeChange = currentTransform.parent;
-            m_HybridLocalPositionBeforeChange = currentTransform.localPosition;
-            m_HybridLocalRotationBeforeChange = currentTransform.localRotation;
-            m_HybridLocalScaleBeforeChange = currentTransform.localScale;
-        }
 
         /// <summary>
         /// A parent change that kept the local transform was made with worldPositionStays disabled.
         /// </summary>
-        private bool HybridLocalTransformKept()
+        private bool LocalTransformKeptByParentChange()
         {
             var currentTransform = transform;
-            return Vector3.Distance(currentTransform.localPosition, m_HybridLocalPositionBeforeChange) <= k_LocalSpaceEpsilon
-                && Quaternion.Angle(currentTransform.localRotation, m_HybridLocalRotationBeforeChange) <= k_LocalSpaceAngleEpsilon
-                && Vector3.Distance(currentTransform.localScale, m_HybridLocalScaleBeforeChange) <= k_LocalSpaceEpsilon;
-        }
-
-        private void RevertHybridParentChange()
-        {
-            m_RevertingHybridParent = true;
-            try
-            {
-                var currentTransform = transform;
-                currentTransform.SetParent(m_HybridParentBeforeChange, false);
-                currentTransform.localPosition = m_HybridLocalPositionBeforeChange;
-                currentTransform.localRotation = m_HybridLocalRotationBeforeChange;
-                currentTransform.localScale = m_HybridLocalScaleBeforeChange;
-            }
-            finally
-            {
-                m_RevertingHybridParent = false;
-            }
+            return Vector3.Distance(currentTransform.localPosition, m_LocalPositionBeforeParentChange) <= k_LocalSpaceEpsilon
+                && Quaternion.Angle(currentTransform.localRotation, m_LocalRotationBeforeParentChange) <= k_LocalSpaceAngleEpsilon
+                && Vector3.Distance(currentTransform.localScale, m_LocalScaleBeforeParentChange) <= k_LocalSpaceEpsilon;
         }
 
         /// <summary>
@@ -2572,6 +2535,49 @@ namespace Unity.Netcode
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
+        // The local transform before a parent change, restored when the change is reverted.
+        private Vector3 m_LocalPositionBeforeParentChange;
+        private Quaternion m_LocalRotationBeforeParentChange;
+        private Vector3 m_LocalScaleBeforeParentChange;
+        private bool m_RevertingParentChange;
+
+        private void OnBeforeTransformParentChanged()
+        {
+            // The revert's own SetParent must not overwrite the values it is restoring.
+            if (m_RevertingParentChange)
+            {
+                return;
+            }
+            var currentTransform = transform;
+            m_LocalPositionBeforeParentChange = currentTransform.localPosition;
+            m_LocalRotationBeforeParentChange = currentTransform.localRotation;
+            m_LocalScaleBeforeParentChange = currentTransform.localScale;
+        }
+
+        /// <summary>
+        /// Restores the cached parent and the local transform from before the parent change.
+        /// </summary>
+        /// <remarks>
+        /// Setting <see cref="Transform.parent"/> keeps the world position, so it only restores the original pose when the change also kept
+        /// the world position. Restoring the local transform under the cached parent works for either worldPositionStays value.
+        /// </remarks>
+        private void RevertParentChange()
+        {
+            m_RevertingParentChange = true;
+            try
+            {
+                var currentTransform = transform;
+                currentTransform.SetParent(m_CachedParent, false);
+                currentTransform.localPosition = m_LocalPositionBeforeParentChange;
+                currentTransform.localRotation = m_LocalRotationBeforeParentChange;
+                currentTransform.localScale = m_LocalScaleBeforeParentChange;
+            }
+            finally
+            {
+                m_RevertingParentChange = false;
+            }
+        }
+
         /// <summary>
         /// With distributed authority, we need to have a way to determine if the parenting action is authorized.
         /// This is set when handling an incoming ParentSyncMessage and when running as a DAHost and a client has disconnected.
@@ -2753,14 +2759,14 @@ namespace Unity.Netcode
         private void OnTransformParentChanged()
         {
             var networkManager = NetworkManager;
-            if (!AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
+            if (m_RevertingParentChange || !AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
             {
                 return;
             }
 
 #if UNIFIED_NETCODE
-            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own, and for a reverted one.
-            if (GhostReplicatesParent() || m_RevertingHybridParent)
+            // Silent: this fires for the parent changes Netcode for Entities applies as well as the user's own.
+            if (GhostReplicatesParent())
             {
                 return;
             }
@@ -2773,7 +2779,7 @@ namespace Unity.Netcode
 
             if (networkManager == null || !networkManager.IsListening)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 // We want to log at any LogLevel, since we may not have a network manager may here.
                 NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 return;
@@ -2791,7 +2797,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
@@ -2806,7 +2812,7 @@ namespace Unity.Netcode
             // If we are spawned and don't have authority; reset the parent back to the cached parent and exit
             if (!isParentingAuthority)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 if (networkManager.LogLevel <= LogLevel.Error)
                 {
                     if (networkManager.DistributedAuthorityMode)
@@ -2825,13 +2831,13 @@ namespace Unity.Netcode
             // A direct Transform parent change does not pass a worldPositionStays value, so it is read from whether the local transform was kept.
             if (HasGhost && !AuthorityAppliedParenting && !GhostObject.ParentReplication)
             {
-                if (HybridLocalTransformKept())
+                if (LocalTransformKeptByParentChange())
                 {
                     m_CachedWorldPositionStays = false;
                 }
                 else if (RejectHybridWorldPositionStays(true))
                 {
-                    RevertHybridParentChange();
+                    RevertParentChange();
                     return;
                 }
             }
@@ -2843,7 +2849,7 @@ namespace Unity.Netcode
             {
                 if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
@@ -2853,7 +2859,7 @@ namespace Unity.Netcode
                 }
                 if (!parentObject.IsSpawned)
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
