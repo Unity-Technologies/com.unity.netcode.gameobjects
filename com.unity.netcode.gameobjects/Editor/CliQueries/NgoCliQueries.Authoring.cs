@@ -132,14 +132,18 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return result;
         }
 
+        /// <summary>
+        /// Describes a list entry, with an error when NGO would reject it at runtime (see
+        /// <see cref="NetworkPrefab.Validate"/>). An empty entry, which netcode ignores, is described as such.
+        /// </summary>
         private static PrefabEntry DescribePrefabEntry(NetworkPrefab prefab)
         {
-            var entry = new PrefabEntry { Override = prefab.Override.ToString() };
-            var source = prefab.Override switch
+            if (prefab == null)
             {
-                NetworkPrefabOverride.Prefab => prefab.SourcePrefabToOverride,
-                _ => prefab.Prefab,
-            };
+                return new PrefabEntry { Error = k_EmptyEntry };
+            }
+            var entry = new PrefabEntry { Override = prefab.Override.ToString() };
+            var source = SourcePrefab(prefab);
             if (source == null && prefab.Override != NetworkPrefabOverride.Hash)
             {
                 entry.Error = "Missing prefab reference.";
@@ -163,13 +167,68 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             if (prefab.Override == NetworkPrefabOverride.Hash)
             {
                 entry.OverrideSource = prefab.SourceHashToOverride.ToString();
+                if (prefab.SourceHashToOverride == 0)
+                {
+                    entry.Error ??= "The hash override's source hash is 0.";
+                }
             }
             if (prefab.Override != NetworkPrefabOverride.None)
             {
                 entry.OverrideSource ??= entry.Path;
-                entry.OverrideTarget = prefab.OverridingTargetPrefab != null ? AssetDatabase.GetAssetPath(prefab.OverridingTargetPrefab) : null;
+                var target = prefab.OverridingTargetPrefab;
+                entry.OverrideTarget = target != null ? AssetDatabase.GetAssetPath(target) : null;
+                if (target == null)
+                {
+                    entry.Error ??= "The override has no target prefab.";
+                }
+                else if (!target.TryGetComponent<NetworkObject>(out _))
+                {
+                    entry.Error ??= $"The override target {entry.OverrideTarget} has no NetworkObject on its root.";
+                }
             }
             return entry;
+        }
+
+        private const string k_EmptyEntry = "Empty entry, with no prefab set. Netcode ignores it.";
+
+        // The prefab an entry registers, as NGO resolves it: a prefab override falls back to Prefab when its source is unset.
+        private static GameObject SourcePrefab(NetworkPrefab prefab) => prefab.Override switch
+        {
+            NetworkPrefabOverride.Prefab => prefab.SourcePrefabToOverride != null ? prefab.SourcePrefabToOverride : prefab.Prefab,
+            _ => prefab.Prefab,
+        };
+
+        /// <summary>
+        /// Whether a list already registers this prefab, as NGO matches entries at runtime: by the source prefab id
+        /// hash, so a prefab override or hash override of it counts. Empty entries are skipped.
+        /// </summary>
+        private static bool IsRegisteredIn(NetworkPrefabsList list, GameObject prefab)
+        {
+            var hash = prefab.TryGetComponent<NetworkObject>(out var networkObject) ? networkObject.GlobalObjectIdHash : 0;
+            foreach (var entry in list.PrefabList)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+                var source = SourcePrefab(entry);
+                if (source == prefab && entry.Override != NetworkPrefabOverride.Hash)
+                {
+                    return true;
+                }
+                if (hash == 0)
+                {
+                    continue;
+                }
+                var sourceHash = entry.Override == NetworkPrefabOverride.Hash
+                    ? entry.SourceHashToOverride
+                    : source != null && source.TryGetComponent<NetworkObject>(out var sourceObject) ? sourceObject.GlobalObjectIdHash : 0;
+                if (sourceHash == hash)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -188,11 +247,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             var result = new RegisterPrefabResult { DryRun = dryRun, Prefab = prefabPath };
-            var registeredIn = FindPrefabsLists().Where(l => l.Contains(prefabAsset)).Select(AssetDatabase.GetAssetPath).ToList();
+            var registeredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, prefabAsset)).Select(AssetDatabase.GetAssetPath).ToList();
             var list = ResolveTargetList(listPath, dryRun, result.Notes);
             result.List = list != null ? AssetDatabase.GetAssetPath(list) : NetworkPrefabProcessor.DefaultNetworkPrefabsPath;
 
-            if (list != null && list.Contains(prefabAsset))
+            if (list != null && IsRegisteredIn(list, prefabAsset))
             {
                 result.AlreadyRegistered = true;
                 if (list.IsDefault && NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs)
@@ -269,7 +328,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.AlreadyNetworkObject = true;
                 result.PrefabIdHash = existing.GlobalObjectIdHash;
-                result.RegisteredIn = FindPrefabsLists().Where(l => l.Contains(prefabAsset)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
+                result.RegisteredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, prefabAsset)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
                 return result;
             }
             if (prefabAsset.GetComponentInChildren<NetworkManager>(true) != null)
@@ -279,7 +338,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             var nested = prefabAsset.GetComponentsInChildren<NetworkObject>(true);
             if (nested.Length > 0)
             {
-                result.Notes.Add($"It already has {nested.Length} child NetworkObject(s). Each spawns separately; the new root NetworkObject won't spawn them.");
+                // Nested NetworkObjects are only supported in scene objects: a network prefab doesn't spawn them.
+                throw new ArgumentException($"{path} has {nested.Length} child NetworkObject(s), and network prefabs don't support nested NetworkObjects. Make each of those children its own network prefab, or remove their NetworkObjects, then run make_prefab again.");
             }
             if (dryRun)
             {
@@ -302,7 +362,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Notes.Add("The prefab id hash is generated on the next import; check it with netcode.gameobjects list_prefabs.");
             }
-            result.RegisteredIn = FindPrefabsLists().Where(l => l.Contains(reloaded)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
+            result.RegisteredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, reloaded)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
             if (result.RegisteredIn == null)
             {
                 result.Notes.Add("Not in a network prefabs list yet. Register it with netcode.gameobjects register_prefab.");
@@ -396,7 +456,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
             var result = new AuditResult();
             var lists = FindPrefabsLists();
-            var registered = new HashSet<GameObject>(lists.SelectMany(l => l.PrefabList).Select(p => p.Prefab).Where(p => p != null));
+            var registered = new HashSet<GameObject>(lists.SelectMany(l => l.PrefabList).Where(p => p != null).Select(SourcePrefab).Where(p => p != null));
             var autoGenerate = NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs;
             var hashes = new Dictionary<uint, string>();
             var scriptCache = new Dictionary<string, bool>();
@@ -442,6 +502,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 var listPath = AssetDatabase.GetAssetPath(list);
                 foreach (var entry in list.PrefabList)
                 {
+                    if (entry == null)
+                    {
+                        Add("warning", "LIST_ENTRY_INVALID", listPath, k_EmptyEntry);
+                        continue;
+                    }
                     var described = DescribePrefabEntry(entry);
                     if (described.Error != null)
                     {

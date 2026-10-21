@@ -207,6 +207,63 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
+        public void RegisterPrefab_OverrideSourceCountsAsRegistered()
+        {
+            var source = CreatePrefab("Source", typeof(NetworkObject));
+            var target = CreatePrefab("Target", typeof(NetworkObject));
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            // As in the inspector's override entries: Prefab differs from the source being overridden.
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Prefab, Prefab = target, SourcePrefabToOverride = source, OverridingTargetPrefab = target });
+
+            var result = NgoCliQueries.RegisterPrefab("Source", k_ListPath, false);
+
+            Assert.IsTrue(result.AlreadyRegistered);
+            Assert.IsFalse(result.Registered);
+            Assert.AreEqual(1, list.PrefabList.Count);
+        }
+
+        [Test]
+        public void MakePrefab_WithChildNetworkObjects_ChangesNothing()
+        {
+            var parent = new GameObject("Parent");
+            new GameObject("Child", typeof(NetworkObject)).transform.SetParent(parent.transform);
+            PrefabUtility.SaveAsPrefabAsset(parent, $"{k_Folder}/Parent.prefab");
+            UnityEngine.Object.DestroyImmediate(parent);
+
+            var error = Assert.Throws<ArgumentException>(() => NgoCliQueries.MakePrefab("Parent", false));
+
+            StringAssert.Contains("nested NetworkObjects", error.Message);
+            Assert.IsNull(AssetDatabase.LoadAssetAtPath<GameObject>($"{k_Folder}/Parent.prefab").GetComponent<NetworkObject>());
+        }
+
+        [Test]
+        public void AuditPrefabs_ReportsBrokenOverridesAndEmptyEntries()
+        {
+            var source = CreatePrefab("Source", typeof(NetworkObject));
+            var plain = CreatePrefab("Plain");
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            list.Add(null);
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = source });
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = source, OverridingTargetPrefab = plain });
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 0, OverridingTargetPrefab = source });
+
+            var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
+
+            var entries = result.Issues.Where(i => i.Code == "LIST_ENTRY_INVALID" && i.Asset == k_ListPath).ToList();
+            var found = string.Join(" | ", entries.Select(i => $"{i.Severity}: {i.Message}"));
+            Assert.AreEqual(4, entries.Count, found);
+            Assert.AreEqual(1, entries.Count(i => i.Severity == "warning"), "Netcode ignores an empty entry: " + found);
+            Assert.IsTrue(entries.Any(i => i.Message.Contains("no target prefab")), found);
+            Assert.IsTrue(entries.Any(i => i.Message.Contains("Plain.prefab has no NetworkObject")), found);
+            Assert.IsTrue(entries.Any(i => i.Message.Contains("source hash is 0")), found);
+
+            var listed = NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists.Single();
+            Assert.AreEqual(4, listed.Prefabs.Count, "Listing doesn't stop at an empty entry.");
+        }
+
+        [Test]
         public void RegisterPrefab_WithoutNetworkObject_PointsToMakePrefab()
         {
             CreatePrefab("Plain");
@@ -307,6 +364,22 @@ namespace Unity.Netcode.GameObjects.EditorTests
             serialized.ApplyModifiedPropertiesWithoutUndo();
             var relay = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.SetConfig("port", "9200", null, false));
             StringAssert.Contains("Relay", relay.Message);
+        }
+
+        [Test]
+        public void SetConfig_RejectsOutOfRangeAndNonFiniteFloats()
+        {
+            var manager = CreateManager();
+            var spawnTimeout = manager.NetworkConfig.SpawnTimeout;
+
+            StringAssert.Contains("between", Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("spawn_timeout", "0", null, false)).Message);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("spawn_timeout", "4000", null, false));
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("spawn_timeout", "NaN", null, false));
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("network_id_recycle_delay", "Infinity", null, false));
+            Assert.AreEqual(spawnTimeout, manager.NetworkConfig.SpawnTimeout, "A rejected value changes nothing.");
+
+            NgoCliQueries.SetConfig("spawn_timeout", "30", null, false);
+            Assert.AreEqual(30f, manager.NetworkConfig.SpawnTimeout);
         }
 
         [Test]

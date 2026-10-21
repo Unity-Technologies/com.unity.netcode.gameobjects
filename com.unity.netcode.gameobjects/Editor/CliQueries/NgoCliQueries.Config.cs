@@ -193,6 +193,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 case nameof(NetworkConfig.NetworkTopology) when (NetworkTopologyTypes)value == NetworkTopologyTypes.DistributedAuthority:
                     notes.Add("Distributed authority needs a session service (use_cmb_service, e.g. through the Multiplayer Services SDK) or a distributed authority host.");
                     break;
+                case nameof(NetworkConfig.SpawnTimeout) when (float)value < NetworkConfig.MinSpawnTimeout || (float)value > NetworkConfig.MaxSpawnTimeout:
+                    throw new ArgumentException($"{name} must be between {NetworkConfig.MinSpawnTimeout} and {NetworkConfig.MaxSpawnTimeout} seconds.");
                 case nameof(NetworkConfig.ClientConnectionBufferTimeout) or nameof(NetworkConfig.LoadSceneTimeOut) or nameof(NetworkConfig.TimeResyncInterval) when (int)value < 1:
                     throw new ArgumentException($"{name} must be at least 1.");
             }
@@ -304,7 +306,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 add("error", "PLAYER_PREFAB_WITHOUT_NETWORKOBJECT", where, $"The player prefab {AssetPathOrName(config.PlayerPrefab)} has no NetworkObject on its root.");
             }
 
-            var prefabs = lists.SelectMany(l => l.PrefabList).Select(p => p.Prefab).Where(p => p != null).ToList();
+            var prefabs = lists.SelectMany(l => l.PrefabList).Where(p => p != null).Select(p => p.Prefab).Where(p => p != null).ToList();
             if (config.PlayerPrefab != null)
             {
                 prefabs.Add(config.PlayerPrefab);
@@ -382,7 +384,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                         _ => throw new FormatException(),
                     };
                 }
-                return Convert.ChangeType(text, type, CultureInfo.InvariantCulture);
+                var parsed = Convert.ChangeType(text, type, CultureInfo.InvariantCulture);
+                if (parsed is float f && !float.IsFinite(f) || parsed is double d && !double.IsFinite(d))
+                {
+                    throw new FormatException();
+                }
+                return parsed;
             }
             catch (Exception e) when (e is FormatException or OverflowException or InvalidCastException)
             {
