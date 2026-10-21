@@ -13,7 +13,9 @@ namespace Unity.Netcode.RuntimeTests
     /// - Hybrid instances are also counted on their own.<br />
     /// </summary>
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
     [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class SpawnCountAnalyticsTests : NetcodeIntegrationTest
     {
         private const int k_DefaultInstances = 3;
@@ -29,10 +31,12 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
+#if UNIFIED_NETCODE
         protected override bool UseUnifiedTests()
         {
             return true;
         }
+#endif
 
         protected override void OnServerAndClientsCreated()
         {
@@ -66,7 +70,13 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"Failed to spawn {instance.name} on all clients!");
             }
 
-            var expectedHybridSpawns = m_UseUnifiedTests ? k_DefaultInstances : 0;
+            var expectedHybridSpawns = 0;
+#if UNIFIED_NETCODE
+            if (m_UseUnifiedTests)
+            {
+                expectedHybridSpawns = k_DefaultInstances;
+            }
+#endif
             for (int i = 0; i < m_NetworkManagers.Length; i++)
             {
                 var spawnManager = m_NetworkManagers[i].SpawnManager;
