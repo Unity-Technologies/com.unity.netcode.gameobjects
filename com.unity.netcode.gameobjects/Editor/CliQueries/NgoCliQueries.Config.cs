@@ -242,7 +242,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         private static void ValidateManager(NetworkManager manager, Action<string, string, string, string> add)
         {
-            var where = $"{manager.gameObject.scene.name}/{GetHierarchyPath(manager.transform)}";
+            var where = $"{SceneLabel(manager.gameObject.scene)}/{GetHierarchyPath(manager.transform)}";
             var config = manager.NetworkConfig;
             if (config == null)
             {

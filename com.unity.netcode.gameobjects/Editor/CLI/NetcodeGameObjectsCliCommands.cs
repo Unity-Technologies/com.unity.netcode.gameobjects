@@ -109,13 +109,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         }
     }
 
-    /// <summary>Network traffic, as the Network Profiler shows it: group <c>netcode.gameobjects.profiler</c>.</summary>
+    /// <summary>Network traffic: group <c>netcode.gameobjects.profiler</c>.</summary>
     internal static class NetcodeGameObjectsProfilerCliCommands
     {
         private const string k_Group = NgoCliQueries.Group + ".profiler";
         private const string k_Tag = NetcodeGameObjectsCliCommands.Tag;
 
-        [CliGroupCommand(k_Group, "Sample network traffic over N frames: the profiler's network counters (messages, RPCs, NetworkVariables, spawns and bytes, with Multiplayer Tools installed), clients with round trip times, and the spawned object count. Requires a running session.", Tags = new[] { k_Tag })]
+        [CliGroupCommand(k_Group, "Sample network traffic over N frames: bytes and messages sent and received, per message type, clients with round trip times, and the spawned object count. Requires a running session.", Tags = new[] { k_Tag })]
         private static async Task<object> GetStats(
             [CliArg("frames", "Frames to sample.")] int frames = 120,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null,
@@ -153,7 +153,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
             => NgoCliOutput.ToWire(NgoCliQueries.Kick(clientId, reason, manager));
 
-        [CliGroupCommand(k_Group, "Shut a client down and connect it again with the same settings, then wait until it's connected. Tests reconnection handling.", Tags = new[] { k_Tag })]
+        [CliGroupCommand(k_Group, "Shut a client down and connect it again with the same settings, then wait until it's connected. A client that was already disconnected (kicked or timed out) just connects again. Tests reconnection handling.", Tags = new[] { k_Tag })]
         private static async Task<object> Reconnect(
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null,
             [CliArg("timeout", "Seconds to wait for the reconnection.")] double timeoutInSeconds = 30)

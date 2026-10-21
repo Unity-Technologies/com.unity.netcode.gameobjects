@@ -38,7 +38,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             var existing = FindManagers();
             if (existing.Count > 0)
             {
-                throw new InvalidOperationException($"The open scenes already have a NetworkManager ({string.Join(", ", existing.Select(m => $"{GetHierarchyPath(m.transform)} in {m.gameObject.scene.name}"))}). A session uses one; inspect it with netcode.gameobjects.config get.");
+                throw new InvalidOperationException($"The open scenes already have a NetworkManager ({string.Join(", ", existing.Select(m => $"{GetHierarchyPath(m.transform)} in {SceneLabel(m.gameObject.scene)}"))}). A session uses one; inspect it with netcode.gameobjects.config get.");
             }
 
             var scene = SceneManager.GetActiveScene();

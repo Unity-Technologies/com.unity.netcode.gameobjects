@@ -394,6 +394,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             throw new ArgumentException($"Several NetworkManagers. Pass manager with one of: {string.Join(", ", managers.Select(m => GetHierarchyPath(m.transform)))}.");
         }
 
+        // A scene's name for messages; an unsaved scene has none.
+        internal static string SceneLabel(UnityEngine.SceneManagement.Scene scene) => string.IsNullOrEmpty(scene.name) ? "an unsaved scene" : scene.name;
+
         internal static NetworkManager ResolveRunningManager(string filter)
         {
             // Report a missing NetworkManager first: entering play mode wouldn't help.

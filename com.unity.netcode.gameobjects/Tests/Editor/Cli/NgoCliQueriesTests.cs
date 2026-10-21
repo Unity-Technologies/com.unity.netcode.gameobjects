@@ -159,6 +159,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var again = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.ClientServer, "127.0.0.1", 7777, false));
             StringAssert.Contains("already have a NetworkManager", again.Message);
+            StringAssert.Contains("in an unsaved scene", again.Message, "An unsaved scene has no name to show.");
         }
 
         [Test]
@@ -541,10 +542,15 @@ namespace Unity.Netcode.GameObjects.EditorTests
                 driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
                 Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
 
+                var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
+                var hookCount = hooks.Count;
                 var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
+                Assert.AreEqual(hookCount + 1, hooks.Count, "Sampling hooks the message manager.");
                 yield return WaitFor(stats);
                 Assert.AreEqual("host", stats.Result.Role);
                 Assert.GreaterOrEqual(stats.Result.Frames, 1);
+                Assert.AreEqual(stats.Result.Messages.Sum(m => m.Sent), stats.Result.MessagesSent);
+                Assert.AreEqual(hookCount, hooks.Count, "Sampling unhooks the message manager when done.");
 
                 var despawned = NgoCliQueries.Despawn(id, true, null);
                 Assert.IsTrue(despawned.Despawned);

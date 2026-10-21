@@ -359,21 +359,26 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         public string Role;
         public int Frames;
         public double Seconds;
-        public bool MultiplayerToolsInstalled;
-        /// <summary>Counters with traffic during the sample, largest first.</summary>
-        public List<CounterStat> Counters = new List<CounterStat>();
-        /// <summary>Names of the counters that stayed at zero.</summary>
-        public List<string> IdleCounters = new List<string>();
+        /// <summary>Bytes handed to and read from the transport, in message batches.</summary>
+        public long BytesSent;
+        public long BytesReceived;
+        public double BytesSentPerSecond;
+        public double BytesReceivedPerSecond;
+        public long MessagesSent;
+        public long MessagesReceived;
+        /// <summary>Traffic per message type, largest first.</summary>
+        public List<MessageStat> Messages = new List<MessageStat>();
         public List<ClientInfo> Clients = new List<ClientInfo>();
         public int? SpawnedObjectCount;
         public string Note;
     }
 
-    internal class CounterStat
+    internal class MessageStat
     {
-        public string Name;
-        public long Total;
-        public double PerSecond;
-        public long MaxPerFrame;
+        public string Message;
+        public long Sent;
+        public long Received;
+        public long BytesSent;
+        public long BytesReceived;
     }
 }

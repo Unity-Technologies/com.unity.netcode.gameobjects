@@ -41,7 +41,7 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 
 | **Command** | **Description** |
 | :--- | :--- |
-| `get_stats` | Sample network traffic over a number of frames. Message and byte counters need the Multiplayer Tools package. |
+| `get_stats` | Sample network traffic over a number of frames: bytes and messages sent and received, per message type. |
 
 ### netcode.gameobjects.session
 
@@ -50,7 +50,7 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 | `start` | Start the NetworkManager as host, server or client, optionally with another address and port. |
 | `stop` | Shut the NetworkManager down. |
 | `kick` | Disconnect a client from the server or host. |
-| `reconnect` | Disconnect a client and connect it again, then wait for it to be connected. |
+| `reconnect` | Disconnect a client and connect it again, then wait for it to be connected. A client that was already disconnected, for example kicked or timed out, just connects again. |
 | `wait_ready` | Wait until a client is connected, or a server has a number of clients. |
 
 ### netcode.gameobjects.simulator
