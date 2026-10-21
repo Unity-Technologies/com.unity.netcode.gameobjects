@@ -1870,6 +1870,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Length - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when its length matches original2.
+                while (idx < original2.Length && EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
@@ -2165,6 +2170,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Count - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when no elements are added or removed.
+                while (EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
@@ -3663,6 +3673,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Length - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when no elements are added or removed.
+                while (EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
