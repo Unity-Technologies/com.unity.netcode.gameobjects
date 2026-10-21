@@ -129,15 +129,23 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         internal static async Task<WaitReadyResult> ReconnectAsync(string managerFilter, float timeoutSeconds)
         {
             ValidateTimeout(timeoutSeconds);
-            var manager = ResolveRunningManager(managerFilter);
+            var manager = ResolveManager(managerFilter);
+            if (!EditorApplication.isPlaying)
+            {
+                throw new InvalidOperationException(NotPlayingMessage);
+            }
             if (manager.IsServer)
             {
                 throw new InvalidOperationException($"{manager.name} is the {GetRole(manager)}. reconnect is for clients; restart a server with netcode.gameobjects.session stop, then start.");
             }
 
             var started = EditorApplication.timeSinceStartup;
-            manager.Shutdown();
-            await WaitUntilAsync(() => !manager.IsListening && !manager.ShutdownInProgress, timeoutSeconds, "the client to shut down");
+            // A client that was kicked or timed out has already shut down; connect it again as it is.
+            if (manager.IsListening || manager.ShutdownInProgress)
+            {
+                manager.Shutdown();
+                await WaitUntilAsync(() => !manager.IsListening && !manager.ShutdownInProgress, timeoutSeconds, "the client to shut down");
+            }
 
             using (var errors = new LogCapture())
             {

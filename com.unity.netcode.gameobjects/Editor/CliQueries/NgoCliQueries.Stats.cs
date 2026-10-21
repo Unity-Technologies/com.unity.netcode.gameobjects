@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Profiling;
-using Unity.Profiling.LowLevel;
-using Unity.Profiling.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,9 +10,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
     internal static partial class NgoCliQueries
     {
         /// <summary>
-        /// Samples the profiler's Network counters for <paramref name="frames"/> frames: with Multiplayer Tools
-        /// installed these are Netcode for GameObjects' message, RPC, NetworkVariable, spawn and byte counters.
-        /// Adds the manager's clients with their round trip times. Doesn't block the main thread.
+        /// Samples the manager's network traffic for <paramref name="frames"/> frames: the bytes and messages it sends
+        /// and receives, per message type, read from its message manager as Netcode for GameObjects' own metrics
+        /// are. Adds the manager's clients with their round trip times. Doesn't block the main thread.
         /// </summary>
         internal static Task<StatsResult> SampleStatsAsync(string managerFilter, int frames, float timeoutSeconds)
         {
@@ -30,47 +27,40 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new InvalidOperationException("Play mode is paused, so no frames run. Unpause (editor.playmode pause) and retry.");
             }
 
-            var recorders = StartNetworkRecorders(frames);
+            var messageManager = manager.MessageManager;
+            var traffic = new TrafficHooks();
+            messageManager.Hook(traffic);
             var completion = new TaskCompletionSource<StatsResult>();
             var startFrame = Time.frameCount;
             var startTime = EditorApplication.timeSinceStartup;
             var deadline = startTime + timeoutSeconds;
 
-            void Finish()
+            void Stop()
             {
                 EditorApplication.update -= Tick;
-                try
-                {
-                    completion.TrySetResult(BuildStats(manager, recorders, Time.frameCount - startFrame, EditorApplication.timeSinceStartup - startTime));
-                }
-                catch (Exception e)
-                {
-                    completion.TrySetException(e);
-                }
-                finally
-                {
-                    foreach (var recorder in recorders.Values)
-                    {
-                        recorder.Dispose();
-                    }
-                }
+                messageManager.Unhook(traffic);
             }
 
             void Tick()
             {
                 if (!EditorApplication.isPlaying || manager == null)
                 {
-                    EditorApplication.update -= Tick;
-                    foreach (var recorder in recorders.Values)
-                    {
-                        recorder.Dispose();
-                    }
+                    Stop();
                     completion.TrySetException(new InvalidOperationException("Play mode stopped while sampling."));
                     return;
                 }
-                if (Time.frameCount - startFrame >= frames || EditorApplication.timeSinceStartup >= deadline)
+                if (Time.frameCount - startFrame < frames && EditorApplication.timeSinceStartup < deadline)
                 {
-                    Finish();
+                    return;
+                }
+                Stop();
+                try
+                {
+                    completion.TrySetResult(BuildStats(manager, traffic, Time.frameCount - startFrame, EditorApplication.timeSinceStartup - startTime));
+                }
+                catch (Exception e)
+                {
+                    completion.TrySetException(e);
                 }
             }
 
@@ -78,25 +68,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return completion.Task;
         }
 
-        private static Dictionary<string, ProfilerRecorder> StartNetworkRecorders(int capacity)
-        {
-            var handles = new List<ProfilerRecorderHandle>();
-            ProfilerRecorderHandle.GetAvailable(handles);
-            var recorders = new Dictionary<string, ProfilerRecorder>();
-            foreach (var handle in handles)
-            {
-                var description = ProfilerRecorderHandle.GetDescription(handle);
-                // Counters only: the Network category also holds the editor connection's timing markers.
-                if (description.Category != ProfilerCategory.Network || (description.Flags & MarkerFlags.Counter) == 0 || recorders.ContainsKey(description.Name))
-                {
-                    continue;
-                }
-                recorders[description.Name] = ProfilerRecorder.StartNew(ProfilerCategory.Network, description.Name, capacity);
-            }
-            return recorders;
-        }
-
-        private static StatsResult BuildStats(NetworkManager manager, Dictionary<string, ProfilerRecorder> recorders, int frames, double seconds)
+        private static StatsResult BuildStats(NetworkManager manager, TrafficHooks traffic, int frames, double seconds)
         {
             var result = new StatsResult
             {
@@ -104,55 +76,95 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 Role = GetRole(manager),
                 Frames = frames,
                 Seconds = Math.Round(seconds, 3),
-                MultiplayerToolsInstalled = MultiplayerToolsInstalled,
+                BytesSent = traffic.BytesSent,
+                BytesReceived = traffic.BytesReceived,
+                BytesSentPerSecond = seconds > 0 ? Math.Round(traffic.BytesSent / seconds, 1) : 0,
+                BytesReceivedPerSecond = seconds > 0 ? Math.Round(traffic.BytesReceived / seconds, 1) : 0,
+                MessagesSent = traffic.Messages.Values.Sum(m => m.Sent),
+                MessagesReceived = traffic.Messages.Values.Sum(m => m.Received),
+                Messages = traffic.Messages.Values
+                    .OrderByDescending(m => m.BytesSent + m.BytesReceived)
+                    .ThenBy(m => m.Message, StringComparer.Ordinal)
+                    .ToList(),
                 SpawnedObjectCount = manager.SpawnManager?.SpawnedObjects.Count,
             };
-
-            foreach (var pair in recorders)
-            {
-                var recorder = pair.Value;
-                if (!recorder.Valid)
-                {
-                    continue;
-                }
-                long total = 0;
-                long max = 0;
-                for (var i = 0; i < recorder.Count; i++)
-                {
-                    var value = recorder.GetSample(i).Value;
-                    total += value;
-                    max = Math.Max(max, value);
-                }
-                if (total == 0)
-                {
-                    result.IdleCounters.Add(pair.Key);
-                    continue;
-                }
-                result.Counters.Add(new CounterStat
-                {
-                    Name = pair.Key,
-                    Total = total,
-                    MaxPerFrame = max,
-                    PerSecond = seconds > 0 ? Math.Round(total / seconds, 1) : 0,
-                });
-            }
-            result.IdleCounters.Sort(StringComparer.Ordinal);
-            result.Counters = result.Counters.OrderByDescending(c => c.Total).ThenBy(c => c.Name, StringComparer.Ordinal).ToList();
 
             if (manager.IsListening)
             {
                 result.Clients = ListClients(manager).Clients;
             }
-
-            if (!MultiplayerToolsInstalled)
+            if (result.MessagesSent == 0 && result.MessagesReceived == 0)
             {
-                result.Note = "Netcode for GameObjects reports message and byte counters through Multiplayer Tools. Install it (package add com.unity.multiplayer.tools) for per-message-type traffic.";
-            }
-            else if (result.Counters.Count == 0)
-            {
-                result.Note = "No network traffic was recorded. A host on its own sends nothing; connect a client (a Multiplayer Play Mode player or another editor), and check that NetworkConfig network_message_metrics is on (netcode.gameobjects.config get).";
+                result.Note = "No messages were sent or received during the sample. A host on its own sends nothing over the network; connect a client (another editor or a Multiplayer Play Mode player).";
             }
             return result;
+        }
+
+        /// <summary>
+        /// Counts what the message manager sends and receives, from the same hooks that feed Netcode for GameObjects'
+        /// metrics: message sizes per type, and batch sizes for the bytes handed to and read from the transport.
+        /// </summary>
+        private sealed class TrafficHooks : INetworkHooks
+        {
+            public long BytesSent;
+            public long BytesReceived;
+            public readonly Dictionary<Type, MessageStat> Messages = new Dictionary<Type, MessageStat>();
+
+            private MessageStat For(Type type)
+            {
+                if (!Messages.TryGetValue(type, out var stat))
+                {
+                    stat = new MessageStat { Message = type.Name };
+                    Messages[type] = stat;
+                }
+                return stat;
+            }
+
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
+            {
+                var stat = For(typeof(T));
+                stat.Sent++;
+                stat.BytesSent += messageSizeBytes;
+            }
+
+            public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+                var stat = For(messageType);
+                stat.Received++;
+                stat.BytesReceived += messageSizeBytes;
+            }
+
+            public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery) => BytesSent += batchSizeInBytes;
+
+            public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes) => BytesReceived += batchSizeInBytes;
+
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+            }
+
+            public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery) => true;
+
+            public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context) => true;
+
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
         }
     }
 }
