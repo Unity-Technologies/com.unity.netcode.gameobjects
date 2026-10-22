@@ -17,7 +17,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
     /// </summary>
     internal class NetcodeGameObjectsCliCommandsTests
     {
-        private const string k_Package = "Unity.Netcode.GameObjects.Editor.CLI";
+        private const string k_Package = "Unity.Netcode.GameObjects.CLI.Editor";
         private const string k_Tag = "networking/netcode";
 
         // Parameters are wire API: clients bind positionals to required parameters in order, so renaming,
