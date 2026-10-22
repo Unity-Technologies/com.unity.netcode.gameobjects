@@ -1,21 +1,28 @@
 {
-    "name": "Unity.Netcode.GameObjects.Editor.CLI",
-    "rootNamespace": "Unity.Netcode.GameObjects.Editor.Cli",
+    "name": "Unity.Netcode.GameObjects.CLI.Editor.Tests",
+    "rootNamespace": "Unity.Netcode.GameObjects.EditorTests",
     "references": [
         "Unity.Pipeline",
         "Unity.Pipeline.Attributes",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.GameObjects.Editor"
+        "Unity.Netcode.GameObjects.Editor",
+        "Unity.Netcode.GameObjects.CLI.Editor",
+        "Unity.Networking.Transport",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
         "UNITY_PIPELINE_PACKAGE_AVAILABLE"
     ],
     "versionDefines": [

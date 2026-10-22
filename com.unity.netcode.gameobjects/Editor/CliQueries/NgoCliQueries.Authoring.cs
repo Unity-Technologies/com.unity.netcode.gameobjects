@@ -206,7 +206,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         // unset. A hash override has none: NGO ignores the Prefab field the inspector keeps after switching to Hash.
         private static GameObject SourcePrefab(NetworkPrefab prefab) => prefab.Override switch
         {
-            NetworkPrefabOverride.Prefab => prefab.SourcePrefabToOverride != null ? prefab.SourcePrefabToOverride : prefab.Prefab,
+            NetworkPrefabOverride.Prefab => prefab.SourcePrefabToOverride ? prefab.SourcePrefabToOverride : prefab.Prefab,
             NetworkPrefabOverride.Hash => null,
             _ => prefab.Prefab,
         };

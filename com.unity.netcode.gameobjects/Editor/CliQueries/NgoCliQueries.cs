@@ -11,7 +11,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 {
     /// <summary>
     /// Read and write operations behind the Netcode for GameObjects CLI commands (group <c>netcode.gameobjects</c>).
-    /// The commands live in the Unity.Netcode.GameObjects.Editor.CLI assembly, which only compiles when
+    /// The commands live in the Unity.Netcode.GameObjects.CLI.Editor assembly, which only compiles when
     /// com.unity.pipeline is installed; keeping the logic here means the package's tests exercise it without the
     /// pipeline. Errors are thrown as <see cref="InvalidOperationException"/> or <see cref="ArgumentException"/>
     /// with a message that names the next step to take.
