@@ -36,20 +36,16 @@ namespace Unity.Netcode.GameObjects.Editor
         }
 
         /// <summary>
-        /// Callback to remove the GhostBehaviours prior to removing GhostObject.
+        /// Callback to remove the NetworkObjectBridge prior to removing GhostObject.
         /// </summary>
         /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
         private static void OnGhostObjectPreRemoval(GameObject gameObject)
         {
-            var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
-            for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
-            {
-                DestroyImmediate(ghostBehaviours[i], true);
-            }
             var networkObject = gameObject.GetComponent<NetworkObject>();
-            networkObject.GhostObject = null;
-            networkObject.HasGhost = false;
-            networkObject.HadBridge = true;
+            if (networkObject != null)
+            {
+                networkObject.OnRemoveNetworkObjectBridge();
+            }
         }
 #endif
 

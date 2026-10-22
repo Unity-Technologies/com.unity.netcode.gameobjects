@@ -1,6 +1,9 @@
 #if UNIFIED_NETCODE
 using Unity.Mathematics;
 using Unity.Transforms;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -37,6 +40,19 @@ namespace Unity.Netcode
                 return;
             }
 
+            var networkObject = GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    if (this != null)
+                    {
+                        DestroyImmediate(this, true);
+                    }
+                };
+                return;
+            }
+
 #if COM_UNITY_MODULES_PHYSICS
             var rigidBody = GetComponent<Rigidbody>();
             var ghostRigidBody = GetComponent<GhostRigidbody>();
@@ -44,7 +60,7 @@ namespace Unity.Netcode
             {
                 // This must be enabled when replicating the rigid body.
 
-                ghostAdapter.SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
+                ghostAdapter.FullTickSmoothing = FullTickSmoothingMode.Interpolate;
                 // TODO: Currently, this is added only if you enable replication of the rigid body.
                 // There is a bug where if you don't add this component it doesn't synchronize the transform.
                 // Remove this once the issue is resolved.
