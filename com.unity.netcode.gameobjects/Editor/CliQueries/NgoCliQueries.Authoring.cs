@@ -185,6 +185,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 {
                     entry.Error ??= $"The override target {entry.OverrideTarget} has no NetworkObject on its root.";
                 }
+#if UNIFIED_NETCODE
+                else if ((source != null && IsHybridPrefab(source)) || IsHybridPrefab(target))
+                {
+                    entry.Error ??= NetworkPrefab.HybridPrefabOverrideError;
+                }
+#endif
             }
             return entry;
         }
@@ -456,7 +462,6 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
             var result = new AuditResult();
             var lists = FindPrefabsLists();
-            var registered = new HashSet<GameObject>(lists.SelectMany(l => l.PrefabList).Where(p => p != null).Select(SourcePrefab).Where(p => p != null));
             var autoGenerate = NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs;
             var hashes = new Dictionary<uint, string>();
             var scriptCache = new Dictionary<string, bool>();
@@ -494,7 +499,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     continue;
                 }
                 result.PrefabsScanned++;
-                AuditPrefab(prefabAsset, path, registered, autoGenerate, hashes, Add);
+                AuditPrefab(prefabAsset, path, lists, autoGenerate, hashes, Add);
             }
 
             foreach (var list in lists)
@@ -517,7 +522,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return result;
         }
 
-        private static void AuditPrefab(GameObject prefabAsset, string path, HashSet<GameObject> registered, bool autoGenerate, Dictionary<uint, string> hashes, Action<string, string, string, string> add)
+        private static void AuditPrefab(GameObject prefabAsset, string path, List<NetworkPrefabsList> lists, bool autoGenerate, Dictionary<uint, string> hashes, Action<string, string, string, string> add)
         {
             var rootObject = prefabAsset.GetComponent<NetworkObject>();
             var networkObjects = prefabAsset.GetComponentsInChildren<NetworkObject>(true);
@@ -565,7 +570,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 hashes[hash] = path;
             }
 
-            if (!registered.Contains(prefabAsset) && !autoGenerate)
+            if (!autoGenerate && !lists.Any(l => IsRegisteredIn(l, prefabAsset)))
             {
                 add("warning", "NOT_REGISTERED", path, "Not in any network prefabs list, so it can't be spawned. Register it with netcode.gameobjects register_prefab.");
             }

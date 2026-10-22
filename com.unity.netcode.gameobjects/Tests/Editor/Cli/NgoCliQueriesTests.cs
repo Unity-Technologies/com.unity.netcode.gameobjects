@@ -265,6 +265,23 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
+        public void AuditPrefabs_CountsAHashOverrideAsRegistration()
+        {
+            var source = CreatePrefab("Source", typeof(NetworkObject));
+            var target = CreatePrefab("Target", typeof(NetworkObject));
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            list.Add(new NetworkPrefab { Prefab = target });
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = source.GetComponent<NetworkObject>().GlobalObjectIdHash, OverridingTargetPrefab = target });
+
+            var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
+
+            var found = string.Join(", ", result.Issues.Select(i => $"{i.Code} {i.Asset}"));
+            Assert.IsFalse(result.Issues.Any(i => i.Code == "NOT_REGISTERED"), found);
+            Assert.IsTrue(NgoCliQueries.RegisterPrefab("Source", k_ListPath, true).AlreadyRegistered, "register_prefab and audit agree.");
+        }
+
+        [Test]
         public void RegisterPrefab_WithoutNetworkObject_PointsToMakePrefab()
         {
             CreatePrefab("Plain");

@@ -306,7 +306,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 add("error", "PLAYER_PREFAB_WITHOUT_NETWORKOBJECT", where, $"The player prefab {AssetPathOrName(config.PlayerPrefab)} has no NetworkObject on its root.");
             }
 
-            var prefabs = lists.SelectMany(l => l.PrefabList).Where(p => p != null).Select(p => p.Prefab).Where(p => p != null).ToList();
+            // NGO rejects overrides of hybrid prefabs (audit reports them), so only plain entries can make the session hybrid.
+            var prefabs = lists.SelectMany(l => l.PrefabList).Where(p => p != null && p.Override == NetworkPrefabOverride.None).Select(p => p.Prefab).Where(p => p != null).ToList();
             if (config.PlayerPrefab != null)
             {
                 prefabs.Add(config.PlayerPrefab);
