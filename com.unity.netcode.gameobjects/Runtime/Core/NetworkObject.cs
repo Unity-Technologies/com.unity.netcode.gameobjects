@@ -392,8 +392,9 @@ namespace Unity.Netcode
             }
 
             NetworkObjectBridge = null;
-
             HadBridge = false;
+            HasGhost = false;
+
             // NGO synchronizes the transform again once the prefab is no longer hybrid
             SynchronizeTransform = true;
             EditorApplication.update -= OnRemoveNetworkObjectBridge;
