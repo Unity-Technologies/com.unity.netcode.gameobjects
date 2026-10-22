@@ -175,6 +175,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             apply();
             if (!playing)
             {
+                // A change made directly to a prefab instance is only kept once recorded as an override.
+                if (PrefabUtility.IsPartOfPrefabInstance(target))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(target);
+                }
                 EditorUtility.SetDirty(target);
                 EditorSceneManager.MarkSceneDirty(manager.gameObject.scene);
             }

@@ -272,13 +272,42 @@ namespace Unity.Netcode.GameObjects.EditorTests
             var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             AssetDatabase.CreateAsset(list, k_ListPath);
             list.Add(new NetworkPrefab { Prefab = target });
-            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = source.GetComponent<NetworkObject>().GlobalObjectIdHash, OverridingTargetPrefab = target });
+            // The inspector keeps Prefab after an entry switches to Hash; NGO ignores it, and so does the audit.
+            var leftover = CreatePrefab("Leftover");
+            list.Add(new NetworkPrefab { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = source.GetComponent<NetworkObject>().GlobalObjectIdHash, OverridingTargetPrefab = target, Prefab = leftover });
 
             var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
 
             var found = string.Join(", ", result.Issues.Select(i => $"{i.Code} {i.Asset}"));
             Assert.IsFalse(result.Issues.Any(i => i.Code == "NOT_REGISTERED"), found);
+            Assert.IsFalse(result.Issues.Any(i => i.Code == "LIST_ENTRY_INVALID"), found);
             Assert.IsTrue(NgoCliQueries.RegisterPrefab("Source", k_ListPath, true).AlreadyRegistered, "register_prefab and audit agree.");
+        }
+
+        [Test]
+        public void AuditPrefabs_CountsThePlayerPrefabAsRegistration()
+        {
+            var player = CreatePrefab("Player", typeof(NetworkObject));
+            var manager = CreateManager();
+            manager.NetworkConfig.PlayerPrefab = player;
+
+            var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
+
+            Assert.IsFalse(result.Issues.Any(i => i.Code == "NOT_REGISTERED"), string.Join(", ", result.Issues.Select(i => $"{i.Code} {i.Asset}")));
+        }
+
+        [Test]
+        public void SetConfig_OnAPrefabInstance_RecordsAnOverride()
+        {
+            CreateManager();
+            var managerPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(NgoCliQueries.FindManagers().Single().gameObject, $"{k_Folder}/Manager.prefab", InteractionMode.AutomatedAction);
+            Assert.IsNotNull(managerPrefab);
+
+            NgoCliQueries.SetConfig("tick_rate", "60", null, false);
+
+            var instance = NgoCliQueries.FindManagers().Single();
+            Assert.IsTrue(PrefabUtility.GetPropertyModifications(instance).Any(m => m.target == managerPrefab.GetComponent<NetworkManager>() && m.propertyPath.EndsWith("TickRate") && m.value == "60"),
+                "The change is kept as a prefab override.");
         }
 
         [Test]

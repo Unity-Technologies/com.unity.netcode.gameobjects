@@ -38,7 +38,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             void Stop()
             {
                 EditorApplication.update -= Tick;
-                messageManager.Unhook(traffic);
+                // After a shutdown the hooked message manager is already disposed, and its hooks with it.
+                if (manager != null && manager.MessageManager == messageManager)
+                {
+                    messageManager.Unhook(traffic);
+                }
             }
 
             void Tick()
@@ -47,6 +51,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 {
                     Stop();
                     completion.TrySetException(new InvalidOperationException("Play mode stopped while sampling."));
+                    return;
+                }
+                // A shutdown disposes the message manager and a restart creates a new one, so the hooks stop counting.
+                if (!manager.IsListening || manager.MessageManager != messageManager)
+                {
+                    Stop();
+                    completion.TrySetException(new InvalidOperationException($"{manager.name}'s session ended while sampling, so the traffic counts are incomplete. Run get_stats again once it's running."));
                     return;
                 }
                 if (Time.frameCount - startFrame < frames && EditorApplication.timeSinceStartup < deadline)
