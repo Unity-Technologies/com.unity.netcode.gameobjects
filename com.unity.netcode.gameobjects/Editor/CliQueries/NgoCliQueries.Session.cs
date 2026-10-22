@@ -276,6 +276,10 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 throw new InvalidOperationException($"{manager.name} is a client. With a client-server topology only the server or host spawns; run the command against the server's editor.");
             }
+            if (manager.DistributedAuthorityMode && !manager.IsConnectedClient)
+            {
+                throw new InvalidOperationException($"{manager.name} hasn't finished connecting to the session, so it can't spawn yet. Wait for it with netcode.gameobjects.session wait_ready.");
+            }
 
             var result = new SpawnResult { Manager = manager.name, Prefab = AssetDatabase.GetAssetPath(prefabAsset) };
             var ownerId = manager.DistributedAuthorityMode ? manager.LocalClientId : owner < 0 ? NetworkManager.ServerClientId : (ulong)owner;
@@ -296,11 +300,30 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 spawned = NetworkObject.InstantiateAndSpawn(prefabAsset, manager, ownerId, isPlayerObject: playerObject, position: spawnPosition, rotation: prefabAsset.transform.rotation);
                 if (spawned == null || !spawned.IsSpawned)
                 {
+                    // NGO instantiates before it spawns, so a failed spawn can leave an instance behind.
+                    if (spawned != null)
+                    {
+                        DestroyUnspawned(manager, spawned);
+                    }
                     throw new InvalidOperationException($"Spawning {prefabAsset.name} failed{errors.Describe()} Is it registered? Check with netcode.gameobjects list_prefabs.");
                 }
             }
             result.Object = Describe(manager, spawned);
             return result;
+        }
+
+        // Destroys an instance that never spawned the way NGO destroys a despawned one: through its prefab handler if
+        // it has one, else directly.
+        private static void DestroyUnspawned(NetworkManager manager, NetworkObject instance)
+        {
+            if (manager.PrefabHandler.ContainsHandler(instance))
+            {
+                manager.PrefabHandler.HandleNetworkPrefabDestroy(instance);
+            }
+            else
+            {
+                UnityEngine.Object.Destroy(instance.gameObject);
+            }
         }
 
         internal static DespawnResult Despawn(long networkObjectId, bool destroy, string managerFilter)

@@ -257,7 +257,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             detail.Ownership = DescribeOwnership(manager, networkObject);
             foreach (var behaviour in networkObject.GetComponentsInChildren<NetworkBehaviour>(true))
             {
-                detail.Behaviours.Add(behaviour.GetType().Name);
+                // As NGO assigns them: a nested NetworkObject owns the behaviours below it.
+                if (behaviour.GetComponentInParent<NetworkObject>(true) == networkObject)
+                {
+                    detail.Behaviours.Add(behaviour.GetType().Name);
+                }
             }
 
             // Observers are only tracked by the authority that decides visibility.
