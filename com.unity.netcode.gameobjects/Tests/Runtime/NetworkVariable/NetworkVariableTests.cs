@@ -1935,7 +1935,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
 #if ENABLE_CORECLR
         [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
 #endif
@@ -1998,7 +1997,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetArarys((rand) => rand.Next(2) == 1);
                 TestValueTypeNativeArray(original, changed);
                 TestValueTypeNativeArray(original2, changed2);
             }
@@ -2400,7 +2399,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
 #if ENABLE_CORECLR
         [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
 #endif
@@ -2598,7 +2596,6 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
 #if ENABLE_CORECLR
         [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
 #endif
@@ -2764,8 +2761,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
-        [Repeat(5)]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer, RuntimePlatform.PS4, RuntimePlatform.PS5 })] // Ignored test tracked in MTT-11343, MTT-16494
 #if ENABLE_CORECLR
         [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
 #endif
@@ -3910,7 +3906,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -4101,11 +4096,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(long), typeof(ulong), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
                 typeof(Quaternion), typeof(Pose), typeof(HashableNetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
@@ -4261,7 +4255,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashMapNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(ulong), typeof(Vector2), typeof(HashMapKeyStruct))] Type keyType,

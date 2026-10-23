@@ -82,9 +82,6 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
-
 {% if platform.standalone == "Android" %}
     # Download standalone UnityTestRunner and ADB setup
     - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey.pub -O %USERPROFILE%/.android/adbkey.pub
@@ -97,11 +94,11 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     # Run tests for Android devices
     - |
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
-      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
 {% else %}
 
     # Run tests for non-Android devices
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }} --device-id=%BOKKEN_DEVICE_ID%
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }} --device-id=%BOKKEN_DEVICE_ID%
 {% endif %}
   artifacts:
     logs:
