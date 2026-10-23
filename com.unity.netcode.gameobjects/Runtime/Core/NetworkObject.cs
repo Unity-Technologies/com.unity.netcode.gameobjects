@@ -369,14 +369,57 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HadBridge;
 #if UNITY_EDITOR
-        private void OnApplicationUpdate()
+        // The update callbacks unsubscribe first so one whose NetworkObject was destroyed doesn't throw every frame.
+        private void OnAddNetworkObjectBridge()
         {
+            EditorApplication.update -= OnAddNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
             NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
             HadBridge = true;
             // Transform synchronization is handled by unified netcode
             SynchronizeTransform = false;
+        }
 
-            EditorApplication.update -= OnApplicationUpdate;
+        private void OnRemoveNetworkObjectBridge()
+        {
+            EditorApplication.update -= OnRemoveNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
+            var networkObjectBridge = gameObject.GetComponent<NetworkObjectBridge>();
+            if (networkObjectBridge != null)
+            {
+                DestroyImmediate(networkObjectBridge, true);
+            }
+            var ghostRigidbodies = gameObject.GetComponentsInChildren<GhostRigidbody>(true);
+            for (int i = 0; i < ghostRigidbodies.Length; i++)
+            {
+                DestroyImmediate(ghostRigidbodies[i], true);
+            }
+
+            NetworkObjectBridge = null;
+            HadBridge = false;
+            HasGhost = false;
+
+            // NGO synchronizes the transform again once the prefab is no longer hybrid
+            SynchronizeTransform = true;
+        }
+
+        private void OnRemoveGhostObject()
+        {
+            EditorApplication.update -= OnRemoveGhostObject;
+            if (this == null)
+            {
+                return;
+            }
+            OnRemoveNetworkObjectBridge();
+            DestroyImmediate(GhostObject);
+            GhostObject = null;
+            HasGhost = false;
         }
 
         internal void UnifiedValidation()
@@ -390,22 +433,29 @@ namespace Unity.Netcode
                 //TODO: Needs to be validated once develop-2.0.0 is merged.
                 if (InScenePlaced)
                 {
-                    Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
-                    Destroy(GhostObject);
-                    HasGhost = false;
+                    Debug.LogError($"In-scene placed Hybrid instances are not allowed.");
+                    EditorApplication.update -= OnRemoveGhostObject;
+                    EditorApplication.update += OnRemoveGhostObject;
                     return;
                 }
-
-                if (NetworkObjectBridge == null)
+                else if (NetworkObjectBridge == null)
                 {
-                    EditorApplication.update -= OnApplicationUpdate;
-                    EditorApplication.update += OnApplicationUpdate;
+                    EditorApplication.update -= OnAddNetworkObjectBridge;
+                    EditorApplication.update += OnAddNetworkObjectBridge;
                 }
             }
-            else if (HadBridge && !HasGhost && !NetworkObjectBridge)
+            else if (HadBridge && !HasGhost)
             {
-                HadBridge = false;
-                SynchronizeTransform = true;
+                if (NetworkObjectBridge != null)
+                {
+                    EditorApplication.update -= OnRemoveNetworkObjectBridge;
+                    EditorApplication.update += OnRemoveNetworkObjectBridge;
+                }
+                else
+                {
+                    HadBridge = false;
+                    SynchronizeTransform = true;
+                }
             }
         }
 #endif

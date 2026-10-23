@@ -1,6 +1,9 @@
 #if UNIFIED_NETCODE
 using Unity.Mathematics;
 using Unity.Transforms;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -15,18 +18,6 @@ namespace Unity.Netcode
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
 #if UNITY_EDITOR
-        private void Reset()
-        {
-            // Start users with just interpolation (they can adjust this if they want prediction)
-            // to make the initial transition less problematic for users.
-            // Only set when the bridge is first added, so a user's prediction setting is kept.
-            var ghostAdapter = GetComponent<GhostObject>();
-            if (ghostAdapter != null)
-            {
-                ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
-            }
-        }
-
         private void OnValidate()
         {
             hideFlags = HideFlags.HideInInspector;
@@ -37,6 +28,13 @@ namespace Unity.Netcode
                 return;
             }
 
+            var networkObject = GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                EditorApplication.delayCall += () => DestroyImmediate(this, true);
+                return;
+            }
+
 #if COM_UNITY_MODULES_PHYSICS
             var rigidBody = GetComponent<Rigidbody>();
             var ghostRigidBody = GetComponent<GhostRigidbody>();
@@ -44,7 +42,7 @@ namespace Unity.Netcode
             {
                 // This must be enabled when replicating the rigid body.
 
-                ghostAdapter.SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
+                ghostAdapter.FullTickSmoothing = FullTickSmoothingMode.Interpolate;
                 // TODO: Currently, this is added only if you enable replication of the rigid body.
                 // There is a bug where if you don't add this component it doesn't synchronize the transform.
                 // Remove this once the issue is resolved.
