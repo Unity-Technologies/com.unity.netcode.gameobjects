@@ -1,8 +1,8 @@
 # Unity CLI commands
 
-Drive Netcode for GameObjects from the command line, a CI job or an AI agent with the Unity CLI. The commands set up a NetworkManager and network prefabs, start and stop sessions, inspect connected clients and spawned objects, simulate poor network conditions, and sample network traffic.
+Drive Netcode for GameObjects from the command line, a CI job, or an AI agent with the [Unity CLI](https://docs.unity.com/en-us/unity-cli/unity-cli). You can use commands to set up a NetworkManager and network prefabs, start and stop sessions, inspect connected clients and spawned objects, simulate poor network conditions, and sample network traffic.
 
-The commands are available when the project has the `com.unity.pipeline` package (version 0.9.0-exp.1 or later). Without it, the commands aren't compiled. Run them against an open Editor as `unity command <group> <name> [arguments]`; `unity command --list` shows every command with its arguments.
+To use Unity CLI commands with Netcode for GameObjects, you must install the [Unity Pipeline package](https://docs.unity.com/en-us/unity-cli/unity-pipeline/unity-pipeline-package) (version 0.9.0-exp.1 or later). Without it, the commands aren't compiled. Run them against an open Unity Editor as `unity command <group> <name> [arguments]`. `unity command --list` shows every command with its arguments.
 
 ## Typical workflow
 
