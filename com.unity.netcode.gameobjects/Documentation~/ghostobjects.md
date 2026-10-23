@@ -2,6 +2,8 @@
 
 Understand how to use GhostObjects from Unity Netcode to support client-side prediction.
 
+GhostObjects are a feature of [Unity Netcode](https://docs.unity3d.com/Packages/com.unity.netcode@latest) that let you build networked gameplay with GameObjects and MonoBehaviours, while Unity Netcode handles replication, prediction, and interpolation for you. By adding a GhostObject component to the root of a GameObject prefab, you can use Unity Netcode to synchronize the transform of the GameObject and its children, and optionally synchronize the state of its Rigidbody component. You can also use GhostObjects to implement client-side prediction for your networked gameplay.
+
 A hybrid object is a GameObject that has both a [NetworkObject](components/core/networkobject.md) component and a [GhostObject](https://docs.unity3d.com/Packages/com.unity.netcode@latest?subfolder=/manual/ghostobject/ghostobject.html) component. Unity Netcode synchronizes the transform of a hybrid object as part of its snapshot, which makes the object compatible with prediction in Unity Netcode. Netcode for GameObjects continues to synchronize the data in your [`NetworkBehaviour`](xref:Unity.Netcode.NetworkBehaviour)s, such as [`NetworkVariable`](networkvariables-landing.md)s and RPCs.
 
 When the network prefabs list contains a hybrid object, Netcode for GameObjects uses Unity Netcode to drive the connection, and Unity Netcode drives the physics system. The **Parent Replication** setting on the GhostObject component controls how you set the parent GameObject of a hybrid object. Hybrid objects have some [limitations](#hybrid-object-limitations), including incompatibility with the distributed authority topology, in-scene placed objects, and object pooling.
@@ -36,8 +38,7 @@ When the network prefabs list on the [NetworkManager](components/core/networkman
 
 Hybrid objects have the following requirements:
 
-- Unity Netcode version 7.2.0 or later. Netcode for GameObjects only enables hybrid object support when your project uses this version or later.
-- A global `NetcodeConfig` asset. If no global `NetcodeConfig` asset exists, the session fails to start and Netcode for GameObjects logs an error.
+- A global `NetcodeConfig` asset. Unity Netcode creates this asset by default. If for some reason no global `NetcodeConfig` asset exists, the session fails to start and Netcode for GameObjects logs an error.
 - The `HostWorldModeSelection` setting of the global `NetcodeConfig` asset set to `SingleWorld`. If you use any other host world mode, the session fails to start and Netcode for GameObjects logs an error.
 
 ### Snapshot size
