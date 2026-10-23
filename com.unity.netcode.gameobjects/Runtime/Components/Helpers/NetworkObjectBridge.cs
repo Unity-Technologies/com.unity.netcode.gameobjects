@@ -18,18 +18,6 @@ namespace Unity.Netcode
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
 #if UNITY_EDITOR
-        private void Reset()
-        {
-            // Start users with just interpolation (they can adjust this if they want prediction)
-            // to make the initial transition less problematic for users.
-            // Only set when the bridge is first added, so a user's prediction setting is kept.
-            var ghostAdapter = GetComponent<GhostObject>();
-            if (ghostAdapter != null)
-            {
-                ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
-            }
-        }
-
         private void OnValidate()
         {
             hideFlags = HideFlags.HideInInspector;

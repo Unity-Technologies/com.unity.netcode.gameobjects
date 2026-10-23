@@ -1,7 +1,4 @@
 using System.Collections.Generic;
-#if UNIFIED_NETCODE
-using Unity.Netcode.Editor;
-#endif
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -24,38 +21,6 @@ namespace Unity.Netcode.GameObjects.Editor
         private bool m_ShowObservers;
 
         private static readonly string[] k_HiddenFields = { "m_Script" };
-
-#if UNIFIED_NETCODE
-        /// <summary>
-        /// Register for the GhostObject removal event.
-        /// </summary>
-        [InitializeOnLoadMethod]
-        private static void OnApplicationStart()
-        {
-            GhostObjectEditor.OnGhostObjectPreRemoval = OnGhostObjectPreRemoval;
-        }
-
-        /// <summary>
-        /// Callback to remove the NetworkObjectBridge prior to removing GhostObject.
-        /// </summary>
-        /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
-        private static void OnGhostObjectPreRemoval(GameObject gameObject)
-        {
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-            if (networkObject != null)
-            {
-                networkObject.OnRemoveNetworkObjectBridge();
-                // Revalidate once the removal completes: OnValidate is skipped on the prefab stage root, and this hook fires for any GhostBehaviour.
-                EditorApplication.delayCall += () =>
-                {
-                    if (networkObject)
-                    {
-                        networkObject.UnifiedValidation();
-                    }
-                };
-            }
-        }
-#endif
 
         private void Initialize()
         {

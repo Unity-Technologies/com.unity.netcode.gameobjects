@@ -383,7 +383,7 @@ namespace Unity.Netcode
             SynchronizeTransform = false;
         }
 
-        internal void OnRemoveNetworkObjectBridge()
+        private void OnRemoveNetworkObjectBridge()
         {
             EditorApplication.update -= OnRemoveNetworkObjectBridge;
             if (this == null)
