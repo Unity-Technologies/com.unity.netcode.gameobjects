@@ -80,6 +80,52 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Validates that a client synchronized while the list still has unsent changes
+        /// does not apply those changes twice (snapshot + next delta).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator LateJoinWithPendingChanges()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var instantiatedObject = SpawnObject(m_ListObjectPrefab, authority).GetComponent<NetworkObject>();
+            m_TestObjectId = instantiatedObject.NetworkObjectId;
+
+            yield return WaitForSpawnedOnAllOrTimeOut(instantiatedObject);
+            AssertOnTimeout("[Setup] Failed to spawn list object");
+
+            var list = instantiatedObject.GetComponent<NetworkListTest>().TheList;
+            m_ExpectedValues.Clear();
+            for (int i = 0; i < 5; i++)
+            {
+                m_ExpectedValues.Add(i);
+                list.Add(i);
+            }
+
+            yield return WaitForConditionOrTimeOut(OnVerifyData);
+            AssertOnTimeout("[Setup] Failed to add items to list");
+
+            // Hold back deltas so these changes are still pending when the new client synchronizes
+            list.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 3600 });
+            list.Add(100);
+            m_ExpectedValues.Add(100);
+            list.Insert(0, 101);
+            m_ExpectedValues.Insert(0, 101);
+            list.RemoveAt(2);
+            m_ExpectedValues.RemoveAt(2);
+            list[1] = 102;
+            m_ExpectedValues[1] = 102;
+            list.Remove(3);
+            m_ExpectedValues.Remove(3);
+
+            yield return CreateAndStartNewClient();
+            Assert.IsTrue(list.IsDirty(), "[Setup] Changes should still be pending after the new client synchronized");
+
+            list.SetUpdateTraits(default);
+            yield return WaitForConditionOrTimeOut(OnVerifyData);
+            AssertOnTimeout("Late joined client did not match the authority's list");
+        }
+
         [UnityTest]
         public IEnumerator ValidateNetworkListSynchronization()
         {
