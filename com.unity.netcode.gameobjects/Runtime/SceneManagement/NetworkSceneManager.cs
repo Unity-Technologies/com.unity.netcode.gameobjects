@@ -869,14 +869,6 @@ namespace Unity.Netcode
                 for (int i = 0; i < SceneManager.sceneCount; i++)
                 {
                     var loadedScene = SceneManager.GetSceneAt(i);
-                    // Should be incredibly rare
-                    // If a promoted session owner's scene handle conflicts with an already registered server scene handle,
-                    // ensure the already registered (and synchronized with other clients) scene handle wins.
-                    if (ClientSceneHandleToServerSceneHandle.ContainsKey(loadedScene.handle))
-                    {
-                        NetworkManager.Log.Warning(new Context(LogLevel.Developer, "Unexpected event occurred while initializing loaded scenes! Failed to register scene handle.").AddInfo("SceneName", loadedScene.name).AddInfo("SceneHandle", loadedScene.handle));
-                        continue;
-                    }
                     UpdateServerClientSceneHandle(loadedScene.handle, loadedScene.handle, loadedScene);
                 }
                 SceneManagerHandler.PopulateLoadedScenes(ref ScenesLoaded, NetworkManager);
@@ -1961,12 +1953,10 @@ namespace Unity.Netcode
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddActiveSceneToClientSynchronization(ref SceneEventData sceneEventData, ref Scene activeScene, bool isSynchronizingService)
+        private void AddActiveSceneToClientSynchronization(ref SceneEventData sceneEventData, ref Scene activeScene, bool shouldRunValidation)
         {
             // It is possible a user might not want to synchronize the active scene, so we will check to see if it is valid before adding it to the synchronization list.
-            // !! Important !!
-            // The active scene MUST always be sent when synchronizing the CMB Service
-            if (!isSynchronizingService && !ValidateSceneBeforeLoading(activeScene.buildIndex, activeScene.name, sceneEventData.LoadSceneMode))
+            if (shouldRunValidation && !ValidateSceneBeforeLoading(activeScene.buildIndex, activeScene.name, sceneEventData.LoadSceneMode))
             {
                 return;
             }
@@ -1975,7 +1965,7 @@ namespace Unity.Netcode
             {
                 if (!ClientSceneHandleToServerSceneHandle.TryGetValue(activeScene.handle, out var localHandle))
                 {
-                    NetworkManager.Log.Warning(new Context(LogLevel.Developer, $"Attempting to synchronize unknown scene. Use {nameof(ValidateSceneBeforeLoading)} to exclude this scene from validation").AddInfo("SceneName", activeScene.name).AddInfo("SceneHandle", activeScene.handle));
+                    NetworkManager.Log.Warning(new Context(LogLevel.Developer, $"Failed to synchronize active scene. Use {nameof(ValidateSceneBeforeLoading)} to exclude this scene from validation").AddInfo("SceneName", activeScene.name).AddInfo("SceneHandle", activeScene.handle));
                     return;
                 }
 
@@ -2057,10 +2047,11 @@ namespace Unity.Netcode
             }
 
             // Organize how (and when) we serialize our NetworkObjects
-
             // !! Important !!
             // The active scene MUST always be the first scene in the synchronization list.
-            AddActiveSceneToClientSynchronization(ref sceneEventData, ref activeScene, synchronizingService);
+
+            // Don't run user-validation when we're synchronizing the CMB service. CMB always needs to know about the active scene
+            AddActiveSceneToClientSynchronization(ref sceneEventData, ref activeScene, !synchronizingService);
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
