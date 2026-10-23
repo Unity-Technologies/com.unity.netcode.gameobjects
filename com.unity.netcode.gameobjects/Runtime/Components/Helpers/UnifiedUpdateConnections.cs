@@ -55,14 +55,15 @@ namespace Unity.Netcode.Components
             var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().NetworkManager.Value;
             // A missing NetworkManager counts as shutting down: the world outlives it if ShutdownInternal throws before disposing the world.
             var isShuttingDown = !networkManager || networkManager.ShutdownInProgress || !networkManager.IsListening;
-            foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
+            // A destroyed connection keeps only its cleanup components, so the NetworkId comes from ConnectionState.
+            foreach (var (connectionState, entity) in SystemAPI.Query<ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
                 commandBuffer.RemoveComponent<ConnectionState>(entity);
                 m_TempConnections.Add(new NetcodeConnection
                 {
                     World = World,
                     Entity = entity,
-                    NetworkId = networkId.Value
+                    NetworkId = connectionState.NetworkId
                 });
             }
 
@@ -99,7 +100,7 @@ namespace Unity.Netcode.Components
                     {
                         // Set the connection in-game
                         commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
-                        commandBuffer.AddComponent(entry.Value.Entity, default(ConnectionState));
+                        commandBuffer.AddComponent(entry.Value.Entity, new ConnectionState { NetworkId = entry.Value.NetworkId });
                         NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
                         m_TempConnections.Add(entry.Value);
                     }
