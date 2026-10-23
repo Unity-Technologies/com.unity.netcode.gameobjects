@@ -30,6 +30,8 @@ internal static class Program
             return 2;
         }
 
+        var report = new StandardsReport(project);
+
         foreach (var file in Directory.GetFiles(project, pattern))
         {
             var procInfo = new ProcessStartInfo("dotnet");
@@ -39,11 +41,14 @@ internal static class Program
                 ? $"format whitespace {file} --no-restore --verify-no-changes --verbosity {verbosity}"
                 : $"format whitespace {file} --no-restore --verbosity {verbosity}";
             Console.WriteLine($"######## START -> {(check ? "check" : "fix")} whitespace issues");
+            report.BeginStep(file, "Whitespace", 120, 0, 0);
             var whitespace = Process.Start(procInfo);
             whitespace.WaitForExit();
+            report.EndStep(whitespace.ExitCode);
             if (whitespace.ExitCode != 0)
             {
                 Console.WriteLine("######## FAILED -> found whitespace issues (see details above)");
+                report.Print();
                 return whitespace.ExitCode;
             }
             Console.WriteLine("######## SUCCEEDED -> no whitespace issues");
@@ -52,16 +57,21 @@ internal static class Program
                 ? $"format style {file} --severity error --no-restore --verify-no-changes --verbosity {verbosity}"
                 : $"format style {file} --severity error --no-restore --verbosity {verbosity}";
             Console.WriteLine($"######## START -> {(check ? "check" : "fix")} style/naming issues");
+            report.BeginStep(file, "Style", 300, 1, 0);
             var style = Process.Start(procInfo);
             style.WaitForExit();
+            report.EndStep(style.ExitCode);
             if (style.ExitCode != 0)
             {
                 Console.WriteLine("######## FAILED -> found style/naming issues (see details above)");
+                report.Print();
                 return style.ExitCode;
             }
             Console.WriteLine("######## SUCCEEDED -> no style/naming issues");
         }
 
+        report.Print();
+        report.Save();
         return 0;
     }
 }
