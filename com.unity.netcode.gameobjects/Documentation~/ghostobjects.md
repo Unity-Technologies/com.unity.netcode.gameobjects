@@ -68,7 +68,7 @@ Hybrid objects have the following limitations:
 - Distributed authority: Hybrid objects aren't compatible with the [distributed authority](terms-concepts/distributed-authority.md) topology. If the network prefabs list contains a hybrid object, a distributed authority session fails to start.
 - In-scene placed objects: [In-scene placed NetworkObjects](basics/scenemanagement/inscene-placed-networkobjects.md) can't be hybrid objects.
 - Object pooling: Hybrid objects aren't compatible with `INetworkPrefabInstanceHandler`, so you can't use [object pooling](advanced-topics/object-pooling.md) with hybrid objects.
-- Client authority: Unity Netcode doesn't support client authority. You can convert a NetworkObject that uses an owner-authoritative NetworkTransform into a hybrid object, but the owner no longer controls its transform, because the NetworkTransform component stops synchronizing data. To move the converted object, use server-authoritative motion or prediction instead. `NetworkVariable`s on hybrid objects can still use owner write permissions.
+- Client authority: Unity Netcode doesn't support the client authoritative motion model. You can convert a NetworkObject that uses an owner-authoritative NetworkTransform into a hybrid object, but the owner no longer controls its transform, because the NetworkTransform component stops synchronizing data. To move the converted object, use server-authoritative motion or prediction instead. `NetworkVariable`s on hybrid objects can still use owner write permissions.
 
 ## Create and remove hybrid objects
 
