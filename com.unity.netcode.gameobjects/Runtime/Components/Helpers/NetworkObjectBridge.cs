@@ -43,13 +43,7 @@ namespace Unity.Netcode
             var networkObject = GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                EditorApplication.delayCall += () =>
-                {
-                    if (this != null)
-                    {
-                        DestroyImmediate(this, true);
-                    }
-                };
+                EditorApplication.delayCall += () => DestroyImmediate(this, true);
                 return;
             }
 

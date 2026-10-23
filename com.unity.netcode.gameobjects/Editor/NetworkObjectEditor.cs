@@ -45,6 +45,14 @@ namespace Unity.Netcode.GameObjects.Editor
             if (networkObject != null)
             {
                 networkObject.OnRemoveNetworkObjectBridge();
+                // Revalidate once the removal completes: OnValidate is skipped on the prefab stage root, and this hook fires for any GhostBehaviour.
+                EditorApplication.delayCall += () =>
+                {
+                    if (networkObject)
+                    {
+                        networkObject.UnifiedValidation();
+                    }
+                };
             }
         }
 #endif

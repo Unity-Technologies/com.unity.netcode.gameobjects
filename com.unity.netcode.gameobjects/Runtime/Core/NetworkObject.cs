@@ -369,17 +369,27 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HadBridge;
 #if UNITY_EDITOR
+        // The update callbacks unsubscribe first so one whose NetworkObject was destroyed doesn't throw every frame.
         private void OnAddNetworkObjectBridge()
         {
+            EditorApplication.update -= OnAddNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
             NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
             HadBridge = true;
             // Transform synchronization is handled by unified netcode
             SynchronizeTransform = false;
-            EditorApplication.update -= OnAddNetworkObjectBridge;
         }
 
         internal void OnRemoveNetworkObjectBridge()
         {
+            EditorApplication.update -= OnRemoveNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
             var networkObjectBridge = gameObject.GetComponent<NetworkObjectBridge>();
             if (networkObjectBridge != null)
             {
@@ -397,16 +407,19 @@ namespace Unity.Netcode
 
             // NGO synchronizes the transform again once the prefab is no longer hybrid
             SynchronizeTransform = true;
-            EditorApplication.update -= OnRemoveNetworkObjectBridge;
         }
 
         private void OnRemoveGhostObject()
         {
+            EditorApplication.update -= OnRemoveGhostObject;
+            if (this == null)
+            {
+                return;
+            }
             OnRemoveNetworkObjectBridge();
             DestroyImmediate(GhostObject);
             GhostObject = null;
             HasGhost = false;
-            EditorApplication.update -= OnRemoveGhostObject;
         }
 
         internal void UnifiedValidation()
