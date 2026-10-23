@@ -17,6 +17,8 @@ A hybrid object synchronizes its data through two separate systems:
 
 Because Netcode for GameObjects data isn't part of the snapshot, Unity Netcode doesn't roll back or replay `NetworkVariable`s, RPCs, or spawn data as part of its prediction loop. To use prediction on a hybrid object, write your prediction code in `GhostBehaviour`s. Prediction code in `GhostBehaviour`s on hybrid objects works the same way as on any other GhostObject.
 
+When you convert a NetworkObject into a hybrid object, Netcode for GameObjects sets the GhostObject's supported ghost modes to interpolated only. To use prediction, change the `SupportedGhostModes` and `DefaultGhostMode` settings on the **GhostObject** component to include a predicted mode. For more information about ghost modes, refer to the [Unity Netcode documentation](https://docs.unity3d.com/Packages/com.unity.netcode@latest).
+
 ### Effect on existing transform and physics components
 
 When you convert a NetworkObject into a hybrid object, any existing [NetworkTransform](components/helper/networktransform.md) and [NetworkRigidbody](components/helper/networkrigidbody.md) components stay on the prefab so that you don't lose their settings. However, they no longer synchronize data:
@@ -28,7 +30,15 @@ If you convert the hybrid object back into a NetworkObject, these components res
 
 ## How Netcode for GameObjects uses Unity Netcode
 
-When the network prefabs list on the [NetworkManager](components/core/networkmanager.md) contains a hybrid object, Netcode for GameObjects configures Unity Netcode and uses it to drive the connection. This process doesn't require any further setup, but it changes how Netcode for GameObjects handles snapshot size and physics.
+When the network prefabs list on the [NetworkManager](components/core/networkmanager.md) contains a hybrid object, Netcode for GameObjects configures Unity Netcode and uses it to drive the connection. This changes how Netcode for GameObjects handles snapshot size and physics.
+
+### Hybrid object requirements
+
+Hybrid objects have the following requirements:
+
+- Unity Netcode version 7.2.0 or later. Netcode for GameObjects only enables hybrid object support when your project uses this version or later.
+- A global `NetcodeConfig` asset. If no global `NetcodeConfig` asset exists, the session fails to start and Netcode for GameObjects logs an error.
+- The `HostWorldModeSelection` setting of the global `NetcodeConfig` asset set to `SingleWorld`. If you use any other host world mode, the session fails to start and Netcode for GameObjects logs an error.
 
 ### Snapshot size
 
@@ -58,7 +68,7 @@ Hybrid objects have the following limitations:
 - Distributed authority: Hybrid objects aren't compatible with the [distributed authority](terms-concepts/distributed-authority.md) topology. If the network prefabs list contains a hybrid object, a distributed authority session fails to start.
 - In-scene placed objects: [In-scene placed NetworkObjects](basics/scenemanagement/inscene-placed-networkobjects.md) can't be hybrid objects.
 - Object pooling: Hybrid objects aren't compatible with `INetworkPrefabInstanceHandler`, so you can't use [object pooling](advanced-topics/object-pooling.md) with hybrid objects.
-- Client authority: Unity Netcode doesn't support client authority, so you can't convert a NetworkObject that uses an owner-authoritative NetworkTransform into a hybrid object. `NetworkVariable`s on hybrid objects can still use owner write permissions.
+- Client authority: Unity Netcode doesn't support client authority. You can convert a NetworkObject that uses an owner-authoritative NetworkTransform into a hybrid object, but the owner no longer controls its transform, because the NetworkTransform component stops synchronizing data. To move the converted object, use server-authoritative motion or prediction instead. `NetworkVariable`s on hybrid objects can still use owner write permissions.
 
 ## Create and remove hybrid objects
 
