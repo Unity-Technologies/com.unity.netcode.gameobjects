@@ -1144,7 +1144,7 @@ namespace Unity.Netcode.Transports.UTP
                         // means a clean disconnect that doesn't require logging.
                         if (!m_Driver.Listening && m_ServerClientId == default)
                         {
-                            Debug.LogError("Failed to connect to server.");
+                            LogClientConnectionFailureMessage();
                         }
 
                         // Set the disconnect event error code
@@ -1170,6 +1170,40 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             return false;
+        }
+
+        private void LogClientConnectionFailureMessage()
+        {
+            if (OnCurrentTopology() == NetworkTopologyTypes.ClientServer)
+            {
+                var reasons = new List<string> { "Server/host is not running." };
+
+                if (m_ProtocolType == ProtocolType.RelayUnityTransport && !m_UseWebSockets)
+                {
+                    reasons.Add("Relay port might be blocked on your network. Try using WebSockets.");
+                    if (m_RelayServerData.IsSecure != 0)
+                    {
+                        reasons.Add("DTLS might be blocked on your network. Try using UDP or WebSockets.");
+                    }
+                }
+                else if (m_ProtocolType != ProtocolType.RelayUnityTransport)
+                {
+                    reasons.Add($"Server/host might not be reachable. Try \"ping {ConnectionData.Address}\" in a terminal.");
+                    reasons.Add("The firewall on the server/host might be blocking the connection attempts.");
+                    if (m_UseEncryption && !m_UseWebSockets)
+                    {
+                        reasons.Add("DTLS might be blocked on your network. Try using WebSockets.");
+                    }
+                }
+
+                const string prefix = "\n\t- ";
+                Debug.LogError("Failed to connect to server. Possible reasons:" + prefix + string.Join(prefix, reasons));
+            }
+            else
+            {
+                // If using DA the SDK should have logged an actual useful error.
+                Debug.LogError("Failed to connect to server.");
+            }
         }
 
         /// <summary>
