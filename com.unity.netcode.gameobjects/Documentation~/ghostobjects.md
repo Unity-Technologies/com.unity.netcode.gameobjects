@@ -1,4 +1,4 @@
-# Introduction to hybrid objects (GhostObjects)
+# Hybrid objects (GhostObjects)
 
 Understand how to use GhostObjects from Unity Netcode to support client-side prediction.
 
