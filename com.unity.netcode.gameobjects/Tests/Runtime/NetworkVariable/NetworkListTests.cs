@@ -126,6 +126,45 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout("Late joined client did not match the authority's list");
         }
 
+        /// <summary>
+        /// Validates that showing an object while list updates are held back by update traits
+        /// still delivers the pending changes once they can be sent.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkShowWithThrottledPendingChanges()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            var instantiatedObject = SpawnObject(m_ListObjectPrefab, authority).GetComponent<NetworkObject>();
+            m_TestObjectId = instantiatedObject.NetworkObjectId;
+
+            yield return WaitForSpawnedOnAllOrTimeOut(instantiatedObject);
+            AssertOnTimeout("[Setup] Failed to spawn list object");
+
+            instantiatedObject.NetworkHide(nonAuthority.LocalClientId);
+            yield return WaitForConditionOrTimeOut(() => !nonAuthority.SpawnManager.SpawnedObjects.ContainsKey(m_TestObjectId));
+            AssertOnTimeout("[Setup] Failed to hide list object");
+
+            // Hold back deltas so these changes are still pending when the object is shown
+            var list = instantiatedObject.GetComponent<NetworkListTest>().TheList;
+            list.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 3600 });
+            m_ExpectedValues.Clear();
+            for (int i = 0; i < 5; i++)
+            {
+                m_ExpectedValues.Add(i);
+                list.Add(i);
+            }
+
+            instantiatedObject.NetworkShow(nonAuthority.LocalClientId);
+            yield return WaitForConditionOrTimeOut(() => nonAuthority.SpawnManager.SpawnedObjects.ContainsKey(m_TestObjectId));
+            AssertOnTimeout("[Setup] Failed to show list object");
+            Assert.IsTrue(list.IsDirty(), "[Setup] Changes should still be pending after the object was shown");
+
+            list.SetUpdateTraits(default);
+            yield return WaitForConditionOrTimeOut(OnVerifyData);
+            AssertOnTimeout("Clients did not receive the changes that were pending when the object was shown");
+        }
+
         [UnityTest]
         public IEnumerator ValidateNetworkListSynchronization()
         {
