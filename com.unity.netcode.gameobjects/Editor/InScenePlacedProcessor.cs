@@ -5,7 +5,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-#if UNITY_6000_7_OR_NEWER
+#if UNITY_7000_0_OR_NEWER
 using UnityEditor.Build.Content;
 #endif
 
@@ -19,7 +19,7 @@ namespace Unity.Netcode.GameObjects.Editor
     /// <remarks>
     /// This will always run as a scene is loaded in playmode or while processed for a player build.
     /// </remarks>
-#if UNITY_6000_7_OR_NEWER
+#if UNITY_7000_0_OR_NEWER
     internal class SetInScenePlaced : AssetPostprocessor
     {
         public override uint GetVersion() => 1;
@@ -43,7 +43,7 @@ namespace Unity.Netcode.GameObjects.Editor
     }
 #endif
 
-    static class InScenePlaceChecks
+    internal static class InScenePlaceChecks
     {
         public static void ReportSceneIssues(Scene scene, bool hasAwakeRun)
         {

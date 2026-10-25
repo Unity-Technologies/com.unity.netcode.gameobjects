@@ -109,7 +109,7 @@ Using this approach allows you to:
 1. Re-use the same single-spawn manager with any other network prefab registered with a `NetworkPrefabsList`.
 2. Not worry about the complexities involved with treating an in-scene placed NetworkObject like a dynamically spawned one.
 
-[You can see a hybrid approach example here.](../object-spawning.md#dynamic-spawning-non-pooled)
+[You can see a hybrid approach example here.](../object-spawning.md#spawn-dynamically-without-pooling)
 
 ## Spawning and despawning in-scene placed NetworkObjects
 
@@ -237,7 +237,7 @@ Referring back to the [section on complex in-scene NetworkObjects](#complex-in-s
 - Have another in-scene placed NetworkObject track which in-scene placed NetworkObjects have been destroyed and upon a player late-joining (that is, `OnClientConnected`) you would need to send the newly-joined client the list of in-scene placed NetworkObjects that it should destroy. This adds an additional in-scene placed NetworkObject to your scene hierarchy and will consume memory keeping track of what was destroyed.
 - Disable the visual and physics-related components (in Editor as a default) of the in-scene placed NetworkObject(s) in question and only enable them in `OnNetworkSpawn`. This doesn't delete/remove the in-scene placed NetworkObject(s) for the late-joining client and can be tricky to implement without running into edge case scenario bugs.
 
-These two alternatives aren't recommended, but are worth briefly exploring to better understand why it's recommend to use a [non-pooled hybrid approach](../object-spawning.md#dynamic-spawning-non-pooled), or just not destroying the in-scene placed NetworkObject when despawning it.
+These two alternatives aren't recommended, but are worth briefly exploring to better understand why it's recommend to use a [non-pooled hybrid approach](../object-spawning.md#spawn-dynamically-without-pooling), or just not destroying the in-scene placed NetworkObject when despawning it.
 
 ## Parenting in-scene placed NetworkObjects
 

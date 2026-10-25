@@ -10,6 +10,10 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(NetworkTopologyTypes.ClientServer, true)]
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, false)]
     [TestFixture(NetworkTopologyTypes.ClientServer, false)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost, true)]
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost, false)]
+#endif
     internal class RpcDuringOnNetworkSpawn : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -20,6 +24,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_EnableSceneManagement = enableSceneManagement;
         }
+
+#if UNIFIED_NETCODE
+        public RpcDuringOnNetworkSpawn(NetworkTopologyTypes topologyType, HostOrServer hostOrServer, bool enableSceneManagement) : base(topologyType, hostOrServer)
+        {
+            m_EnableSceneManagement = enableSceneManagement;
+        }
+
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         /// <summary>
         /// Enables or disables scene management when the <see cref="NetworkManager"/>s

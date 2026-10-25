@@ -400,8 +400,8 @@ namespace TestProject.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnectedInvocations == 3);
+            var timeoutHelper = new TimeoutHelper(8.0f);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnectedInvocations == 3, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, "Timed out waiting for clients to be disconnected!");
             Assert.AreEqual(3, m_ClientDisconnectedInvocations);
         }

@@ -29,6 +29,13 @@ namespace TestProject.RuntimeTests
 
         public NetworkObjectDestroyWithSceneTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         protected override void OnServerAndClientsCreated()
         {
             m_TestPrefab = CreateNetworkObjectPrefab("TestObject").GetComponent<NetworkObject>();

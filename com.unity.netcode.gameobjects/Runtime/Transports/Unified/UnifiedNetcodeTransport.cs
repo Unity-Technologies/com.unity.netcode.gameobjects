@@ -1,4 +1,4 @@
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
 using System;
 using System.Collections.Generic;
 using Unity.Burst;
@@ -6,10 +6,6 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-#if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-using NetcodeConnectionEvent = Unity.NetCode.NetCodeConnectionEvent;
-#endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -168,7 +164,7 @@ namespace Unity.Netcode.Unified
             NetworkManager.MessageManager.ProcessSendQueues();
 
             using var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach(var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
+            foreach (var (networkId, _, entity) in SystemAPI.Query<RefRO<NetworkId>, RefRO<NetworkStreamConnection>>().WithEntityAccess())
             {
                 var connectionId = networkId.ValueRO.Value;
                 DynamicBuffer<TransportRpcData> rpcs = EntityManager.GetBuffer<TransportRpcData>(entity);
@@ -179,7 +175,7 @@ namespace Unity.Netcode.Unified
                     {
                         Transport.DispatchMessage(connectionId, buffer);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Debug.LogException(e);
                     }
@@ -221,7 +217,11 @@ namespace Unity.Netcode.Unified
 
         internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer)
         {
-            var connectionInfo = m_Connections[connectionId];
+            // The connection is removed on disconnect, which can be ahead of its last messages.
+            if (!m_Connections.TryGetValue(connectionId, out ConnectionInfo connectionInfo))
+            {
+                return;
+            }
 
             using var arr = FixedBytes1280.ToNativeArray(buffer);
             var reader = new DataStreamReader(arr);
@@ -374,6 +374,8 @@ namespace Unity.Netcode.Unified
                 GetDisconnectEventFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason),
                 GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
             );
+            // Removed before notifying, so the shutdown this triggers does not notify again from DisconnectLocalClient.
+            m_Connections.Remove(connectionEvent.Id.Value);
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
@@ -440,7 +442,7 @@ namespace Unity.Netcode.Unified
         public override void DisconnectLocalClient()
         {
             // Remove the connection 1st (the world might not be available)
-            m_Connections.Remove((int)ServerClientId);
+            var wasConnected = m_Connections.Remove((int)ServerClientId);
 
             // TODO-FIX-REVIEW-ME:
             // This was causing errors to occur upon shutdown during an integration test.
@@ -462,12 +464,20 @@ namespace Unity.Netcode.Unified
             }
             m_NetworkManager.NetcodeWorld.RequestDisconnectFromServer();
 
+            // N4E reports the disconnect a frame or more later, after NGO's shutdown has stopped listening, so the
+            // client would never be notified. Notify now, as UnityTransport does, and ignore N4E's later event.
+            m_NetworkManager.NetcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
+            if (wasConnected)
+            {
+                InvokeOnTransportEvent(NetworkEvent.Disconnect, ServerClientId, default, m_RealTimeProvider.RealTimeSinceStartup);
+            }
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
             var (transportId, _) = m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
-            return (ulong)m_Connections[(int)transportId].Connection.RTT;
+            // Returns 0 when the connection was already removed (for example while shutting down), the same as UnityTransport.
+            return m_Connections.TryGetValue((int)transportId, out ConnectionInfo connectionInfo) ? (ulong)connectionInfo.Connection.RTT : 0;
         }
 
         public override void Initialize(NetworkManager networkManager = null)
@@ -479,7 +489,12 @@ namespace Unity.Netcode.Unified
 
         public override void Shutdown()
         {
-
+            var netcodeWorld = m_NetworkManager ? m_NetworkManager.NetcodeWorld : null;
+            if (netcodeWorld != null)
+            {
+                netcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
+                netcodeWorld.OnConnectionEvent -= OnServerConnectionEvent;
+            }
         }
     }
 }

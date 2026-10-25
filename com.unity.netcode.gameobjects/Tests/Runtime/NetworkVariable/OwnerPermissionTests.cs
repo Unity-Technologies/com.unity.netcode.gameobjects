@@ -1,8 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-#if ENABLE_CORECLR
-using NUnit.Framework;
-#endif
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -101,9 +98,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("Unexpected owner write-permission error logged on CoreCLR, see https://jira.unity3d.com/browse/UUM-149597")]
-#endif
         public IEnumerator OwnerPermissionTest()
         {
             // create 3 objects
@@ -111,10 +105,18 @@ namespace Unity.Netcode.RuntimeTests
             {
                 OwnerPermissionObject.CurrentlySpawning = objectIndex;
 
+                // Object N is owned by client id N; ids follow connection order, which is not guaranteed to match creation order
                 NetworkManager ownerManager = m_ServerNetworkManager;
                 if (objectIndex != 0)
                 {
-                    ownerManager = m_ClientNetworkManagers[objectIndex - 1];
+                    foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                    {
+                        if (clientNetworkManager.LocalClientId == (ulong)objectIndex)
+                        {
+                            ownerManager = clientNetworkManager;
+                            break;
+                        }
+                    }
                 }
                 var spawnedInstance = SpawnObject(m_PrefabToSpawn, ownerManager);
 

@@ -13,6 +13,10 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkTransformAutoParenting : IntegrationTestWithApproximation
     {
         public enum TransformSpace
@@ -22,6 +26,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 4;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private List<NetworkObject> m_PrefabsToSpawn = new List<NetworkObject>();
         private NetworkObject m_ParentToSpawn;

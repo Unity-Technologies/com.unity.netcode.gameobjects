@@ -172,6 +172,9 @@ namespace Unity.Netcode
                 list.OnAdd -= AddTriggeredByNetworkPrefabList;
                 list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
             }
+#if UNIFIED_NETCODE
+            m_GhostPrefabRejection = null;
+#endif
         }
 
         /// <summary>
@@ -183,10 +186,17 @@ namespace Unity.Netcode
         {
             m_PrefabHashIds.Clear();
             m_Prefabs.Clear();
+#if UNIFIED_NETCODE
+            // Recomputed by the registrations below.
+            HasGhostPrefabs = false;
+#endif
             NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
             {
+                // Initialize runs more than once per session, so unsubscribe first to keep a single subscription.
+                list.OnAdd -= AddTriggeredByNetworkPrefabList;
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
+                list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
                 list.OnRemove += RemoveTriggeredByNetworkPrefabList;
             }
 
@@ -356,7 +366,43 @@ namespace Unity.Netcode
         }
 
 #if UNIFIED_NETCODE
+        internal const string DistributedAuthorityHybridPrefabError = "Distributed authority does not support hybrid prefabs.";
+        internal const string HybridPrefabAfterStartError = "Hybrid prefabs must be registered before the NetworkManager starts.";
+
         internal bool HasGhostPrefabs { get; private set; }
+
+        // The error a hybrid prefab added during the session is rejected with, or null. Cleared in Shutdown.
+        private string m_GhostPrefabRejection;
+
+        /// <summary>
+        /// Hybrid mode is decided when the session starts. A distributed authority session, or one that started without
+        /// hybrid prefabs, rejects hybrid prefabs added while it runs.
+        /// </summary>
+        internal void OnSessionStarting(bool distributedAuthority)
+        {
+            m_GhostPrefabRejection = distributedAuthority ? DistributedAuthorityHybridPrefabError : HasGhostPrefabs ? null : HybridPrefabAfterStartError;
+        }
+
+        /// <summary>
+        /// Logs every registered hybrid prefab and returns false if there is any.
+        /// </summary>
+        internal bool ValidateForDistributedAuthority()
+        {
+            if (!HasGhostPrefabs)
+            {
+                return true;
+            }
+            var hybridPrefabNames = new List<string>();
+            foreach (var networkPrefab in m_Prefabs)
+            {
+                if (networkPrefab.HasGhost)
+                {
+                    hybridPrefabNames.Add(networkPrefab.GetDebugName());
+                }
+            }
+            NetworkLog.LogError($"{DistributedAuthorityHybridPrefabError} Remove the GhostObject from these prefabs or use a prefab list without them: {string.Join(", ", hybridPrefabNames)}");
+            return false;
+        }
 #endif
 
 
@@ -381,6 +427,12 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
             if (networkPrefab.HasGhost)
             {
+                // Registering a hybrid prefab mid-session would switch NetworkManager into hybrid mode and stop its send queue.
+                if (m_GhostPrefabRejection != null)
+                {
+                    Debug.LogError($"{m_GhostPrefabRejection} {networkPrefab.GetDebugName()} was not added.");
+                    return false;
+                }
                 HasGhostPrefabs = true;
             }
 #endif

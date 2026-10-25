@@ -7,12 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
 #if UNIFIED_NETCODE
-#if UNIFIED_NETCODE_7_0_0
 using EntitiesNetcode = Unity.Netcode.Netcode;
-#else
-using Unity.NetCode;
-using EntitiesNetcode = Unity.NetCode.Netcode;
-#endif
 #endif
 using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.RuntimeTests;
@@ -339,6 +334,46 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             Assert.Fail("No valid non-authority network manager found!");
             return null;
+        }
+
+        /// <summary>
+        /// Gets the name of the given <see cref="NetworkManager"/> to use in assertion messages:
+        /// - Dedicated server: "Server"
+        /// - Host: "Host"
+        /// - Client: "Client-" followed by its <see cref="NetworkManager.LocalClientId"/>
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the name of</param>
+        /// <returns>The name of the <paramref name="networkManager"/></returns>
+        protected string GetDisplayName(NetworkManager networkManager)
+        {
+            if (networkManager.IsServer)
+            {
+                return networkManager.IsHost ? "Host" : "Server";
+            }
+            return $"Client-{networkManager.LocalClientId}";
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the <see cref="NetworkObject"/> with the given identifier.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObjectId">The identifier of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, ulong networkObjectId)
+        {
+            Assert.True(networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId), $"{GetDisplayName(networkManager)} has no spawned {nameof(NetworkObject)} with an identifier of {networkObjectId}!");
+            return networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+        }
+
+        /// <summary>
+        /// Gets the <paramref name="networkManager"/> relative instance of the given <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> to get the relative instance from</param>
+        /// <param name="networkObject">Any instance of the <see cref="NetworkObject"/> wanted</param>
+        /// <returns>The <paramref name="networkManager"/> relative <see cref="NetworkObject"/> instance</returns>
+        protected NetworkObject GetManagersInstance(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            return GetManagersInstance(networkManager, networkObject.NetworkObjectId);
         }
 
         /// <summary>
@@ -708,7 +743,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InternalOnOneTimeSetup();
         }
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
         private bool m_PreviousWarnBatchedTicks;
 #endif
 
@@ -727,7 +762,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
             // Netcode for Entities emits a performance-dependent "Server Tick Batching" warning on loaded CI agents that would fail strict log assertions.
             m_PreviousWarnBatchedTicks = MultiplayerPlayModePreferences.WarnBatchedTicks;
             MultiplayerPlayModePreferences.WarnBatchedTicks = false;
@@ -796,6 +831,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // In addition to setting the number of clients in the OneTimeSetup, we need to re-apply the number of clients for each unique test
             // in the event that a previous test stopped a client.
             m_NumberOfClients = NumberOfClients;
+            // Clear any time out state left by a previous test so it cannot fail this test's assertions
+            s_GlobalTimeoutHelper.TimedOut = false;
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
@@ -860,7 +897,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // If the world matches, then register the instance with this NetworkManager's spawn manager.
                 if (networkManager.NetcodeWorld == ghost.World)
                 {
-                    networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    // Like GhostSpawnManager.RegisterGhostBridge, only clients wait for a ghost. Registering the server's
+                    // own instance moved it into the DontDestroyOnLoad scene on a dedicated server, which every client
+                    // was then told about.
+                    if (!networkManager.IsServer)
+                    {
+                        networkManager.SpawnManager.GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObjectId);
+                    }
                     return;
                 }
             }
@@ -1013,6 +1056,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Provides opportunity to allow child derived classes to
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
+#if UNIFIED_NETCODE
+            // N4E worlds and the unified transport only start when a hybrid prefab is registered.
+            // Without this, a hybrid test case that only spawns players would run as plain NGO.
+            if (m_AllPrefabsAsHybrid && !m_HybridPrefabCreated)
+            {
+                CreateHybridPrefab("UnifiedSessionPrefab");
+            }
+#endif
 
             VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
@@ -1212,7 +1263,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Wait for the new client to connect
             var connected = WaitForClientsConnectedOrTimeOutWithTimeTravel();
-            AssertOnTimeout($"{nameof(CreateAndStartNewClientWithTimeTravel)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
+            Assert.IsTrue(connected, $"{nameof(CreateAndStartNewClientWithTimeTravel)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
             OnNewClientStartedAndConnected(networkManager);
             if (!connected)
@@ -1595,9 +1646,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!m_BypassConnectionTimeout)
                 {
                     // Wait for all clients to connect
-                    WaitForClientsConnectedOrTimeOutWithTimeTravel();
+                    var connected = WaitForClientsConnectedOrTimeOutWithTimeTravel();
 
-                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
+                    Assert.IsTrue(connected, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
                     if (m_UseHost || authorityManager.IsHost)
                     {
@@ -1620,8 +1671,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         foreach (var networkManager in m_NetworkManagers)
                         {
-                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(networkManager));
-                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
+                            var spawned = WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(networkManager));
+                            Assert.IsTrue(spawned, $"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
                         }
                     }
 
@@ -1722,7 +1773,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             catch (Exception e)
             {
-                throw e;
+                Debug.LogException(e);
             }
             finally
             {
@@ -1806,6 +1857,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_AllPrefabsAsHybrid)
             {
                 m_PendingPrefabs.Clear();
+                m_HybridPrefabCreated = false;
                 GhostSpawnManager.RegisterPendingGhost = null;
                 CleanupPrefabReferences();
             }
@@ -1859,6 +1911,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     ShutdownAndCleanUp();
                 }
+
+                // Wait until all the scene from this test are unloaded before starting the next test.
+                yield return WaitForRemainingScenesUnloaded();
             }
 
             if (m_EnableTimeTravel)
@@ -1866,6 +1921,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ComponentFactory.Deregister<IRealTimeProvider>();
             }
 
+#if UNIFIED_NETCODE
+            // A test that takes its HostOrServer as a method parameter sets m_AllPrefabsAsHybrid from the test
+            // body, but SetUp runs before that: without this the next case creates a hybrid prefab nobody asked
+            // for, and the server start sweep rejects it as an unregistered NetworkObject.
+            m_AllPrefabsAsHybrid = m_FixtureAllPrefabsAsHybrid;
+#endif
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
@@ -1915,7 +1976,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Disable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
 
-#if UNIFIED_NETCODE_7_0_0 && UNITY_EDITOR
+#if UNITY_EDITOR
             MultiplayerPlayModePreferences.WarnBatchedTicks = m_PreviousWarnBatchedTicks;
 #endif
 
@@ -2505,6 +2566,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
 #if UNIFIED_NETCODE
         protected bool m_AllPrefabsAsHybrid = false;
+
+        // What the fixture was constructed with, restored after every test case.
+        private bool m_FixtureAllPrefabsAsHybrid;
 #endif
 
         /// <summary>
@@ -2517,7 +2581,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected GameObject CreateNetworkObjectPrefab(string baseName)
         {
 #if UNIFIED_NETCODE
-            if (m_AllPrefabsAsHybrid)
+            return CreateNetworkObjectPrefab(baseName, m_AllPrefabsAsHybrid);
+        }
+
+        /// <summary>
+        /// Creates a hybrid prefab only when <paramref name="asHybrid"/> is true, so a unified test can create a NetworkObject-only prefab.
+        /// </summary>
+        /// <param name="baseName">the basic name to be used for each instance</param>
+        /// <param name="asHybrid">when true, the prefab also has a GhostObject</param>
+        /// <returns>The <see cref="GameObject"/> assigned to the new NetworkPrefab entry</returns>
+        protected GameObject CreateNetworkObjectPrefab(string baseName, bool asHybrid)
+        {
+            if (asHybrid)
             {
                 return CreateHybridPrefab(baseName, true);
             }
@@ -2544,8 +2619,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Object.Destroy(reference);
             }
         }
-        protected GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true)
+        private bool m_HybridPrefabCreated;
+        internal GameObject CreateHybridPrefab(string baseName, bool moveToDDOL = true, GhostMode ghostMode = GhostMode.Interpolated)
         {
+            m_HybridPrefabCreated = true;
             // Prevent from trying to register/spawn when creating this hybrid prefab
             var gameObject = new GameObject
             {
@@ -2568,13 +2645,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Initialize it as a prefab
             adapter.InitializeAsPrefab();
 
-            // TODO: This might be part of the CreateHybridPrefab parameters
-            // For now, just use normal interpolation until we get integration
-            // tests running.
-            // Once we have validated prediction works and have a working manual
-            // test, we can circle back to this (possibly make that a sub-task
-            // with the dependency to prediction manual test).
-            adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            if (ghostMode == GhostMode.Interpolated)
+            {
+                adapter.SupportedGhostModes = GhostModeMask.Interpolated;
+            }
+            else
+            {
+                adapter.SupportedGhostModes = GhostModeMask.All;
+                adapter.DefaultGhostMode = ghostMode;
+                adapter.HasOwner = ghostMode == GhostMode.OwnerPredicted;
+            }
 
             // Once done with setting up the GhostObject, we can set it back to active in the hierarchy
             gameObject.SetActive(true);
@@ -2854,6 +2934,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNIFIED_NETCODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost || hostOrServer == HostOrServer.UnifiedHost;
             m_AllPrefabsAsHybrid = (hostOrServer == HostOrServer.UnifiedServer || hostOrServer == HostOrServer.UnifiedHost);
+            m_FixtureAllPrefabsAsHybrid = m_AllPrefabsAsHybrid;
             // If this is a hybrid prefab test case and the environment variable to run the unified tests
             // is set, then perform the m_UseUnifiedTests check.
             if (m_AllPrefabsAsHybrid && GetUnifiedTestsEnvironmentVariable())
@@ -2899,22 +2980,84 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 
-        private void UnloadRemainingScenes()
+        private const float k_SceneUnloadTimeout = 5.0f;
+        private readonly List<AsyncOperation> m_PendingSceneUnloads = new List<AsyncOperation>();
+
+        /// <returns>true if any scene (other than the test runner scene) is still loading and could not be unloaded yet</returns>
+        private bool UnloadRemainingScenes()
         {
             // Unload any remaining scenes loaded but the test runner scene
             // Note: Some tests only unload the server-side instance, and this
             // just assures no currently loaded scenes will impact the next test
+            Scene testRunnerScene = default;
+            var sceneStillLoading = false;
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-                if (!scene.IsValid() || !scene.isLoaded || scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName) || !OnCanSceneCleanUpUnload(scene))
+                if (scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
+                {
+                    testRunnerScene = scene;
+                    continue;
+                }
+                if (scene.IsValid() && !scene.isLoaded)
+                {
+                    // Can't unload a scene that is still loading
+                    sceneStillLoading = true;
+                    continue;
+                }
+                if (!scene.IsValid() || !OnCanSceneCleanUpUnload(scene))
                 {
                     continue;
                 }
 
                 VerboseDebug($"Unloading scene {scene.name}-{scene.handle}");
                 var asyncOperation = SceneManager.UnloadSceneAsync(scene);
+                if (asyncOperation != null)
+                {
+                    m_PendingSceneUnloads.Add(asyncOperation);
+                }
             }
+
+            // Ensure the test runner scene is reset to be the active scene.
+            if (testRunnerScene.IsValid())
+            {
+                if (SceneManager.GetActiveScene() != testRunnerScene)
+                {
+                    SceneManager.SetActiveScene(testRunnerScene);
+                }
+
+            }
+
+            return sceneStillLoading;
+        }
+
+        /// <summary>
+        /// Waits (in real time) for all scenes left over by the test to finish unloading.
+        /// Scenes that finish loading after tear down started are also unloaded.
+        /// </summary>
+        private IEnumerator WaitForRemainingScenesUnloaded()
+        {
+            var timeOut = Time.realtimeSinceStartup + k_SceneUnloadTimeout;
+            while (true)
+            {
+                // Pick up any scenes that finished loading after the clean up started
+                var sceneStillLoading = UnloadRemainingScenes();
+
+                // Keep waiting while a scene is still loading so it can be unloaded once it finishes loading
+                if (!sceneStillLoading && m_PendingSceneUnloads.All(c => c.isDone))
+                {
+                    break;
+                }
+
+                if (Time.realtimeSinceStartup >= timeOut)
+                {
+                    Debug.LogWarning($"[{nameof(WaitForRemainingScenesUnloaded)}] Timed out waiting for scenes to unload!");
+                    break;
+                }
+                yield return null;
+            }
+
+            m_PendingSceneUnloads.Clear();
         }
 
         private StringBuilder m_WaitForLog = new StringBuilder();

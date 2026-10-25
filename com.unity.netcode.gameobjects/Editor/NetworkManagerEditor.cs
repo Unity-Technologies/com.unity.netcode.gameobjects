@@ -37,6 +37,9 @@ namespace Unity.Netcode.GameObjects.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
+#if UNIFIED_NETCODE
+        private SerializedProperty m_AutoConfigureSnapshotSizeProperty;
+#endif
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
         private SerializedProperty m_AutoSpawnPlayerPrefabClientSide;
         private SerializedProperty m_NetworkTopologyProperty;
@@ -114,6 +117,9 @@ namespace Unity.Netcode.GameObjects.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+#if UNIFIED_NETCODE
+            m_AutoConfigureSnapshotSizeProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.AutoConfigureSnapshotSize));
+#endif
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
             // Only display the auto spawn property when the distributed authority network topology is selected
@@ -157,6 +163,9 @@ namespace Unity.Netcode.GameObjects.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+#if UNIFIED_NETCODE
+            m_AutoConfigureSnapshotSizeProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.AutoConfigureSnapshotSize));
+#endif
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
             // Only display the auto spawn property when the distributed authority network topology is selected
@@ -198,6 +207,12 @@ namespace Unity.Netcode.GameObjects.Editor
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();
 
+#if UNIFIED_NETCODE
+                EditorGUILayout.LabelField("Hybrid Settings", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_AutoConfigureSnapshotSizeProperty);
+                EditorGUILayout.Space();
+#endif
+
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
@@ -221,6 +236,7 @@ namespace Unity.Netcode.GameObjects.Editor
                     }
                 }
                 EditorGUILayout.PropertyField(m_TickRateProperty);
+
                 EditorGUILayout.PropertyField(m_SpawnTimeOutProperty);
                 EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
                 if (m_NetworkManager.NetworkConfig.ConnectionApproval)
