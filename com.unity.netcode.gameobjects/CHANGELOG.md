@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4214)
 - Issue where a rejected parent change, for example one made by a client without parenting authority, restored the `NetworkObject`'s parent but left it at the moved position when the change was made with `worldPositionStays` disabled. The original position, rotation and scale are now restored. (#4202)
 - Issue where a client's clock kept alternating between running slightly fast and slightly slow on every frame, even after it had synchronized with the server. Interpolated objects juddered (a periodic motion artifact caused by mismatched frame rates): they moved in uneven steps instead of smoothly. Barely noticeable at the default `NetworkTimeSystem.AdjustmentRatio`, and clearly visible at higher values. (#4195)
 - Issue where the IL post-processor could not resolve core library types, such as `Guid` and `List<T>`, in assemblies compiled against .NET reference assemblies, for example when targeting .NET 10. Those split the core library across `System.Runtime`, `System.Collections` and other assemblies. (#4188)
