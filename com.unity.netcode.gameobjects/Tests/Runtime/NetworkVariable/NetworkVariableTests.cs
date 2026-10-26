@@ -1850,6 +1850,13 @@ namespace Unity.Netcode.RuntimeTests
             return t;
         }
 
+        // RandGenBytes<bool> yields bools whose byte is neither 0 nor 1, which IL2CPP on ARM64 can
+        // compare as unequal even though both print True.
+        public bool RandGenBool(System.Random rand)
+        {
+            return rand.Next(2) == 1;
+        }
+
         public FixedString32Bytes RandGenFixedString32(System.Random rand)
         {
             var s = new FixedString32Bytes();
@@ -1917,6 +1924,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Length - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when its length matches original2.
+                while (idx < original2.Length && EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
@@ -1997,7 +2009,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetArarys((rand) => rand.Next(2) == 1);
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBool);
                 TestValueTypeNativeArray(original, changed);
                 TestValueTypeNativeArray(original2, changed2);
             }
@@ -2215,6 +2227,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Count - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when no elements are added or removed.
+                while (EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
@@ -2461,7 +2478,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBool);
                 TestList(original, changed);
                 TestList(original2, changed2);
             }
@@ -2657,7 +2674,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBool);
                 TestHashSet(original, changed);
                 TestHashSet(original2, changed2);
             }
@@ -3010,27 +3027,27 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (keyType == typeof(byte))
                 {
-                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBool);
                     TestDictionary(original, changed);
                     TestDictionary(original2, changed2);
 
                 }
                 else if (keyType == typeof(ulong))
                 {
-                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBool);
                     TestDictionary(original, changed);
                     TestDictionary(original2, changed2);
                 }
                 else if (keyType == typeof(Vector2))
                 {
-                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBool);
                     TestDictionary(original, changed);
                     TestDictionary(original2, changed2);
 
                 }
                 else if (keyType == typeof(HashMapKeyClass))
                 {
-                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBool);
                     TestDictionary(original, changed);
                     TestDictionary(original2, changed2);
                 }
@@ -3722,6 +3739,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var idx = rand.Next(changed2.Length - 1);
                 var item = generator(rand);
+                // Ensures changed2 differs from original2 when no elements are added or removed.
+                while (EqualityComparer<T>.Default.Equals(item, original2[idx]))
+                {
+                    item = generator(rand);
+                }
                 changed2[idx] = item;
             }
 
@@ -3965,7 +3987,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBool);
                 TestValueTypeNativeList(original, changed);
                 TestValueTypeNativeList(original2, changed2);
             }
@@ -4154,7 +4176,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(bool))
             {
-                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<bool>);
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBool);
                 TestValueTypeNativeHashSet(original, changed);
                 TestValueTypeNativeHashSet(original2, changed2);
             }
@@ -4500,27 +4522,27 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (keyType == typeof(byte))
                 {
-                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBool);
                     TestValueTypeNativeHashMap(original, changed);
                     TestValueTypeNativeHashMap(original2, changed2);
 
                 }
                 else if (keyType == typeof(ulong))
                 {
-                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBool);
                     TestValueTypeNativeHashMap(original, changed);
                     TestValueTypeNativeHashMap(original2, changed2);
                 }
                 else if (keyType == typeof(Vector2))
                 {
-                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBool);
                     TestValueTypeNativeHashMap(original, changed);
                     TestValueTypeNativeHashMap(original2, changed2);
 
                 }
                 else if (keyType == typeof(HashMapKeyStruct))
                 {
-                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<bool>);
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBool);
                     TestValueTypeNativeHashMap(original, changed);
                     TestValueTypeNativeHashMap(original2, changed2);
                 }
