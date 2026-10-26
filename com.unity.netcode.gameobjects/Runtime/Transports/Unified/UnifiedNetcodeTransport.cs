@@ -215,6 +215,16 @@ namespace Unity.Netcode.Unified
 
         private Dictionary<int, ConnectionInfo> m_Connections;
 
+        private bool RemoveConnection(int connectionId)
+        {
+            if (!m_Connections.Remove(connectionId, out ConnectionInfo connectionInfo))
+            {
+                return false;
+            }
+            connectionInfo.SendQueue.Dispose();
+            return true;
+        }
+
         internal void DispatchMessage(int connectionId, in FixedBytes1280 buffer)
         {
             // The connection is removed on disconnect, which can be ahead of its last messages.
@@ -223,7 +233,7 @@ namespace Unity.Netcode.Unified
                 return;
             }
 
-            using var arr = FixedBytes1280.ToNativeArray(buffer);
+            var arr = FixedBytes1280.ToNativeArray(buffer);
             var reader = new DataStreamReader(arr);
             if (connectionInfo.ReceiveQueue == null)
             {
@@ -233,6 +243,11 @@ namespace Unity.Netcode.Unified
             {
                 connectionInfo.ReceiveQueue.PushReader(reader);
             }
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            // Disposing an Allocator.None array does not release its safety handle. The queue has copied the data.
+            var safety = NativeArrayUnsafeUtility.GetAtomicSafetyHandle(arr);
+            CollectionHelper.DisposeSafetyHandle(ref safety);
+#endif
 
             var message = connectionInfo.ReceiveQueue.PopMessage();
             while (message.Count != 0)
@@ -278,6 +293,7 @@ namespace Unity.Netcode.Unified
 
         private void OnClientConnectedToServer(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
+            RemoveConnection(connectionEvent.Id.Value);
             m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
                 ReceiveQueue = null,
@@ -292,6 +308,7 @@ namespace Unity.Netcode.Unified
 
         private void OnServerNewClientConnection(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
+            RemoveConnection(connectionEvent.Id.Value);
             m_Connections[connectionEvent.Id.Value] = new ConnectionInfo
             {
                 ReceiveQueue = null,
@@ -375,13 +392,14 @@ namespace Unity.Netcode.Unified
                 GetDisconnectMessageFromNetworkStreamDisconnectReason(connectionEvent.DisconnectReason)
             );
             // Removed before notifying, so the shutdown this triggers does not notify again from DisconnectLocalClient.
-            m_Connections.Remove(connectionEvent.Id.Value);
+            RemoveConnection(connectionEvent.Id.Value);
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
         }
 
         private void OnServerClientDisconnected(Connection connection, NetcodeConnectionEvent connectionEvent)
         {
             InvokeOnTransportEvent(NetworkEvent.Disconnect, (ulong)connectionEvent.Id.Value, default, m_RealTimeProvider.RealTimeSinceStartup);
+            RemoveConnection(connectionEvent.Id.Value);
         }
 
         private void OnClientConnectionEvent(Connection connection, NetcodeConnectionEvent connectionEvent)
@@ -435,14 +453,18 @@ namespace Unity.Netcode.Unified
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            m_NetworkManager.NetcodeWorld.DisconnectAClient(m_Connections[(int)clientId].Connection);
-            m_Connections.Remove((int)clientId);
+            // The connection is already removed when the client disconnected first.
+            if (m_Connections.TryGetValue((int)clientId, out ConnectionInfo connectionInfo))
+            {
+                m_NetworkManager.NetcodeWorld.DisconnectAClient(connectionInfo.Connection);
+                RemoveConnection((int)clientId);
+            }
         }
 
         public override void DisconnectLocalClient()
         {
             // Remove the connection 1st (the world might not be available)
-            var wasConnected = m_Connections.Remove((int)ServerClientId);
+            var wasConnected = RemoveConnection((int)ServerClientId);
 
             // TODO-FIX-REVIEW-ME:
             // This was causing errors to occur upon shutdown during an integration test.
@@ -494,6 +516,15 @@ namespace Unity.Netcode.Unified
             {
                 netcodeWorld.OnConnectionEvent -= OnClientConnectionEvent;
                 netcodeWorld.OnConnectionEvent -= OnServerConnectionEvent;
+            }
+
+            if (m_Connections != null)
+            {
+                foreach (var connectionInfo in m_Connections.Values)
+                {
+                    connectionInfo.SendQueue.Dispose();
+                }
+                m_Connections.Clear();
             }
         }
     }
