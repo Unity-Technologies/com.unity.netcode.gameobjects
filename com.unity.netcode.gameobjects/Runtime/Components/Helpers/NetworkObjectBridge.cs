@@ -52,14 +52,9 @@ namespace Unity.Netcode
         /// instance's entity's PostTransformMatrix.</param>
         internal void HybridParentUpdate(Vector3 scale)
         {
-            var current = Ghost.GetPositionAndRotation();
+            //var current = Ghost.GetPositionAndRotation();
             //Debug.Log($"---- Current LT: {current.Position} | {current.Rotation.eulerAngles}");
             //Debug.Log($"---- New LT: {transform.localPosition} | {transform.localRotation}");
-            Ghost.ApplyPostTransformMatrixScale(scale);
-        }
-
-        internal void ApplyScale(Vector3 scale)
-        {
             Ghost.ApplyPostTransformMatrixScale(scale);
         }
 
