@@ -435,10 +435,7 @@ namespace Unity.Netcode.Unified
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            if (m_Connections.TryGetValue((int)clientId, out var connection))
-            {
-                m_NetworkManager.NetcodeWorld.DisconnectAClient(connection.Connection);
-            }
+            m_NetworkManager.NetcodeWorld.DisconnectAClient(m_Connections[(int)clientId].Connection);
             m_Connections.Remove((int)clientId);
         }
 
