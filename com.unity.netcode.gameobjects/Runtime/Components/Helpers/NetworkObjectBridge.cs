@@ -31,8 +31,14 @@ namespace Unity.Netcode
             var networkObject = GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                // Remove the bridge if there is no NetworkObject
-                EditorApplication.delayCall += () => DestroyImmediate(this, true);
+                // Check again once the current operation finishes, since a script can add the bridge before the NetworkObject.
+                EditorApplication.delayCall += () =>
+                {
+                    if (this != null && GetComponent<NetworkObject>() == null)
+                    {
+                        DestroyImmediate(this, true);
+                    }
+                };
             }
             else
             {
