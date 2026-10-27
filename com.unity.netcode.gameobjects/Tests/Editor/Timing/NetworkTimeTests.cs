@@ -67,6 +67,23 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        [TestCase(0.25d, 2, 0.05d)]
+        [TestCase(0.3d, 3, 0d)]
+        [TestCase(0.7d, 7, 0d)]
+        [TestCase(-0.05d, -1, 0.05d)]
+        [TestCase(-0.15d, -2, 0.05d)]
+        [TestCase(-0.3d, -3, 0d)]
+        [TestCase(16384.3d, 163843, 0d)]
+        public void NetworkTimeTickAndOffset(double time, int expectedTick, double expectedTickOffset)
+        {
+            var networkTime = new NetworkTime(10, time);
+
+            Assert.AreEqual(expectedTick, networkTime.Tick);
+            Assert.IsTrue(Approximately(networkTime.TickOffset, expectedTickOffset));
+            Assert.IsTrue(Approximately(networkTime.FixedTime + networkTime.TickOffset, time));
+        }
+
+        [Test]
         public void NetworkTimeDefault()
         {
             NetworkTime defaultTime = default;
