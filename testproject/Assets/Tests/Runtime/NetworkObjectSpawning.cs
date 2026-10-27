@@ -10,6 +10,9 @@ using UnityEngine.TestTools;
 namespace TestProject.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
+#endif
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     internal class NetworkObjectSpawning : NetcodeIntegrationTest
     {
@@ -29,6 +32,12 @@ namespace TestProject.RuntimeTests
 
         public NetworkObjectSpawning(NetworkTopologyTypes networkTopology, HostOrServer hostOrServer) : base(networkTopology, hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         protected override IEnumerator OnSetup()
         {
@@ -96,6 +105,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnOnSynchronizedNotification([Values] SynchronizeNotificationTypes synchronizeNotificationTypes)
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("In-scene placed NetworkObjects are not supported with hybrid prefabs.");
+            }
+#endif
             m_SceneLoadCompleted = false;
             m_CanStartServerAndClients = true;
             NetworkObjectSpawnerForTests.SpawnAfterInSceneSynchronized = synchronizeNotificationTypes == SynchronizeNotificationTypes.InSceneObjects || synchronizeNotificationTypes == SynchronizeNotificationTypes.Both;
