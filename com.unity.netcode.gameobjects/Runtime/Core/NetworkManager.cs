@@ -1266,7 +1266,12 @@ namespace Unity.Netcode
             NetworkConfig.InitializePrefabs();
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
-                NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                // Reused so that restarting a session does not add another transport.
+                if (!TryGetComponent(out UnifiedNetcodeTransport unifiedTransport))
+                {
+                    unifiedTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                }
+                NetworkConfig.NetworkTransport = unifiedTransport;
             }
 #endif
 #if UNIFIED_NETCODE
@@ -1400,6 +1405,7 @@ namespace Unity.Netcode
             TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             new UnifiedBootstrap().Initialize("Default World");
+            UnifiedBootstrap.CurrentNetworkManagerForInitialization = null;
 
             if (NetcodeWorld != null && NetcodeWorld.IsCreated)
             {

@@ -31,6 +31,20 @@ namespace Unity.Netcode
         // creates its own bootstrap, so the worlds created for other NetworkManagers are registered again.
         private static readonly List<NetcodeWorld> k_CreatedWorlds = new List<NetcodeWorld>();
 
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnLoad()
+        {
+            Instance = null;
+            OnInitialized = null;
+            Port = 7979;
+            CurrentNetworkManagerForInitialization = null;
+            LastCreatedWorld = null;
+            s_WorldCounter = 0;
+            k_CreatedWorlds.Clear();
+        }
+#endif
+
         private static void RegisterCreatedWorlds()
         {
             for (int i = k_CreatedWorlds.Count - 1; i >= 0; i--)
