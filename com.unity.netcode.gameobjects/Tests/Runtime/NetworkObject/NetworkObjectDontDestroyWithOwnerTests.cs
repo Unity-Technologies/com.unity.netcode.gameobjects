@@ -165,7 +165,8 @@ namespace Unity.Netcode.RuntimeTests
                 var destroyObjectId = m_DestroyObjectIds[i];
                 var dontDestroyObject = networkManager.SpawnManager.SpawnedObjects[dontDestroyObjectId];
                 var destroyObject = networkManager.SpawnManager.SpawnedObjects[destroyObjectId];
-                Assert.IsTrue(dontDestroyObject.TrySetParent(destroyObject), $"[Client-{networkManager.LocalClientId}][Parent Failure] Could not parent {destroyObject.name} under {dontDestroyObject.name}!");
+                // NGO parenting of a hybrid instance requires worldPositionStays disabled. The pose does not matter for this test.
+                Assert.IsTrue(dontDestroyObject.TrySetParent(destroyObject, false), $"[Client-{networkManager.LocalClientId}][Parent Failure] Could not parent {destroyObject.name} under {dontDestroyObject.name}!");
             }
         }
 
