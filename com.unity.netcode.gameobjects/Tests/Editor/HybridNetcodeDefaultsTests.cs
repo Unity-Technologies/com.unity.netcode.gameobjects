@@ -64,6 +64,17 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
+        public void ApplyManualStateReplicationDisablesAutomaticStateReplication()
+        {
+            m_Config.AutomaticStateReplication = true;
+
+            Assert.IsTrue(HybridNetcodeDefaults.ApplyManualStateReplication(m_Config), "The first apply should report a change.");
+            Assert.IsFalse(m_Config.AutomaticStateReplication, "NGO should own putting connections in game.");
+
+            Assert.IsFalse(HybridNetcodeDefaults.ApplyManualStateReplication(m_Config), "Re-applying an unchanged config should report no change.");
+        }
+
+        [Test]
         public void IsMissingRequiredDetectsBinaryWorlds()
         {
             m_Config.HostWorldModeSelection = NetcodeConfig.HostWorldMode.SingleWorld;

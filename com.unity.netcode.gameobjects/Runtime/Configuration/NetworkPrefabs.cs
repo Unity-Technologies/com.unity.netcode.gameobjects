@@ -429,7 +429,7 @@ namespace Unity.Netcode
             if (networkPrefab.HasGhost)
             {
                 // Registering a hybrid prefab mid-session would switch NetworkManager into hybrid mode and stop its send queue.
-                if (m_GhostPrefabRejection != null)
+                if (!string.IsNullOrEmpty(m_GhostPrefabRejection))
                 {
                     Debug.LogError($"{m_GhostPrefabRejection} {networkPrefab.GetDebugName()} was not added.");
                     return false;
