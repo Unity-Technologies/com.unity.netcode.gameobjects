@@ -27,11 +27,17 @@ namespace Unity.Netcode
             {
                 return;
             }
-
+            
             var networkObject = GetComponent<NetworkObject>();
             if (networkObject == null)
             {
+                // Remove the bridge if there is no NetworkObject
                 EditorApplication.delayCall += () => DestroyImmediate(this, true);
+            }
+            else
+            {
+                // NGO spawns the ghost when the NetworkObject spawns. This assures the ghost spawns in that NetworkManager's world.
+                ghostAdapter.DelaySpawning = true;
             }
         }
 #endif

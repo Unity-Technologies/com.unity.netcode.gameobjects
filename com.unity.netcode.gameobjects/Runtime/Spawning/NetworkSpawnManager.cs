@@ -8,6 +8,10 @@ using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNIFIED_NETCODE
+// Refer to NetworkManager.cs for why N4E's Netcode class gets its own name
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#endif
 
 namespace Unity.Netcode
 {
@@ -959,6 +963,36 @@ namespace Unity.Netcode
             return networkObject;
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Spawns a hybrid instance's ghost in this <see cref="NetworkManager"/>'s world.
+        /// </summary>
+        /// <remarks>
+        /// N4E spawns a ghost into its active world, which is not always this NetworkManager's world.
+        /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>), so the world can be selected here.
+        /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as is.
+        /// </remarks>
+        private void SpawnGhost(NetworkObject networkObject)
+        {
+            var ghostObject = networkObject.GhostObject;
+            if (ghostObject == null || ghostObject.IsSpawned || !ghostObject.DelaySpawning)
+            {
+                return;
+            }
+            var entitiesNetcode = EntitiesNetcode.Instance;
+            var previousWorld = entitiesNetcode.m_ActiveWorld;
+            entitiesNetcode.m_ActiveWorld = NetworkManager.NetcodeWorld;
+            try
+            {
+                ghostObject.Spawn();
+            }
+            finally
+            {
+                entitiesNetcode.m_ActiveWorld = previousWorld;
+            }
+        }
+#endif
+
         /// <summary>
         /// Creates a local NetworkObject to be spawned.
         /// </summary>
@@ -1137,6 +1171,18 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // Only registering a hybrid prefab before the session starts puts the NetworkManager in hybrid mode.
+            if (networkObject.HasGhost && !NetworkManager.NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"{NetworkPrefabs.HybridSpawnWithoutHybridPrefabsError} {networkObject.name} was not spawned.");
+                }
+                return false;
+            }
+#endif
+
             if (playerObject && networkObject.InScenePlaced)
             {
                 NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
@@ -1164,6 +1210,13 @@ namespace Unity.Netcode
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
             }
 
+#if UNIFIED_NETCODE
+            // The ghost is spawned before OnNetworkSpawn, so NetworkBehaviours can access it there.
+            if (networkObject.HasGhost)
+            {
+                SpawnGhost(networkObject);
+            }
+#endif
 
             if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, playerObject, ownerClientId, destroyWithScene))
             {
@@ -1779,6 +1832,13 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+#if UNIFIED_NETCODE
+                    // NGO does not track a parent that N4E replicates. The hierarchy determines the generation instead.
+                    if (spawnedNetObj.GhostReplicatesParent() && spawnedNetObj.transform.parent != networkObject.transform)
+                    {
+                        continue;
+                    }
+#endif
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
                     spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;
