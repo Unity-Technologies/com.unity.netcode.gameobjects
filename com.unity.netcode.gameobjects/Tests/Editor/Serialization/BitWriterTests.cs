@@ -329,5 +329,30 @@ namespace Unity.Netcode.EditorTests
 
             }
         }
+
+        [Test]
+        public void TestTryBeginWriteBitsGrowingBufferKeepsBitwiseWrites([Values] bool writeLeadingByte)
+        {
+            var writer = new FastBufferWriter(writeLeadingByte ? 2 : 1, Allocator.Temp, 16);
+            using (writer)
+            {
+                if (writeLeadingByte)
+                {
+                    writer.WriteByteSafe(0x11);
+                }
+
+                using (var bitWriter = writer.EnterBitwiseContext())
+                {
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(8));
+                    bitWriter.WriteBits((byte)0xAB, 8);
+                    // Grows the buffer while 0xAB is still uncommitted to the writer.
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(16));
+                    bitWriter.WriteBits(0xCDEFUL, 16);
+                }
+
+                var expected = writeLeadingByte ? new byte[] { 0x11, 0xAB, 0xEF, 0xCD } : new byte[] { 0xAB, 0xEF, 0xCD };
+                CollectionAssert.AreEqual(expected, writer.ToArray());
+            }
+        }
     }
 }
