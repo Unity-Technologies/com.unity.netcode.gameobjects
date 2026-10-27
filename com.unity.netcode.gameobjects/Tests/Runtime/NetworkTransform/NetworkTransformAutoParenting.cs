@@ -227,7 +227,13 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var prefabToSpawn in m_PrefabsToSpawn)
             {
-                yield return SpawnAndTest(prefabToSpawn, true);
+#if UNIFIED_NETCODE
+                // NGO parenting of a hybrid instance requires worldPositionStays disabled.
+                if (!m_AllPrefabsAsHybrid)
+#endif
+                {
+                    yield return SpawnAndTest(prefabToSpawn, true);
+                }
                 yield return SpawnAndTest(prefabToSpawn, false);
             }
         }
@@ -259,7 +265,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (m_ChildInstance.transform.parent)
                 {
+#if UNIFIED_NETCODE
+                    m_ChildInstance.TryRemoveParent(!m_AllPrefabsAsHybrid);
+#else
                     m_ChildInstance.TryRemoveParent();
+#endif
                 }
                 for (int j = 0; j < k_ParentsToSpawn; j++)
                 {

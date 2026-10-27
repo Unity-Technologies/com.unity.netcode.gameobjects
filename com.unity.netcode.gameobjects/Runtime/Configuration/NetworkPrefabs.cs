@@ -368,6 +368,7 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
         internal const string DistributedAuthorityHybridPrefabError = "Distributed authority does not support hybrid prefabs.";
         internal const string HybridPrefabAfterStartError = "Hybrid prefabs must be registered before the NetworkManager starts.";
+        internal const string HybridSpawnWithoutHybridPrefabsError = "Hybrid prefab instances can only be spawned in a session that started with a hybrid prefab registered.";
 
         internal bool HasGhostPrefabs { get; private set; }
 
