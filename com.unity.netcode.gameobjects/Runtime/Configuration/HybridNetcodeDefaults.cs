@@ -3,7 +3,7 @@
 namespace Unity.Netcode
 {
     /// <summary>
-    /// This handles applying two <see cref="NetcodeConfig"/> settings NGO requires and an optional recommended snapshot size when running in hybrid mode.
+    /// This handles applying the <see cref="NetcodeConfig"/> settings NGO requires and an optional recommended snapshot size when running in hybrid mode.
     /// </summary>
     /// <remarks>
     /// This intentionally does not modify the <see cref="NetcodeConfig"/> asset to preserve the default settings and/or any user adjustments other than the ones required.
@@ -52,6 +52,26 @@ namespace Unity.Netcode
             }
 
             config.GhostSendSystemData.DefaultSnapshotPacketSize = SnapshotPacketSize;
+            return true;
+        }
+
+        /// <summary>
+        /// Assures N4E leaves putting connections in game to NGO.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Components.UnifiedUpdateConnections"/> raises the connect events for connections not yet in game,
+        /// and a client only goes in game once NGO has synchronized it, so it receives no ghosts prior to that.
+        /// </remarks>
+        /// <param name="config">The config to correct.</param>
+        /// <returns>True if anything changed.</returns>
+        internal static bool ApplyManualStateReplication(NetcodeConfig config)
+        {
+            if (!config.AutomaticStateReplication)
+            {
+                return false;
+            }
+
+            config.AutomaticStateReplication = false;
             return true;
         }
 
