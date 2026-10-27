@@ -27,7 +27,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            
+
             var networkObject = GetComponent<NetworkObject>();
             if (networkObject == null)
             {
