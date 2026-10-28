@@ -1,5 +1,4 @@
 using System;
-using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -181,15 +180,17 @@ namespace Unity.Netcode
                 // Mark this network prefab as having to be registered via the unified API
                 HasGhost = networkObject.HasGhost;
 
-                if (HasGhost)
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                // With UserControlled physics, full tick smoothing holds a hybrid Rigidbody in place on the host.
+                var netcodeConfig = NetcodeConfig.Global;
+                if (HasGhost && netcodeConfig != null && netcodeConfig.PhysicsRunMode == PhysicGroupRunMode.UserControlled
+                    && networkObject.GhostObject.FullTickSmoothing != FullTickSmoothingMode.Disabled
+                    && networkObject.GetComponent<Components.NetworkRigidbodyBase>() != null)
                 {
-                    var networkRigidbodyBase = networkObject.GetComponent<NetworkRigidbodyBase>();
-                    if (networkRigidbodyBase != null && NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.UserControlled)
-                    {
-                        NetworkLog.LogWarning(new Logging.Context(LogLevel.Developer, "Full tick smoothing is being disabled.").AddNetworkObject(networkObject));
-                        networkObject.GhostObject.FullTickSmoothing = FullTickSmoothingMode.Disabled;
-                    }
+                    NetworkLog.LogWarning(new Logging.Context(LogLevel.Developer, $"Disabling full tick smoothing on {networkObject.name} because the {nameof(NetcodeConfig)} physics mode is {PhysicGroupRunMode.UserControlled}.").AddNetworkObject(networkObject));
+                    networkObject.GhostObject.FullTickSmoothing = FullTickSmoothingMode.Disabled;
                 }
+#endif
 #endif
                 if (networkObject.InScenePlaced)
                 {

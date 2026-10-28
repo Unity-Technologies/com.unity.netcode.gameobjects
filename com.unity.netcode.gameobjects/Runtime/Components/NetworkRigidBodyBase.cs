@@ -274,13 +274,6 @@ namespace Unity.Netcode.Components
 #endif
 
 #if UNIFIED_NETCODE
-
-        protected override void OnNetworkPostSpawn()
-        {
-            InitializeHybrid();
-            base.OnNetworkPostSpawn();
-        }
-
         // The authored kinematic state, restored in OnDestroy.
         private bool m_OriginalKinematicState;
 
@@ -290,37 +283,38 @@ namespace Unity.Netcode.Components
         /// <returns>true for a hybrid prefab</returns>
         private bool InitializeHybrid()
         {
-            if (NetworkObject == null)
+            if (NetworkObject == null || !NetworkObject.HasGhost)
             {
                 return false;
+            }
+
+            // Clears any registration left behind by a prior Initialize call.
+            if (NetworkTransform)
+            {
+                NetworkTransform.UnregisterRigidbody();
             }
 
             m_OriginalKinematicState = IsKinematic();
-
-            if (!NetworkObject.HasGhost)
-            {
-                if (NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.AlwaysRun)
-                {
-                    if (m_InternalRigidbody)
-                    {
-                        if (IsServer)
-                        {
-                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
-                        }
-                        else
-                        {
-                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.None;
-                        }
-                    }
-                }
-                return false;
-            }
-            else if (NetworkTransform)
-            {
-                // Clears any registration left behind by a prior Initialize call.
-                NetworkTransform.UnregisterRigidbody();
-            }
             return true;
+        }
+
+        // Overrides the authored interpolation while spawned when the NetcodeConfig physics mode requires it.
+        private bool m_UsePhysicsModeInterpolation;
+        private InterpolationTypes m_PhysicsModeInterpolation;
+
+        /// <summary>
+        /// Prevents the jitter an interpolated Rigidbody that is not a GhostObject shows in a hybrid session with <see cref="PhysicGroupRunMode.AlwaysRun"/>.
+        /// </summary>
+        private void SetPhysicsModeInterpolation()
+        {
+            var netcodeConfig = NetcodeConfig.Global;
+            m_UsePhysicsModeInterpolation = !m_IsRigidbody2D && m_LocalNetworkManager.NetworkConfig.Prefabs.HasGhostPrefabs
+                && netcodeConfig != null && netcodeConfig.PhysicsRunMode == PhysicGroupRunMode.AlwaysRun;
+            if (m_UsePhysicsModeInterpolation)
+            {
+                m_PhysicsModeInterpolation = m_LocalNetworkManager.IsServer ? InterpolationTypes.Extrapolate : InterpolationTypes.None;
+                SetInterpolation(m_PhysicsModeInterpolation);
+            }
         }
 
         /// <summary>
@@ -981,6 +975,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+#if UNIFIED_NETCODE
+            if (m_UsePhysicsModeInterpolation)
+            {
+                SetInterpolation(m_PhysicsModeInterpolation);
+                return;
+            }
+#endif
+
             if (UseRigidBodyForMotion)
             {
                 // Exit early if the original interpolation type is not set to extrapolate or NetworkTransform interpolate is disabled
@@ -1147,6 +1149,9 @@ namespace Unity.Netcode.Components
 #endif
             m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
             m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
+#if UNIFIED_NETCODE
+            SetPhysicsModeInterpolation();
+#endif
             UpdateOwnershipAuthority();
         }
 

@@ -88,8 +88,8 @@ To convert a hybrid object back into a prefab that uses only one package, remove
 
 ## Mixed mode objects and physics
 
-- When the `NetcodeConfig` asset is configured for **Always run**, non-hybrid NGO prefabs with a NetworkRigidbody will automatically adjust the Rigidbody's **Interpolate** value to **Extrapolate** on the server or host side and to **None** on the client side in order to avoid visual anomalies.
-- When the `NetcodeConfig` asset is configured for **User Controlled**, hybrid NGO prefabs with a NetworkRigidbody will automatically disable **Full Tick Smoothing* for these prefabs.
+- When the `NetcodeConfig` asset is configured for **Always run** and the session has hybrid prefabs, non-hybrid NGO prefabs with a NetworkRigidbody and a 3D Rigidbody will automatically adjust the Rigidbody's **Interpolate** value to **Extrapolate** on the server or host side and to **None** on the client side in order to avoid visual anomalies.
+- When the `NetcodeConfig` asset is configured for **User Controlled**, hybrid NGO prefabs with a NetworkRigidbody will automatically disable **Full Tick Smoothing** for these prefabs.
 
 ## Additional resources
 
