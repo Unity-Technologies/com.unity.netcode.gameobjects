@@ -108,6 +108,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Note = "No messages were sent or received during the sample. A host on its own sends nothing over the network; connect a client (another editor or a Multiplayer Play Mode player).";
             }
+            if (IsHybridSession(manager))
+            {
+                var hybrid = HybridSessionNote(manager, "the sample counts Netcode for GameObjects messages only, not GhostObject replication");
+                result.Note = result.Note == null ? hybrid : $"{result.Note} {hybrid}";
+            }
             return result;
         }
 

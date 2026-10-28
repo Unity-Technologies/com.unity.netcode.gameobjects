@@ -318,6 +318,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         public List<string> NetworkSimulatorComponents = new List<string>();
         public List<string> LiveTransports = new List<string>();
         public string AppliesWhen;
+        public List<string> Notes = new List<string>();
     }
 
     internal class SimulatorPresetInfo

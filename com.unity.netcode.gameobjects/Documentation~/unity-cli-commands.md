@@ -73,3 +73,13 @@ The simulator applies packet delay, jitter and loss to UnityTransport through it
 | `set` | Set a NetworkConfig field (for example `tick_rate`), the transport `address`, `port` or `listen_address`, the `player_prefab`, or the `log_level`. The log level also changes a running session. |
 
 Commands that change scenes or assets are undoable where Unity supports it and don't save the scene; save it with `unity command scene save`. Commands that change a running session apply to the Editor they run in.
+
+## Hybrid sessions
+
+A session whose network prefabs include `GhostObject` prefabs runs on a Netcode for Entities world. Its traffic goes through Netcode for Entities on port 7979, not through the NetworkManager's UnityTransport. In a hybrid session:
+
+- The `netcode.gameobjects.simulator` commands don't affect the session's traffic. `timeout` and `lag_spike` refuse to run.
+- The transport `address` and `port` set with `netcode.gameobjects.config set` or `netcode.gameobjects.session start` don't apply.
+- `get_stats` counts Netcode for GameObjects messages only, not `GhostObject` replication.
+
+The commands say so in their notes when this applies. For the Netcode for Entities side of the session, use the Netcode for Entities commands, for example `netcode.simulator` and `netcode.profiler get_snapshot_stats`.

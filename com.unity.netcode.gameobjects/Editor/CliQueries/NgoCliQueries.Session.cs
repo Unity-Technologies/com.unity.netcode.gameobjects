@@ -43,7 +43,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             var result = new SessionResult { Action = "start" };
-            if (!string.IsNullOrWhiteSpace(address) || port > 0)
+            if ((!string.IsNullOrWhiteSpace(address) || port > 0) && IsHybridSession(manager))
+            {
+                result.Notes.Add(HybridSessionNote(manager, "the address and port weren't applied"));
+            }
+            else if (!string.IsNullOrWhiteSpace(address) || port > 0)
             {
                 if (manager.NetworkConfig.NetworkTransport is not UnityTransport utp)
                 {

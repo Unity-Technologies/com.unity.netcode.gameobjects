@@ -313,6 +313,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
     internal static partial class NgoCliQueries
     {
+        private const string k_HybridSimulatorEffect = "the CLI simulator, timeout and lag_spike don't reach it";
+
         internal static SimulatorStatusResult GetSimulator()
         {
             var result = new SimulatorStatusResult
@@ -325,6 +327,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     ? "Now, to the live transports listed, and to transports started later in this editor session."
                     : "When a transport starts in play mode, for the rest of this editor session.",
             };
+            AddHybridSessionNotes(result.Notes, k_HybridSimulatorEffect);
 #if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
             foreach (var component in FindObjects.ByType<NetworkSimulator>(includeInactive: false))
             {
@@ -405,6 +408,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Notes.Add("The running transports have no simulator stage (it's compiled into the editor and development builds only).");
             }
+            AddHybridSessionNotes(result.Notes, k_HybridSimulatorEffect);
 #if MULTIPLAYER_TOOLS_NETWORK_SIMULATOR
             if (FindObjects.ByType<NetworkSimulator>(includeInactive: false).Length > 0)
             {
@@ -506,6 +510,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             if (NgoCliSimulator.LiveTransports().Count == 0)
             {
+                foreach (var manager in FindManagers())
+                {
+                    if (manager.IsListening && IsHybridSession(manager))
+                    {
+                        throw new InvalidOperationException(HybridSessionNote(manager, $"the CLI simulator can't {action} on it"));
+                    }
+                }
                 throw new InvalidOperationException($"No running UnityTransport to {action} on. Start a session with netcode.gameobjects.session start.");
             }
         }

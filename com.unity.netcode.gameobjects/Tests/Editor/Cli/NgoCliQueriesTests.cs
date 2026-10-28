@@ -513,6 +513,36 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("log_level", "Verbose", null, false));
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// A NetworkManager with a GhostObject prefab runs a hybrid session over Netcode for Entities' transport, so the
+        /// UnityTransport settings and the CLI simulator say they don't reach it.
+        /// </summary>
+        [Test]
+        public void HybridPrefabs_TransportCommandsSayTheyDontApply()
+        {
+            var manager = CreateManager();
+            Assert.IsFalse(NgoCliQueries.IsHybridSession(manager));
+            CollectionAssert.IsEmpty(NgoCliQueries.SetConfig("port", "9100", null, false).Notes);
+
+            // With the bridge already there, NetworkObject doesn't schedule adding one to the GameObject CreatePrefab destroys.
+            var prefab = CreatePrefab("CliHybrid", typeof(GhostObject), typeof(NetworkObjectBridge), typeof(NetworkObject));
+            Assert.IsTrue(prefab.GetComponent<NetworkObject>().HasGhost, "The prefab is hybrid.");
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            NgoCliQueries.RegisterPrefab("CliHybrid", k_ListPath, false);
+            manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
+            manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
+
+            Assert.IsTrue(NgoCliQueries.IsHybridSession(manager));
+            var port = NgoCliQueries.SetConfig("port", "9200", null, false);
+            Assert.AreEqual(9200, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port, "The setting is still saved.");
+            StringAssert.Contains("hybrid session", port.Notes.Single());
+            StringAssert.Contains("hybrid session", NgoCliQueries.SetSimulator(true, null, 50, -1, -1).Notes.Last());
+            StringAssert.Contains("hybrid session", NgoCliQueries.GetSimulator().Notes.Single());
+        }
+#endif
+
         [Test]
         public void ValidateConfig_ReportsMissingTransportAndDistributedAuthorityService()
         {

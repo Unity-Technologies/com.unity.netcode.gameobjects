@@ -126,15 +126,61 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         {
 #if UNIFIED_NETCODE
             var summary = new UnifiedNetcodeSummary { Available = true };
-            // A session runs on a Netcode for Entities world only when its prefabs include hybrid (GhostObject) ones.
             if (EditorApplication.isPlaying && manager.IsListening)
             {
-                summary.HybridSession = manager.NetworkConfig?.Prefabs != null && manager.NetworkConfig.Prefabs.HasGhostPrefabs;
+                summary.HybridSession = IsHybridSession(manager);
             }
             return summary;
 #else
             return new UnifiedNetcodeSummary { Available = false };
 #endif
+        }
+
+        /// <summary>
+        /// True when the manager runs, or would run, a hybrid session: its prefabs include hybrid (GhostObject) ones,
+        /// so the session runs on a Netcode for Entities world and its traffic goes through UnifiedNetcodeTransport,
+        /// not the NetworkManager's own transport.
+        /// </summary>
+        internal static bool IsHybridSession(NetworkManager manager)
+        {
+#if UNIFIED_NETCODE
+            if (manager.NetworkConfig == null)
+            {
+                return false;
+            }
+            // A running session has registered its prefabs; before it starts, look at the configured ones.
+            return manager.IsListening
+                ? manager.NetworkConfig.Prefabs != null && manager.NetworkConfig.Prefabs.HasGhostPrefabs
+                : ConfiguredHybridPrefabs(manager.NetworkConfig).Count > 0;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>
+        /// Says that a UnityTransport setting or measurement misses a hybrid session's traffic (<paramref name="effect"/>),
+        /// and where to look instead.
+        /// </summary>
+        internal static string HybridSessionNote(NetworkManager manager, string effect)
+        {
+#if UNIFIED_NETCODE
+            var port = UnifiedBootstrap.Port;
+#else
+            var port = 7979;
+#endif
+            return $"{manager.name} runs a hybrid session (its prefabs include GhostObject ones): Netcode for Entities' UnifiedNetcodeTransport carries its traffic on port {port}, not its UnityTransport, so {effect}. For the Netcode for Entities side, see the netcode.simulator and netcode.profiler get_snapshot_stats commands.";
+        }
+
+        /// <summary>Adds <see cref="HybridSessionNote"/> for each NetworkManager in the open scenes that runs, or would run, a hybrid session.</summary>
+        internal static void AddHybridSessionNotes(List<string> notes, string effect)
+        {
+            foreach (var manager in FindManagers())
+            {
+                if (IsHybridSession(manager))
+                {
+                    notes.Add(HybridSessionNote(manager, effect));
+                }
+            }
         }
 
         internal static string GetRole(NetworkManager manager)

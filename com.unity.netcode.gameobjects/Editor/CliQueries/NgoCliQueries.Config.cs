@@ -94,6 +94,10 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                             throw new ArgumentException($"{name} is a UnityTransport setting, and {manager.name} uses {manager.NetworkConfig.NetworkTransport?.GetType().Name ?? "no transport"}.");
                         }
                         RequireDirectConnection(utp, name);
+                        if (IsHybridSession(manager))
+                        {
+                            result.Notes.Add(HybridSessionNote(manager, $"{name} is saved on the UnityTransport but doesn't apply to it"));
+                        }
                         var data = utp.ConnectionData;
                         target = utp;
                         if (name == k_Port)
@@ -311,17 +315,47 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 add("error", "PLAYER_PREFAB_WITHOUT_NETWORKOBJECT", where, $"The player prefab {AssetPathOrName(config.PlayerPrefab)} has no NetworkObject on its root.");
             }
 
-            // NGO rejects overrides of hybrid prefabs (audit reports them), so only plain entries can make the session hybrid.
-            var prefabs = lists.SelectMany(l => l.PrefabList).Where(p => p != null && p.Override == NetworkPrefabOverride.None).Select(p => p.Prefab).Where(p => p != null).ToList();
-            if (config.PlayerPrefab != null)
-            {
-                prefabs.Add(config.PlayerPrefab);
-            }
-            var hybrid = prefabs.Where(IsHybridPrefab).Distinct().ToList();
+            var hybrid = ConfiguredHybridPrefabs(config);
             if (hybrid.Count > 0)
             {
                 ValidateHybrid(config, hybrid, where, add);
             }
+        }
+
+        /// <summary>
+        /// The hybrid (GhostObject) prefabs a config registers, through its lists or as the player prefab. NGO rejects
+        /// overrides of hybrid prefabs (audit reports them), so only plain list entries can make a session hybrid.
+        /// </summary>
+        internal static List<UnityEngine.GameObject> ConfiguredHybridPrefabs(NetworkConfig config)
+        {
+            var hybrid = new List<UnityEngine.GameObject>();
+            void Add(UnityEngine.GameObject prefab)
+            {
+                if (prefab != null && !hybrid.Contains(prefab) && IsHybridPrefab(prefab))
+                {
+                    hybrid.Add(prefab);
+                }
+            }
+
+            if (config.Prefabs != null)
+            {
+                foreach (var list in config.Prefabs.NetworkPrefabsLists)
+                {
+                    if (list == null)
+                    {
+                        continue;
+                    }
+                    foreach (var entry in list.PrefabList)
+                    {
+                        if (entry != null && entry.Override == NetworkPrefabOverride.None)
+                        {
+                            Add(entry.Prefab);
+                        }
+                    }
+                }
+            }
+            Add(config.PlayerPrefab);
+            return hybrid;
         }
 
         private static void ValidateHybrid(NetworkConfig config, List<UnityEngine.GameObject> hybrid, string where, Action<string, string, string, string> add)
