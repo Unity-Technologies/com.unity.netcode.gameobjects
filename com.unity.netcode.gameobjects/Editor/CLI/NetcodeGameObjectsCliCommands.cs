@@ -76,7 +76,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("list", "Only lists whose path contains this text.")] string list = null)
             => NgoCliOutput.ToWire(NgoCliQueries.ListPrefabs(list));
 
-        [CliGroupCommand(k_Group, "Add a network prefab to a network prefabs list (the given one, else the scene's NetworkManager's, else the default). Reports when it's already registered. Not allowed in play mode.", Tags = new[] { Tag })]
+        [CliGroupCommand(k_Group, "Add a network prefab to a network prefabs list (the given one, else the scene's NetworkManager's, else the default, which is created if needed). Reports when it's already registered. Saves the list. Not allowed in play mode.", Tags = new[] { Tag })]
         private static object RegisterPrefab(
             [CliArg("prefab", "Prefab path, GUID or name.", Required = true)] string prefab,
             [CliArg("list", "NetworkPrefabsList asset path.")] string list = null,

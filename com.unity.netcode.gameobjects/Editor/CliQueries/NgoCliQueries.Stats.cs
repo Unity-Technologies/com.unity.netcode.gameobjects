@@ -143,6 +143,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 stat.BytesSent += messageSizeBytes;
             }
 
+            // NetworkMessageManager reports a received message with the unpacked header size, so the per-type received
+            // bytes can be up to 6 bytes a message more than went over the network. The batch totals are exact.
             public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
             {
                 var stat = For(messageType);

@@ -33,7 +33,7 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 | `change_owner` | Give a NetworkObject to another client, following the topology's ownership rules. |
 | `create_network_manager` | Add a NetworkManager with a UnityTransport to the active scene. |
 | `list_prefabs` | Network prefabs lists with their prefabs, and the lists and player prefab each NetworkManager uses. |
-| `register_prefab` | Add a network prefab to a network prefabs list. |
+| `register_prefab` | Add a network prefab to a network prefabs list and save the list. |
 | `make_prefab` | Add a NetworkObject to a prefab's root and report its prefab id hash. |
 | `audit` | Find setup problems that otherwise show when a session starts: in NetworkManagers (transport, topology, prefab lists, player prefab, hybrid prefab requirements) and in network prefabs (NetworkBehaviours without a NetworkObject, nested NetworkObjects, duplicate prefab ids, unregistered prefabs). `--scope config` or `--scope prefabs` runs one half. |
 
@@ -42,6 +42,8 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 | **Command** | **Description** |
 | :--- | :--- |
 | `get_stats` | Sample network traffic over a number of frames: bytes and messages sent and received, per message type. |
+
+The total bytes sent and received are exact. Per message type, the bytes received can be overstated by up to 6 bytes per message, because Netcode for GameObjects reports received messages with their header's unpacked size.
 
 ### netcode.gameobjects.session
 
