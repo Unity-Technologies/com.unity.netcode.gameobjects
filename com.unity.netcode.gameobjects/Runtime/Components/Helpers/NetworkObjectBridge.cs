@@ -37,6 +37,9 @@ namespace Unity.Netcode
                 return;
             }
 
+            // NGO spawns the ghost when the NetworkObject spawns. This assures the ghost spawns in that NetworkManager's world.
+            ghostAdapter.DelaySpawning = true;
+
 #if COM_UNITY_MODULES_PHYSICS
             var rigidBody = GetComponent<Rigidbody>();
             var ghostRigidBody = GetComponent<GhostRigidbody>();
