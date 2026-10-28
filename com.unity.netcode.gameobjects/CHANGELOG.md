@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4214)
 - Issue where `NetworkManager.OnNetCodeDisconnect` was not invoked when a connection closed during a hybrid mode session, only when the session shut down. (#4209)
 - Issue where a rejected parent change, for example one made by a client without parenting authority, restored the `NetworkObject`'s parent but left it at the moved position when the change was made with `worldPositionStays` disabled. The original position, rotation and scale are now restored. (#4202)
