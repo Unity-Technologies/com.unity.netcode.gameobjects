@@ -184,7 +184,7 @@ namespace Unity.Netcode
                 if (HasGhost)
                 {
                     var networkRigidbodyBase = networkObject.GetComponent<NetworkRigidbodyBase>();
-                    if(networkRigidbodyBase != null && NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.UserControlled)
+                    if (networkRigidbodyBase != null && NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.UserControlled)
                     {
                         NetworkLog.LogWarning(new Logging.Context(LogLevel.Developer, "Full tick smoothing is being disabled.").AddNetworkObject(networkObject));
                         networkObject.GhostObject.FullTickSmoothing = FullTickSmoothingMode.Disabled;
