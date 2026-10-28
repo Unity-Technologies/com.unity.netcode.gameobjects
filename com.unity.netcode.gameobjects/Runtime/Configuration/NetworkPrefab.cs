@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -179,6 +180,16 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
                 // Mark this network prefab as having to be registered via the unified API
                 HasGhost = networkObject.HasGhost;
+
+                if (HasGhost)
+                {
+                    var networkRigidbodyBase = networkObject.GetComponent<NetworkRigidbodyBase>();
+                    if(networkRigidbodyBase != null && NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.UserControlled)
+                    {
+                        NetworkLog.LogWarning(new Logging.Context(LogLevel.Developer, "Full tick smoothing is being disabled.").AddNetworkObject(networkObject));
+                        networkObject.GhostObject.FullTickSmoothing = FullTickSmoothingMode.Disabled;
+                    }
+                }
 #endif
                 if (networkObject.InScenePlaced)
                 {

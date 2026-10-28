@@ -274,6 +274,13 @@ namespace Unity.Netcode.Components
 #endif
 
 #if UNIFIED_NETCODE
+
+        protected override void OnNetworkPostSpawn()
+        {
+            InitializeHybrid();
+            base.OnNetworkPostSpawn();
+        }
+
         // The authored kinematic state, restored in OnDestroy.
         private bool m_OriginalKinematicState;
 
@@ -283,18 +290,36 @@ namespace Unity.Netcode.Components
         /// <returns>true for a hybrid prefab</returns>
         private bool InitializeHybrid()
         {
-            if (NetworkObject == null || !NetworkObject.HasGhost)
+            if (NetworkObject == null)
             {
                 return false;
             }
 
-            // Clears any registration left behind by a prior Initialize call.
-            if (NetworkTransform)
+            m_OriginalKinematicState = IsKinematic();
+
+            if (!NetworkObject.HasGhost)
             {
+                if (NetcodeConfig.Global.PhysicsRunMode == PhysicGroupRunMode.AlwaysRun)
+                {
+                    if (m_InternalRigidbody)
+                    {
+                        if (IsServer)
+                        {
+                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
+                        }
+                        else
+                        {
+                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.None;
+                        }
+                    }
+                }
+                return false;
+            }
+            else if (NetworkTransform)
+            {
+                // Clears any registration left behind by a prior Initialize call.
                 NetworkTransform.UnregisterRigidbody();
             }
-
-            m_OriginalKinematicState = IsKinematic();
             return true;
         }
 
