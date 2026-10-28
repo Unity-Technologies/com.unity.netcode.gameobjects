@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Unity.Netcode.GameObjects.Editor.Cli;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -486,6 +487,25 @@ namespace Unity.Netcode.GameObjects.EditorTests
         }
 
         [Test]
+        public void SetConfig_Address_ListensOnEveryInterfaceForARemoteAddress()
+        {
+            var manager = CreateManager();
+            var transport = (UnityTransport)manager.NetworkConfig.NetworkTransport;
+            Assert.AreEqual(string.Empty, transport.ConnectionData.ServerListenAddress);
+
+            var lan = NgoCliQueries.SetConfig("address", "192.168.1.20", null, false);
+            Assert.AreEqual("0.0.0.0", transport.ConnectionData.ServerListenAddress, "A LAN host is reachable from other machines.");
+            StringAssert.Contains("0.0.0.0", lan.Notes.Single());
+
+            NgoCliQueries.SetConfig("address", "127.0.0.1", null, false);
+            Assert.AreEqual(string.Empty, transport.ConnectionData.ServerListenAddress, "A default listen address follows the connect address.");
+
+            NgoCliQueries.SetConfig("listen_address", "192.168.1.20", null, false);
+            CollectionAssert.IsEmpty(NgoCliQueries.SetConfig("address", "10.0.0.5", null, false).Notes);
+            Assert.AreEqual("192.168.1.20", transport.ConnectionData.ServerListenAddress, "A listen address set on purpose stays.");
+        }
+
+        [Test]
         public void SetConfig_RejectsOutOfRangeAndNonFiniteFloats()
         {
             var manager = CreateManager();
@@ -686,6 +706,18 @@ namespace Unity.Netcode.GameObjects.EditorTests
             driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
             Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
 
+            // Losing every packet on purpose, e.g. from a Network Simulator component, isn't mistaken for a CLI timeout.
+            driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var userLoss);
+            userLoss.ReceivePacketLossPercent = 100f;
+            userLoss.SendPacketLossPercent = 100f;
+            driver.ModifyNetworkSimulatorParameters(userLoss);
+            NgoCliQueries.SetTimeout(false);
+            driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var kept);
+            Assert.AreEqual(100f, kept.ReceivePacketLossPercent, "Loss the CLI didn't set is left alone.");
+            userLoss.ReceivePacketLossPercent = 0f;
+            userLoss.SendPacketLossPercent = 0f;
+            driver.ModifyNetworkSimulatorParameters(userLoss);
+
             var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
             var hookCount = hooks.Count;
             var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
@@ -777,6 +809,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             NgoCliQueries.Stop("ClientManager", false);
             yield return WaitForCondition(() => !client.IsListening && !client.ShutdownInProgress);
+            yield return WaitForCondition(() => !host.IsListening && !host.ShutdownInProgress);
+            var stoppedHost = Assert.ThrowsAsync<InvalidOperationException>(() => NgoCliQueries.ReconnectAsync("NetworkManager", 5), "A stopped host isn't started again as a client.");
+            StringAssert.Contains("stopped as the host", stoppedHost.Message);
         }
 
         /// <summary>

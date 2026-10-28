@@ -87,7 +87,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             public NetworkSimulatorParameter Global;
         }
 
-        // Keyed by the id UnityTransport passes to TransportInitialized (see TransportId).
+        // Keyed by the id UnityTransport passes to TransportInitialized (UnityTransport.TransportId).
         private static readonly Dictionary<int, Baseline> s_Baselines = new Dictionary<int, Baseline>();
         private static bool s_WarnedThisPlaySession;
 
@@ -135,6 +135,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 TimeoutActive = false;
                 s_LagSpikeEnd = 0;
                 s_WarnedThisPlaySession = false;
+                // The drivers are disposed with play mode.
+                BlackoutApplied = false;
                 EditorApplication.update -= EndLagSpikeWhenDue;
                 s_Baselines.Clear();
             }
@@ -165,29 +167,21 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return transports;
         }
 
-        /// <summary>
-        /// The id UnityTransport passes to TransportInitialized and TransportDisposed for this transport. Mirrors
-        /// UnityTransport's own computation; keep the two in step.
-        /// </summary>
-        private static int TransportId(UnityTransport utp)
-        {
-#if UNITY_6000_2_OR_NEWER
-            return utp.GetEntityId().GetHashCode();
-#else
-            return utp.GetInstanceID();
-#endif
-        }
-
         /// <summary>Pushes the current settings to every running driver and returns the transports updated.</summary>
         internal static List<string> ApplyToLiveTransports(List<UnityTransport> live = null, bool clearBlackout = false)
         {
             var applied = new List<string>();
             foreach (var utp in live ?? LiveTransports())
             {
-                if (Apply(TransportId(utp), utp.GetNetworkDriver(), clearBlackout))
+                if (Apply(utp.TransportId, utp.GetNetworkDriver(), clearBlackout))
                 {
                     applied.Add(NgoCliQueries.GetHierarchyPath(utp.transform));
                 }
+            }
+            if (!Blackout)
+            {
+                // Every live driver is back to its own loss, or the simulator's.
+                BlackoutApplied = false;
             }
             return applied;
         }
@@ -197,8 +191,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         /// and restores the saved ones once none is. Returns false when the driver was left alone.
         /// </summary>
         /// <param name="clearBlackout">
-        /// With nothing saved and nothing on, still lift a blackout (100% loss both ways) left on the driver, e.g.
-        /// after a script recompile in play mode reset the saved state.
+        /// With nothing saved and nothing on, still lift a blackout (100% loss both ways) the CLI left on the driver,
+        /// e.g. after a script recompile in play mode reset the saved state.
         /// </param>
         private static bool Apply(int transportId, NetworkDriver driver, bool clearBlackout = false)
         {
@@ -233,6 +227,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 parameters.ReceivePacketLossPercent = 100f;
                 parameters.SendPacketLossPercent = 100f;
+                BlackoutApplied = true;
             }
             driver.ModifyNetworkSimulatorParameters(parameters);
             if (!Active)
@@ -257,9 +252,20 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             Debug.LogWarning($"[Netcode] The Unity CLI network simulator is on for this editor session: {DelayMs} ms delay, {JitterMs} ms jitter and {DropPercent}% packet loss on every UnityTransport. Turn it off with netcode.gameobjects.simulator set --enable false.");
         }
 
+        /// <summary>
+        /// True from when the CLI drops every packet on a driver until it lets them through again. Kept in
+        /// SessionState so it outlasts a script recompile, which resets the saved driver settings.
+        /// </summary>
+        private static bool BlackoutApplied
+        {
+            get => SessionState.GetBool(k_Prefix + "BlackoutApplied", false);
+            set => SessionState.SetBool(k_Prefix + "BlackoutApplied", value);
+        }
+
+        // Only a blackout the CLI applied is lifted: 100% loss set on purpose, e.g. in a Network Simulator component, stays.
         private static bool ClearLeftoverBlackout(NetworkDriver driver)
         {
-            if (!driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var global)
+            if (!BlackoutApplied || !driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var global)
                 || global.ReceivePacketLossPercent < 100f || global.SendPacketLossPercent < 100f)
             {
                 return false;

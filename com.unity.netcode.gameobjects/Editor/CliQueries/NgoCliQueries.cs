@@ -492,6 +492,22 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return "0.0.0.0";
         }
 
+        /// <summary>
+        /// The listen address to use when the connect address changes from <paramref name="oldAddress"/> to
+        /// <paramref name="newAddress"/>: one set on purpose stays, while an empty one, or the default for the old
+        /// address, becomes the default for the new one (<see cref="DefaultListenAddress"/>), as
+        /// create_network_manager sets it.
+        /// </summary>
+        internal static string ListenAddressFor(string oldAddress, string oldListenAddress, string newAddress)
+        {
+            var listen = oldListenAddress ?? string.Empty;
+            return listen.Length == 0 || listen == DefaultListenAddress(oldAddress) ? DefaultListenAddress(newAddress) : listen;
+        }
+
+        internal static string DescribeListenAddress(string listenAddress) => listenAddress.Length == 0
+            ? "The server listens on the loopback address only, matching the local connect address."
+            : $"The server listens on {listenAddress} (every interface), so clients on other machines can connect. Set listen_address to narrow it.";
+
         /// <summary>Throws when the transport connects through Relay, which ignores the address and port.</summary>
         internal static void RequireDirectConnection(UnityTransport utp, string setting)
         {

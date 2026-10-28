@@ -70,7 +70,10 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new InvalidOperationException($"{manager.name} is running; its configuration is read when it starts. Stop it (netcode.gameobjects.session stop), set the field, then start it again.");
             }
 
-            manager.NetworkConfig ??= new NetworkConfig();
+            if (manager.NetworkConfig == null)
+            {
+                throw new InvalidOperationException($"{manager.name} has no NetworkConfig. Add a NetworkManager with netcode.gameobjects create_network_manager.");
+            }
             var result = new ConfigSetResult
             {
                 DryRun = dryRun,
@@ -116,7 +119,12 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                             var address = RequireText(value, name);
                             result.Previous = data.Address;
                             result.Value = address;
-                            apply = () => SetConnectionAddress(utp, address, data.Port, data.ServerListenAddress);
+                            var listen = ListenAddressFor(data.Address, data.ServerListenAddress, address);
+                            if (listen != (data.ServerListenAddress ?? string.Empty))
+                            {
+                                result.Notes.Add(DescribeListenAddress(listen));
+                            }
+                            apply = () => SetConnectionAddress(utp, address, data.Port, listen);
                         }
                         else
                         {
