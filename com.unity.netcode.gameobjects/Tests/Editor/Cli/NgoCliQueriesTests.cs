@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -568,6 +569,15 @@ namespace Unity.Netcode.GameObjects.EditorTests
             var simulatorNotes = NgoCliQueries.SetSimulator(true, null, 50, -1, -1).Notes;
             StringAssert.Contains("hybrid session", simulatorNotes[simulatorNotes.Count - 1]);
             StringAssert.Contains("hybrid session", Only(NgoCliQueries.GetSimulator().Notes));
+
+            manager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
+            Assert.IsFalse(NgoCliQueries.IsHybridSession(manager), "Distributed authority rejects hybrid prefabs.");
+            manager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
+
+            // Once a hybrid session has run, the NetworkManager's transport is UnifiedNetcodeTransport.
+            manager.NetworkConfig.NetworkTransport = manager.gameObject.AddComponent<Unity.Netcode.Unified.UnifiedNetcodeTransport>();
+            var swapped = Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("address", "10.0.0.2", null, false));
+            StringAssert.Contains("hybrid session", swapped.Message);
         }
 #endif
 
@@ -701,6 +711,8 @@ namespace Unity.Netcode.GameObjects.EditorTests
             CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
             driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var applied);
             Assert.AreEqual(50, applied.PacketDelayMs);
+            LogAssert.Expect(LogType.Warning, new Regex("network simulator is on for this editor session: 80 ms delay"));
+            NgoCliQueries.SetSimulator(true, null, 80, -1, -1);
 
             var timeout = NgoCliQueries.SetTimeout(true);
             Assert.IsTrue(timeout.Current.TimeoutActive);
@@ -714,6 +726,15 @@ namespace Unity.Netcode.GameObjects.EditorTests
             NgoCliQueries.SetSimulator(false, null, -1, -1, -1);
             driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
             Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
+
+            // A script recompile in play mode forgets the timeout and the saved settings, but the drivers keep dropping every packet.
+            NgoCliQueries.SetTimeout(true);
+            typeof(NgoCliSimulator).GetProperty("TimeoutActive", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, false);
+            ((IDictionary)typeof(NgoCliSimulator).GetField("s_Baselines", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null)).Clear();
+            NgoCliQueries.SetSimulator(false, null, -1, -1, -1);
+            NgoCliQueries.SetTimeout(false);
+            driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var lifted);
+            Assert.AreEqual(0f, lifted.ReceivePacketLossPercent, "timeout false still lifts a blackout the CLI left on.");
 
             // Losing every packet on purpose, e.g. from a Network Simulator component, isn't mistaken for a CLI timeout.
             driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var userLoss);
@@ -747,8 +768,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.AreEqual(0, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
 
             NgoCliQueries.Stop(null, false);
-            yield return null;
-            yield return null;
+            yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
+
+            // However it was started, a stopped server isn't started again as a client.
+            Assert.IsTrue(manager.StartServer());
+            manager.Shutdown();
+            yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
+            var stoppedServer = Assert.ThrowsAsync<InvalidOperationException>(() => NgoCliQueries.ReconnectAsync(null, 5));
+            StringAssert.Contains("stopped as the server", stoppedServer.Message);
         }
 
         /// <summary>

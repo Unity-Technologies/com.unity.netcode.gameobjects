@@ -23,9 +23,6 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         /// address and port first. Returns once the start call returns; use <see cref="WaitReadyAsync"/> to wait
         /// for the connection.
         /// </summary>
-        // The role each NetworkManager last started as through the CLI: once it has stopped, it no longer says.
-        private static readonly Dictionary<NetworkManager, SessionMode> s_StartedAs = new Dictionary<NetworkManager, SessionMode>();
-
         internal static SessionResult Start(SessionMode mode, string managerFilter, string address, int port)
         {
             RequireDefined(mode, "mode");
@@ -81,7 +78,6 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     throw new InvalidOperationException($"{manager.name} failed to start as {mode.ToString().ToLowerInvariant()}{errors.Describe()}");
                 }
             }
-            s_StartedAs[manager] = mode;
 
             result.Status = DescribeManager(manager);
             if (mode == SessionMode.Client)
@@ -152,8 +148,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new InvalidOperationException($"{manager.name} is the {GetRole(manager)}. reconnect is for clients; restart a server with netcode.gameobjects.session stop, then start.");
             }
             // A stopped host or server no longer reports IsServer, and would otherwise start again as a client.
-            if (!manager.IsListening && s_StartedAs.TryGetValue(manager, out var startedAs) && startedAs != SessionMode.Client)
+            if (!manager.IsListening && manager.LastStartedRole.IsServer)
             {
+                var startedAs = manager.LastStartedRole.IsClient ? SessionMode.Host : SessionMode.Server;
                 throw new InvalidOperationException($"{manager.name} was stopped as the {startedAs.ToString().ToLowerInvariant()}. reconnect is for clients; start it again with netcode.gameobjects.session start --mode {startedAs}.");
             }
 
@@ -172,7 +169,6 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     throw new InvalidOperationException($"{manager.name} shut down but failed to start again{errors.Describe()}");
                 }
             }
-            s_StartedAs[manager] = SessionMode.Client;
 
             var remaining = timeoutSeconds - (float)(EditorApplication.timeSinceStartup - started);
             var ready = await WaitReadyAsync(manager, Math.Max(remaining, 0.1f), 0);

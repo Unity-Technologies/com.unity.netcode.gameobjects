@@ -57,7 +57,7 @@ The total bytes sent and received are exact. Per message type, the bytes receive
 
 ### netcode.gameobjects.simulator
 
-The simulator applies packet delay, jitter and loss to UnityTransport through its simulator pipeline stage, which is available in the Editor and development builds. Settings last for the Editor session and also apply to sessions started later. Once the simulator, `timeout` and `lag_spike` are all off, the transport gets its own simulator settings back. While the simulator is on, the Console shows a warning in each play session it affects.
+The simulator applies packet delay, jitter and loss to UnityTransport through its simulator pipeline stage, which is available in the Editor and development builds. Settings last for the Editor session and also apply to sessions started later. Once the simulator, `timeout` and `lag_spike` are all off, the transport gets its own simulator settings back. While the simulator is on, the Console shows a warning in each play session it affects, and again when its settings change.
 
 | **Command** | **Description** |
 | :--- | :--- |

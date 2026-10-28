@@ -92,6 +92,11 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     {
                         if (manager.NetworkConfig.NetworkTransport is not UnityTransport utp)
                         {
+                            // A hybrid session that has run replaced the UnityTransport with UnifiedNetcodeTransport.
+                            if (IsHybridSession(manager))
+                            {
+                                throw new ArgumentException(HybridSessionNote(manager, $"{name}, a UnityTransport setting, can't be set on it"));
+                            }
                             throw new ArgumentException($"{name} is a UnityTransport setting, and {manager.name} uses {manager.NetworkConfig.NetworkTransport?.GetType().Name ?? "no transport"}.");
                         }
                         RequireDirectConnection(utp, name);

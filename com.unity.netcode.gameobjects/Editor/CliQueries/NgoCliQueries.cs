@@ -147,10 +147,14 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 return false;
             }
-            // A running session has registered its prefabs; before it starts, look at the configured ones.
-            return manager.IsListening
-                ? manager.NetworkConfig.Prefabs != null && manager.NetworkConfig.Prefabs.HasGhostPrefabs
-                : ConfiguredHybridPrefabs(manager.NetworkConfig).Count > 0;
+            // A running session has registered its prefabs; before it starts, look at the configured ones. Distributed
+            // authority rejects hybrid prefabs, so such a session never runs on a Netcode for Entities world.
+            if (manager.IsListening)
+            {
+                return manager.NetworkConfig.Prefabs != null && manager.NetworkConfig.Prefabs.HasGhostPrefabs;
+            }
+            return manager.NetworkConfig.NetworkTopology != NetworkTopologyTypes.DistributedAuthority
+                && ConfiguredHybridPrefabs(manager.NetworkConfig).Count > 0;
 #else
             return false;
 #endif
