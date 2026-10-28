@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Unity.Netcode.GameObjects.Editor.Cli;
@@ -636,6 +637,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var driver = ((UnityTransport)NgoCliQueries.ResolveManager(null).NetworkConfig.NetworkTransport).GetNetworkDriver();
             driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var original);
+            LogAssert.Expect(LogType.Warning, new Regex("network simulator is on for this editor session: 50 ms delay"));
             var simulator = NgoCliQueries.SetSimulator(true, null, 50, 0, 0);
             CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
             driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var applied);

@@ -19,9 +19,10 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
     /// applied to drivers created later, so they can be set before entering play mode.
     /// </summary>
     /// <remarks>
-    /// No driver is touched until the CLI turns the simulator, a timeout or a lag spike on. Each driver's own
-    /// simulator parameters (from the transport or a Network Simulator component) are saved before the first
-    /// override and put back once all three are off.
+    /// No driver is touched, and no transport event subscribed to, until the CLI turns the simulator, a timeout or
+    /// a lag spike on. Each driver's own simulator parameters (from the transport or a Network Simulator component)
+    /// are saved before the first override and put back once all three are off. While the simulator is on, the
+    /// console warns once per play session, when it first changes a driver.
     /// </remarks>
     [InitializeOnLoad]
     internal static class NgoCliSimulator
@@ -32,7 +33,14 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         internal static bool Enabled
         {
             get => SessionState.GetBool(k_Prefix + "Enabled", false);
-            set => SessionState.SetBool(k_Prefix + "Enabled", value);
+            set
+            {
+                SessionState.SetBool(k_Prefix + "Enabled", value);
+                if (value)
+                {
+                    SubscribeWhilePlaying();
+                }
+            }
         }
 
         internal static string Preset
@@ -81,6 +89,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         // Keyed by the id UnityTransport passes to TransportInitialized (see TransportId).
         private static readonly Dictionary<int, Baseline> s_Baselines = new Dictionary<int, Baseline>();
+        private static bool s_WarnedThisPlaySession;
 
         static NgoCliSimulator()
         {
@@ -88,9 +97,27 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        // UnityTransport clears its driver events when play mode starts, so subscribe once the runtime is up.
+        // UnityTransport clears its driver events when play mode starts, so subscribe once the runtime is up, and
+        // only when the CLI simulator is on: in projects that never use it, no transport event is hooked.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void SubscribeToDrivers()
+        {
+            if (Enabled)
+            {
+                Subscribe();
+            }
+        }
+
+        /// <summary>Hooks drivers started later in this play session, once the CLI turns something on.</summary>
+        private static void SubscribeWhilePlaying()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                Subscribe();
+            }
+        }
+
+        private static void Subscribe()
         {
             UnityTransport.TransportInitialized -= OnTransportInitialized;
             UnityTransport.TransportInitialized += OnTransportInitialized;
@@ -107,6 +134,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 TimeoutActive = false;
                 s_LagSpikeEnd = 0;
+                s_WarnedThisPlaySession = false;
                 EditorApplication.update -= EndLagSpikeWhenDue;
                 s_Baselines.Clear();
             }
@@ -196,6 +224,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 stage.PacketJitterMs = JitterMs;
                 stage.PacketDropPercentage = DropPercent;
                 stage.PacketDropInterval = 0;
+                WarnOncePerPlaySession();
             }
             driver.ModifySimulatorStageParameters(stage);
 
@@ -214,6 +243,20 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return true;
         }
 
+        /// <summary>
+        /// The simulator outlasts the play session that turned it on, so say so in the console, where someone who
+        /// didn't run the command will look for the cause of the lag.
+        /// </summary>
+        private static void WarnOncePerPlaySession()
+        {
+            if (s_WarnedThisPlaySession)
+            {
+                return;
+            }
+            s_WarnedThisPlaySession = true;
+            Debug.LogWarning($"[Netcode] The Unity CLI network simulator is on for this editor session: {DelayMs} ms delay, {JitterMs} ms jitter and {DropPercent}% packet loss on every UnityTransport. Turn it off with netcode.gameobjects.simulator set --enable false.");
+        }
+
         private static bool ClearLeftoverBlackout(NetworkDriver driver)
         {
             if (!driver.CurrentSettings.TryGet<NetworkSimulatorParameter>(out var global)
@@ -227,10 +270,18 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return true;
         }
 
-        internal static void SetTimeout(bool on) => TimeoutActive = on;
+        internal static void SetTimeout(bool on)
+        {
+            TimeoutActive = on;
+            if (on)
+            {
+                SubscribeWhilePlaying();
+            }
+        }
 
         internal static void StartLagSpike(int durationMs)
         {
+            SubscribeWhilePlaying();
             s_LagSpikeEnd = EditorApplication.timeSinceStartup + durationMs / 1000.0;
             EditorApplication.update -= EndLagSpikeWhenDue;
             EditorApplication.update += EndLagSpikeWhenDue;
