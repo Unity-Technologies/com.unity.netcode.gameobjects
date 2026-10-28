@@ -575,7 +575,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             manager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
 
             // Once a hybrid session has run, the NetworkManager's transport is UnifiedNetcodeTransport.
-            manager.NetworkConfig.NetworkTransport = manager.gameObject.AddComponent<Unity.Netcode.Unified.UnifiedNetcodeTransport>();
+            manager.NetworkConfig.NetworkTransport = manager.gameObject.AddComponent<Unified.UnifiedNetcodeTransport>();
             var swapped = Assert.Throws<ArgumentException>(() => NgoCliQueries.SetConfig("address", "10.0.0.2", null, false));
             StringAssert.Contains("hybrid session", swapped.Message);
         }
@@ -748,7 +748,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             userLoss.SendPacketLossPercent = 0f;
             driver.ModifyNetworkSimulatorParameters(userLoss);
 
-            var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
+            var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
             var hookCount = hooks.Count;
             var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
             Assert.AreEqual(hookCount + 1, hooks.Count, "Sampling hooks the message manager.");
