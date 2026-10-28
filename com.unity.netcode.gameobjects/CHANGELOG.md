@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- A hybrid mode session now disables `NetcodeConfig.AutomaticStateReplication` at runtime, as Netcode for GameObjects puts each connection in game once the client has synchronized. (#4209)
 - Renamed the Editor assembly definition files to match their assembly names. Assembly names and GUIDs are unchanged. (#4187)
 
 ### Deprecated
@@ -25,8 +26,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4214)
-- Issue where a client's clock kept alternating between running slightly fast and slightly slow on every frame, even after it had synchronized with the server. Interpolated objects juddered (a periodic motion artifact caused by mismatched frame rates): they moved in uneven steps instead of smoothly. Barely noticeable at the default `NetworkTimeSystem.AdjustmentRatio`, and clearly visible at higher values.
-- Issue where the IL post-processor could not resolve core library types, such as `Guid` and `List<T>`, in assemblies compiled against .NET reference assemblies, for example when targeting .NET 10. Those split the core library across `System.Runtime`, `System.Collections` and other assemblies.
+- Issue where `NetworkManager.OnNetCodeDisconnect` was not invoked when a connection closed during a hybrid mode session, only when the session shut down. (#4209)
+- Issue where a rejected parent change, for example one made by a client without parenting authority, restored the `NetworkObject`'s parent but left it at the moved position when the change was made with `worldPositionStays` disabled. The original position, rotation and scale are now restored. (#4202)
+- Issue where a client's clock kept alternating between running slightly fast and slightly slow on every frame, even after it had synchronized with the server. Interpolated objects juddered (a periodic motion artifact caused by mismatched frame rates): they moved in uneven steps instead of smoothly. Barely noticeable at the default `NetworkTimeSystem.AdjustmentRatio`, and clearly visible at higher values. (#4195)
+- Issue where the IL post-processor could not resolve core library types, such as `Guid` and `List<T>`, in assemblies compiled against .NET reference assemblies, for example when targeting .NET 10. Those split the core library across `System.Runtime`, `System.Collections` and other assemblies. (#4188)
 - Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
 - Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`. (#4176)
 - Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server. (#4176)

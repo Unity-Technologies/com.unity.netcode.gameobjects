@@ -1447,6 +1447,11 @@ namespace Unity.Netcode
                 Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
             }
 
+            if (HybridNetcodeDefaults.ApplyManualStateReplication(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)}.{nameof(NetcodeConfig.AutomaticStateReplication)} has been disabled, as NGO puts connections in game once synchronized.").AddTag("Unified"));
+            }
+
             if (NetworkConfig.AutoConfigureSnapshotSize && HybridNetcodeDefaults.ApplySnapshotPacketSize(NetcodeConfig.Global))
             {
                 Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} snapshot packet size has been set to {HybridNetcodeDefaults.SnapshotPacketSize}. Disable {nameof(NetworkConfig)}.{nameof(NetworkConfig.AutoConfigureSnapshotSize)} to manage it yourself.").AddTag("Unified"));
