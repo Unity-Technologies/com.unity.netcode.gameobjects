@@ -344,7 +344,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     Assert.IsTrue(bitWriter.TryBeginWriteBits(8));
-                    bitWriter.WriteBits((byte)0xAB, 8);
+                    bitWriter.WriteBits(0xAB, 8);
                     // Grows the buffer while 0xAB is still uncommitted to the writer.
                     Assert.IsTrue(bitWriter.TryBeginWriteBits(16));
                     bitWriter.WriteBits(0xCDEFUL, 16);
