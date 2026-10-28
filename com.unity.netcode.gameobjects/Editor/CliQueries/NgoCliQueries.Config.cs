@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Transports.UTP;
@@ -33,7 +32,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 Transport = DescribeTransport(config.NetworkTransport),
                 LogLevel = manager.LogLevel.ToString(),
                 PlayerPrefab = config.PlayerPrefab != null ? AssetPathOrName(config.PlayerPrefab) : null,
-                PrefabsLists = config.Prefabs?.NetworkPrefabsLists.Where(l => l != null).Select(AssetDatabase.GetAssetPath).ToList() ?? new List<string>(),
+                PrefabsLists = config.Prefabs != null ? PrefabsListPaths(config.Prefabs.NetworkPrefabsLists) : new List<string>(),
                 GenerateDefaultNetworkPrefabs = NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs,
                 DefaultNetworkPrefabsPath = NetworkPrefabProcessor.DefaultNetworkPrefabsPath,
             };
@@ -42,9 +41,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 var value = field.GetValue(config);
                 result.NetworkConfig[ToSnakeCase(field.Name)] = value is Enum ? value.ToString() : value;
             }
-            result.SettableFields = SettableConfigFields().Select(f => ToSnakeCase(f.Name))
-                .Concat(new[] { k_Address, k_Port, k_ListenAddress, k_PlayerPrefab, k_LogLevel })
-                .ToList();
+            result.SettableFields = SettableConfigFields().ConvertAll(f => ToSnakeCase(f.Name));
+            result.SettableFields.AddRange(new[] { k_Address, k_Port, k_ListenAddress, k_PlayerPrefab, k_LogLevel });
             return result;
         }
 
@@ -163,7 +161,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     }
                 default:
                     {
-                        var configField = SettableConfigFields().FirstOrDefault(f => ToSnakeCase(f.Name) == name) ?? throw new ArgumentException($"Unknown field '{field}'. Settable: {string.Join(", ", GetConfig(managerFilter).SettableFields)}.");
+                        var configField = SettableConfigFields().Find(f => ToSnakeCase(f.Name) == name) ?? throw new ArgumentException($"Unknown field '{field}'. Settable: {string.Join(", ", GetConfig(managerFilter).SettableFields)}.");
                         var parsed = ParseValue(configField.FieldType, value, name);
                         ValidateConfigValue(configField.Name, name, parsed, result.Notes);
                         target = manager;
@@ -295,7 +293,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             // The dialog opens on entering play mode; in play mode the manager has moved to DontDestroyOnLoad.
             var scene = manager.gameObject.scene;
             var checkScene = config.EnableSceneManagement && !EditorApplication.isPlaying;
-            if (checkScene && !string.IsNullOrEmpty(scene.path) && !EditorBuildSettings.scenes.Any(s => s.enabled && s.path == scene.path))
+            if (checkScene && !string.IsNullOrEmpty(scene.path) && !Array.Exists(EditorBuildSettings.scenes, s => s.enabled && s.path == scene.path))
             {
                 add("warning", "SCENE_NOT_IN_BUILD", where, $"Scene management is on and {scene.path} isn't in the build's scene list, so clients can't load it. Entering play mode opens a dialog asking to add it; add it first with scene add_to_build, or turn scene management off (netcode.gameobjects.config set enable_scene_management false).");
             }
@@ -309,8 +307,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 add("error", "TICK_RATE_ZERO", where, "tick_rate is 0. Set it with netcode.gameobjects.config set tick_rate 30.");
             }
 
-            var lists = config.Prefabs?.NetworkPrefabsLists.Where(l => l != null).ToList() ?? new List<NetworkPrefabsList>();
-            if (config.Prefabs != null && config.Prefabs.NetworkPrefabsLists.Any(l => l == null))
+            var lists = config.Prefabs != null ? config.Prefabs.NetworkPrefabsLists.FindAll(l => l != null) : new List<NetworkPrefabsList>();
+            if (config.Prefabs != null && config.Prefabs.NetworkPrefabsLists.Exists(l => l == null))
             {
                 add("error", "MISSING_PREFABS_LIST", where, "A Network Prefabs Lists entry is empty or points to a deleted asset.");
             }
@@ -369,7 +367,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         private static void ValidateHybrid(NetworkConfig config, List<UnityEngine.GameObject> hybrid, string where, Action<string, string, string, string> add)
         {
 #if UNIFIED_NETCODE
-            var names = string.Join(", ", hybrid.Take(5).Select(AssetPathOrName));
+            var names = JoinNames(hybrid.GetRange(0, Math.Min(5, hybrid.Count)), AssetPathOrName);
             if (config.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
             {
                 add("error", "HYBRID_WITH_DISTRIBUTED_AUTHORITY", where, $"{NetworkPrefabs.DistributedAuthorityHybridPrefabError} Hybrid prefabs: {names}.");
@@ -394,23 +392,28 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 return NetcodeConfig.Global;
             }
-            var configs = AssetDatabase.FindAssets($"t:{nameof(NetcodeConfig)}")
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(AssetDatabase.LoadAssetAtPath<NetcodeConfig>)
-                .Where(c => c != null)
-                .ToList();
             // A project has one NetcodeConfig (Netcode for Entities reports several as an error).
-            return configs.FirstOrDefault();
+            foreach (var guid in AssetDatabase.FindAssets($"t:{nameof(NetcodeConfig)}"))
+            {
+                var config = AssetDatabase.LoadAssetAtPath<NetcodeConfig>(AssetDatabase.GUIDToAssetPath(guid));
+                if (config != null)
+                {
+                    return config;
+                }
+            }
+            return null;
         }
 #endif
 
         // --- Helpers ---
 
-        private static IEnumerable<FieldInfo> SettableConfigFields()
+        private static List<FieldInfo> SettableConfigFields()
         {
-            return typeof(NetworkConfig).GetFields(BindingFlags.Instance | BindingFlags.Public)
-                .Where(f => !f.IsInitOnly && (f.FieldType.IsPrimitive || f.FieldType.IsEnum))
-                .OrderBy(f => f.MetadataToken);
+            var fields = new List<FieldInfo>(typeof(NetworkConfig).GetFields(BindingFlags.Instance | BindingFlags.Public));
+            fields.RemoveAll(f => f.IsInitOnly || !(f.FieldType.IsPrimitive || f.FieldType.IsEnum));
+            // Declaration order; each field's metadata token is unique.
+            fields.Sort((a, b) => a.MetadataToken.CompareTo(b.MetadataToken));
+            return fields;
         }
 
         private static object ParseValue(Type type, string value, string name)
@@ -420,7 +423,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 if (type.IsEnum)
                 {
-                    var match = Enum.GetNames(type).FirstOrDefault(n => string.Equals(n, text, StringComparison.OrdinalIgnoreCase)) ?? throw new FormatException();
+                    var match = Array.Find(Enum.GetNames(type), n => string.Equals(n, text, StringComparison.OrdinalIgnoreCase)) ?? throw new FormatException();
                     return Enum.Parse(type, match);
                 }
                 if (type == typeof(bool))

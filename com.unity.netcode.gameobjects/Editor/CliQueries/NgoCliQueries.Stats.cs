@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
@@ -91,14 +90,20 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 BytesReceived = traffic.BytesReceived,
                 BytesSentPerSecond = seconds > 0 ? Math.Round(traffic.BytesSent / seconds, 1) : 0,
                 BytesReceivedPerSecond = seconds > 0 ? Math.Round(traffic.BytesReceived / seconds, 1) : 0,
-                MessagesSent = traffic.Messages.Values.Sum(m => m.Sent),
-                MessagesReceived = traffic.Messages.Values.Sum(m => m.Received),
-                Messages = traffic.Messages.Values
-                    .OrderByDescending(m => m.BytesSent + m.BytesReceived)
-                    .ThenBy(m => m.Message, StringComparer.Ordinal)
-                    .ToList(),
+                Messages = new List<MessageStat>(traffic.Messages.Values),
                 SpawnedObjectCount = manager.SpawnManager?.SpawnedObjects.Count,
             };
+            foreach (var message in result.Messages)
+            {
+                result.MessagesSent += message.Sent;
+                result.MessagesReceived += message.Received;
+            }
+            // Largest first.
+            StableSort(result.Messages, (a, b) =>
+            {
+                var bySize = (b.BytesSent + b.BytesReceived).CompareTo(a.BytesSent + a.BytesReceived);
+                return bySize != 0 ? bySize : StringComparer.Ordinal.Compare(a.Message, b.Message);
+            });
 
             if (manager.IsListening)
             {

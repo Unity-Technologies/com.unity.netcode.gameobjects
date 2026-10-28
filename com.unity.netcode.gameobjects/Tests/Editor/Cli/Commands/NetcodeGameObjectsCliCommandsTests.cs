@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode.GameObjects.Editor.Cli;
@@ -81,14 +80,40 @@ namespace Unity.Netcode.GameObjects.EditorTests
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
-        private static List<CommandInfo> Commands() =>
-            CommandRegistry.DiscoverCommands().Where(c => c.Package == k_Package).ToList();
+        private static List<CommandInfo> Commands()
+        {
+            var commands = new List<CommandInfo>();
+            foreach (var command in CommandRegistry.DiscoverCommands())
+            {
+                if (command.Package == k_Package)
+                {
+                    commands.Add(command);
+                }
+            }
+            return commands;
+        }
 
         private static CommandInfo Command(string name)
         {
-            var command = Commands().SingleOrDefault(c => c.FullName == name);
-            Assert.IsNotNull(command, $"{name} is not registered.");
-            return command;
+            var matches = Commands().FindAll(c => c.FullName == name);
+            Assert.IsNotEmpty(matches, $"{name} is not registered.");
+            Assert.AreEqual(1, matches.Count, $"{name} is registered more than once.");
+            return matches[0];
+        }
+
+        private static CommandParameterInfo Parameter(string command, string name)
+        {
+            CommandParameterInfo found = null;
+            foreach (var parameter in Command(command).Parameters)
+            {
+                if (parameter.Name == name)
+                {
+                    Assert.IsNull(found, $"{command} has several {name} parameters.");
+                    found = parameter;
+                }
+            }
+            Assert.IsNotNull(found, $"{command} has no {name} parameter.");
+            return found;
         }
 
         /// <summary>
@@ -103,8 +128,8 @@ namespace Unity.Netcode.GameObjects.EditorTests
             for (var i = 0; i < methodParameters.Length; i++)
             {
                 var cliName = command.Parameters[i].Name;
-                var supplied = arguments.Where(a => a.Name == cliName).ToList();
-                values[i] = supplied.Count > 0 ? supplied[0].Value : methodParameters[i].DefaultValue;
+                var supplied = Array.FindIndex(arguments, a => a.Name == cliName);
+                values[i] = supplied >= 0 ? arguments[supplied].Value : methodParameters[i].DefaultValue;
             }
 
             object result;
@@ -133,10 +158,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             var commands = Commands();
 
-            CollectionAssert.AreEquivalent(k_WireApi.Keys, commands.Select(c => c.FullName), "Registered commands (group name)");
+            CollectionAssert.AreEquivalent(k_WireApi.Keys, commands.ConvertAll(c => c.FullName), "Registered commands (group name)");
             foreach (var command in commands)
             {
-                var actual = command.Parameters.Select(p => p.Required ? p.Name + "*" : p.Name).ToArray();
+                var actual = new List<string>();
+                foreach (var p in command.Parameters)
+                {
+                    actual.Add(p.Required ? p.Name + "*" : p.Name);
+                }
                 CollectionAssert.AreEqual(k_WireApi[command.FullName], actual, $"{command.FullName} parameters (name, order, required)");
             }
         }
@@ -158,12 +187,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             // Enum types let the pipeline's schema list the accepted values; a double timeout lets the server pass
             // the time left of the request.
-            Assert.AreEqual(typeof(NgoCliQueries.SessionMode), Command("netcode.gameobjects.session start").Parameters.Single(p => p.Name == "mode").ParameterType);
-            Assert.AreEqual(typeof(NetworkTopologyTypes), Command("netcode.gameobjects create_network_manager").Parameters.Single(p => p.Name == "topology").ParameterType);
-            Assert.AreEqual(typeof(float[]), Command("netcode.gameobjects spawn").Parameters.Single(p => p.Name == "position").ParameterType);
+            Assert.AreEqual(typeof(NgoCliQueries.SessionMode), Parameter("netcode.gameobjects.session start", "mode").ParameterType);
+            Assert.AreEqual(typeof(NetworkTopologyTypes), Parameter("netcode.gameobjects create_network_manager", "topology").ParameterType);
+            Assert.AreEqual(typeof(float[]), Parameter("netcode.gameobjects spawn", "position").ParameterType);
             foreach (var name in new[] { "netcode.gameobjects.profiler get_stats", "netcode.gameobjects.session reconnect", "netcode.gameobjects.session wait_ready" })
             {
-                Assert.AreEqual(typeof(double), Command(name).Parameters.Single(p => p.Name == "timeout").ParameterType, name);
+                Assert.AreEqual(typeof(double), Parameter(name, "timeout").ParameterType, name);
             }
         }
 

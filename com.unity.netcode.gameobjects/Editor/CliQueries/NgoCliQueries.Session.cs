@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
@@ -121,7 +120,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 throw new InvalidOperationException($"{manager.name} is a {GetRole(manager)}; only the server or host can disconnect other clients. Run the command against the server's editor, or stop this client with netcode.gameobjects.session stop.");
             }
-            if (clientId < 0 || !manager.ConnectedClientsIds.Contains((ulong)clientId))
+            if (clientId < 0 || !IsConnected(manager, (ulong)clientId))
             {
                 throw new ArgumentException($"No connected client {clientId}. Connected: {string.Join(", ", manager.ConnectedClientsIds)}. List them with netcode.gameobjects list_clients.");
             }
@@ -263,7 +262,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             if (manager.IsServer)
             {
-                var remote = manager.ConnectedClientsIds.Count(id => id != manager.LocalClientId);
+                var remote = CountOtherClients(manager);
                 return remote >= minClients ? null : $"{remote} of {minClients} remote client(s) connected.";
             }
             if (!manager.IsConnectedClient)
@@ -272,7 +271,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             if (manager.DistributedAuthorityMode && minClients > 0)
             {
-                var others = manager.ConnectedClientsIds.Count(id => id != manager.LocalClientId);
+                var others = CountOtherClients(manager);
                 return others >= minClients ? null : $"{others} of {minClients} other client(s) in the session.";
             }
             return null;
@@ -439,8 +438,34 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         /// <summary>A connected client, or with a client-server topology the server itself (a dedicated server isn't a client).</summary>
         private static bool IsValidOwner(NetworkManager manager, ulong clientId)
         {
-            return manager.ConnectedClientsIds.Contains(clientId)
+            return IsConnected(manager, clientId)
                 || (!manager.DistributedAuthorityMode && clientId == NetworkManager.ServerClientId);
+        }
+
+        private static bool IsConnected(NetworkManager manager, ulong clientId)
+        {
+            foreach (var id in manager.ConnectedClientsIds)
+            {
+                if (id == clientId)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>The connected clients other than the manager's own.</summary>
+        private static int CountOtherClients(NetworkManager manager)
+        {
+            var count = 0;
+            foreach (var id in manager.ConnectedClientsIds)
+            {
+                if (id != manager.LocalClientId)
+                {
+                    count++;
+                }
+            }
+            return count;
         }
 
         private static void ValidateTimeout(float timeoutSeconds)
@@ -516,7 +541,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             /// <summary>": message; message." for an error message, or "." when nothing was logged.</summary>
-            internal string Describe() => m_Messages.Count == 0 ? "." : ": " + string.Join("; ", m_Messages.Distinct()) + ".";
+            internal string Describe() => m_Messages.Count == 0 ? "." : ": " + string.Join("; ", WithoutDuplicates(m_Messages)) + ".";
 
             public void Dispose() => Application.logMessageReceived -= OnLog;
         }

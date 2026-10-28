@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Unity.Netcode.Transports.UTP;
@@ -47,7 +46,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Hint = "Not in play mode: only the configuration is reported. Enter play mode (editor.playmode start), then netcode.gameobjects.session start.";
             }
-            else if (result.Managers.All(m => !m.IsListening))
+            else if (!result.Managers.Exists(m => m.IsListening))
             {
                 result.Hint = NotListeningMessage;
             }
@@ -264,12 +263,17 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 throw new ArgumentException("limit must be at least 1.");
             }
             var manager = ResolveRunningManager(managerFilter);
-            var objects = manager.SpawnManager.SpawnedObjects.Values
-                .Where(o => o != null)
-                .Where(o => string.IsNullOrEmpty(nameContains) || o.name.IndexOf(nameContains, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Where(o => owner < 0 || o.OwnerClientId == (ulong)owner)
-                .OrderBy(o => o.NetworkObjectId)
-                .ToList();
+            var objects = new List<NetworkObject>();
+            foreach (var o in manager.SpawnManager.SpawnedObjects.Values)
+            {
+                if (o != null
+                    && (string.IsNullOrEmpty(nameContains) || o.name.IndexOf(nameContains, StringComparison.OrdinalIgnoreCase) >= 0)
+                    && (owner < 0 || o.OwnerClientId == (ulong)owner))
+                {
+                    objects.Add(o);
+                }
+            }
+            StableSort(objects, (a, b) => a.NetworkObjectId.CompareTo(b.NetworkObjectId));
 
             var result = new ObjectListResult
             {
@@ -277,9 +281,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 Role = GetRole(manager),
                 Total = objects.Count,
             };
-            foreach (var networkObject in objects.Take(limit))
+            for (var i = 0; i < objects.Count && i < limit; i++)
             {
-                result.Objects.Add(Summarize(networkObject, new ObjectSummary()));
+                result.Objects.Add(Summarize(objects[i], new ObjectSummary()));
             }
             result.Returned = result.Objects.Count;
             return result;
@@ -391,10 +395,61 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         /// <summary>The NetworkManagers in the open scenes, including DontDestroyOnLoad ones in play mode.</summary>
         internal static List<NetworkManager> FindManagers()
         {
-            return FindObjects.ByType<NetworkManager>(includeInactive: true)
-                .Where(m => m != null && !EditorUtility.IsPersistent(m))
-                .OrderBy(m => m.name, StringComparer.Ordinal)
-                .ToList();
+            var managers = new List<NetworkManager>();
+            foreach (var manager in FindObjects.ByType<NetworkManager>(includeInactive: true))
+            {
+                if (manager != null && !EditorUtility.IsPersistent(manager))
+                {
+                    managers.Add(manager);
+                }
+            }
+            StableSort(managers, (a, b) => StringComparer.Ordinal.Compare(a.name, b.name));
+            return managers;
+        }
+
+        /// <summary>Sorts <paramref name="list"/> in place, keeping equal items in their original order (as OrderBy does).</summary>
+        internal static void StableSort<T>(List<T> list, Comparison<T> comparison)
+        {
+            var indexed = new List<KeyValuePair<int, T>>(list.Count);
+            for (var i = 0; i < list.Count; i++)
+            {
+                indexed.Add(new KeyValuePair<int, T>(i, list[i]));
+            }
+            indexed.Sort((a, b) =>
+            {
+                var compared = comparison(a.Value, b.Value);
+                return compared != 0 ? compared : a.Key.CompareTo(b.Key);
+            });
+            for (var i = 0; i < list.Count; i++)
+            {
+                list[i] = indexed[i].Value;
+            }
+        }
+
+        /// <summary>The items in their original order, each only the first time it appears.</summary>
+        internal static List<T> WithoutDuplicates<T>(IEnumerable<T> items)
+        {
+            var seen = new HashSet<T>();
+            var result = new List<T>();
+            foreach (var item in items)
+            {
+                if (seen.Add(item))
+                {
+                    result.Add(item);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>Joins <paramref name="items"/> into a comma-separated list, each written by <paramref name="describe"/>.</summary>
+        internal static string JoinNames<T>(IEnumerable<T> items, Func<T, string> describe)
+        {
+            var names = new List<string>();
+            foreach (var item in items)
+            {
+                names.Add(describe(item));
+            }
+            return string.Join(", ", names);
         }
 
         /// <summary>
@@ -412,14 +467,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             if (!string.IsNullOrWhiteSpace(filter))
             {
                 var trimmed = filter.Trim();
-                var paths = managers.Select(m => (manager: m, path: GetHierarchyPath(m.transform))).ToList();
                 // An exact name or hierarchy path wins over a partial match: "Server" picks Server, not ServerBrowser.
-                var matches = paths.Where(p =>
-                    string.Equals(p.manager.name, trimmed, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(p.path, trimmed, StringComparison.OrdinalIgnoreCase)).Select(p => p.manager).ToList();
+                var matches = managers.FindAll(m =>
+                    string.Equals(m.name, trimmed, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(GetHierarchyPath(m.transform), trimmed, StringComparison.OrdinalIgnoreCase));
                 if (matches.Count == 0)
                 {
-                    matches = paths.Where(p => p.path.IndexOf(trimmed, StringComparison.OrdinalIgnoreCase) >= 0).Select(p => p.manager).ToList();
+                    matches = managers.FindAll(m => GetHierarchyPath(m.transform).IndexOf(trimmed, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
                 if (matches.Count == 1)
                 {
@@ -427,7 +481,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 }
                 if (matches.Count == 0)
                 {
-                    throw new ArgumentException($"No NetworkManager matches '{filter}'. NetworkManagers: {string.Join(", ", managers.Select(m => GetHierarchyPath(m.transform)))}.");
+                    throw new ArgumentException($"No NetworkManager matches '{filter}'. NetworkManagers: {JoinNames(managers, m => GetHierarchyPath(m.transform))}.");
                 }
                 managers = matches;
             }
@@ -441,7 +495,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 return singleton;
             }
-            throw new ArgumentException($"Several NetworkManagers. Pass manager with one of: {string.Join(", ", managers.Select(m => GetHierarchyPath(m.transform)))}.");
+            throw new ArgumentException($"Several NetworkManagers. Pass manager with one of: {JoinNames(managers, m => GetHierarchyPath(m.transform))}.");
         }
 
         // A scene's name for messages; an unsaved scene has none.

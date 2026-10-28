@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
@@ -118,6 +118,13 @@ namespace Unity.Netcode.GameObjects.EditorTests
             EditorSettings.enterPlayModeOptions = options;
         }
 
+        /// <summary>The one item in <paramref name="items"/>; fails the test when there are none or several.</summary>
+        private static T Only<T>(List<T> items)
+        {
+            Assert.AreEqual(1, items.Count, $"Expected exactly one {typeof(T).Name}.");
+            return items[0];
+        }
+
         /// <summary>A UDP port nothing is bound to, from the OS, so concurrent jobs on a CI agent don't collide.</summary>
         private static ushort GetFreeUdpPort()
         {
@@ -146,7 +153,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         private static NetworkManager CreateManager(NetworkTopologyTypes topology = NetworkTopologyTypes.ClientServer, int port = 7777)
         {
             NgoCliQueries.CreateNetworkManager("NetworkManager", topology, "127.0.0.1", port, false);
-            return NgoCliQueries.FindManagers().Single();
+            return Only(NgoCliQueries.FindManagers());
         }
 
         // --- Status and resolution ---
@@ -166,7 +173,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             CreateManager(port: 7801);
 
-            var manager = NgoCliQueries.GetStatus().Managers.Single();
+            var manager = Only(NgoCliQueries.GetStatus().Managers);
 
             Assert.AreEqual("none", manager.Role);
             Assert.IsFalse(manager.IsListening);
@@ -214,12 +221,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
             var dryRun = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, true);
             Assert.IsFalse(dryRun.Created);
             CollectionAssert.IsEmpty(NgoCliQueries.FindManagers(), "dry_run changes nothing.");
-            Assert.IsTrue(dryRun.Notes.Any(n => n.Contains("Distributed authority")));
+            Assert.IsTrue(dryRun.Notes.Exists(n => n.Contains("Distributed authority")));
 
             var result = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, false);
             Assert.IsTrue(result.Created);
 
-            var manager = NgoCliQueries.FindManagers().Single();
+            var manager = Only(NgoCliQueries.FindManagers());
             var transport = (UnityTransport)manager.NetworkConfig.NetworkTransport;
             Assert.AreSame(manager.GetComponent<UnityTransport>(), transport);
             Assert.AreEqual(NetworkTopologyTypes.DistributedAuthority, manager.NetworkConfig.NetworkTopology);
@@ -275,9 +282,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
             var again = NgoCliQueries.RegisterPrefab($"{k_Folder}/Networked.prefab", null, false);
             Assert.IsTrue(again.AlreadyRegistered, "With no NetworkManager, the default list (here the test list) is the target.");
 
-            var listed = NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists.Single();
+            var listed = Only(NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists);
             Assert.AreEqual(k_ListPath, listed.Path);
-            Assert.AreEqual($"{k_Folder}/Networked.prefab", listed.Prefabs.Single().Path);
+            Assert.AreEqual($"{k_Folder}/Networked.prefab", Only(listed.Prefabs).Path);
         }
 
         [Test]
@@ -325,15 +332,15 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
 
-            var entries = result.Issues.Where(i => i.Code == "LIST_ENTRY_INVALID" && i.Asset == k_ListPath).ToList();
-            var found = string.Join(" | ", entries.Select(i => $"{i.Severity}: {i.Message}"));
+            var entries = result.Issues.FindAll(i => i.Code == "LIST_ENTRY_INVALID" && i.Asset == k_ListPath);
+            var found = string.Join(" | ", entries.ConvertAll(i => $"{i.Severity}: {i.Message}"));
             Assert.AreEqual(4, entries.Count, found);
-            Assert.AreEqual(1, entries.Count(i => i.Severity == "warning"), "Netcode ignores an empty entry: " + found);
-            Assert.IsTrue(entries.Any(i => i.Message.Contains("no target prefab")), found);
-            Assert.IsTrue(entries.Any(i => i.Message.Contains("Plain.prefab has no NetworkObject")), found);
-            Assert.IsTrue(entries.Any(i => i.Message.Contains("source hash is 0")), found);
+            Assert.AreEqual(1, entries.FindAll(i => i.Severity == "warning").Count, "Netcode ignores an empty entry: " + found);
+            Assert.IsTrue(entries.Exists(i => i.Message.Contains("no target prefab")), found);
+            Assert.IsTrue(entries.Exists(i => i.Message.Contains("Plain.prefab has no NetworkObject")), found);
+            Assert.IsTrue(entries.Exists(i => i.Message.Contains("source hash is 0")), found);
 
-            var listed = NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists.Single();
+            var listed = Only(NgoCliQueries.ListPrefabs("CliTestPrefabs").Lists);
             Assert.AreEqual(4, listed.Prefabs.Count, "Listing doesn't stop at an empty entry.");
         }
 
@@ -351,9 +358,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
 
-            var found = string.Join(", ", result.Issues.Select(i => $"{i.Code} {i.Asset}"));
-            Assert.IsFalse(result.Issues.Any(i => i.Code == "NOT_REGISTERED"), found);
-            Assert.IsFalse(result.Issues.Any(i => i.Code == "LIST_ENTRY_INVALID"), found);
+            var found = string.Join(", ", result.Issues.ConvertAll(i => $"{i.Code} {i.Asset}"));
+            Assert.IsFalse(result.Issues.Exists(i => i.Code == "NOT_REGISTERED"), found);
+            Assert.IsFalse(result.Issues.Exists(i => i.Code == "LIST_ENTRY_INVALID"), found);
             Assert.IsTrue(NgoCliQueries.RegisterPrefab("Source", k_ListPath, true).AlreadyRegistered, "register_prefab and audit agree.");
         }
 
@@ -366,20 +373,20 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
 
-            Assert.IsFalse(result.Issues.Any(i => i.Code == "NOT_REGISTERED"), string.Join(", ", result.Issues.Select(i => $"{i.Code} {i.Asset}")));
+            Assert.IsFalse(result.Issues.Exists(i => i.Code == "NOT_REGISTERED"), string.Join(", ", result.Issues.ConvertAll(i => $"{i.Code} {i.Asset}")));
         }
 
         [Test]
         public void SetConfig_OnAPrefabInstance_RecordsAnOverride()
         {
             CreateManager();
-            var managerPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(NgoCliQueries.FindManagers().Single().gameObject, $"{k_Folder}/Manager.prefab", InteractionMode.AutomatedAction);
+            var managerPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(Only(NgoCliQueries.FindManagers()).gameObject, $"{k_Folder}/Manager.prefab", InteractionMode.AutomatedAction);
             Assert.IsNotNull(managerPrefab);
 
             NgoCliQueries.SetConfig("tick_rate", "60", null, false);
 
-            var instance = NgoCliQueries.FindManagers().Single();
-            Assert.IsTrue(PrefabUtility.GetPropertyModifications(instance).Any(m => m.target == managerPrefab.GetComponent<NetworkManager>() && m.propertyPath.EndsWith("TickRate") && m.value == "60"),
+            var instance = Only(NgoCliQueries.FindManagers());
+            Assert.IsTrue(Array.Exists(PrefabUtility.GetPropertyModifications(instance), m => m.target == managerPrefab.GetComponent<NetworkManager>() && m.propertyPath.EndsWith("TickRate") && m.value == "60"),
                 "The change is kept as a prefab override.");
         }
 
@@ -405,13 +412,13 @@ namespace Unity.Netcode.GameObjects.EditorTests
             CreatePrefab("NotNetworked");
 
             var result = NgoCliQueries.AuditPrefabs(k_Folder, 50);
-            var codes = result.Issues.Select(i => (i.Code, i.Asset)).ToList();
+            var codes = result.Issues.ConvertAll(i => (i.Code, i.Asset));
 
             var found = string.Join(", ", codes);
             CollectionAssert.Contains(codes, ("BEHAVIOUR_WITHOUT_NETWORKOBJECT", $"{k_Folder}/Orphan.prefab"), found);
             CollectionAssert.Contains(codes, ("NESTED_NETWORKOBJECT", $"{k_Folder}/Nested.prefab"), found);
             CollectionAssert.Contains(codes, ("NOT_REGISTERED", $"{k_Folder}/Unregistered.prefab"), found);
-            Assert.AreEqual(result.Issues.Count(i => i.Severity == "error"), result.Errors);
+            Assert.AreEqual(result.Issues.FindAll(i => i.Severity == "error").Count, result.Errors);
             Assert.AreEqual(3, result.PrefabsScanned, $"The prefab without netcode scripts isn't loaded. Found: {found}");
 
             var truncated = NgoCliQueries.AuditPrefabs(k_Folder, 1);
@@ -424,7 +431,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.AreEqual(3, all.PrefabsScanned);
             Assert.AreEqual(0, all.ManagersChecked);
             Assert.AreEqual("NO_NETWORKMANAGER", all.Issues[0].Code);
-            Assert.IsTrue(all.Issues.Skip(1).All(i => i.Area == "prefabs"));
+            Assert.IsTrue(all.Issues.GetRange(1, all.Issues.Count - 1).TrueForAll(i => i.Area == "prefabs"));
             Assert.AreEqual(result.Warnings + 1, all.Warnings);
             Assert.IsNull(NgoCliQueries.Audit("prefabs", k_Folder, 50, null).ManagersChecked);
             Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Audit("config", null, 50, null), "Asking for the NetworkManager checks needs one.");
@@ -495,7 +502,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var lan = NgoCliQueries.SetConfig("address", "192.168.1.20", null, false);
             Assert.AreEqual("0.0.0.0", transport.ConnectionData.ServerListenAddress, "A LAN host is reachable from other machines.");
-            StringAssert.Contains("0.0.0.0", lan.Notes.Single());
+            StringAssert.Contains("0.0.0.0", Only(lan.Notes));
 
             NgoCliQueries.SetConfig("address", "127.0.0.1", null, false);
             Assert.AreEqual(string.Empty, transport.ConnectionData.ServerListenAddress, "A default listen address follows the connect address.");
@@ -557,9 +564,10 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.IsTrue(NgoCliQueries.IsHybridSession(manager));
             var port = NgoCliQueries.SetConfig("port", "9200", null, false);
             Assert.AreEqual(9200, ((UnityTransport)manager.NetworkConfig.NetworkTransport).ConnectionData.Port, "The setting is still saved.");
-            StringAssert.Contains("hybrid session", port.Notes.Single());
-            StringAssert.Contains("hybrid session", NgoCliQueries.SetSimulator(true, null, 50, -1, -1).Notes.Last());
-            StringAssert.Contains("hybrid session", NgoCliQueries.GetSimulator().Notes.Single());
+            StringAssert.Contains("hybrid session", Only(port.Notes));
+            var simulatorNotes = NgoCliQueries.SetSimulator(true, null, 50, -1, -1).Notes;
+            StringAssert.Contains("hybrid session", simulatorNotes[simulatorNotes.Count - 1]);
+            StringAssert.Contains("hybrid session", Only(NgoCliQueries.GetSimulator().Notes));
         }
 #endif
 
@@ -570,10 +578,10 @@ namespace Unity.Netcode.GameObjects.EditorTests
             manager.NetworkConfig.NetworkTransport = null;
 
             var audit = NgoCliQueries.Audit("config", null, 50, null);
-            var codes = audit.Issues.Select(i => i.Code).ToList();
+            var codes = audit.Issues.ConvertAll(i => i.Code);
 
             Assert.AreEqual(1, audit.ManagersChecked);
-            Assert.IsTrue(audit.Issues.All(i => i.Area == "config"));
+            Assert.IsTrue(audit.Issues.TrueForAll(i => i.Area == "config"));
             CollectionAssert.Contains(codes, "NO_TRANSPORT");
             CollectionAssert.Contains(codes, "DA_WITHOUT_SERVICE");
             CollectionAssert.Contains(codes, "NO_NETWORK_PREFABS");
@@ -623,13 +631,14 @@ namespace Unity.Netcode.GameObjects.EditorTests
             }
 
             Assert.IsNotEmpty(presets.Presets);
-            var preset = presets.Presets.First(p => p.PacketDelayMs > 0);
+            var preset = presets.Presets.Find(p => p.PacketDelayMs > 0);
+            Assert.IsNotNull(preset, "A preset adds delay.");
             var result = NgoCliQueries.SetSimulator(true, preset.Name.ToUpperInvariant(), -1, -1, -1);
             Assert.AreEqual(preset.Name, result.Current.Preset);
             Assert.AreEqual(preset.PacketDelayMs, result.Current.PacketDelayMs);
 
             // Preset names carry bracketed details; the name before them is enough.
-            var detailed = presets.Presets.FirstOrDefault(p => p.Name.Contains(" ["));
+            var detailed = presets.Presets.Find(p => p.Name.Contains(" ["));
             if (detailed != null)
             {
                 var shortName = detailed.Name.Substring(0, detailed.Name.IndexOf(" [", StringComparison.Ordinal));
@@ -667,7 +676,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             yield return WaitFor(ready);
             Assert.IsTrue(ready.Result.Ready, ready.Result.Reason);
 
-            var client = NgoCliQueries.ListClients(null).Clients.Single();
+            var client = Only(NgoCliQueries.ListClients(null).Clients);
             Assert.AreEqual(0, client.ClientId);
             Assert.IsTrue(client.IsLocal);
 
@@ -725,7 +734,12 @@ namespace Unity.Netcode.GameObjects.EditorTests
             yield return WaitFor(stats);
             Assert.AreEqual("host", stats.Result.Role);
             Assert.GreaterOrEqual(stats.Result.Frames, 1);
-            Assert.AreEqual(stats.Result.Messages.Sum(m => m.Sent), stats.Result.MessagesSent);
+            long sent = 0;
+            foreach (var message in stats.Result.Messages)
+            {
+                sent += message.Sent;
+            }
+            Assert.AreEqual(sent, stats.Result.MessagesSent);
             Assert.AreEqual(hookCount, hooks.Count, "Sampling unhooks the message manager when done.");
 
             var despawned = NgoCliQueries.Despawn(id, true, null);
@@ -780,7 +794,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             var remoteId = (long)client.LocalClientId;
             var clients = NgoCliQueries.ListClients("NetworkManager").Clients;
             Assert.AreEqual(2, clients.Count);
-            Assert.IsFalse(clients.Single(c => c.ClientId == remoteId).IsLocal);
+            Assert.IsFalse(Only(clients.FindAll(c => c.ClientId == remoteId)).IsLocal);
 
             var id = NgoCliQueries.Spawn("CliSpawnable", null, -1, false, "NetworkManager").Object.NetworkObjectId;
             var changed = NgoCliQueries.ChangeOwner(id, remoteId, "NetworkManager");

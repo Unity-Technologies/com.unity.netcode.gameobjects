@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
@@ -328,7 +327,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 Settings = NgoCliSimulator.Snapshot(),
                 MultiplayerToolsInstalled = MultiplayerToolsInstalled,
                 NetworkSimulatorAvailable = NetworkSimulatorAvailable,
-                LiveTransports = NgoCliSimulator.LiveTransports().Select(t => GetHierarchyPath(t.transform)).ToList(),
+                LiveTransports = NgoCliSimulator.LiveTransports().ConvertAll(t => GetHierarchyPath(t.transform)),
                 AppliesWhen = EditorApplication.isPlaying
                     ? "Now, to the live transports listed, and to transports started later in this editor session."
                     : "When a transport starts in play mode, for the rest of this editor session.",
@@ -371,7 +370,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 {
                     throw new ArgumentException($"{PresetsUnavailableReason} Pass delay_ms, jitter_ms and drop_percent instead.");
                 }
-                chosen = MatchPreset(presets, preset.Trim()) ?? throw new ArgumentException($"Unknown preset '{preset}'. Presets: {string.Join(", ", presets.Select(p => p.Name))}.");
+                chosen = MatchPreset(presets, preset.Trim()) ?? throw new ArgumentException($"Unknown preset '{preset}'. Presets: {JoinNames(presets, p => p.Name)}.");
             }
 
             var result = new SimulatorResult { Previous = NgoCliSimulator.Snapshot() };
@@ -436,13 +435,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 return bracket > 0 ? full.Substring(0, bracket) : full;
             }
 
-            var exact = presets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
-                ?? presets.FirstOrDefault(p => string.Equals(ShortName(p.Name), name, StringComparison.OrdinalIgnoreCase));
+            var exact = presets.Find(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+                ?? presets.Find(p => string.Equals(ShortName(p.Name), name, StringComparison.OrdinalIgnoreCase));
             if (exact != null)
             {
                 return exact;
             }
-            var prefixed = presets.Where(p => p.Name.StartsWith(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            var prefixed = presets.FindAll(p => p.Name.StartsWith(name, StringComparison.OrdinalIgnoreCase));
             return prefixed.Count == 1 ? prefixed[0] : null;
         }
 

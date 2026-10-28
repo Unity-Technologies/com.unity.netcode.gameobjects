@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Transports.UTP;
@@ -38,7 +37,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             var existing = FindManagers();
             if (existing.Count > 0)
             {
-                throw new InvalidOperationException($"The open scenes already have a NetworkManager ({string.Join(", ", existing.Select(m => $"{GetHierarchyPath(m.transform)} in {SceneLabel(m.gameObject.scene)}"))}). A session uses one; inspect it with netcode.gameobjects.config get.");
+                throw new InvalidOperationException($"The open scenes already have a NetworkManager ({JoinNames(existing, m => $"{GetHierarchyPath(m.transform)} in {SceneLabel(m.gameObject.scene)}")}). A session uses one; inspect it with netcode.gameobjects.config get.");
             }
 
             var scene = SceneManager.GetActiveScene();
@@ -83,7 +82,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             EditorSceneManager.MarkSceneDirty(scene);
 
             result.Created = true;
-            result.PrefabsLists = manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Where(l => l != null).Select(AssetDatabase.GetAssetPath).ToList();
+            result.PrefabsLists = PrefabsListPaths(manager.NetworkConfig.Prefabs.NetworkPrefabsLists);
             if (result.PrefabsLists.Count == 0)
             {
                 result.Notes.Add("No network prefabs list attached (default prefab generation is off). Register prefabs with netcode.gameobjects register_prefab.");
@@ -126,7 +125,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     Manager = GetHierarchyPath(manager.transform),
                     Scene = manager.gameObject.scene.name,
                     PlayerPrefab = config?.PlayerPrefab != null ? AssetPathOrName(config.PlayerPrefab) : null,
-                    Lists = config?.Prefabs?.NetworkPrefabsLists.Where(l => l != null).Select(AssetDatabase.GetAssetPath).ToList() ?? new List<string>(),
+                    Lists = config?.Prefabs != null ? PrefabsListPaths(config.Prefabs.NetworkPrefabsLists) : new List<string>(),
                 });
             }
             return result;
@@ -260,7 +259,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             var result = new RegisterPrefabResult { DryRun = dryRun, Prefab = prefabPath };
-            var registeredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, prefabAsset)).Select(AssetDatabase.GetAssetPath).ToList();
+            var registeredIn = PrefabsListPaths(FindPrefabsLists().FindAll(l => IsRegisteredIn(l, prefabAsset)));
             var list = ResolveTargetList(listPath, dryRun, result.Notes);
             result.List = list != null ? AssetDatabase.GetAssetPath(list) : NetworkPrefabProcessor.DefaultNetworkPrefabsPath;
 
@@ -298,18 +297,29 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 return list;
             }
 
-            var managerLists = FindManagers()
-                .SelectMany(m => m.NetworkConfig?.Prefabs?.NetworkPrefabsLists ?? new List<NetworkPrefabsList>())
-                .Where(l => l != null)
-                .Distinct()
-                .ToList();
+            var managerLists = new List<NetworkPrefabsList>();
+            foreach (var manager in FindManagers())
+            {
+                var lists = manager.NetworkConfig?.Prefabs?.NetworkPrefabsLists;
+                if (lists == null)
+                {
+                    continue;
+                }
+                foreach (var list in lists)
+                {
+                    if (list != null && !managerLists.Contains(list))
+                    {
+                        managerLists.Add(list);
+                    }
+                }
+            }
             if (managerLists.Count == 1)
             {
                 return managerLists[0];
             }
             if (managerLists.Count > 1)
             {
-                throw new ArgumentException($"The scene's NetworkManagers use several lists. Pass list with one of: {string.Join(", ", managerLists.Select(AssetDatabase.GetAssetPath))}.");
+                throw new ArgumentException($"The scene's NetworkManagers use several lists. Pass list with one of: {JoinNames(managerLists, AssetDatabase.GetAssetPath)}.");
             }
 
             var defaultPath = NetworkPrefabProcessor.DefaultNetworkPrefabsPath;
@@ -341,7 +351,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.AlreadyNetworkObject = true;
                 result.PrefabIdHash = existing.GlobalObjectIdHash;
-                result.RegisteredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, prefabAsset)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
+                var registeredIn = FindPrefabsLists().Find(l => IsRegisteredIn(l, prefabAsset));
+                result.RegisteredIn = registeredIn != null ? AssetDatabase.GetAssetPath(registeredIn) : null;
                 return result;
             }
             if (prefabAsset.GetComponentInChildren<NetworkManager>(true) != null)
@@ -375,7 +386,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Notes.Add("The prefab id hash is generated on the next import; check it with netcode.gameobjects list_prefabs.");
             }
-            result.RegisteredIn = FindPrefabsLists().Where(l => IsRegisteredIn(l, reloaded)).Select(AssetDatabase.GetAssetPath).FirstOrDefault();
+            var registeredList = FindPrefabsLists().Find(l => IsRegisteredIn(l, reloaded));
+            result.RegisteredIn = registeredList != null ? AssetDatabase.GetAssetPath(registeredList) : null;
             if (result.RegisteredIn == null)
             {
                 result.Notes.Add("Not in a network prefabs list yet. Register it with netcode.gameobjects register_prefab.");
@@ -446,7 +458,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             {
                 result.Truncated = true;
             }
-            result.Issues = issues.Take(limit).ToList();
+            result.Issues = issues.GetRange(0, Math.Min(limit, issues.Count));
             return result;
         }
 
@@ -470,7 +482,15 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             var result = new AuditResult();
             var lists = FindPrefabsLists();
             // NetworkManager registers its player prefab when it starts, list or not.
-            var playerPrefabs = new HashSet<GameObject>(FindManagers().Select(m => m.NetworkConfig?.PlayerPrefab).Where(p => p != null));
+            var playerPrefabs = new HashSet<GameObject>();
+            foreach (var manager in FindManagers())
+            {
+                var playerPrefab = manager.NetworkConfig?.PlayerPrefab;
+                if (playerPrefab != null)
+                {
+                    playerPrefabs.Add(playerPrefab);
+                }
+            }
             var autoGenerate = NetcodeForGameObjectsProjectSettings.instance.GenerateDefaultNetworkPrefabs;
             var hashes = new Dictionary<uint, string>();
             var scriptCache = new Dictionary<string, bool>();
@@ -496,7 +516,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
 
             var searchIn = string.IsNullOrWhiteSpace(folder) ? new[] { "Assets" } : new[] { folder.Trim() };
-            foreach (var path in AssetDatabase.FindAssets("t:Prefab", searchIn).Select(AssetDatabase.GUIDToAssetPath).Distinct())
+            foreach (var path in AssetPaths(AssetDatabase.FindAssets("t:Prefab", searchIn)))
             {
                 if (!UsesNetcodeScripts(path, scriptCache))
                 {
@@ -579,7 +599,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 hashes[hash] = path;
             }
 
-            if (!autoGenerate && !playerPrefabs.Contains(prefabAsset) && !lists.Any(l => IsRegisteredIn(l, prefabAsset)))
+            if (!autoGenerate && !playerPrefabs.Contains(prefabAsset) && !lists.Exists(l => IsRegisteredIn(l, prefabAsset)))
             {
                 add("warning", "NOT_REGISTERED", path, "Not in any network prefabs list, so it can't be spawned. Register it with netcode.gameobjects register_prefab.");
             }
@@ -613,12 +633,41 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         internal static List<NetworkPrefabsList> FindPrefabsLists()
         {
-            return AssetDatabase.FindAssets($"t:{nameof(NetworkPrefabsList)}")
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Distinct()
-                .Select(AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>)
-                .Where(l => l != null)
-                .ToList();
+            var lists = new List<NetworkPrefabsList>();
+            foreach (var path in AssetPaths(AssetDatabase.FindAssets($"t:{nameof(NetworkPrefabsList)}")))
+            {
+                var list = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(path);
+                if (list != null)
+                {
+                    lists.Add(list);
+                }
+            }
+            return lists;
+        }
+
+        /// <summary>The asset paths of found GUIDs, each once, in the order found.</summary>
+        private static List<string> AssetPaths(string[] guids)
+        {
+            var paths = new List<string>(guids.Length);
+            foreach (var guid in guids)
+            {
+                paths.Add(AssetDatabase.GUIDToAssetPath(guid));
+            }
+            return WithoutDuplicates(paths);
+        }
+
+        /// <summary>The asset paths of the prefabs lists that are set, skipping empty entries.</summary>
+        internal static List<string> PrefabsListPaths(List<NetworkPrefabsList> lists)
+        {
+            var paths = new List<string>();
+            foreach (var list in lists)
+            {
+                if (list != null)
+                {
+                    paths.Add(AssetDatabase.GetAssetPath(list));
+                }
+            }
+            return paths;
         }
 
         /// <summary>Resolves a prefab path, GUID or name to the prefab asset.</summary>
@@ -641,16 +690,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             else
             {
-                var matches = AssetDatabase.FindAssets($"{prefab} t:Prefab")
-                    .Select(AssetDatabase.GUIDToAssetPath)
-                    .Where(p => string.Equals(Path.GetFileNameWithoutExtension(p), prefab, StringComparison.OrdinalIgnoreCase))
-                    .Distinct()
-                    .ToList();
+                var matches = AssetPaths(AssetDatabase.FindAssets($"{prefab} t:Prefab"))
+                    .FindAll(p => string.Equals(Path.GetFileNameWithoutExtension(p), prefab, StringComparison.OrdinalIgnoreCase));
                 if (matches.Count > 1)
                 {
                     throw new ArgumentException($"Several prefabs are named '{prefab}': {string.Join(", ", matches)}. Pass the path instead.");
                 }
-                path = matches.FirstOrDefault();
+                path = matches.Count > 0 ? matches[0] : null;
             }
 
             var asset = (string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(path)) ?? throw new ArgumentException($"No prefab found for '{prefab}'. Search with asset find, or list network prefabs with netcode.gameobjects list_prefabs.");
