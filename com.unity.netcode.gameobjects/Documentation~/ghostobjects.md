@@ -19,7 +19,7 @@ A hybrid object synchronizes its data through two separate systems:
 
 Because Netcode for GameObjects data isn't part of the snapshot, Unity Netcode doesn't roll back or replay `NetworkVariable`s, RPCs, or spawn data as part of its prediction loop. To use prediction on a hybrid object, write your prediction code in `GhostBehaviour`s. Prediction code in `GhostBehaviour`s on hybrid objects works the same way as on any other GhostObject.
 
-When you convert a NetworkObject into a hybrid object, Netcode for GameObjects sets the GhostObject's supported ghost modes to interpolated only. To use prediction, change the `SupportedGhostModes` and `DefaultGhostMode` settings on the **GhostObject** component to include a predicted mode. For more information about ghost modes, refer to the [Unity Netcode documentation](https://docs.unity3d.com/Packages/com.unity.netcode@latest).
+When you convert a NetworkObject into a hybrid object, Netcode for GameObjects doesn't change the GhostObject's ghost mode settings. By default, a GhostObject spawns interpolated and supports all ghost modes. To use prediction, set `DefaultGhostMode` on the **GhostObject** component to a predicted mode. To reduce bandwidth, limit `SupportedGhostModes` to the modes the object uses. For more information about ghost modes, refer to the [Unity Netcode documentation](https://docs.unity3d.com/Packages/com.unity.netcode@latest).
 
 ### Effect on existing transform and physics components
 
