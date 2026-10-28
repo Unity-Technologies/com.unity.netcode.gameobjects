@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Unity.Netcode.GameObjects.Editor.Cli;
@@ -25,6 +27,9 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
         private bool m_GenerateDefaultNetworkPrefabs;
         private string m_DefaultNetworkPrefabsPath;
+        private bool m_PlayModeOptionsChanged;
+        private bool m_EnterPlayModeOptionsEnabled;
+        private EnterPlayModeOptions m_EnterPlayModeOptions;
 
         [SetUp]
         public void SetUp()
@@ -50,6 +55,72 @@ namespace Unity.Netcode.GameObjects.EditorTests
             NetworkPrefabProcessor.DefaultNetworkPrefabsPath = m_DefaultNetworkPrefabsPath;
             AssetDatabase.DeleteAsset(k_Folder);
             ResetSimulator();
+        }
+
+        /// <summary>
+        /// Leaves play mode even when a play mode test failed part way, so the tests after it start in edit mode,
+        /// and puts back the enter play mode options a test changed.
+        /// </summary>
+        [UnityTearDown]
+        public IEnumerator ExitPlayModeAndRestoreSettings()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                foreach (var manager in NgoCliQueries.FindManagers())
+                {
+                    if (manager.IsListening)
+                    {
+                        manager.Shutdown(true);
+                    }
+                }
+                yield return WaitForCondition(() =>
+                {
+                    foreach (var manager in NgoCliQueries.FindManagers())
+                    {
+                        if (manager.IsListening || manager.ShutdownInProgress)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                yield return new ExitPlayMode();
+            }
+            foreach (var manager in NgoCliQueries.FindManagers())
+            {
+                UnityEngine.Object.DestroyImmediate(manager.gameObject);
+            }
+            if (m_PlayModeOptionsChanged)
+            {
+                EditorSettings.enterPlayModeOptionsEnabled = m_EnterPlayModeOptionsEnabled;
+                EditorSettings.enterPlayModeOptions = m_EnterPlayModeOptions;
+                m_PlayModeOptionsChanged = false;
+            }
+        }
+
+        /// <summary>
+        /// Enters play mode without a domain or scene reload, so the scene and prefabs a test sets up survive. The
+        /// options are only changed (and later restored) when they differ, so the project settings aren't re-saved.
+        /// </summary>
+        private void UsePlayModeWithoutReload()
+        {
+            const EnterPlayModeOptions options = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
+            if (EditorSettings.enterPlayModeOptionsEnabled && EditorSettings.enterPlayModeOptions == options)
+            {
+                return;
+            }
+            m_EnterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
+            m_EnterPlayModeOptions = EditorSettings.enterPlayModeOptions;
+            m_PlayModeOptionsChanged = true;
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = options;
+        }
+
+        /// <summary>A UDP port nothing is bound to, from the OS, so concurrent jobs on a CI agent don't collide.</summary>
+        private static ushort GetFreeUdpPort()
+        {
+            using var socket = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            return (ushort)((IPEndPoint)socket.Client.LocalEndPoint).Port;
         }
 
         private static void ResetSimulator()
@@ -524,95 +595,82 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [UnityTest]
         public IEnumerator RunningHost_SupportsTheRuntimeQueries()
         {
-            var enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
-            var enterPlayModeOptions = EditorSettings.enterPlayModeOptions;
-            EditorSettings.enterPlayModeOptionsEnabled = true;
-            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
-            try
-            {
-                var prefab = CreatePrefab("CliSpawnable", typeof(NetworkObject));
-                var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-                AssetDatabase.CreateAsset(list, k_ListPath);
-                NgoCliQueries.RegisterPrefab("CliSpawnable", k_ListPath, false);
-                var manager = CreateManager(port: (ushort)UnityEngine.Random.Range(20000, 40000));
-                manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
-                manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
-                // The unsaved test scene isn't in the build, which with scene management on opens a dialog in play mode.
-                manager.NetworkConfig.EnableSceneManagement = false;
+            UsePlayModeWithoutReload();
+            var prefab = CreatePrefab("CliSpawnable", typeof(NetworkObject));
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            NgoCliQueries.RegisterPrefab("CliSpawnable", k_ListPath, false);
+            var manager = CreateManager(port: GetFreeUdpPort());
+            manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
+            manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
+            // The unsaved test scene isn't in the build, which with scene management on opens a dialog in play mode.
+            manager.NetworkConfig.EnableSceneManagement = false;
 
-                yield return new EnterPlayMode();
+            yield return new EnterPlayMode();
 
-                var started = NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1);
-                Assert.AreEqual("host", started.Status.Role);
-                Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1));
+            var started = NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1);
+            Assert.AreEqual("host", started.Status.Role);
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1));
 
-                var ready = NgoCliQueries.WaitReadyAsync(null, 0, 10);
-                yield return WaitFor(ready);
-                Assert.IsTrue(ready.Result.Ready, ready.Result.Reason);
+            var ready = NgoCliQueries.WaitReadyAsync(null, 0, 10);
+            yield return WaitFor(ready);
+            Assert.IsTrue(ready.Result.Ready, ready.Result.Reason);
 
-                var client = NgoCliQueries.ListClients(null).Clients.Single();
-                Assert.AreEqual(0, client.ClientId);
-                Assert.IsTrue(client.IsLocal);
+            var client = NgoCliQueries.ListClients(null).Clients.Single();
+            Assert.AreEqual(0, client.ClientId);
+            Assert.IsTrue(client.IsLocal);
 
-                var spawned = NgoCliQueries.Spawn("CliSpawnable", new[] { 1f, 2f, 3f }, -1, false, null);
-                var id = spawned.Object.NetworkObjectId;
-                CollectionAssert.AreEqual(new[] { 1f, 2f, 3f }, spawned.Object.Position);
-                Assert.AreEqual(1, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
-                var detail = NgoCliQueries.GetObject(id, null);
-                Assert.AreEqual(0, detail.OwnerClientId);
-                Assert.AreEqual("The server or host.", detail.Ownership.WhoCanChange);
-                Assert.Throws<ArgumentException>(() => NgoCliQueries.GetObject(id + 1000, null));
+            var spawned = NgoCliQueries.Spawn("CliSpawnable", new[] { 1f, 2f, 3f }, -1, false, null);
+            var id = spawned.Object.NetworkObjectId;
+            CollectionAssert.AreEqual(new[] { 1f, 2f, 3f }, spawned.Object.Position);
+            Assert.AreEqual(1, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
+            var detail = NgoCliQueries.GetObject(id, null);
+            Assert.AreEqual(0, detail.OwnerClientId);
+            Assert.AreEqual("The server or host.", detail.Ownership.WhoCanChange);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.GetObject(id + 1000, null));
 
-                var unchanged = NgoCliQueries.ChangeOwner(id, 0, null);
-                Assert.AreEqual(0, unchanged.Owner);
-                Assert.Throws<ArgumentException>(() => NgoCliQueries.ChangeOwner(id, 42, null));
-                Assert.Throws<ArgumentException>(() => NgoCliQueries.Kick(0, null, null), "The host can't kick its own client.");
+            var unchanged = NgoCliQueries.ChangeOwner(id, 0, null);
+            Assert.AreEqual(0, unchanged.Owner);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.ChangeOwner(id, 42, null));
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.Kick(0, null, null), "The host can't kick its own client.");
 
-                var driver = ((UnityTransport)NgoCliQueries.ResolveManager(null).NetworkConfig.NetworkTransport).GetNetworkDriver();
-                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var original);
-                var simulator = NgoCliQueries.SetSimulator(true, null, 50, 0, 0);
-                CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
-                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var applied);
-                Assert.AreEqual(50, applied.PacketDelayMs);
+            var driver = ((UnityTransport)NgoCliQueries.ResolveManager(null).NetworkConfig.NetworkTransport).GetNetworkDriver();
+            driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var original);
+            var simulator = NgoCliQueries.SetSimulator(true, null, 50, 0, 0);
+            CollectionAssert.IsNotEmpty(simulator.AppliedLiveTo, "The running transport gets the settings now.");
+            driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var applied);
+            Assert.AreEqual(50, applied.PacketDelayMs);
 
-                var timeout = NgoCliQueries.SetTimeout(true);
-                Assert.IsTrue(timeout.Current.TimeoutActive);
-                var spike = NgoCliQueries.StartLagSpike(10);
-                Assert.IsTrue(spike.Current.TimeoutActive, "A lag spike leaves the timeout on.");
-                yield return WaitForCondition(() => !NgoCliSimulator.LagSpikeActive);
-                Assert.IsFalse(NgoCliSimulator.LagSpikeActive);
-                Assert.IsTrue(NgoCliQueries.GetSimulator().Settings.TimeoutActive, "The timeout outlasts the lag spike.");
-                NgoCliQueries.SetTimeout(false);
+            var timeout = NgoCliQueries.SetTimeout(true);
+            Assert.IsTrue(timeout.Current.TimeoutActive);
+            var spike = NgoCliQueries.StartLagSpike(10);
+            Assert.IsTrue(spike.Current.TimeoutActive, "A lag spike leaves the timeout on.");
+            yield return WaitForCondition(() => !NgoCliSimulator.LagSpikeActive);
+            Assert.IsFalse(NgoCliSimulator.LagSpikeActive);
+            Assert.IsTrue(NgoCliQueries.GetSimulator().Settings.TimeoutActive, "The timeout outlasts the lag spike.");
+            NgoCliQueries.SetTimeout(false);
 
-                NgoCliQueries.SetSimulator(false, null, -1, -1, -1);
-                driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
-                Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
+            NgoCliQueries.SetSimulator(false, null, -1, -1, -1);
+            driver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var restored);
+            Assert.AreEqual(original.PacketDelayMs, restored.PacketDelayMs, "Turning the simulator off restores the transport's own settings.");
 
-                var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
-                var hookCount = hooks.Count;
-                var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
-                Assert.AreEqual(hookCount + 1, hooks.Count, "Sampling hooks the message manager.");
-                yield return WaitFor(stats);
-                Assert.AreEqual("host", stats.Result.Role);
-                Assert.GreaterOrEqual(stats.Result.Frames, 1);
-                Assert.AreEqual(stats.Result.Messages.Sum(m => m.Sent), stats.Result.MessagesSent);
-                Assert.AreEqual(hookCount, hooks.Count, "Sampling unhooks the message manager when done.");
+            var hooks = (IList)typeof(NetworkMessageManager).GetField("m_Hooks", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(NgoCliQueries.ResolveManager(null).MessageManager);
+            var hookCount = hooks.Count;
+            var stats = NgoCliQueries.SampleStatsAsync(null, 3, 10);
+            Assert.AreEqual(hookCount + 1, hooks.Count, "Sampling hooks the message manager.");
+            yield return WaitFor(stats);
+            Assert.AreEqual("host", stats.Result.Role);
+            Assert.GreaterOrEqual(stats.Result.Frames, 1);
+            Assert.AreEqual(stats.Result.Messages.Sum(m => m.Sent), stats.Result.MessagesSent);
+            Assert.AreEqual(hookCount, hooks.Count, "Sampling unhooks the message manager when done.");
 
-                var despawned = NgoCliQueries.Despawn(id, true, null);
-                Assert.IsTrue(despawned.Despawned);
-                Assert.AreEqual(0, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
+            var despawned = NgoCliQueries.Despawn(id, true, null);
+            Assert.IsTrue(despawned.Despawned);
+            Assert.AreEqual(0, NgoCliQueries.ListObjects(null, "CliSpawnable", -1, 10).Total);
 
-                NgoCliQueries.Stop(null, false);
-                yield return null;
-                yield return null;
-
-                yield return new ExitPlayMode();
-            }
-            finally
-            {
-                EditorSettings.enterPlayModeOptionsEnabled = enterPlayModeOptionsEnabled;
-                EditorSettings.enterPlayModeOptions = enterPlayModeOptions;
-            }
+            NgoCliQueries.Stop(null, false);
+            yield return null;
+            yield return null;
         }
 
         /// <summary>
@@ -623,88 +681,70 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [UnityTest]
         public IEnumerator HostWithARemoteClient_SupportsTheClientQueries()
         {
-            var enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
-            var enterPlayModeOptions = EditorSettings.enterPlayModeOptions;
-            EditorSettings.enterPlayModeOptionsEnabled = true;
-            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
-            NetworkManager client = null;
-            try
-            {
-                CreatePrefab("CliSpawnable", typeof(NetworkObject));
-                var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-                AssetDatabase.CreateAsset(list, k_ListPath);
-                NgoCliQueries.RegisterPrefab("CliSpawnable", k_ListPath, false);
-                var port = (ushort)UnityEngine.Random.Range(20000, 40000);
-                var host = CreateManager(port: port);
-                host.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
-                host.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
-                // The unsaved test scene isn't in the build, which with scene management on opens a dialog in play mode.
-                host.NetworkConfig.EnableSceneManagement = false;
-                // A copy of the host's setup, pointed at the wrong port so start's override has something to fix.
-                client = UnityEngine.Object.Instantiate(host.gameObject).GetComponent<NetworkManager>();
-                client.name = "ClientManager";
-                var clientTransport = (UnityTransport)client.NetworkConfig.NetworkTransport;
-                Assert.AreSame(client.gameObject, clientTransport.gameObject, "The copy uses its own transport.");
-                clientTransport.SetConnectionData("127.0.0.1", (ushort)(port + 1));
+            UsePlayModeWithoutReload();
+            CreatePrefab("CliSpawnable", typeof(NetworkObject));
+            var list = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            AssetDatabase.CreateAsset(list, k_ListPath);
+            NgoCliQueries.RegisterPrefab("CliSpawnable", k_ListPath, false);
+            var port = GetFreeUdpPort();
+            var host = CreateManager(port: port);
+            host.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
+            host.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(list);
+            // The unsaved test scene isn't in the build, which with scene management on opens a dialog in play mode.
+            host.NetworkConfig.EnableSceneManagement = false;
+            // A copy of the host's setup, pointed at the wrong port so start's override has something to fix.
+            var client = UnityEngine.Object.Instantiate(host.gameObject).GetComponent<NetworkManager>();
+            client.name = "ClientManager";
+            var clientTransport = (UnityTransport)client.NetworkConfig.NetworkTransport;
+            Assert.AreSame(client.gameObject, clientTransport.gameObject, "The copy uses its own transport.");
+            clientTransport.SetConnectionData("127.0.0.1", (ushort)(port + 1));
 
-                yield return new EnterPlayMode();
+            yield return new EnterPlayMode();
 
-                NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, "NetworkManager", null, -1);
-                var clientStart = NgoCliQueries.Start(NgoCliQueries.SessionMode.Client, "ClientManager", null, port);
-                Assert.AreEqual(port, clientTransport.ConnectionData.Port, "start's port overrides the transport's.");
-                StringAssert.Contains($":{port}", clientStart.Notes[0]);
+            NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, "NetworkManager", null, -1);
+            var clientStart = NgoCliQueries.Start(NgoCliQueries.SessionMode.Client, "ClientManager", null, port);
+            Assert.AreEqual(port, clientTransport.ConnectionData.Port, "start's port overrides the transport's.");
+            StringAssert.Contains($":{port}", clientStart.Notes[0]);
 
-                var clientReady = NgoCliQueries.WaitReadyAsync("ClientManager", 0, 10);
-                yield return WaitFor(clientReady);
-                Assert.IsTrue(clientReady.Result.Ready, clientReady.Result.Reason);
-                var hostReady = NgoCliQueries.WaitReadyAsync("NetworkManager", 1, 10);
-                yield return WaitFor(hostReady);
-                Assert.IsTrue(hostReady.Result.Ready, hostReady.Result.Reason);
+            var clientReady = NgoCliQueries.WaitReadyAsync("ClientManager", 0, 10);
+            yield return WaitFor(clientReady);
+            Assert.IsTrue(clientReady.Result.Ready, clientReady.Result.Reason);
+            var hostReady = NgoCliQueries.WaitReadyAsync("NetworkManager", 1, 10);
+            yield return WaitFor(hostReady);
+            Assert.IsTrue(hostReady.Result.Ready, hostReady.Result.Reason);
 
-                var remoteId = (long)client.LocalClientId;
-                var clients = NgoCliQueries.ListClients("NetworkManager").Clients;
-                Assert.AreEqual(2, clients.Count);
-                Assert.IsFalse(clients.Single(c => c.ClientId == remoteId).IsLocal);
+            var remoteId = (long)client.LocalClientId;
+            var clients = NgoCliQueries.ListClients("NetworkManager").Clients;
+            Assert.AreEqual(2, clients.Count);
+            Assert.IsFalse(clients.Single(c => c.ClientId == remoteId).IsLocal);
 
-                var id = NgoCliQueries.Spawn("CliSpawnable", null, -1, false, "NetworkManager").Object.NetworkObjectId;
-                var changed = NgoCliQueries.ChangeOwner(id, remoteId, "NetworkManager");
-                Assert.AreEqual(0, changed.PreviousOwner);
-                Assert.AreEqual(remoteId, changed.Owner);
-                yield return WaitForCondition(() => client.SpawnManager.SpawnedObjects.ContainsKey((ulong)id));
-                Assert.Throws<InvalidOperationException>(() => NgoCliQueries.ChangeOwner(id, 0, "ClientManager"), "A client-server client can't change ownership.");
-                Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Kick(remoteId, null, "ClientManager"), "Only the server or host kicks.");
+            var id = NgoCliQueries.Spawn("CliSpawnable", null, -1, false, "NetworkManager").Object.NetworkObjectId;
+            var changed = NgoCliQueries.ChangeOwner(id, remoteId, "NetworkManager");
+            Assert.AreEqual(0, changed.PreviousOwner);
+            Assert.AreEqual(remoteId, changed.Owner);
+            yield return WaitForCondition(() => client.SpawnManager.SpawnedObjects.ContainsKey((ulong)id));
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.ChangeOwner(id, 0, "ClientManager"), "A client-server client can't change ownership.");
+            Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Kick(remoteId, null, "ClientManager"), "Only the server or host kicks.");
 
-                NgoCliQueries.Kick(remoteId, "Kicked by the CLI test", "NetworkManager");
-                yield return WaitForCondition(() => !client.IsListening && !client.ShutdownInProgress);
-                Assert.IsFalse(client.IsListening, "The kicked client shuts down.");
-                StringAssert.Contains("Kicked by the CLI test", client.DisconnectReason);
+            NgoCliQueries.Kick(remoteId, "Kicked by the CLI test", "NetworkManager");
+            yield return WaitForCondition(() => !client.IsListening && !client.ShutdownInProgress);
+            Assert.IsFalse(client.IsListening, "The kicked client shuts down.");
+            StringAssert.Contains("Kicked by the CLI test", client.DisconnectReason);
 
-                var reconnected = NgoCliQueries.ReconnectAsync("ClientManager", 10);
-                yield return WaitFor(reconnected);
-                Assert.IsTrue(reconnected.Result.Ready, reconnected.Result.Reason);
-                Assert.IsTrue(client.IsConnectedClient);
-                Assert.ThrowsAsync<InvalidOperationException>(() => NgoCliQueries.ReconnectAsync("NetworkManager", 5), "reconnect is for clients.");
+            var reconnected = NgoCliQueries.ReconnectAsync("ClientManager", 10);
+            yield return WaitFor(reconnected);
+            Assert.IsTrue(reconnected.Result.Ready, reconnected.Result.Reason);
+            Assert.IsTrue(client.IsConnectedClient);
+            Assert.ThrowsAsync<InvalidOperationException>(() => NgoCliQueries.ReconnectAsync("NetworkManager", 5), "reconnect is for clients.");
 
-                var stats = NgoCliQueries.SampleStatsAsync("NetworkManager", 10_000, 60);
-                NgoCliQueries.Stop("NetworkManager", false);
-                yield return WaitForCondition(() => stats.IsCompleted);
-                Assert.IsTrue(stats.IsFaulted, "Stopping the host ends the sample with an error.");
-                StringAssert.Contains("session ended while sampling", stats.Exception.InnerException.Message);
+            var stats = NgoCliQueries.SampleStatsAsync("NetworkManager", 10_000, 60);
+            NgoCliQueries.Stop("NetworkManager", false);
+            yield return WaitForCondition(() => stats.IsCompleted);
+            Assert.IsTrue(stats.IsFaulted, "Stopping the host ends the sample with an error.");
+            StringAssert.Contains("session ended while sampling", stats.Exception.InnerException.Message);
 
-                NgoCliQueries.Stop("ClientManager", false);
-                yield return WaitForCondition(() => !client.IsListening && !client.ShutdownInProgress);
-
-                yield return new ExitPlayMode();
-            }
-            finally
-            {
-                if (client != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(client.gameObject);
-                }
-                EditorSettings.enterPlayModeOptionsEnabled = enterPlayModeOptionsEnabled;
-                EditorSettings.enterPlayModeOptions = enterPlayModeOptions;
-            }
+            NgoCliQueries.Stop("ClientManager", false);
+            yield return WaitForCondition(() => !client.IsListening && !client.ShutdownInProgress);
         }
 
         /// <summary>
@@ -714,37 +754,24 @@ namespace Unity.Netcode.GameObjects.EditorTests
         [UnityTest]
         public IEnumerator Spawn_DistributedAuthorityClientNotConnected_Refuses()
         {
-            var enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
-            var enterPlayModeOptions = EditorSettings.enterPlayModeOptions;
-            EditorSettings.enterPlayModeOptionsEnabled = true;
-            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
-            try
-            {
-                CreatePrefab("CliSpawnable", typeof(NetworkObject));
-                // Nothing listens on this port, so the client stays connecting.
-                var manager = CreateManager(NetworkTopologyTypes.DistributedAuthority, UnityEngine.Random.Range(20000, 40000));
-                manager.NetworkConfig.EnableSceneManagement = false;
+            UsePlayModeWithoutReload();
+            CreatePrefab("CliSpawnable", typeof(NetworkObject));
+            // Nothing listens on this port, so the client stays connecting.
+            var manager = CreateManager(NetworkTopologyTypes.DistributedAuthority, GetFreeUdpPort());
+            manager.NetworkConfig.EnableSceneManagement = false;
 
-                yield return new EnterPlayMode();
+            yield return new EnterPlayMode();
 
-                NgoCliQueries.Start(NgoCliQueries.SessionMode.Client, null, null, -1);
-                Assert.IsTrue(manager.IsListening);
-                Assert.IsFalse(manager.IsConnectedClient);
+            NgoCliQueries.Start(NgoCliQueries.SessionMode.Client, null, null, -1);
+            Assert.IsTrue(manager.IsListening);
+            Assert.IsFalse(manager.IsConnectedClient);
 
-                var refused = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Spawn("CliSpawnable", null, -1, false, null));
-                StringAssert.Contains("wait_ready", refused.Message);
-                Assert.IsNull(GameObject.Find("CliSpawnable(Clone)"), "Nothing is instantiated.");
+            var refused = Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Spawn("CliSpawnable", null, -1, false, null));
+            StringAssert.Contains("wait_ready", refused.Message);
+            Assert.IsNull(GameObject.Find("CliSpawnable(Clone)"), "Nothing is instantiated.");
 
-                NgoCliQueries.Stop(null, true);
-                yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
-
-                yield return new ExitPlayMode();
-            }
-            finally
-            {
-                EditorSettings.enterPlayModeOptionsEnabled = enterPlayModeOptionsEnabled;
-                EditorSettings.enterPlayModeOptions = enterPlayModeOptions;
-            }
+            NgoCliQueries.Stop(null, true);
+            yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
         }
 
         private static IEnumerator WaitForCondition(Func<bool> condition)
