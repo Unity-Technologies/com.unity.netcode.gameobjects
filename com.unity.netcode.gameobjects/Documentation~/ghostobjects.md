@@ -86,6 +86,13 @@ To convert a hybrid object back into a prefab that uses only one package, remove
 > [!NOTE]
 > Unity might prevent you from removing a **GhostObject** or **NetworkObject** component while the GameObject has `GhostBehaviour` or `NetworkBehaviour` components that depend on it. Remove the dependent components first.
 
+## Mixed mode objects and physics
+
+To avoid visual anomalies, NGO automatically adjusts some Rigidbody settings based on the **Physics Run Mode** of the `NetcodeConfig` asset:
+
+- **Always Run**: In a session that has hybrid prefabs, non-hybrid NGO prefabs with a NetworkRigidbody and a 3D Rigidbody have the Rigidbody's **Interpolate** value set to **Extrapolate** on the authority instance and to **None** on all non-authority instances. The authority instance is the server or host for a server-authoritative NetworkTransform, or the owner for an owner-authoritative one. The value follows authority when ownership changes, and the original value is restored when the instance despawns.
+- **User Controlled**: Hybrid NGO prefabs with a NetworkRigidbody have **Full Tick Smoothing** set to **Disabled**.
+
 ## Additional resources
 
 - [GhostObjects in Unity Netcode](https://docs.unity3d.com/Packages/com.unity.netcode@latest?subfolder=/manual/ghostobject/ghostobject.html)
