@@ -851,6 +851,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ConfigureFramesPerTick();
             }
 
+            // Get the transform synchronization mode before setup.
+            GetSyncMode();
+
             if (m_SetupIsACoroutine)
             {
                 yield return OnSetup();
@@ -985,6 +988,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        internal TransformSyncModes SyncMode { get; private set; }
+
+        internal virtual TransformSyncModes OnGetSyncMode()
+        {
+            // Always default to per instance
+            return TransformSyncModes.PerInstance;
+        }
+
+        private void GetSyncMode()
+        {
+            SyncMode = OnGetSyncMode();
+        }
+
         /// <summary>
         /// Creates the server and clients
         /// </summary>
@@ -1033,6 +1049,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             foreach (var manager in m_NetworkManagers)
             {
+                manager.NetworkConfig.TransformSyncMode = SyncMode;
                 manager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
                 SetDistributedAuthorityProperties(manager);
 #if UNIFIED_NETCODE
@@ -1125,6 +1142,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected NetworkManager CreateNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_UseMockTransport, m_UseCmbService);
+            networkManager.NetworkConfig.TransformSyncMode = SyncMode;
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             SetDistributedAuthorityProperties(networkManager);
 

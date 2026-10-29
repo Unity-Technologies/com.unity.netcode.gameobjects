@@ -46,7 +46,8 @@ namespace Unity.Netcode.Components
     /// <br />
     /// The smooth parenting transition flag, <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>,
     /// is excluded from this state as it is handled differently.<br />
-    /// - <see cref="NativeInterpolator.ConvertSpace"/> provides additional details on this.
+    /// - <see cref="NativeInterpolator.ConvertSpace"/> provides additional details on this. <br />
+    /// - <see cref="NetworkTransformStateManager.ConvertInterpolationSpace"/> is where this happens.
     /// </remarks>
     internal struct NativeInterpolatorState
     {
