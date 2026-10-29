@@ -22,7 +22,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
+- Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4221)
+- Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4215)
+- Issue where showing a `NetworkObject` with `NetworkShow` while its `NetworkVariable` updates were held back by `NetworkVariableUpdateTraits` stopped those pending changes from being sent until the variable was modified again. (#4215)
+- Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`. (#4185)
+- Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server. (#4185)
+- Issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
 
 ### Security
 

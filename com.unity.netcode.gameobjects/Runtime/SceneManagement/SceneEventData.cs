@@ -1201,6 +1201,18 @@ namespace Unity.Netcode
         internal bool IsForwarding;
         private ulong m_OwnerId;
 
+        /// <summary>
+        /// Whether a migrated <see cref="NetworkObject"/> is sent to the target client: only when the target observes it.
+        /// </summary>
+        /// <remarks>
+        /// The CMB service keeps the session state, so its own copy includes every migrated NetworkObject.
+        /// A forwarded migration was already filtered by the owner that sent it.
+        /// </remarks>
+        private bool IsMigrationSentToTarget(NetworkObject networkObject)
+        {
+            return IsForwarding || (m_NetworkManager.CMBServiceConnection && TargetClientId == NetworkManager.ServerClientId) || networkObject.Observers.Contains(TargetClientId);
+        }
+
         private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)
         {
             var sceneManager = m_NetworkManager.SceneManager;
@@ -1224,17 +1236,35 @@ namespace Unity.Netcode
             {
                 // Since these are separated by scene then owner, there could be scenes that have
                 // no changes.
-                if (!sceneHandleObjects.Value.ContainsKey(networkManagerClientId))
+                if (!sceneHandleObjects.Value.TryGetValue(networkManagerClientId, out var migratedObjects))
                 {
                     continue;
                 }
+
+                // A client is only told about the objects it observes, since it has not spawned the others.
+                var objectCount = 0;
+                foreach (var networkObject in migratedObjects)
+                {
+                    if (IsMigrationSentToTarget(networkObject))
+                    {
+                        objectCount++;
+                    }
+                }
+                if (objectCount == 0)
+                {
+                    continue;
+                }
+
                 // Write the scene handle
                 writer.WriteValueSafe(sceneHandleObjects.Key);
                 // Write the number of NetworkObjectIds to expect
-                writer.WriteValueSafe(sceneHandleObjects.Value[networkManagerClientId].Count);
-                foreach (var networkObject in sceneHandleObjects.Value[networkManagerClientId])
+                writer.WriteValueSafe(objectCount);
+                foreach (var networkObject in migratedObjects)
                 {
-                    writer.WriteValueSafe(networkObject.NetworkObjectId);
+                    if (IsMigrationSentToTarget(networkObject))
+                    {
+                        writer.WriteValueSafe(networkObject.NetworkObjectId);
+                    }
                 }
                 entriesWritten++;
             }
