@@ -16,6 +16,10 @@ namespace Unity.Netcode
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
         private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
+        // The list as it was before the first local change that is still pending in m_DirtyEvents
+        private NativeList<T> m_LastSentList = new NativeList<T>(64, Allocator.Persistent);
+        private bool m_HasLastSentList;
+
         /// <summary>
         /// Delegate type for list changed event
         /// </summary>
@@ -67,6 +71,7 @@ namespace Unity.Netcode
             {
                 m_DirtyEvents.Clear();
             }
+            m_HasLastSentList = false;
         }
 
         /// <inheritdoc cref="NetworkVariable{T}.IsDirty"/>
@@ -149,10 +154,42 @@ namespace Unity.Netcode
         /// <inheritdoc cref="NetworkVariable{T}.WriteField"/>
         public override void WriteField(FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_List.Length);
-            for (int i = 0; i < m_List.Length; i++)
+            WriteList(writer, m_List);
+        }
+
+        internal override void WriteFieldSynchronization(FastBufferWriter writer)
+        {
+            // The pending events are sent to the synchronizing client with the next delta, so it must
+            // receive the list they apply to. Otherwise it would apply them twice.
+            if (m_HasLastSentList && m_DirtyEvents.Length > 0)
             {
-                NetworkVariableSerialization<T>.Serializer.Write(writer, ref m_List.ElementAt(i));
+                WriteList(writer, m_LastSentList);
+            }
+            else
+            {
+                base.WriteFieldSynchronization(writer);
+            }
+        }
+
+        private static void WriteList(FastBufferWriter writer, NativeList<T> list)
+        {
+            writer.WriteValueSafe((ushort)list.Length);
+            for (int i = 0; i < list.Length; i++)
+            {
+                NetworkVariableSerialization<T>.Serializer.Write(writer, ref list.ElementAt(i));
+            }
+        }
+
+        /// <summary>
+        /// Invoked before a local change. Keeps a copy of the list as of the last sent delta
+        /// so <see cref="WriteFieldSynchronization"/> can send it while changes are pending.
+        /// </summary>
+        private void CaptureLastSentList()
+        {
+            if (m_DirtyEvents.Length == 0)
+            {
+                m_LastSentList.CopyFrom(m_List);
+                m_HasLastSentList = true;
             }
         }
 
@@ -439,6 +476,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            CaptureLastSentList();
             m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -466,6 +504,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            CaptureLastSentList();
             m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
@@ -510,6 +549,7 @@ namespace Unity.Netcode
                 return false;
             }
 
+            CaptureLastSentList();
             m_List.RemoveAt(index);
             var listEvent = new NetworkListEvent<T>()
             {
@@ -553,6 +593,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            CaptureLastSentList();
             if (index < m_List.Length)
             {
                 m_List.InsertRangeWithBeginEnd(index, index + 1);
@@ -589,6 +630,7 @@ namespace Unity.Netcode
             }
 
             var value = m_List[index];
+            CaptureLastSentList();
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
@@ -631,6 +673,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            CaptureLastSentList();
             m_List[index] = value;
 
             var listEvent = new NetworkListEvent<T>()
@@ -704,6 +747,11 @@ namespace Unity.Netcode
             if (m_DirtyEvents.IsCreated)
             {
                 m_DirtyEvents.Dispose();
+            }
+
+            if (m_LastSentList.IsCreated)
+            {
+                m_LastSentList.Dispose();
             }
 
             base.Dispose();
