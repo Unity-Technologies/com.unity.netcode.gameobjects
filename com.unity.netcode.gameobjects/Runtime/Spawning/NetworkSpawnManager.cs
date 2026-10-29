@@ -1961,6 +1961,7 @@ namespace Unity.Netcode
                 // A NetworkHide leaves the ghost alive, so the instance waits for a later NetworkShow (removed again if N4E destroys it).
                 if (networkObject && NetworkManager.IsConnectedClient && !NetworkManager.ShutdownInProgress)
                 {
+                    networkObject.ResetIsDestroying();
                     GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObject.NetworkObjectId);
                 }
                 return;
