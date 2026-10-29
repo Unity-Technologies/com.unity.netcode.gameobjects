@@ -232,6 +232,11 @@ namespace Unity.Netcode
             var isSessionOwner = LocalClientId == sessionOwner;
             LocalClient.IsSessionOwner = isSessionOwner;
 
+            if (isSessionOwner && NetworkConfig.EnableSceneManagement)
+            {
+                SceneManager.InitializeScenesLoaded();
+            }
+
             foreach (var networkObject in SpawnManager.SpawnedObjects.Values)
             {
                 if (isSessionOwner)
@@ -1261,7 +1266,12 @@ namespace Unity.Netcode
             NetworkConfig.InitializePrefabs();
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
-                NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                // Reused so that restarting a session does not add another transport.
+                if (!TryGetComponent(out UnifiedNetcodeTransport unifiedTransport))
+                {
+                    unifiedTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                }
+                NetworkConfig.NetworkTransport = unifiedTransport;
             }
 #endif
 #if UNIFIED_NETCODE
@@ -1395,6 +1405,7 @@ namespace Unity.Netcode
             TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
             new UnifiedBootstrap().Initialize("Default World");
+            UnifiedBootstrap.CurrentNetworkManagerForInitialization = null;
 
             if (NetcodeWorld != null && NetcodeWorld.IsCreated)
             {
@@ -1434,6 +1445,11 @@ namespace Unity.Netcode
             if (HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
             {
                 Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
+            }
+
+            if (HybridNetcodeDefaults.ApplyManualStateReplication(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)}.{nameof(NetcodeConfig.AutomaticStateReplication)} has been disabled, as NGO puts connections in game once synchronized.").AddTag("Unified"));
             }
 
             if (NetworkConfig.AutoConfigureSnapshotSize && HybridNetcodeDefaults.ApplySnapshotPacketSize(NetcodeConfig.Global))

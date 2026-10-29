@@ -17,6 +17,9 @@ namespace Unity.Netcode.GameObjects.Editor
         public string NetworkTransport;
         public bool EnableSceneManagement;
         public int TickRate;
+        public bool HybridSession;
+        public int NgoSpawnCount;
+        public int HybridSpawnCount;
         public override string ToString()
         {
             var message = new StringBuilder();
@@ -28,6 +31,9 @@ namespace Unity.Netcode.GameObjects.Editor
             message.AppendLine($"{nameof(NetworkTransport)}: {NetworkTransport}");
             message.AppendLine($"{nameof(EnableSceneManagement)}: {EnableSceneManagement}");
             message.AppendLine($"{nameof(TickRate)}: {TickRate}");
+            message.AppendLine($"{nameof(HybridSession)}: {HybridSession}");
+            message.AppendLine($"{nameof(NgoSpawnCount)}: {NgoSpawnCount}");
+            message.AppendLine($"{nameof(HybridSpawnCount)}: {HybridSpawnCount}");
             return message.ToString();
         }
 
@@ -40,6 +46,7 @@ namespace Unity.Netcode.GameObjects.Editor
             return IsDistributedAuthority == other.IsDistributedAuthority && WasServer == other.WasServer && WasClient == other.WasClient
                 && UsedCMBService == other.UsedCMBService && IsUsingMultiplayerSDK == other.IsUsingMultiplayerSDK
                 && EnableSceneManagement == other.EnableSceneManagement && TickRate == other.TickRate
+                && NgoSpawnCount == other.NgoSpawnCount && HybridSpawnCount == other.HybridSpawnCount && HybridSession == other.HybridSession
                 && NetworkTransport.Equals(other.NetworkTransport);
         }
     }

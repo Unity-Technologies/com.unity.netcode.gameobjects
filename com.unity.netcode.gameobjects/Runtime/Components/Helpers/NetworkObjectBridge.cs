@@ -1,6 +1,9 @@
 #if UNIFIED_NETCODE
 using Unity.Mathematics;
 using Unity.Transforms;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -15,18 +18,6 @@ namespace Unity.Netcode
     internal partial class NetworkObjectBridge : GhostBehaviour
     {
 #if UNITY_EDITOR
-        private void Reset()
-        {
-            // Start users with just interpolation (they can adjust this if they want prediction)
-            // to make the initial transition less problematic for users.
-            // Only set when the bridge is first added, so a user's prediction setting is kept.
-            var ghostAdapter = GetComponent<GhostObject>();
-            if (ghostAdapter != null)
-            {
-                ghostAdapter.SupportedGhostModes = GhostModeMask.Interpolated;
-            }
-        }
-
         private void OnValidate()
         {
             hideFlags = HideFlags.HideInInspector;
@@ -37,26 +28,23 @@ namespace Unity.Netcode
                 return;
             }
 
-#if COM_UNITY_MODULES_PHYSICS
-            var rigidBody = GetComponent<Rigidbody>();
-            var ghostRigidBody = GetComponent<GhostRigidbody>();
-            if (rigidBody != null)
+            var networkObject = GetComponent<NetworkObject>();
+            if (networkObject == null)
             {
-                // This must be enabled when replicating the rigid body.
-
-                ghostAdapter.SingleWorldHostInterpolationSmoothing = SingleWorldHostInterpolationMode.Interpolate;
-                // TODO: Currently, this is added only if you enable replication of the rigid body.
-                // There is a bug where if you don't add this component it doesn't synchronize the transform.
-                // Remove this once the issue is resolved.
-                if (ghostRigidBody == null)
+                // Check again once the current operation finishes, since a script can add the bridge before the NetworkObject.
+                EditorApplication.delayCall += () =>
                 {
-                    gameObject.AddComponent<GhostRigidbody>();
-                }
+                    if (this != null && GetComponent<NetworkObject>() == null)
+                    {
+                        DestroyImmediate(this, true);
+                    }
+                };
             }
-#endif
-#if COM_UNITY_MODULES_PHYSICS2D
-            // TODO: Fill out a similar script as above but for the 2D version
-#endif
+            else
+            {
+                // NGO spawns the ghost when the NetworkObject spawns. This assures the ghost spawns in that NetworkManager's world.
+                ghostAdapter.DelaySpawning = true;
+            }
         }
 #endif
 
@@ -76,14 +64,9 @@ namespace Unity.Netcode
         /// instance's entity's PostTransformMatrix.</param>
         internal void HybridParentUpdate(Vector3 scale)
         {
-            var current = Ghost.GetPositionAndRotation();
+            //var current = Ghost.GetPositionAndRotation();
             //Debug.Log($"---- Current LT: {current.Position} | {current.Rotation.eulerAngles}");
             //Debug.Log($"---- New LT: {transform.localPosition} | {transform.localRotation}");
-            Ghost.ApplyPostTransformMatrixScale(scale);
-        }
-
-        internal void ApplyScale(Vector3 scale)
-        {
             Ghost.ApplyPostTransformMatrixScale(scale);
         }
 

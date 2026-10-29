@@ -14,6 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Validates the hybrid prefab registrations that are rejected:<br />
     /// - Any hybrid prefab in a distributed authority session. The start fails, and one added during the session is not registered.<br />
     /// - A hybrid prefab added during a session that started without hybrid prefabs. It is not registered.<br />
+    /// - A hybrid prefab instance spawned during a session that started without hybrid prefabs. It is not spawned.<br />
     /// - A hybrid player prefab counts toward hybrid mode before the session starts, so distributed authority rejects it.<br />
     /// - A NetworkPrefab override with a hybrid source or target prefab, in any topology. The entry is ignored.<br />
     /// </summary>
@@ -150,6 +151,29 @@ namespace Unity.Netcode.RuntimeTests
 
             networkManager.AddNetworkPrefab(m_HybridPrefab);
             Assert.IsTrue(prefabs.Contains(m_HybridPrefab), "The hybrid prefab was rejected after the session ended!");
+        }
+
+        /// <summary>
+        /// Validates that an unregistered hybrid prefab instance, for example one spawned through a prefab handler, is not spawned in a session that started without hybrid prefabs.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator HybridSpawnWithoutHybridPrefabsIsRejected()
+        {
+            var networkManager = CreateNetworkManager(NetworkTopologyTypes.ClientServer);
+            Assert.IsTrue(networkManager.StartHost(), "Failed to start the session!");
+
+            var instance = UnityEngine.Object.Instantiate(m_HybridPrefab).GetComponent<NetworkObject>();
+            instance.NetworkManagerOwner = networkManager;
+            LogAssert.Expect(LogType.Error, new Regex($"{Regex.Escape(NetworkPrefabs.HybridSpawnWithoutHybridPrefabsError)}.*{Regex.Escape(instance.name)}"));
+            instance.Spawn();
+            var isSpawned = instance.IsSpawned;
+            var isInSpawnedObjects = networkManager.SpawnManager.SpawnedObjectsList.Contains(instance);
+
+            // Destroyed prior to asserting, so a failed assert leaves no instance behind and an error logged by its destruction fails this test.
+            UnityEngine.Object.Destroy(instance.gameObject);
+            yield return null;
+            Assert.IsFalse(isSpawned, "The hybrid instance was spawned in a session that started without hybrid prefabs!");
+            Assert.IsFalse(isInSpawnedObjects, "The hybrid instance was added to the spawned objects!");
         }
 
         /// <summary>
