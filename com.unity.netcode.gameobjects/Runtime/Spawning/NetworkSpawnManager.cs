@@ -1958,7 +1958,11 @@ namespace Unity.Netcode
             // Unified netcode handles destroying the instance of the object on the non-authority side when the object has a ghost representation.
             if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
             {
-                // exit early
+                // A NetworkHide leaves the ghost alive, so the instance waits for a later NetworkShow (removed again if N4E destroys it).
+                if (networkObject && NetworkManager.IsConnectedClient && !NetworkManager.ShutdownInProgress)
+                {
+                    GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObject.NetworkObjectId);
+                }
                 return;
             }
 #endif
