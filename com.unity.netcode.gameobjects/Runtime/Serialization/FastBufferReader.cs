@@ -90,6 +90,16 @@ namespace Unity.Netcode
             return readerHandle;
         }
 
+        // A copy starts at offset, so -1 copies what follows it. Allocator.None keeps the whole source and starts reading at offset.
+        private static int ResolveLength(int length, int sourceLength, int offset, Allocator copyAllocator)
+        {
+            if (length != -1)
+            {
+                return length;
+            }
+            return copyAllocator == Allocator.None ? sourceLength : sourceLength - offset;
+        }
+
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
@@ -107,12 +117,12 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="buffer">The NativeArray to create the reader from</param>
         /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
-        /// <param name="length">The number of bytes to read from the buffer. If set to -1, the entire buffer length will be used</param>
+        /// <param name="length">The number of bytes to read from the buffer. If set to -1, every byte from offset to the end of the buffer will be used</param>
         /// <param name="offset">The offset into the buffer to start reading from</param>
         /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, copyAllocator, internalAllocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), ResolveLength(length, buffer.Length, offset, copyAllocator), offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
@@ -127,7 +137,7 @@ namespace Unity.Netcode
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
-        /// <param name="offset">The offset of the buffer to start copying from</param>
+        /// <param name="offset">The offset into the segment to start copying from</param>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0)
         {
             if (copyAllocator == Allocator.None)
@@ -136,7 +146,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, copyAllocator, Allocator.Temp);
+                Handle = CreateHandle(data + buffer.Offset, ResolveLength(length, buffer.Count, offset, copyAllocator), offset, copyAllocator, Allocator.Temp);
             }
         }
 
@@ -209,7 +219,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, copyAllocator, Allocator.Temp);
+                Handle = CreateHandle(data, ResolveLength(length, buffer.Length, offset, copyAllocator), offset, copyAllocator, Allocator.Temp);
             }
         }
 
@@ -260,7 +270,7 @@ namespace Unity.Netcode
         /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
         public unsafe FastBufferReader(FastBufferWriter writer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, copyAllocator, internalAllocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), ResolveLength(length, writer.Length, offset, copyAllocator), offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
@@ -285,7 +295,7 @@ namespace Unity.Netcode
         /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
         public unsafe FastBufferReader(FastBufferReader reader, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, copyAllocator, internalAllocator);
+            Handle = CreateHandle(reader.GetUnsafePtr(), ResolveLength(length, reader.Length, offset, copyAllocator), offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
