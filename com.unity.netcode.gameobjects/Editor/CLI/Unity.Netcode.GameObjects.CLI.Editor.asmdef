@@ -1,0 +1,29 @@
+{
+    "name": "Unity.Netcode.GameObjects.CLI.Editor",
+    "rootNamespace": "Unity.Netcode.GameObjects.Editor.Cli",
+    "references": [
+        "Unity.Pipeline",
+        "Unity.Pipeline.Attributes",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.GameObjects.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_PIPELINE_PACKAGE_AVAILABLE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.pipeline",
+            "expression": "0.9.0-exp.1",
+            "define": "UNITY_PIPELINE_PACKAGE_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}
