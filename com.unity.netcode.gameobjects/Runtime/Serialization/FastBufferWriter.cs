@@ -193,7 +193,7 @@ namespace Unity.Netcode
 
         internal unsafe void Grow(int additionalSizeRequired)
         {
-            var desiredSize = Handle->Capacity * 2;
+            var desiredSize = Math.Max(Handle->Capacity * 2, 1);
             while (desiredSize < Position + additionalSizeRequired)
             {
                 desiredSize *= 2;

@@ -179,6 +179,18 @@ namespace Unity.Netcode
 #if UNIFIED_NETCODE
                 // Mark this network prefab as having to be registered via the unified API
                 HasGhost = networkObject.HasGhost;
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                // With UserControlled physics, full tick smoothing holds a hybrid Rigidbody in place on the host.
+                var netcodeConfig = NetcodeConfig.Global;
+                if (HasGhost && netcodeConfig != null && netcodeConfig.PhysicsRunMode == PhysicGroupRunMode.UserControlled
+                    && networkObject.GhostObject.FullTickSmoothing != FullTickSmoothingMode.Disabled
+                    && networkObject.GetComponent<Components.NetworkRigidbodyBase>() != null)
+                {
+                    NetworkLog.LogWarning(new Logging.Context(LogLevel.Developer, $"Disabling full tick smoothing on {networkObject.name} because the {nameof(NetcodeConfig)} physics mode is {PhysicGroupRunMode.UserControlled}.").AddNetworkObject(networkObject));
+                    networkObject.GhostObject.FullTickSmoothing = FullTickSmoothingMode.Disabled;
+                }
+#endif
 #endif
                 if (networkObject.InScenePlaced)
                 {
