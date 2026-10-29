@@ -371,6 +371,19 @@ namespace Unity.Netcode.Transports.UTP
 #endif
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
+
+        /// <summary>The id <see cref="TransportInitialized"/> and <see cref="TransportDisposed"/> pass for this transport.</summary>
+        internal int TransportId
+        {
+            get
+            {
+#if UNITY_6000_2_OR_NEWER
+                return GetEntityId().GetHashCode();
+#else
+                return GetInstanceID();
+#endif
+            }
+        }
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnLoad()
@@ -461,12 +474,9 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 #if UNITY_6000_2_OR_NEWER
-            var entityId = GetEntityId();
-            OnDriverInitialized?.Invoke(entityId, m_Driver);
-            TransportInitialized?.Invoke(entityId.GetHashCode(), m_Driver);
-#else
-            TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
+            OnDriverInitialized?.Invoke(GetEntityId(), m_Driver);
 #endif
+            TransportInitialized?.Invoke(TransportId, m_Driver);
         }
 
         private void DisposeInternals()
@@ -484,12 +494,9 @@ namespace Unity.Netcode.Transports.UTP
             m_SendQueue.Clear();
 
 #if UNITY_6000_2_OR_NEWER
-            var entityId = GetEntityId();
-            OnDisposingDriver?.Invoke(entityId);
-            TransportDisposed?.Invoke(entityId.GetHashCode());
-#else
-            TransportDisposed?.Invoke(GetInstanceID());
+            OnDisposingDriver?.Invoke(GetEntityId());
 #endif
+            TransportDisposed?.Invoke(TransportId);
         }
 
         /// <summary>
