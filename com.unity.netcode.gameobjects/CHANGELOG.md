@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added Unity CLI commands (`netcode.gameobjects` groups) to set up NetworkManagers and network prefabs, start and stop sessions, inspect clients and spawned objects, spawn, despawn and change ownership, simulate network conditions and sample network traffic. They are available when the project has `com.unity.pipeline` 0.9.0-exp.1 or later. (#4210)
 - Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
 - Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
 
@@ -24,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4214)
 - Issue where `NetworkManager.OnNetCodeDisconnect` was not invoked when a connection closed during a hybrid mode session, only when the session shut down. (#4209)

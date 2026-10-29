@@ -51,6 +51,8 @@ When the network prefabs list contains a hybrid object, Unity Netcode drives the
 
 For more information about tick rates in Netcode for GameObjects, refer to [Ticks and update rates](learn/ticks-and-update-rates.md).
 
+The change in physics simulation rate is used to enable user prediction. If the change in physics simulation rate causes issues for your game, you can disable Unity Netcode driving the physics simulation by setting the **Physics Run Mode** on the `NetcodeConfig` asset to **User Controlled**. Note that under this configuration, client-side prediction will not work.
+
 ## Parent replication
 
 The **Parent Replication** setting on the **GhostObject** component controls which package synchronizes the parent GameObject of a hybrid object.
@@ -71,6 +73,9 @@ Hybrid objects have the following limitations:
 - Object pooling: Hybrid objects aren't compatible with `INetworkPrefabInstanceHandler`, so you can't use [object pooling](advanced-topics/object-pooling.md) with hybrid objects.
 - Client authority: Unity Netcode doesn't support the client authoritative motion model. You can convert a NetworkObject that uses an owner-authoritative NetworkTransform into a hybrid object, but the owner no longer controls its transform, because the NetworkTransform component stops synchronizing data. To move the converted object, use server-authoritative motion or prediction instead. `NetworkVariable`s on hybrid objects can still use owner write permissions.
 
+> [!NOTE]
+> Client-side prediction is not compatible with client authoritative physics. Unity Netcode leverages the physics simulation to minimize mis-predictions. This will result in faster than expected physics solving for all GameObjects whenever any GhostObject is being predicted.
+
 ## Create and remove hybrid objects
 
 To create a hybrid object, add the missing component to an existing network prefab:
@@ -85,6 +90,13 @@ To convert a hybrid object back into a prefab that uses only one package, remove
 
 > [!NOTE]
 > Unity might prevent you from removing a **GhostObject** or **NetworkObject** component while the GameObject has `GhostBehaviour` or `NetworkBehaviour` components that depend on it. Remove the dependent components first.
+
+## Mixed mode objects and physics
+
+To avoid visual anomalies, NGO automatically adjusts some Rigidbody settings based on the **Physics Run Mode** of the `NetcodeConfig` asset:
+
+- **Always Run**: In a session that has hybrid prefabs, non-hybrid NGO prefabs with a NetworkRigidbody and a 3D Rigidbody have the Rigidbody's **Interpolate** value set to **Extrapolate** on the authority instance and to **None** on all non-authority instances. The authority instance is the server or host for a server-authoritative NetworkTransform, or the owner for an owner-authoritative one. The value follows authority when ownership changes, and the original value is restored when the instance despawns.
+- **User Controlled**: Hybrid NGO prefabs with a NetworkRigidbody have **Full Tick Smoothing** set to **Disabled**.
 
 ## Additional resources
 

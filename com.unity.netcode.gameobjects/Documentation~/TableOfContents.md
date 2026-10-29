@@ -103,6 +103,7 @@
   * [Logging](basics/logging.md)
   * [Techniques and tricks for debugging multiplayer games](tutorials/testing/techniques_and_tricks_for_debugging_multiplayer_games.md)
   * [Command-line helper](tutorials/command-line-helper.md)
+  * [Unity CLI commands](unity-cli-commands.md)
   * [Troubleshooting](troubleshooting/troubleshooting.md)
   * [Error messages](troubleshooting/error-messages.md)
 * [FAQ](learn/faq.md)

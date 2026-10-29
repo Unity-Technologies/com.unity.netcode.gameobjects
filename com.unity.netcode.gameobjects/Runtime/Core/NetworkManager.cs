@@ -662,6 +662,12 @@ namespace Unity.Netcode
         public bool IsHost => ConnectionManager.LocalClient.IsHost;
 
         /// <summary>
+        /// The role this NetworkManager last started as. Unlike <see cref="IsServer"/> and <see cref="IsClient"/>, it
+        /// stays set after a shutdown, so editor tooling can tell a stopped host or server from a stopped client.
+        /// </summary>
+        internal (bool IsServer, bool IsClient) LastStartedRole { get; private set; }
+
+        /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
         /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
         /// </summary>
@@ -1476,6 +1482,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (true, false);
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
             try
@@ -1558,6 +1565,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (false, true);
 
             try
             {
@@ -1632,6 +1640,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (true, true);
 
             try
             {

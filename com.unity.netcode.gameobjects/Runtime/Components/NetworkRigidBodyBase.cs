@@ -298,6 +298,25 @@ namespace Unity.Netcode.Components
             return true;
         }
 
+        // Overrides the authored interpolation while spawned when the NetcodeConfig physics mode requires it.
+        private bool m_UsePhysicsModeInterpolation;
+
+        /// <summary>
+        /// Prevents the jitter an interpolated Rigidbody that is not a GhostObject shows in a hybrid session with <see cref="PhysicGroupRunMode.AlwaysRun"/>.
+        /// </summary>
+        private void SetPhysicsModeInterpolation()
+        {
+            var netcodeConfig = NetcodeConfig.Global;
+            m_UsePhysicsModeInterpolation = !m_IsRigidbody2D && m_LocalNetworkManager.NetworkConfig.Prefabs.HasGhostPrefabs
+                && netcodeConfig != null && netcodeConfig.PhysicsRunMode == PhysicGroupRunMode.AlwaysRun;
+        }
+
+        // The authority extrapolates and every other peer does not interpolate.
+        private void ApplyPhysicsModeInterpolation()
+        {
+            SetInterpolation(m_IsAuthority ? InterpolationTypes.Extrapolate : InterpolationTypes.None);
+        }
+
         /// <summary>
         /// Kinematic on every peer except the server. Called at spawn because an in-scene placed instance has no session during Awake.
         /// </summary>
@@ -956,6 +975,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+#if UNIFIED_NETCODE
+            if (m_UsePhysicsModeInterpolation)
+            {
+                ApplyPhysicsModeInterpolation();
+                return;
+            }
+#endif
+
             if (UseRigidBodyForMotion)
             {
                 // Exit early if the original interpolation type is not set to extrapolate or NetworkTransform interpolate is disabled
@@ -1103,6 +1130,12 @@ namespace Unity.Netcode.Components
             {
                 SetIsKinematic(!m_IsAuthority);
             }
+#if UNIFIED_NETCODE
+            else if (m_UsePhysicsModeInterpolation)
+            {
+                ApplyPhysicsModeInterpolation();
+            }
+#endif
         }
 
         internal override void InternalOnNetworkPreSpawn(ref NetworkManager networkManager)
@@ -1122,6 +1155,9 @@ namespace Unity.Netcode.Components
 #endif
             m_TickFrequency = 1.0f / m_LocalNetworkManager.NetworkConfig.TickRate;
             m_TickRate = m_LocalNetworkManager.NetworkConfig.TickRate;
+#if UNIFIED_NETCODE
+            SetPhysicsModeInterpolation();
+#endif
             UpdateOwnershipAuthority();
         }
 
