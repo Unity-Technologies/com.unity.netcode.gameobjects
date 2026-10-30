@@ -31,6 +31,13 @@ namespace TestProject.RuntimeTests
 
         }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
             return NetworkManagerInstatiationMode.DoNotCreate;

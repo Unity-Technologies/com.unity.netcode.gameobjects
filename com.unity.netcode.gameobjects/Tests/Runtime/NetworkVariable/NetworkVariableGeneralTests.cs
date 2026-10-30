@@ -13,9 +13,20 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkVariableGeneralTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private GameObject m_PrefabToSpawn;
         private GeneralNetVarTest m_AuthorityNetVarTest;

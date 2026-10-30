@@ -288,6 +288,13 @@ namespace Unity.Netcode
 
             if (m_IsDirty)
             {
+#if UNIFIED_NETCODE
+                // The implicit bool skips a destroyed behaviour, whose name the warning reads; ?. would not.
+                if (m_NetworkBehaviour)
+                {
+                    m_NetworkBehaviour.WarnIfNetworkVariableWrittenInPredictionLoop(Name);
+                }
+#endif
                 MarkNetworkBehaviourDirty();
             }
         }

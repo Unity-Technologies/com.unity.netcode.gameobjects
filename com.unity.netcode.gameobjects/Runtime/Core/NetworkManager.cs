@@ -6,15 +6,8 @@ using Unity.Collections;
 using Unity.Entities;
 // N4E's own Netcode class cannot be aliased as "Netcode": inside namespace Unity.Netcode that name
 // resolves to the enclosing Unity.Netcode namespace before any file-scope alias is considered, so it gets
-// its own name here. 6.7.0 additionally keeps the config and world types under the older Unity.NetCode
-// casing, aliased to the 7.0.0 spellings so the use sites below read the same either way.
-#if UNIFIED_NETCODE_7_0_0
+// its own name here.
 using EntitiesNetcode = Unity.Netcode.Netcode;
-#else
-using EntitiesNetcode = Unity.NetCode.Netcode;
-using NetcodeConfig = Unity.NetCode.NetCodeConfig;
-using NetcodeWorld = Unity.NetCode.NetcodeWorld;
-#endif
 #endif
 using Unity.Netcode.Components;
 using Unity.Netcode.GameObjects.Timing;
@@ -25,7 +18,7 @@ using Unity.Netcode.Runtime;
 // - TestProject has been updated to include N4E.
 // - TestProject and Runtime tests have been updated to use UnifiedHost.
 // Remove the conditional compilation and just use the namespace.
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
 using Unity.Netcode.Unified;
 #endif
 using UnityEngine;
@@ -238,6 +231,11 @@ namespace Unity.Netcode
             CurrentSessionOwner = sessionOwner;
             var isSessionOwner = LocalClientId == sessionOwner;
             LocalClient.IsSessionOwner = isSessionOwner;
+
+            if (isSessionOwner && NetworkConfig.EnableSceneManagement)
+            {
+                SceneManager.InitializeScenesLoaded();
+            }
 
             foreach (var networkObject in SpawnManager.SpawnedObjects.Values)
             {
@@ -669,6 +667,12 @@ namespace Unity.Netcode
         /// Gets if we are running as host
         /// </summary>
         public bool IsHost => ConnectionManager.LocalClient.IsHost;
+
+        /// <summary>
+        /// The role this NetworkManager last started as. Unlike <see cref="IsServer"/> and <see cref="IsClient"/>, it
+        /// stays set after a shutdown, so editor tooling can tell a stopped host or server from a stopped client.
+        /// </summary>
+        internal (bool IsServer, bool IsClient) LastStartedRole { get; private set; }
 
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
@@ -1270,7 +1274,7 @@ namespace Unity.Netcode
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
-#if UNIFIED_NETCODE && OUT_OF_BAND_RPC
+#if UNIFIED_NETCODE
             // TODO-FixMe:
             // We assign transport at this point to preceed the NetworkConnectionManager
             // being initialized. However, HasGhostPrefabs might not be set at this point
@@ -1282,8 +1286,16 @@ namespace Unity.Netcode
             NetworkConfig.InitializePrefabs();
             if (NetworkConfig.Prefabs.HasGhostPrefabs)
             {
-                NetworkConfig.NetworkTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                // Reused so that restarting a session does not add another transport.
+                if (!TryGetComponent(out UnifiedNetcodeTransport unifiedTransport))
+                {
+                    unifiedTransport = gameObject.AddComponent<UnifiedNetcodeTransport>();
+                }
+                NetworkConfig.NetworkTransport = unifiedTransport;
             }
+#endif
+#if UNIFIED_NETCODE
+            NetworkConfig.Prefabs.OnSessionStarting(DistributedAuthorityMode);
 #endif
 
             MetricsManager.Initialize(this);
@@ -1378,6 +1390,12 @@ namespace Unity.Netcode
                 }
             }
 
+#if UNIFIED_NETCODE
+            if (!NetworkConfig.InitializePrefabsForStart(PrefabHandler))
+            {
+                return false;
+            }
+#endif
             return true;
         }
 
@@ -1404,10 +1422,16 @@ namespace Unity.Netcode
                 EntitiesNetcode.Reset();
             }
 
-            /// !! Initialize worlds here !!
-            /// Worlds are created here: <see cref="UnifiedBootStrap.Initialize"/>
+            TypeManager.Initialize();
             UnifiedBootstrap.CurrentNetworkManagerForInitialization = this;
-            DefaultWorldInitialization.Initialize("Default World", false);
+            new UnifiedBootstrap().Initialize("Default World");
+            UnifiedBootstrap.CurrentNetworkManagerForInitialization = null;
+
+            if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+            {
+                var entityManager = NetcodeWorld.EntityManager;
+                entityManager.AddComponentData(entityManager.CreateEntity(), new HybridNetworkManager { NetworkManager = this });
+            }
         }
 
         /// <summary>
@@ -1421,12 +1445,37 @@ namespace Unity.Netcode
                 Log.Error(new Context(LogLevel.Error, $"You must create a {nameof(NetcodeConfig)} and set it to a single world in order to run in hybrid mode!").AddTag("Unified"));
                 return false;
             }
-            if (NetcodeConfig.Global.HostWorldModeSelection != NetcodeConfig.HostWorldMode.SingleWorld)
+            if (HybridNetcodeDefaults.IsMissingRequired(NetcodeConfig.Global, out var reason))
             {
-                Log.Error(new Context(LogLevel.Error, $"You must configure {nameof(NetcodeConfig)} to only use a single world in order to run in hybrid mode!").AddTag("Unified"));
+                Log.Error(new Context(LogLevel.Error, $"The {nameof(NetcodeConfig)} cannot be used in hybrid mode: {reason}.").AddTag("Unified"));
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Invoked before creating the world for a hybrid mode session to assure the required NetcodeConfig settings are applied.
+        /// </summary>
+        /// <remarks>
+        /// Netcode for Entities copies the config into its world singletons once, at world creation, so this is the
+        /// point where it takes effect. This occurs during runtime to avoid modification of the NetcodeConfig asset.
+        /// </remarks>
+        private void UnifiedApplyNetcodeConfig()
+        {
+            if (HybridNetcodeDefaults.ApplyTickRate(NetcodeConfig.Global, NetworkConfig.TickRate))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} tick rates have been set to {nameof(NetworkConfig)}.{nameof(NetworkConfig.TickRate)} ({NetworkConfig.TickRate}).").AddTag("Unified"));
+            }
+
+            if (HybridNetcodeDefaults.ApplyManualStateReplication(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)}.{nameof(NetcodeConfig.AutomaticStateReplication)} has been disabled, as NGO puts connections in game once synchronized.").AddTag("Unified"));
+            }
+
+            if (NetworkConfig.AutoConfigureSnapshotSize && HybridNetcodeDefaults.ApplySnapshotPacketSize(NetcodeConfig.Global))
+            {
+                Log.Info(new Context(LogLevel.Developer, $"The {nameof(NetcodeConfig)} snapshot packet size has been set to {HybridNetcodeDefaults.SnapshotPacketSize}. Disable {nameof(NetworkConfig)}.{nameof(NetworkConfig.AutoConfigureSnapshotSize)} to manage it yourself.").AddTag("Unified"));
+            }
         }
 #endif
 
@@ -1447,6 +1496,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (true, false);
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
             try
@@ -1471,6 +1521,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 if (LogLevel <= LogLevel.Developer)
                 {
                     Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
@@ -1538,6 +1589,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (false, true);
 
             try
             {
@@ -1560,6 +1612,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
@@ -1621,6 +1674,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            LastStartedRole = (true, true);
 
             try
             {
@@ -1644,6 +1698,7 @@ namespace Unity.Netcode
                     ShutdownInternal();
                     return false;
                 }
+                UnifiedApplyNetcodeConfig();
                 Log.Info(new Context(LogLevel.Developer, "Creating world: Default world"));
                 InitializeNetcodeWorld();
             }
@@ -1869,8 +1924,11 @@ namespace Unity.Netcode
             {
                 try
                 {
-                    // Dispose of all worlds
-                    World.DisposeAllWorlds();
+                    // Dispose only this NetworkManager's world. Other NetworkManagers in the same process keep theirs.
+                    if (NetcodeWorld != null && NetcodeWorld.IsCreated)
+                    {
+                        NetcodeWorld.Dispose();
+                    }
                     // Clear the world assigned from previous session
                     NetcodeWorld = null;
                 }

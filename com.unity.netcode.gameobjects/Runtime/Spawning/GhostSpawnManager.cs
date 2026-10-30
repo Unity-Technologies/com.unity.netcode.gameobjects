@@ -115,7 +115,11 @@ namespace Unity.Netcode
 
             // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
             // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            // A child kept alive by its ghost (NetworkHide) is still parented and stays in its parent's scene.
+            if (networkObject.transform.parent == null)
+            {
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            }
             return true;
         }
 
@@ -145,6 +149,12 @@ namespace Unity.Netcode
                 m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(serializedObject.NetworkSceneHandle);
             }
             var networkObject = NetworkObject.DeserializeAndSpawnObject(serializedObject, reader, m_NetworkManager);
+
+            // The synchronization moved the other NetworkObjects into their server-side scenes before this one spawned
+            if (networkObject != null)
+            {
+                m_NetworkManager.SceneManager.SynchronizeNetworkObjectScene(networkObject);
+            }
 
             // TODO-UNIFIED: How do we handle the "all in-scene placed objects are spawned notification"?
             //if (serializedObject.IsSceneObject)
@@ -182,13 +192,13 @@ namespace Unity.Netcode
                     m_GhostSynchronizationPendingRemoval.Add(networkObjectId);
                 }
                 else
-                if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
-                {
-                    m_Log.Info(new Context(LogLevel.Developer, $"Registering {nameof(NetworkObject.SerializedObject)} for pending synchronization").AddInfo(nameof(NetworkObject.NetworkObjectId), networkObjectId));
+                    if ((ghost.Value.RegistrationTime + spawnTimeout) < Time.realtimeSinceStartup)
+                    {
+                        m_Log.Info(new Context(LogLevel.Developer, $"Registering {nameof(NetworkObject.SerializedObject)} for pending synchronization").AddInfo(nameof(NetworkObject.NetworkObjectId), networkObjectId));
 
-                    // Timed out entries are removed too
-                    m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
-                }
+                        // Timed out entries are removed too
+                        m_GhostSynchronizationPendingRemoval.Add(ghost.Key);
+                    }
             }
 
             foreach (var networkObjectId in m_GhostSynchronizationPendingRemoval)

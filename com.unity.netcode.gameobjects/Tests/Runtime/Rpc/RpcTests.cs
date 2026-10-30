@@ -9,8 +9,21 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class RpcTests : NetcodeIntegrationTest
     {
+        public RpcTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         internal class CompileTimeNoRpcsBaseClassTest : NetworkBehaviour
         {
 

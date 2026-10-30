@@ -145,7 +145,13 @@ run_all_project_tests_desktop_standalone:
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -156,10 +162,17 @@ run_all_project_tests_desktop_standalone:
 run_all_project_tests_desktop_standalone_{{ validation_editors.latest }}:
   name: Run All Standalone Tests - Desktop [{{ validation_editors.latest }} only]
   dependencies:
+{% assign editor = validation_editors.latest.first -%}
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for backend in scripting_backends -%}
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.latest }}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -168,10 +181,17 @@ run_all_project_tests_desktop_standalone_{{ validation_editors.latest }}:
 run_all_project_tests_desktop_standalone_{{ validation_editors.minimal }}:
   name: Run All Standalone Tests - Desktop [{{ validation_editors.minimal }}]
   dependencies:
+{% assign editor = validation_editors.minimal.first -%}
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for backend in scripting_backends -%}
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.minimal }}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -253,7 +273,13 @@ run_all_project_tests_cmb_service:
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -263,10 +289,17 @@ run_all_project_tests_cmb_service:
 run_all_project_tests_cmb_service_{{ validation_editors.latest }}:
   name: Run All CMB Service Tests [{{ validation_editors.latest }} only]
   dependencies:
+{% assign editor = validation_editors.latest.first -%}
 {% for project in projects.default -%}
 {% for platform in test_platforms.default -%}
 {% for backend in scripting_backends -%}
-    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.latest }}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
+    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -275,10 +308,17 @@ run_all_project_tests_cmb_service_{{ validation_editors.latest }}:
 run_all_project_tests_cmb_service_{{ validation_editors.minimal }}:
   name: Run All CMB Service Tests [{{ validation_editors.minimal }}]
   dependencies:
+{% assign editor = validation_editors.minimal.first -%}
 {% for project in projects.default -%}
 {% for platform in test_platforms.default -%}
 {% for backend in scripting_backends -%}
-    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ validation_editors.minimal }}
+{% assign supported = true -%}
+{% if backend == "mono" -%}{% unless mono_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless coreclr_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if backend == "coreclr" -%}{% unless platform.coreclr_component or coreclr_runtime_editors contains editor %}{% assign supported = false %}{% endunless -%}{% endif -%}
+{% if supported -%}
+    - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

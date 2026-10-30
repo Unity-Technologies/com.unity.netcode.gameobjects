@@ -10,9 +10,20 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class PlayerSpawnObjectVisibilityTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         public enum PlayerSpawnStages
         {

@@ -93,6 +93,13 @@ namespace TestProject.RuntimeTests
 
         public RpcUserSerializableTypesTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
             return NetworkManagerInstatiationMode.DoNotCreate;

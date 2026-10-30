@@ -14,12 +14,20 @@ using Vector4 = UnityEngine.Vector4;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class RpcTypeSerializationTests : NetcodeIntegrationTest
     {
-        public RpcTypeSerializationTests()
+        public RpcTypeSerializationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
         {
-            m_UseHost = false;
+            return true;
         }
+#endif
 
         internal class RpcTestNB : NetworkBehaviour
         {

@@ -1,12 +1,4 @@
 using System.Collections.Generic;
-#if UNIFIED_NETCODE
-#if UNIFIED_NETCODE_7_0_0
-using Unity.Netcode.Editor;
-#else
-using Unity.NetCode;
-using Unity.NetCode.Editor;
-#endif
-#endif
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -29,34 +21,6 @@ namespace Unity.Netcode.GameObjects.Editor
         private bool m_ShowObservers;
 
         private static readonly string[] k_HiddenFields = { "m_Script" };
-
-#if UNIFIED_NETCODE
-        /// <summary>
-        /// Register for the GhostObject removal event.
-        /// </summary>
-        [InitializeOnLoadMethod]
-        private static void OnApplicationStart()
-        {
-            GhostObjectEditor.OnGhostObjectPreRemoval = OnGhostObjectPreRemoval;
-        }
-
-        /// <summary>
-        /// Callback to remove the GhostBehaviours prior to removing GhostObject.
-        /// </summary>
-        /// <param name="gameObject">The <see cref="GameObject"/> with the <see cref="GhostObject"/> component being removed.</param>
-        private static void OnGhostObjectPreRemoval(GameObject gameObject)
-        {
-            var ghostBehaviours = gameObject.GetComponentsInChildren<GhostBehaviour>();
-            for (int i = ghostBehaviours.Length - 1; i >= 0; i--)
-            {
-                DestroyImmediate(ghostBehaviours[i], true);
-            }
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-            networkObject.GhostObject = null;
-            networkObject.HasGhost = false;
-            networkObject.HadBridge = true;
-        }
-#endif
 
         private void Initialize()
         {

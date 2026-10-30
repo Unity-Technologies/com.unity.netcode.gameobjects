@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
-#if !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
-using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
@@ -29,44 +25,65 @@ namespace Unity.Netcode.Components
         }
     }
 
+    /// <summary>
+    /// This is used to track the <see cref="NetworkManager"/>, as a singleton, when running a hybrid session.
+    /// </summary>
+    internal struct HybridNetworkManager : IComponentData
+    {
+        public UnityObjectRef<NetworkManager> NetworkManager;
+    }
+
+    // Only exists in client and server worlds, and only updates in a world created for a hybrid session.
+    [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation)]
     internal partial class UnifiedUpdateConnections : SystemBase
     {
         private List<NetcodeConnection> m_TempConnections = new List<NetcodeConnection>();
 
         private Dictionary<int, NetcodeConnection> m_NewConnections = new Dictionary<int, NetcodeConnection>();
 
+        private EntityQuery m_HybridNetworkManagerQuery;
+
+        protected override void OnCreate()
+        {
+            m_HybridNetworkManagerQuery = GetEntityQuery(ComponentType.ReadOnly<HybridNetworkManager>());
+            RequireForUpdate(m_HybridNetworkManagerQuery);
+        }
+
         protected override void OnUpdate()
         {
-            var isServer = World.IsServer();
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var networkManager in Object.FindObjectsByType<NetworkManager>())
+            var networkManager = m_HybridNetworkManagerQuery.GetSingleton<HybridNetworkManager>().NetworkManager.Value;
+            // A missing NetworkManager counts as shutting down: the world outlives it if ShutdownInternal throws before disposing the world.
+            var isShuttingDown = !networkManager || networkManager.ShutdownInProgress || !networkManager.IsListening;
+            // A destroyed connection keeps only its cleanup components, so the NetworkId comes from ConnectionState.
+            foreach (var (connectionState, entity) in SystemAPI.Query<ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
             {
-                foreach (var (networkId, connectionState, entity) in SystemAPI.Query<NetworkId, ConnectionState>().WithNone<NetworkStreamConnection>().WithEntityAccess())
+                commandBuffer.RemoveComponent<ConnectionState>(entity);
+                m_TempConnections.Add(new NetcodeConnection
                 {
-                    commandBuffer.RemoveComponent<ConnectionState>(entity);
-                    m_TempConnections.Add(new NetcodeConnection
-                    {
-                        World = World,
-                        Entity = entity,
-                        NetworkId = networkId.Value
-                    });
-                }
+                    World = World,
+                    Entity = entity,
+                    NetworkId = connectionState.NetworkId
+                });
+            }
 
-                foreach (var con in m_TempConnections)
+            foreach (var con in m_TempConnections)
+            {
+                try
                 {
-                    try
-                    {
-                        NetworkManager.OnNetCodeDisconnect?.Invoke(con);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogException(ex);
-                    }
+                    NetworkManager.OnNetCodeDisconnect?.Invoke(con);
                 }
+                catch (System.Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
 
-                m_TempConnections.Clear();
+            m_TempConnections.Clear();
 
-                // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
+            // TODO: We should figure out how to associate the N4E NetworkId with the NGO ClientId
+            if (!isShuttingDown)
+            {
                 foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<NetworkStreamConnection>()
                              .WithNone<NetworkStreamInGame>().WithEntityAccess())
                 {
@@ -77,58 +94,56 @@ namespace Unity.Netcode.Components
                         m_NewConnections.Add(networkId.Value, newConnection);
                     }
                 }
+            }
 
-                // If we have any pending connections
-                if (m_NewConnections.Count > 0)
+            // If we have any pending connections
+            if (!isShuttingDown && m_NewConnections.Count > 0)
+            {
+                foreach (var entry in m_NewConnections)
                 {
-                    foreach (var entry in m_NewConnections)
+                    // Server: always connect
+                    // Client: wait until we have synchronized before announcing we are ready to receive snapshots
+                    if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
                     {
-                        // Server: always connect
-                        // Client: wait until we have synchronized before announcing we are ready to receive snapshots
-                        if (networkManager.IsServer || (!networkManager.IsServer && networkManager.IsConnectedClient))
-                        {
-                            // Set the connection in-game
-                            commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
-                            commandBuffer.AddComponent(entry.Value.Entity, default(ConnectionState));
-
-                            try
-                            {
-                                NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
-                            }
-                            catch (System.Exception ex)
-                            {
-                                Debug.LogException(ex);
-                            }
-                            m_TempConnections.Add(entry.Value);
-                        }
-                    }
-
-                    // Remove any connections that have "gone in-game".
-                    foreach (var connection in m_TempConnections)
-                    {
-                        m_NewConnections.Remove(connection.NetworkId);
-                    }
-                }
-
-                m_TempConnections.Clear();
-
-                // If the local NetworkManager is shutting down or no longer connected, then
-                // make sure we have disconnected all known connections.
-                if (networkManager.ShutdownInProgress || !networkManager.IsListening)
-                {
-                    foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
-                    {
-                        commandBuffer.RemoveComponent<ConnectionState>(entity);
-
+                        // Set the connection in-game
+                        commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
+                        commandBuffer.AddComponent(entry.Value.Entity, new ConnectionState { NetworkId = entry.Value.NetworkId });
                         try
                         {
-                            NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
-                            { World = World, Entity = entity, NetworkId = networkId.Value });
+                            NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
                         }
                         catch (System.Exception ex)
                         {
                             Debug.LogException(ex);
                         }
+                        m_TempConnections.Add(entry.Value);
+                    }
+                }
+
+                // Remove any connections that have "gone in-game".
+                foreach (var connection in m_TempConnections)
+                {
+                    m_NewConnections.Remove(connection.NetworkId);
+                }
+            }
+
+            m_TempConnections.Clear();
+
+            // If the local NetworkManager is shutting down or no longer connected, then
+            // make sure we have disconnected all known connections.
+            if (isShuttingDown)
+            {
+                // Only in-game connections have ConnectionState, and removing it here means each one is only reported once.
+                foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<ConnectionState>().WithEntityAccess())
+                {
+                    commandBuffer.RemoveComponent<ConnectionState>(entity);
+                    try
+                    {
+                        NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogException(ex);
                     }
                 }
             }

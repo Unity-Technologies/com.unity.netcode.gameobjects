@@ -14,7 +14,8 @@
     # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
     # model --> Defines specific hardware model requirements (e.g., iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
     # base --> Indicates the base operating system for build operations (e.g., win, mac)
-    # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
+    # architecture --> CPU architecture of the agent, i.e. of the Editor installed by unity-downloader-cli (e.g., x64, arm64). Every test_platforms entry defines it
+    # target_architecture --> Player ABI, only defined where it differs from the agent architecture (e.g., armv7 for Android)
 
 
 # SMALL AGENT CONFIGURATION---------------------------------------------------------------------------------------------------
@@ -42,6 +43,8 @@ test_platforms:
           image: package-ci/ubuntu-22.04:v4.87.0
           flavor: b1.large
           standalone: StandaloneLinux64
+          architecture: x64
+          # no coreclr_component: unity-downloader-cli has no Linux CoreCLR player for 6000.7, so those coreclr jobs are skipped
     desktop:
         - name: ubuntu
           type: Unity::VM
@@ -50,6 +53,8 @@ test_platforms:
           smaller_flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: StandaloneLinux64
+          architecture: x64
+          # no coreclr_component: unity-downloader-cli has no Linux CoreCLR player for 6000.7, so those coreclr jobs are skipped
         - name: win
           type: Unity::VM
           image: package-ci/win10:v4
@@ -57,6 +62,8 @@ test_platforms:
           smaller_flavor: b1.medium
           larger_flavor: b1.xlarge
           standalone: StandaloneWindows64
+          architecture: x64
+          coreclr_component: windows-coreclr # This component is only needed for 6000.7 editor where CoreCLR is not yet the default
         - name: mac
           type: Unity::VM::osx
           image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
@@ -65,6 +72,8 @@ test_platforms:
           smaller_flavor: m1.mac
           larger_flavor: m1.mac
           standalone: StandaloneOSX
+          architecture: arm64
+          coreclr_component: mac-coreclr # This component is only needed for 6000.7 editor where CoreCLR is not yet the default
           model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
     # TODO: For android we could consider adding ARM64 configuration
@@ -76,7 +85,8 @@ test_platforms:
           larger_flavor: b1.xlarge
           standalone: Android
           base: win
-          architecture: armv7
+          architecture: x64
+          target_architecture: armv7
         # iOS modern builds are ARM64-only, thus no testing with armv7
         - name: ios-arm64
           type: Unity::VM::osx
@@ -85,7 +95,8 @@ test_platforms:
           larger_flavor: m1.mac
           standalone: IOS
           base: mac
-          architecture: arm64
+          architecture: x64 # package-ci/macos-13:v4 without a model is an Intel VM
+          target_architecture: arm64
     mobile_test:
         - name: android
           type: Unity::mobile::shield
@@ -94,7 +105,8 @@ test_platforms:
           larger_flavor: b1.xlarge
           standalone: Android
           base: win
-          architecture: armv7
+          architecture: x64
+          target_architecture: armv7
         - name: ios-arm64
           type: Unity::mobile::iPhone
           image: package-ci/macos-13-arm64:v4
@@ -104,6 +116,7 @@ test_platforms:
           standalone: IOS
           base: mac
           architecture: arm64
+          target_architecture: arm64
     console_build:
         - name: ps4
           type: Unity::VM
@@ -111,6 +124,7 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
+          architecture: x64
         # ps5: win10-ps5:v4 defaults SCE_PROSPERO_SDK_DIR to an unsupported SDK, so it is overridden to 13.000 in console-standalone-test.yml.
         - name: ps5
           type: Unity::VM
@@ -118,6 +132,7 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
+          architecture: x64
         # switch --> DISABLED. SEE MTT-15636 (split from MTT-12118). 6000.x/trunk editors mandate NintendoSDK 22.2.x, but package-ci/win10-switch:v4 currently ships only nintendosdk-en-21_4_0. That fixes texture packaging but the native IL2CPP link then fails (undefined symbol std::__1::__hash_memory, from the 22_02 SwitchPlayer.a). Re-enable once PETS publishes a win10-switch image with nintendosdk-en-22_2_x.
         # - name: switch
         #   type: Unity::VM
@@ -125,18 +140,21 @@ test_platforms:
         #   flavor: b1.large
         #   larger_flavor: b1.xlarge
         #   standalone: Switch
+        #   architecture: x64
         - name: GameCoreXboxOne
           type: Unity::VM
           image: package-ci/win10-xbox:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: GameCoreXboxOne
+          architecture: x64
         - name: GameCoreScarlett
           type: Unity::VM
           image: package-ci/win10-xbox:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: GameCoreScarlett
+          architecture: x64
     console_test:
         - name: ps4
           type: Unity::console::ps4
@@ -144,12 +162,14 @@ test_platforms:
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS4
+          architecture: x64
         - name: ps5
           type: Unity::console::ps5
           image: package-ci/win10-ps5:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: PS5
+          architecture: x64
         # switch --> DISABLED. SEE MTT-15636 (needs NintendoSDK 22.2.x on the image; see console_build note).
         # - name: switch
         #   type: Unity::console::switch
@@ -158,18 +178,21 @@ test_platforms:
         #   larger_flavor: b1.xlarge
         #   standalone: Switch
         #   base: win
+        #   architecture: x64
         - name: GameCoreXboxOne
           type: Unity::console::xbox
           image: package-ci/win10-xbox:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: GameCoreXboxOne
+          architecture: x64
         - name: GameCoreScarlett
           type: Unity::console::scarlett
           image: package-ci/win10-xbox:v4
           flavor: b1.large
           larger_flavor: b1.xlarge
           standalone: GameCoreScarlett
+          architecture: x64
 
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv3.X official support started from 6000.7.0b1 editor
@@ -185,11 +208,11 @@ validation_editors:
         - trunk
     all:
         - 6000.7
-        - dfdad7ed5522da345003b66ed78dc5e725357037
+        - d10b18af948ab4eec1d5a72341d5243157a0dd72
         - trunk
     standards:
         - 6000.7.0b1
-    pinnedTrunk:  dfdad7ed5522da345003b66ed78dc5e725357037
+    pinnedTrunk:  d10b18af948ab4eec1d5a72341d5243157a0dd72
 
 
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
@@ -197,6 +220,22 @@ validation_editors:
 scripting_backends:
   - mono
   - il2cpp
+  - coreclr
+
+# Editors whose players still support Mono (removed in trunk / 7.0)
+mono_editors:
+  - 6000.7
+
+# Editors whose desktop players support CoreCLR (experimental in 6000.7)
+coreclr_editors:
+  - 6000.7
+  - d10b18af948ab4eec1d5a72341d5243157a0dd72
+  - trunk
+
+# Editors that themselves run on CoreCLR instead of Mono, so editor and in-editor playmode tests run on CoreCLR
+coreclr_runtime_editors:
+  - d10b18af948ab4eec1d5a72341d5243157a0dd72
+  - trunk
 
 
 # PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------

@@ -5,20 +5,47 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+#if UNITY_7000_0_OR_NEWER
+using UnityEditor.Build.Content;
+#endif
+
 namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
-    /// A <see cref="IProcessSceneWithReport"/> that sets the <see cref
+    /// A build scene callback that sets the <see cref
     /// "NetworkObject.InScenePlaced"/> property to true for all <see cref="NetworkObject"/>s in the scene.
     /// Ensures that InScenePlaced is always true for all objects in the scene.
     /// </summary>
     /// <remarks>
-    /// This will always run as the game enters the scene,
+    /// This will always run as a scene is loaded in playmode or while processed for a player build.
     /// </remarks>
+#if UNITY_7000_0_OR_NEWER
+    internal class SetInScenePlaced : AssetPostprocessor
+    {
+        public override uint GetVersion() => 1;
+
+        public override int GetPostprocessOrder() => 0;
+
+        void OnProcessScene(Scene scene, SceneImportContext sceneImportContext)
+        {
+            InScenePlaceChecks.ReportSceneIssues(scene, sceneImportContext.awakeDidRun);
+        }
+    }
+#else
     internal class SetInScenePlaced : IProcessSceneWithReport
     {
         public int callbackOrder => 0;
+
         public void OnProcessScene(Scene scene, BuildReport report)
+        {
+            InScenePlaceChecks.ReportSceneIssues(scene, Application.isPlaying);
+        }
+    }
+#endif
+
+    internal static class InScenePlaceChecks
+    {
+        public static void ReportSceneIssues(Scene scene, bool hasAwakeRun)
         {
             var log = new ContextualLogger();
             log.AddInfo(scene.name, scene.handle);
@@ -42,15 +69,15 @@ namespace Unity.Netcode.GameObjects.Editor
                     continue;
                 }
 
-                // If already marked, the do nothing.
+                // If already marked, do nothing.
                 if (networkObject.InScenePlaced)
                 {
                     continue;
                 }
 
                 networkObject.InScenePlaced = true;
-                // Will not be true when making a build and the values are serialized.
-                networkObject.InScenePlacedPostProcessorMarkedDuringRuntime = Application.isPlaying;
+                // Mark that awake has run so this could have been a dynamically instantiated object.
+                networkObject.InScenePlacedPostProcessorMarkedDuringRuntime = hasAwakeRun;
             }
         }
     }

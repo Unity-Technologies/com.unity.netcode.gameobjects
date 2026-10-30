@@ -23,6 +23,13 @@ namespace TestProject.RuntimeTests
 
         public SenderIdTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
         {
@@ -113,6 +120,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenClientDisconnectsFromServer_ClientIdIsCorrect()
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("A client shutting down disposes every world in the process when hybrid prefabs are registered.");
+            }
+#endif
             m_ClientsDisconnected.Clear();
             m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
             m_ClientToValidateDisconnected = m_ClientNetworkManagers[0].LocalClientId;

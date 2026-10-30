@@ -1106,7 +1106,6 @@ namespace Unity.Netcode
                 if (NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost)
                 {
                     NetworkManager.SetSessionOwner(NetworkManager.LocalClientId);
-                    NetworkManager.SceneManager.InitializeScenesLoaded();
                 }
 
                 if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)

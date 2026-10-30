@@ -82,3 +82,8 @@ InitTestScene*
 boot.config
 SceneTemplateSettings.json
 *BurstAotSettings*.json
+
+# Created by Netcode for Entities on first open. NGO applies the values it needs at runtime.
+/[Aa]ssets/[Nn]et[Cc]ode[Cc]onfig*.asset
+/[Aa]ssets/[Nn]et[Cc]ode[Cc]onfig*.asset.meta
+/[Pp]roject[Ss]ettings/[Nn]et[Cc]ode[Cc]lient[Aa]nd[Ss]erver[Ss]ettings.asset

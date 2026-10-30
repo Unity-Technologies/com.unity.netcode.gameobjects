@@ -10,10 +10,7 @@
     # 2. For all unified editors (currently a single pinned alpha, see project.metafile)
 
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # TODO: N4E is now a hard dependency, so the manifest swap only pins the N4E version and the two
-  #       manifests can be collapsed into one.
-  # This job is deliberately not part of the PR checks: N4E 7.0.0 ships the unified API behind its own
-  #       experimental define, so nothing in the shipping configuration compiles it.
+  # testproject takes N4E from unity/unity trunk, so this job can break on N4E changes made outside NGO.
 
 #------------------------------------------------------------------------------------
 
@@ -37,17 +34,25 @@ unified_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNIFIED_TESTS: "true"
 
   commands:
-    # Swap in the manifest that pins the N4E version the unified API is written against.
-    - cp {{ project.path }}/Packages/manifest-unified.json {{ project.path }}/Packages/manifest.json
-    # Turn the unified API on. UNIFIED_NETCODE is opt-in, and N4E keeps its GameObject bridge internal
-    # until NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL is defined, so both are needed here and nowhere else.
-    - sed -i "s/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT/UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT;NETCODE_GAMEOBJECT_BRIDGE_EXPERIMENTAL;UNIFIED_NETCODE;OUT_OF_BAND_RPC/" {{ project.path }}/ProjectSettings/ProjectSettings.asset
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor --arch {{ platform.architecture }}
+    # Import and compile testproject in its own editor session first. The IL post-processor and compiler processes it starts
+    # otherwise stay resident for the whole test pass and, on this agent, leave too little memory for the tests.
+    - mkdir -p warmup
+    # -releaseCodeOptimization pins the Release configuration the test runner compiles. An editor whose code optimization
+    # preference is Debug would otherwise build the other configuration, and the test session would recompile everything.
+    - .Editor/Unity -batchmode -nographics -releaseCodeOptimization -logFile warmup/editor.log -projectPath {{ project.path }} -quit
+    # Stop any build processes that outlive the warm-up editor, then list what is left so the job log shows it.
+    - dotnet build-server shutdown || true
+    - pkill -f Unity.ILPP.Runner || true
+    - pkill -f VBCSCompiler || true
+    - pkill -f bee_backend || true
+    - ps -eo rss,comm --sort=-rss | head -15
     - UnifiedTestRunner --testproject={{ project.path }} --suite=playmode --artifacts-path=test-results --editor-location=.Editor --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
+        - "warmup/**/*"
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks
 {% endfor -%}

@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Unity Multiplayer Networking!
 
-Here are our guidlines for contributing:
+Here are our guidelines for contributing:
 
 * [Code of Conduct](#coc)
 * [Ways to Contribute](#ways)
@@ -10,7 +10,7 @@ Here are our guidlines for contributing:
 * [Feature Requests](#feature)
 * [Improving Documentation](#docs)
 * [Unity Contribution Agreement](#cla)
-* [Pull Request Submission Guidlines](#submit-pr)
+* [Pull Request Submission Guidelines](#submit-pr)
 
 ## <a name="coc"></a> Code of Conduct
 
@@ -46,7 +46,7 @@ When you open a pull request, you will be asked to enter into Unity's License Ag
 
 ## <a name="submit-pr"></a> Pull Request Submission Guidelines
 
-We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of the Netcode for GameObjects. This means development happens on the **develop-3.x.x branch** and Pull Requests should be submited to it.
+We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of the Netcode for GameObjects. This means development happens on the **develop-3.x.x branch** and Pull Requests should be submitted to it.
 
 ### Commit Message Guidelines
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more

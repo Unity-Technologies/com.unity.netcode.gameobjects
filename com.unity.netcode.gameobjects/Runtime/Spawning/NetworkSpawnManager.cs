@@ -8,6 +8,10 @@ using Unity.Netcode.GameObjects.Timing;
 using Unity.Netcode.Logging;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if UNIFIED_NETCODE
+// Refer to NetworkManager.cs for why N4E's Netcode class gets its own name
+using EntitiesNetcode = Unity.Netcode.Netcode;
+#endif
 
 namespace Unity.Netcode
 {
@@ -33,6 +37,12 @@ namespace Unity.Netcode
         /// A list of the spawned objects
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
+
+#if UNITY_EDITOR
+        // Spawns this peer made or received during the session, reported by the editor analytics.
+        internal int SpawnCount;
+        internal int HybridSpawnCount;
+#endif
 
         /// <summary>
         /// Use to get all NetworkObjects owned by a client
@@ -591,6 +601,12 @@ namespace Unity.Netcode
 
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
+#if UNIFIED_NETCODE
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, clientId);
+            }
+#endif
 
             // Notify lost ownership, update the ownership, then notify gained ownership for the network behaviours
             networkObject.InvokeBehaviourOnOwnershipChanged(originalOwner, clientId);
@@ -953,6 +969,36 @@ namespace Unity.Netcode
             return networkObject;
         }
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Spawns a hybrid instance's ghost in this <see cref="NetworkManager"/>'s world.
+        /// </summary>
+        /// <remarks>
+        /// N4E spawns a ghost into its active world, which is not always this NetworkManager's world.
+        /// Hybrid prefabs delay their ghost spawn (<see cref="GhostObject.DelaySpawning"/>), so the world can be selected here.
+        /// A ghost that already spawned when it was instantiated (a prefab without delayed spawning) is left as is.
+        /// </remarks>
+        private void SpawnGhost(NetworkObject networkObject)
+        {
+            var ghostObject = networkObject.GhostObject;
+            if (ghostObject == null || ghostObject.IsSpawned || !ghostObject.DelaySpawning)
+            {
+                return;
+            }
+            var entitiesNetcode = EntitiesNetcode.Instance;
+            var previousWorld = entitiesNetcode.m_ActiveWorld;
+            entitiesNetcode.m_ActiveWorld = NetworkManager.NetcodeWorld;
+            try
+            {
+                ghostObject.Spawn();
+            }
+            finally
+            {
+                entitiesNetcode.m_ActiveWorld = previousWorld;
+            }
+        }
+#endif
+
         /// <summary>
         /// Creates a local NetworkObject to be spawned.
         /// </summary>
@@ -981,27 +1027,27 @@ namespace Unity.Netcode
             }
             else
 #endif
-            // If scene management is disabled or the NetworkObject was dynamically spawned
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
-            {
-                networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
-            }
-            else // Get the in-scene placed NetworkObject
-            {
-                networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
-                if (networkObject == null)
+                // If scene management is disabled or the NetworkObject was dynamically spawned
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement || !serializedObject.IsSceneObject)
                 {
-                    NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
-                    return null;
+                    networkObject = GetNetworkObjectToSpawn(serializedObject.Hash, serializedObject.OwnerClientId, position, rotation, serializedObject.IsSceneObject, instantiationData);
                 }
+                else // Get the in-scene placed NetworkObject
+                {
+                    networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, serializedObject.NetworkSceneHandle);
+                    if (networkObject == null)
+                    {
+                        NetworkLog.LogErrorServer(new Context(LogLevel.Error, $"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure!").AddInfo(nameof(NetworkObject.GlobalObjectIdHash), globalObjectIdHash));
+                        return null;
+                    }
 
-                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
-                // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (!networkObject.gameObject.activeInHierarchy)
-                {
-                    networkObject.gameObject.SetActive(true);
+                    // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
+                    // NetworkBehaviours will have their OnNetworkSpawn method invoked
+                    if (!networkObject.gameObject.activeInHierarchy)
+                    {
+                        networkObject.gameObject.SetActive(true);
+                    }
                 }
-            }
             if (networkObject == null)
             {
                 return null;
@@ -1131,6 +1177,18 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UNIFIED_NETCODE
+            // Only registering a hybrid prefab before the session starts puts the NetworkManager in hybrid mode.
+            if (networkObject.HasGhost && !NetworkManager.NetworkConfig.Prefabs.HasGhostPrefabs)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"{NetworkPrefabs.HybridSpawnWithoutHybridPrefabsError} {networkObject.name} was not spawned.");
+                }
+                return false;
+            }
+#endif
+
             if (playerObject && networkObject.InScenePlaced)
             {
                 NetworkLog.LogError(new Context(LogLevel.Developer, "Player prefab is marked as belonging to a scene. This may cause issues.").AddNetworkObject(networkObject).AddInfo("SceneName", networkObject.SceneOrigin.name));
@@ -1158,6 +1216,13 @@ namespace Unity.Netcode
                 networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
             }
 
+#if UNIFIED_NETCODE
+            // The ghost is spawned before OnNetworkSpawn, so NetworkBehaviours can access it there.
+            if (networkObject.HasGhost)
+            {
+                SpawnGhost(networkObject);
+            }
+#endif
 
             if (!SpawnNetworkObjectLocallyCommon(networkObject, networkId, playerObject, ownerClientId, destroyWithScene))
             {
@@ -1302,9 +1367,22 @@ namespace Unity.Netcode
             }
 
             networkObject.SetupOnSpawn(networkId, playerObject, ownerClientId, destroyWithScene);
+#if UNIFIED_NETCODE
+            // Before OnNetworkSpawn, so owner-specific initialization sees the ghost owner too.
+            if (networkObject.HasGhost)
+            {
+                networkObject.NetworkObjectBridge.UpdateGhostOwner(NetworkManager, ownerClientId);
+#if UNITY_EDITOR
+                HybridSpawnCount++;
+#endif
+            }
+#endif
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
+#if UNITY_EDITOR
+            SpawnCount++;
+#endif
             networkObject.ApplyNetworkParenting();
 
             NetworkObject.CheckOrphanChildren();
@@ -1766,6 +1844,13 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+#if UNIFIED_NETCODE
+                    // NGO does not track a parent that N4E replicates. The hierarchy determines the generation instead.
+                    if (spawnedNetObj.GhostReplicatesParent() && spawnedNetObj.transform.parent != networkObject.transform)
+                    {
+                        continue;
+                    }
+#endif
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
                     spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;
@@ -1873,7 +1958,12 @@ namespace Unity.Netcode
             // Unified netcode handles destroying the instance of the object on the non-authority side when the object has a ghost representation.
             if (destroyGameObject && networkObject.HasGhost && !NetworkManager.IsServer)
             {
-                // exit early
+                // A NetworkHide leaves the ghost alive, so the instance waits for a later NetworkShow (removed again if N4E destroys it).
+                if (networkObject && NetworkManager.IsConnectedClient && !NetworkManager.ShutdownInProgress)
+                {
+                    networkObject.ResetIsDestroying();
+                    GhostSpawnManager.RegisterGhostPendingSpawn(networkObject, networkObject.NetworkObjectId);
+                }
                 return;
             }
 #endif

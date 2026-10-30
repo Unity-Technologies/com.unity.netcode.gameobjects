@@ -35,16 +35,18 @@ namespace TestProject.RuntimeTests
 
         public NetworkObjectSceneMigrationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
-        // TODO: [MTT-15430] Fix automatic scene object migration between clients
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
-
         protected override IEnumerator OnSetup()
         {
             m_OriginalActiveScene = SceneManager.GetActiveScene();
             return base.OnSetup();
+        }
+
+        /// <summary>
+        /// Rust server needs an update
+        /// </summary>        
+        protected override bool UseCMBService()
+        {
+            return false;
         }
 
         protected override void OnCreatePlayerPrefab()

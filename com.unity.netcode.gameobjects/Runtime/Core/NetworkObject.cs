@@ -7,9 +7,6 @@ using System.Text;
 using Unity.Netcode.Components;
 using Unity.Netcode.Logging;
 using Unity.Netcode.Runtime;
-#if UNIFIED_NETCODE && !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -372,14 +369,57 @@ namespace Unity.Netcode
         [SerializeField]
         internal bool HadBridge;
 #if UNITY_EDITOR
-        private void OnApplicationUpdate()
+        // The update callbacks unsubscribe first so one whose NetworkObject was destroyed doesn't throw every frame.
+        private void OnAddNetworkObjectBridge()
         {
+            EditorApplication.update -= OnAddNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
             NetworkObjectBridge = gameObject.AddComponent<NetworkObjectBridge>();
             HadBridge = true;
             // Transform synchronization is handled by unified netcode
             SynchronizeTransform = false;
+        }
 
-            EditorApplication.update -= OnApplicationUpdate;
+        private void OnRemoveNetworkObjectBridge()
+        {
+            EditorApplication.update -= OnRemoveNetworkObjectBridge;
+            if (this == null)
+            {
+                return;
+            }
+            var networkObjectBridge = gameObject.GetComponent<NetworkObjectBridge>();
+            if (networkObjectBridge != null)
+            {
+                DestroyImmediate(networkObjectBridge, true);
+            }
+            var ghostRigidbodies = gameObject.GetComponentsInChildren<GhostRigidbody>(true);
+            for (int i = 0; i < ghostRigidbodies.Length; i++)
+            {
+                DestroyImmediate(ghostRigidbodies[i], true);
+            }
+
+            NetworkObjectBridge = null;
+            HadBridge = false;
+            HasGhost = false;
+
+            // NGO synchronizes the transform again once the prefab is no longer hybrid
+            SynchronizeTransform = true;
+        }
+
+        private void OnRemoveGhostObject()
+        {
+            EditorApplication.update -= OnRemoveGhostObject;
+            if (this == null)
+            {
+                return;
+            }
+            OnRemoveNetworkObjectBridge();
+            DestroyImmediate(GhostObject);
+            GhostObject = null;
+            HasGhost = false;
         }
 
         internal void UnifiedValidation()
@@ -393,22 +433,29 @@ namespace Unity.Netcode
                 //TODO: Needs to be validated once develop-2.0.0 is merged.
                 if (InScenePlaced)
                 {
-                    Debug.LogError($"This experimental version of NGO does not support hybrid in-scene placed objects.");
-                    Destroy(GhostObject);
-                    HasGhost = false;
+                    Debug.LogError($"In-scene placed Hybrid instances are not allowed.");
+                    EditorApplication.update -= OnRemoveGhostObject;
+                    EditorApplication.update += OnRemoveGhostObject;
                     return;
                 }
-
-                if (NetworkObjectBridge == null)
+                else if (NetworkObjectBridge == null)
                 {
-                    EditorApplication.update -= OnApplicationUpdate;
-                    EditorApplication.update += OnApplicationUpdate;
+                    EditorApplication.update -= OnAddNetworkObjectBridge;
+                    EditorApplication.update += OnAddNetworkObjectBridge;
                 }
             }
-            else if (HadBridge && !HasGhost && !NetworkObjectBridge)
+            else if (HadBridge && !HasGhost)
             {
-                HadBridge = false;
-                SynchronizeTransform = true;
+                if (NetworkObjectBridge != null)
+                {
+                    EditorApplication.update -= OnRemoveNetworkObjectBridge;
+                    EditorApplication.update += OnRemoveNetworkObjectBridge;
+                }
+                else
+                {
+                    HadBridge = false;
+                    SynchronizeTransform = true;
+                }
             }
         }
 #endif
@@ -418,6 +465,79 @@ namespace Unity.Netcode
             if (HasGhost)
             {
                 GhostObject.ApplyPostTransformMatrixScale(scale);
+            }
+        }
+
+        /// <summary>
+        /// Returns true when N4E replicates this instance's parent. NGO parenting is disabled for the instance in that case.
+        /// </summary>
+        internal bool GhostReplicatesParent()
+        {
+            return HasGhost && GhostObject.ParentReplication;
+        }
+
+        private bool WarnIfGhostReplicatesParent(string methodName)
+        {
+            if (!GhostReplicatesParent())
+            {
+                return false;
+            }
+            var networkManager = NetworkManager;
+            if (networkManager == null || networkManager.LogLevel <= LogLevel.Normal)
+            {
+                NetworkLog.LogWarning($"[{name}] {methodName} was ignored. {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)} is enabled, so " +
+                    $"Netcode for Entities replicates the parent of this hybrid instance. Use {nameof(Transform)}.{nameof(Transform.SetParent)} instead.");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// NGO parenting of a hybrid instance only supports worldPositionStays disabled.
+        /// </summary>
+        /// <remarks>
+        /// The ghost replicates its local transform. With worldPositionStays enabled, the authority rebases that local transform when it reparents.
+        /// Clients apply the ParentSyncMessage before the snapshot with the rebased values arrives, so the object pops.
+        /// </remarks>
+        /// <returns>true when the parent change is rejected</returns>
+        private bool RejectHybridWorldPositionStays(bool worldPositionStays)
+        {
+            if (!HasGhost || !worldPositionStays || GhostObject.ParentReplication)
+            {
+                return false;
+            }
+            var networkManager = NetworkManager;
+            if (networkManager == null || networkManager.LogLevel <= LogLevel.Error)
+            {
+                NetworkLog.LogError($"[{name}] Hybrid instances can only be parented with worldPositionStays disabled. Use {nameof(TrySetParent)} " +
+                    $"or {nameof(TryRemoveParent)} with worldPositionStays set to false, or enable {nameof(GhostObject)}.{nameof(GhostObject.ParentReplication)}.");
+            }
+            return true;
+        }
+
+        // Same tolerances as GhostObject. They are above the error a SetParent round trip leaves behind.
+        private const float k_LocalSpaceEpsilon = 1e-4f;
+        private const float k_LocalSpaceAngleEpsilon = 0.01f;
+
+        /// <summary>
+        /// Returns true when parenting occurred with world position stays set to false.
+        /// </summary>
+        private bool LocalTransformKeptByParentChange()
+        {
+            var currentTransform = transform;
+            return Vector3.Distance(currentTransform.localPosition, m_LocalPositionBeforeParentChange) <= k_LocalSpaceEpsilon
+                && Quaternion.Angle(currentTransform.localRotation, m_LocalRotationBeforeParentChange) <= k_LocalSpaceAngleEpsilon
+                && Vector3.Distance(currentTransform.localScale, m_LocalScaleBeforeParentChange) <= k_LocalSpaceEpsilon;
+        }
+
+        /// <summary>
+        /// Logs a warning when a hybrid instance is parented under a non-hybrid one or vice versa.
+        /// </summary>
+        private void LogHybridParentingArtifacts(NetworkObject parentObject)
+        {
+            if (parentObject != null && parentObject.HasGhost != HasGhost)
+            {
+                NetworkLog.LogWarning($"[{name}] Parented under {parentObject.name}, but only one of them is a hybrid instance. Their transforms are " +
+                    $"synchronized and interpolated on different timelines, so the child can jitter relative to its parent while either one moves.");
             }
         }
 #endif
@@ -1889,12 +2009,27 @@ namespace Unity.Netcode
                 {
                     // Tell the childBehaviour that this NetworkObject is being destroyed.
                     // Keeping the property a private set to assure this is
-                    // the only way it can be set as it should never be reset
-                    // back to false once invoked.
+                    // the only way it can be set. Only a hybrid instance that
+                    // its ghost keeps alive resets it (ResetIsDestroying).
                     childBehaviour?.SetIsDestroying();
                 }
             }
             IsDestroying = true;
+        }
+
+        /// <summary>
+        /// Clears the despawning flag of a hybrid instance that its ghost keeps alive, and of its child NetworkBehaviours.
+        /// </summary>
+        internal void ResetIsDestroying()
+        {
+            if (ChildNetworkBehaviours != null)
+            {
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
+                {
+                    childBehaviour?.ResetIsDestroying();
+                }
+            }
+            IsDestroying = false;
         }
 
         private void OnDestroy()
@@ -2535,6 +2670,49 @@ namespace Unity.Netcode
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
+        // The local transform's state before a parent change. These values are used if the parent change is reverted.
+        private Vector3 m_LocalPositionBeforeParentChange;
+        private Quaternion m_LocalRotationBeforeParentChange;
+        private Vector3 m_LocalScaleBeforeParentChange;
+        private bool m_RevertingParentChange;
+
+        private void OnBeforeTransformParentChanged()
+        {
+            // Skips the parent change RevertParentChange makes, so the values it restores are not overwritten.
+            if (m_RevertingParentChange)
+            {
+                return;
+            }
+            var currentTransform = transform;
+            m_LocalPositionBeforeParentChange = currentTransform.localPosition;
+            m_LocalRotationBeforeParentChange = currentTransform.localRotation;
+            m_LocalScaleBeforeParentChange = currentTransform.localScale;
+        }
+
+        /// <summary>
+        /// Restores the cached parent and the local transform prior to the parent change.
+        /// </summary>
+        /// <remarks>
+        /// Setting <see cref="Transform.parent"/> keeps the world position. That only restores the original pose when the change also kept the world position.
+        /// Restoring the local transform under the cached parent works for either worldPositionStays value.
+        /// </remarks>
+        private void RevertParentChange()
+        {
+            m_RevertingParentChange = true;
+            try
+            {
+                var currentTransform = transform;
+                currentTransform.SetParent(m_CachedParent, false);
+                currentTransform.localPosition = m_LocalPositionBeforeParentChange;
+                currentTransform.localRotation = m_LocalRotationBeforeParentChange;
+                currentTransform.localScale = m_LocalScaleBeforeParentChange;
+            }
+            finally
+            {
+                m_RevertingParentChange = false;
+            }
+        }
+
         /// <summary>
         /// With distributed authority, we need to have a way to determine if the parenting action is authorized.
         /// This is set when handling an incoming ParentSyncMessage and when running as a DAHost and a client has disconnected.
@@ -2590,6 +2768,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            {
+                return false;
+            }
+#endif
             // If we are removing ourself from a parent
             if (parent == null)
             {
@@ -2610,6 +2794,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not re-parenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)))
+            {
+                return false;
+            }
+#endif
             // If we are removing ourself from a parent
             if (parent == null)
             {
@@ -2640,6 +2830,12 @@ namespace Unity.Netcode
         /// <returns>True if the parent was successfully removed, false if the operation failed or the object was already parentless</returns>
         public bool TryRemoveParent(bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE
+            if (WarnIfGhostReplicatesParent(nameof(TryRemoveParent)))
+            {
+                return false;
+            }
+#endif
             return TrySetParent((NetworkObject)null, worldPositionStays);
         }
 
@@ -2651,6 +2847,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
+#if UNIFIED_NETCODE
+            if (WarnIfGhostReplicatesParent(nameof(TrySetParent)) || RejectHybridWorldPositionStays(worldPositionStays))
+            {
+                return false;
+            }
+#endif
             if (!AutoObjectParentSync || !IsSpawned || !NetworkManagerOwner.IsListening)
             {
                 return false;
@@ -2692,10 +2894,18 @@ namespace Unity.Netcode
         private void OnTransformParentChanged()
         {
             var networkManager = NetworkManager;
-            if (!AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
+            if (m_RevertingParentChange || !AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
             {
                 return;
             }
+
+#if UNIFIED_NETCODE
+            // No warning: this also runs for the parent changes N4E applies.
+            if (GhostReplicatesParent())
+            {
+                return;
+            }
+#endif
 
             if (transform.parent == m_CachedParent)
             {
@@ -2704,7 +2914,7 @@ namespace Unity.Netcode
 
             if (networkManager == null || !networkManager.IsListening)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 // We want to log at any LogLevel, since we may not have a network manager may here.
                 NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 return;
@@ -2722,7 +2932,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
@@ -2737,7 +2947,7 @@ namespace Unity.Netcode
             // If we are spawned and don't have authority; reset the parent back to the cached parent and exit
             if (!isParentingAuthority)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 if (networkManager.LogLevel <= LogLevel.Error)
                 {
                     if (networkManager.DistributedAuthorityMode)
@@ -2752,13 +2962,29 @@ namespace Unity.Netcode
                 return;
             }
 
+#if UNIFIED_NETCODE
+            // A direct Transform parent change has no worldPositionStays value. It is derived from whether the local transform was kept.
+            if (HasGhost && !AuthorityAppliedParenting && !GhostObject.ParentReplication)
+            {
+                if (LocalTransformKeptByParentChange())
+                {
+                    m_CachedWorldPositionStays = false;
+                }
+                else if (RejectHybridWorldPositionStays(true))
+                {
+                    RevertParentChange();
+                    return;
+                }
+            }
+#endif
+
             var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
                 if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
@@ -2768,7 +2994,7 @@ namespace Unity.Netcode
                 }
                 if (!parentObject.IsSpawned)
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
@@ -2778,6 +3004,12 @@ namespace Unity.Netcode
                 }
 
                 m_LatestParent = parentObject.NetworkObjectId;
+#if UNIFIED_NETCODE
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    LogHybridParentingArtifacts(parentObject);
+                }
+#endif
             }
             else
             {
@@ -2857,6 +3089,14 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+#if UNIFIED_NETCODE
+            // NGO does not track this parent. Applying "no parent" here would undo the parent N4E replicated.
+            if (GhostReplicatesParent())
+            {
+                return false;
+            }
+#endif
 
             // SPECIAL CASE:
             // The ignoreNotSpawned is a special case scenario where a late joining client has joined
@@ -3127,72 +3367,6 @@ namespace Unity.Netcode
                 }
 #endif
             }
-#if UNIFIED_NETCODE
-            // For now, cycle through all known NetworkRigidbodyBase derived components
-            // and destroy them all if this is a hybrid prefab instance.
-            // This allows a user to not have to make direct adjustments until trying out their NGO prefab
-            // as a hybrid spawned prefab.
-            if (HasGhost && !NetworkManager.DistributedAuthorityMode)
-            {
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                // TODO-UNIFIED: This needs to be updated to make it "opt-in".
-                // If the GhostObject is not configured for prediction but is still using a Rigidbody, then go ahead and remove it on
-                // the client side to improve performance by default.
-                // TODO-UNIFIED: Determine if recent unified physics updates does not require checking for prediction.
-                if (NetworkRigidbodies != null)
-                {
-                    var isServer = NetworkManager.IsServer;
-                    for (int i = NetworkRigidbodies.Count - 1; i >= 0; i--)
-                    {
-                        var currenObject = NetworkRigidbodies[i].gameObject;
-                        var currentHasGhostRigidBody = currenObject.GetComponent<GhostRigidbody>() != null;
-                        if (!isServer)
-                        {
-#if COM_UNITY_MODULES_PHYSICS
-                            var rigidBody = currenObject.GetComponent<Rigidbody>();
-
-                            if (rigidBody != null && !currentHasGhostRigidBody)
-                            {
-                                Destroy(rigidBody);
-                            }
-#endif
-#if COM_UNITY_MODULES_PHYSICS2D
-                            var rigidBody2D = currenObject.GetComponent<Rigidbody2D>();
-                            if (rigidBody2D != null && !currentHasGhostRigidBody)
-                            {
-                                Destroy(rigidBody2D);
-                            }
-#endif
-                        }
-                        // Both the server and clients will still remove and destroy the NetworkRigidbody
-                        // since there is no point in synchronizing these when it is handled via unified.
-                        var networkRigidbody = NetworkRigidbodies[i];
-                        NetworkRigidbodies.Remove(networkRigidbody);
-                        ChildNetworkBehaviours.Remove(networkRigidbody.NetworkBehaviourId);
-                        Destroy(networkRigidbody);
-                    }
-                }
-#endif
-                // This is defined out since users might have derived NetworkTransforms
-#if UNIFIED_NETCODE_DESTROY
-                // When hybrid spawning, the transform is synchronized by the GhostObject.
-                // As a convenience, we remove and destroy all NetworkTransforms.
-                // TODO-Parenting-Related-Area: We need to replicate this functionality in a GhostObject
-                // Possibly use a "Synchronize" property and display only on children of a root parent GhostObject.
-                if (NetworkTransforms != null)
-                {
-                    NetworkManager.Log.Warning(new Logging.Context(LogLevel.Developer, $"[]{name} Hybrid spawned objects do not support {nameof(NetworkTransform)} and " +
-                        $"are removed at runtime. If hybrid spawning is intended, then remove it from the network prefab to avoid allocating and de-allocating at runtime."));
-                    for (int i = NetworkTransforms.Count - 1; i >= 0; i--)
-                    {
-                        ChildNetworkBehaviours.Remove(NetworkTransforms[i].NetworkBehaviourId);
-                        Destroy(NetworkTransforms[i]);
-                    }
-                    NetworkTransforms.Clear();
-                }
-#endif
-            }
-#endif
             return true;
         }
 
@@ -3715,7 +3889,12 @@ namespace Unity.Netcode
         {
             var obj = new SerializedObject
             {
+#if UNIFIED_NETCODE
+                // The ghost's spawn carries its own parent.
+                HasParent = transform.parent != null && !GhostReplicatesParent(),
+#else
                 HasParent = transform.parent != null,
+#endif
                 WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,

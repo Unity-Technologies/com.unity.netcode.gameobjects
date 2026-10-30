@@ -15,9 +15,19 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class NetworkVariableTraitsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private StringBuilder m_ErrorLog = new StringBuilder();
 
@@ -97,7 +107,7 @@ namespace Unity.Netcode.RuntimeTests
             var authorityComponent = GetAuthorityComponent();
             authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
             authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MaxSecondsBetweenUpdates = 1.0f });
-            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
+            authorityComponent.TheVariable.UpdateLastSentTime();
 
             var timeoutHelper = new TimeoutHelper(0.62f);
             var newValue = 0.05f;
@@ -117,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
             var authorityComponent = GetAuthorityComponent();
             authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
             authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
-            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
+            authorityComponent.TheVariable.UpdateLastSentTime();
 
             var timeoutHelper = new TimeoutHelper(0.62f);
             var newValue = 0.15f;
@@ -136,7 +146,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var authorityComponent = GetAuthorityComponent();
             authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
-            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
+            authorityComponent.TheVariable.UpdateLastSentTime();
 
             var timeoutHelper = new TimeoutHelper(0.62f);
             var newValue = 0.15f;
@@ -160,7 +170,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var authorityComponent = GetAuthorityComponent();
             authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
-            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
+            authorityComponent.TheVariable.UpdateLastSentTime();
 
             var timeoutHelper = new TimeoutHelper(0.62f);
             var firstValue = 0.15f;
