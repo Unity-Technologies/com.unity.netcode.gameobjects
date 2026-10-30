@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
@@ -69,7 +70,14 @@ namespace Unity.Netcode.Components
 
             foreach (var con in m_TempConnections)
             {
-                NetworkManager.OnNetCodeDisconnect?.Invoke(con);
+                try
+                {
+                    NetworkManager.OnNetCodeDisconnect?.Invoke(con);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
 
             m_TempConnections.Clear();
@@ -101,7 +109,14 @@ namespace Unity.Netcode.Components
                         // Set the connection in-game
                         commandBuffer.AddComponent<NetworkStreamInGame>(entry.Value.Entity);
                         commandBuffer.AddComponent(entry.Value.Entity, new ConnectionState { NetworkId = entry.Value.NetworkId });
-                        NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
+                        try
+                        {
+                            NetworkManager.OnNetCodeConnect?.Invoke(entry.Value);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Debug.LogException(ex);
+                        }
                         m_TempConnections.Add(entry.Value);
                     }
                 }
@@ -123,8 +138,14 @@ namespace Unity.Netcode.Components
                 foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithAll<ConnectionState>().WithEntityAccess())
                 {
                     commandBuffer.RemoveComponent<ConnectionState>(entity);
-                    NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection
-                    { World = World, Entity = entity, NetworkId = networkId.Value });
+                    try
+                    {
+                        NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
                 }
             }
             commandBuffer.Playback(EntityManager);
@@ -139,7 +160,15 @@ namespace Unity.Netcode.Components
             foreach (var (networkId, entity) in SystemAPI.Query<NetworkId>().WithEntityAccess())
             {
                 commandBuffer.RemoveComponent<ConnectionState>(entity);
-                NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
+
+                try
+                {
+                    NetworkManager.OnNetCodeDisconnect?.Invoke(new NetcodeConnection { World = World, Entity = entity, NetworkId = networkId.Value });
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
             commandBuffer.Playback(EntityManager);
             base.OnDestroy();
