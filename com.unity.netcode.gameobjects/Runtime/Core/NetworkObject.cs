@@ -1953,12 +1953,27 @@ namespace Unity.Netcode
                 {
                     // Tell the childBehaviour that this NetworkObject is being destroyed.
                     // Keeping the property a private set to assure this is
-                    // the only way it can be set as it should never be reset
-                    // back to false once invoked.
+                    // the only way it can be set. Only a hybrid instance that
+                    // its ghost keeps alive resets it (ResetIsDestroying).
                     childBehaviour?.SetIsDestroying();
                 }
             }
             IsDestroying = true;
+        }
+
+        /// <summary>
+        /// Clears the despawning flag of a hybrid instance that its ghost keeps alive, and of its child NetworkBehaviours.
+        /// </summary>
+        internal void ResetIsDestroying()
+        {
+            if (ChildNetworkBehaviours != null)
+            {
+                foreach (var childBehaviour in ChildNetworkBehaviours.Values)
+                {
+                    childBehaviour?.ResetIsDestroying();
+                }
+            }
+            IsDestroying = false;
         }
 
         private void OnDestroy()
