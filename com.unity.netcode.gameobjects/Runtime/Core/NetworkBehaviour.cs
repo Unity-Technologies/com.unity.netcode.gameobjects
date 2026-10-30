@@ -703,6 +703,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Invoked by <see cref="NetworkObject.ResetIsDestroying"/>.
+        /// </summary>
+        internal void ResetIsDestroying()
+        {
+            IsDestroying = false;
+        }
+
+        /// <summary>
         /// Updates properties with network session related
         /// dependencies such as a NetworkObject's spawned
         /// state or NetworkManager's session state.
