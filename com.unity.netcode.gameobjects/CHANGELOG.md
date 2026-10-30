@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where `NetworkTime` reported a `TickOffset` of almost a whole tick, instead of zero, for some times that land on a tick (for example 0.3 at a tick rate of 10), which put `TickWithPartial` one tick ahead or, in long sessions, `Tick` one tick behind. Times between minus one tick and zero now report tick -1 with a positive `TickOffset`, as other negative times do. (#4228)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4216)
