@@ -23,7 +23,14 @@
       "coverageCommands": [
         "generateAdditionalMetrics;generateHtmlReport;assemblyFilters:ASSEMBLY_NAME;"
       ],
-      "dependantsToIgnoreInPreviewApv": {},
+      "dependantsToIgnoreInPreviewApv": {
+        "6000.7": [
+          "com.unity.services.multiplayer"
+        ],
+        "7000.0": [
+          "com.unity.services.multiplayer"
+        ]
+      },
       "postPackCommands": []
     }
   },
