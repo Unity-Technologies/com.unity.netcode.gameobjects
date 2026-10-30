@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4217)
+- Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4223)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4221)
 - Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4215)
 - Issue where showing a `NetworkObject` with `NetworkShow` while its `NetworkVariable` updates were held back by `NetworkVariableUpdateTraits` stopped those pending changes from being sent until the variable was modified again. (#4215)
