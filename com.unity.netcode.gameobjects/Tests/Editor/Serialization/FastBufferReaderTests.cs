@@ -1118,6 +1118,78 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private const int k_SourceLength = 10;
+        private const int k_ReaderOffset = 2;
+
+        private static byte[] CreateSequentialBytes()
+        {
+            var bytes = new byte[k_SourceLength];
+            for (var i = 0; i < bytes.Length; ++i)
+            {
+                bytes[i] = (byte)i;
+            }
+            return bytes;
+        }
+
+        private static void AssertReadsToEndFrom(FastBufferReader reader, int firstValue)
+        {
+            var expectedCount = k_SourceLength - firstValue;
+            Assert.AreEqual(expectedCount, reader.Length - reader.Position);
+            for (var i = 0; i < expectedCount; ++i)
+            {
+                reader.ReadByteSafe(out byte value);
+                Assert.AreEqual((byte)(firstValue + i), value);
+            }
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnArrayWithAnOffsetAndNoLength_TheRestOfTheArrayIsCopied()
+        {
+            using var reader = new FastBufferReader(CreateSequentialBytes(), Allocator.Temp, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, k_ReaderOffset);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnArraySegmentWithAnOffsetAndNoLength_TheRestOfTheSegmentIsCopied()
+        {
+            using var reader = new FastBufferReader(new ArraySegment<byte>(CreateSequentialBytes()), Allocator.Temp, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, k_ReaderOffset);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnOffsetArraySegmentWithAnOffset_TheOffsetIsRelativeToTheSegment()
+        {
+            var segmentOffset = 3;
+            var segment = new ArraySegment<byte>(CreateSequentialBytes(), segmentOffset, k_SourceLength - segmentOffset);
+            using var reader = new FastBufferReader(segment, Allocator.Temp, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, segmentOffset + k_ReaderOffset);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromANativeArrayWithAnOffsetAndNoLength_TheRestOfTheArrayIsRead([Values(Allocator.Temp, Allocator.None)] Allocator copyAllocator)
+        {
+            using var source = new NativeArray<byte>(CreateSequentialBytes(), Allocator.Temp);
+            using var reader = new FastBufferReader(source, copyAllocator, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, k_ReaderOffset);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAWriterWithAnOffsetAndNoLength_TheRestOfTheWriterIsRead([Values(Allocator.Temp, Allocator.None)] Allocator copyAllocator)
+        {
+            using var writer = new FastBufferWriter(k_SourceLength, Allocator.Temp);
+            writer.WriteBytesSafe(CreateSequentialBytes());
+            using var reader = new FastBufferReader(writer, copyAllocator, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, k_ReaderOffset);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAReaderWithAnOffsetAndNoLength_TheRestOfTheReaderIsRead([Values(Allocator.Temp, Allocator.None)] Allocator copyAllocator)
+        {
+            using var source = new FastBufferReader(CreateSequentialBytes(), Allocator.Temp);
+            using var reader = new FastBufferReader(source, copyAllocator, -1, k_ReaderOffset);
+            AssertReadsToEndFrom(reader, k_ReaderOffset);
+        }
+
         [Test]
         public void WhenCreatingNewFastBufferReader_IsInitializedIsTrue()
         {
