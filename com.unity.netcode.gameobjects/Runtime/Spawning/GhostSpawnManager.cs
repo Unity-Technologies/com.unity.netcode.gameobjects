@@ -115,7 +115,11 @@ namespace Unity.Netcode
 
             // TODO-UNIFIED: We need a better way to preserve any hybrid instances pending NGO spawn.
             // NOTE: We might be able to use the NetworkSceneHandle to get the associated local scene handle to which we can use to get the targeted scene.
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            // A child kept alive by its ghost (NetworkHide) is still parented and stays in its parent's scene.
+            if (networkObject.transform.parent == null)
+            {
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            }
             return true;
         }
 
