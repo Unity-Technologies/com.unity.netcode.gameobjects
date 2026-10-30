@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where bits written with `BitWriter` were lost when a later `BitWriter.TryBeginWriteBits` call in the same bitwise context grew the `FastBufferWriter`. The bytes written earlier in that context were replaced with zeros or uninitialized memory. (#4226)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4216)
