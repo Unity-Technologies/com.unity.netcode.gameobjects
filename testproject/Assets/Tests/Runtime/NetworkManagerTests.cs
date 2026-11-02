@@ -198,4 +198,45 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.Shutdown();
         }
     }
+
+    internal class DerivedNetworkManagerTests
+    {
+        private class TestNetworkManager : NetworkManager
+        {
+            public void Awake() { }
+            public void OnEnable() { }
+        }
+
+        [UnityTest]
+        public IEnumerator ValidateDerivedNetworkManager()
+        {
+            var gameObject = new GameObject("TestNetworkManager");
+            var server = gameObject.AddComponent<TestNetworkManager>();
+            var mockTransport = server.gameObject.AddComponent<MockTransport>();
+            server.NetworkConfig ??= new NetworkConfig();
+            server.NetworkConfig.NetworkTransport = mockTransport;
+            var client = Object.Instantiate(server);
+
+            var isListening = server.StartServer();
+            Assert.That(isListening, Is.True, "Server failed to start!");
+
+            client.StartClient();
+
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client.IsListening,  timeoutHelper);
+            Assert.That(timeoutHelper.TimedOut, Is.False, "Client timed out waiting to connect!");
+
+            Object.Destroy(client.gameObject);
+
+            server.Shutdown();
+            timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => !server.IsListening,  timeoutHelper);
+            Assert.That(timeoutHelper.TimedOut, Is.False, "Timed out waiting for server to shutdown!");
+
+            isListening = server.StartHost();
+            Assert.That(isListening, Is.True, "Host failed to start!");
+
+            Object.Destroy(gameObject);
+        }
+    }
 }
