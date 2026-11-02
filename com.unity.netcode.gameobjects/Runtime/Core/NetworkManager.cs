@@ -1071,7 +1071,7 @@ namespace Unity.Netcode
             OnSingletonReady?.Invoke();
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (Log == null)
             {
@@ -1088,7 +1088,7 @@ namespace Unity.Netcode
             OnInstantiated?.Invoke(this);
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             if (RunInBackground)
             {
@@ -1337,6 +1337,11 @@ namespace Unity.Netcode
         /// <returns>returns true if <see cref="NetworkManager"/> started in server mode successfully; otherwise false</returns>
         public bool StartServer()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Server))
@@ -1397,6 +1402,11 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
         public bool StartClient()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Client))
@@ -1450,6 +1460,11 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
         public bool StartHost()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Host))
@@ -1752,8 +1767,14 @@ namespace Unity.Netcode
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this, false);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
+
             try
             {
                 ShutdownInternal();
