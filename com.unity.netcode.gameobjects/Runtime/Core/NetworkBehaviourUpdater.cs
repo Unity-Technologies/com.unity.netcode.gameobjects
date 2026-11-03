@@ -138,6 +138,19 @@ namespace Unity.Netcode
             // Remove it from the pending and queued dirty objects lists
             m_PendingDirtyNetworkObjects.Remove(networkObject);
             m_DirtyNetworkObjects.Remove(networkObject);
+
+            // Anything still dirty was held back by its update traits, keep it queued so a later tick sends it
+            foreach (var behaviour in networkObject.ChildNetworkBehaviours.Values)
+            {
+                foreach (var networkVariable in behaviour.NetworkVariableFields)
+                {
+                    if (networkVariable.IsDirty())
+                    {
+                        AddForUpdate(networkObject);
+                        return;
+                    }
+                }
+            }
         }
 
         /// <summary>
