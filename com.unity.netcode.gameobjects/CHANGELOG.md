@@ -22,7 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination.
+- Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4240)
 - Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4217)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4223)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4221)
