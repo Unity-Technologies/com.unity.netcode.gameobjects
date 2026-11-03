@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Netcode.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -1951,6 +1952,37 @@ namespace Unity.Netcode
         /// </summary>
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddActiveSceneToClientSynchronization(ref SceneEventData sceneEventData, ref Scene activeScene, bool shouldRunValidation)
+        {
+            // It is possible a user might not want to synchronize the active scene, so we will check to see if it is valid before adding it to the synchronization list.
+            if (shouldRunValidation && !ValidateSceneBeforeLoading(activeScene.buildIndex, activeScene.name, sceneEventData.LoadSceneMode))
+            {
+                return;
+            }
+
+            if (NetworkManager.DistributedAuthorityMode)
+            {
+                if (!ClientSceneHandleToServerSceneHandle.TryGetValue(activeScene.handle, out var localHandle))
+                {
+                    NetworkManager.Log.Warning(new Context(LogLevel.Developer, $"Failed to synchronize active scene. Use {nameof(ValidateSceneBeforeLoading)} to exclude this scene from validation").AddInfo("SceneName", activeScene.name).AddInfo("SceneHandle", activeScene.handle));
+                    return;
+                }
+
+                // For DA session owners we need to get the scene handle reference that is shared between all clients
+                // This ensures any late joiners get the same scene handle references after a session owner migration.
+                sceneEventData.SceneHandle = localHandle;
+                sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+            }
+            // If we're a normal server, then always use the server scene handle
+            else
+            {
+                sceneEventData.SceneHandle = activeScene.handle;
+            }
+
+            sceneEventData.SceneHash = SceneHashFromNameOrPath(activeScene.path);
+            AddSceneToClientSynchronization(ref sceneEventData, ref activeScene);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddSceneToClientSynchronization(ref SceneEventData sceneEventData, ref Scene scene)
@@ -2009,37 +2041,17 @@ namespace Unity.Netcode
             sceneEventData.LoadSceneMode = ClientSynchronizationMode;
             var activeScene = SceneManager.GetActiveScene();
             sceneEventData.SceneEventType = SceneEventType.Synchronize;
-            if (BuildIndexToHash.ContainsKey(activeScene.buildIndex))
+            if (BuildIndexToHash.TryGetValue(activeScene.buildIndex, out var activeSceneHash))
             {
-                sceneEventData.ActiveSceneHash = BuildIndexToHash[activeScene.buildIndex];
+                sceneEventData.ActiveSceneHash = activeSceneHash;
             }
 
             // Organize how (and when) we serialize our NetworkObjects
-            var hasSynchronizedActive = false;
-
-            // It is possible a user might not want to synchronize the active scene, so we will check to see if it is valid before adding it to the synchronization list.
             // !! Important !!
             // The active scene MUST always be the first scene in the synchronization list.
-            if (ValidateSceneBeforeLoading(activeScene.buildIndex, activeScene.name, sceneEventData.LoadSceneMode))
-            {
-                sceneEventData.SceneHash = SceneHashFromNameOrPath(activeScene.path);
-                if (sceneEventData.SceneHash == sceneEventData.ActiveSceneHash)
-                {
-                    hasSynchronizedActive = true;
-                }
 
-                // If we are just a normal client, then always use the server scene handle
-                if (NetworkManager.DistributedAuthorityMode)
-                {
-                    sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                    sceneEventData.SceneHandle = ClientSceneHandleToServerSceneHandle[activeScene.handle];
-                }
-                else
-                {
-                    sceneEventData.SceneHandle = activeScene.handle;
-                }
-                AddSceneToClientSynchronization(ref sceneEventData, ref activeScene);
-            }
+            // Don't run user-validation when we're synchronizing the CMB service. CMB always needs to know about the active scene
+            AddActiveSceneToClientSynchronization(ref sceneEventData, ref activeScene, !synchronizingService);
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -2063,11 +2075,6 @@ namespace Unity.Netcode
                     continue;
                 }
                 AddSceneToClientSynchronization(ref sceneEventData, ref scene);
-            }
-
-            if (!hasSynchronizedActive && NetworkManager.CMBServiceConnection && synchronizingService)
-            {
-                sceneEventData.AddSceneToSynchronize(BuildIndexToHash[activeScene.buildIndex], ClientSceneHandleToServerSceneHandle[activeScene.handle]);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();

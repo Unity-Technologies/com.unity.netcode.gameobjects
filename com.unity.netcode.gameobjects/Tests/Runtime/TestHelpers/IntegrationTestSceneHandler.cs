@@ -372,7 +372,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void ClearSceneTracking(NetworkManager networkManager)
         {
-            SceneNameToSceneHandles.Clear();
+            // Only clear the calling NetworkManager's tracking, other NetworkManagers may still be tracking their own scenes
+            SceneNameToSceneHandles.Remove(networkManager);
         }
 
         public void StopTrackingScene(NetworkSceneHandle handle, string name, NetworkManager networkManager)
