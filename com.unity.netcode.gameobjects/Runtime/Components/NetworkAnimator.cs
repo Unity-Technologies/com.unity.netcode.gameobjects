@@ -300,8 +300,8 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Gets the transition info for a destination state, preferring the entry that starts from the originating state
-        /// since several states can transition into the same destination.
+        /// Gets the transition info for a destination state, matched by originating state since several states can
+        /// transition into the same destination. Transitions not in the table, such as non-trigger ones, return false.
         /// </summary>
         internal bool TryGetTransitionInfo(int layer, int destinationState, int originatingState, out TransitionStateInfo transitionInfo)
         {
@@ -311,16 +311,15 @@ namespace Unity.Netcode.Components
                 return false;
             }
 
-            transitionInfo = transitions[0];
             foreach (var entry in transitions)
             {
                 if (entry.OriginatingState == originatingState)
                 {
                     transitionInfo = entry;
-                    break;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         [Serializable]
@@ -493,7 +492,11 @@ namespace Unity.Netcode.Components
             foreach (var childStateMachine in stateMachine.stateMachines)
             {
                 var nestedStateMachine = childStateMachine.stateMachine;
-                ParseStateMachineStates(layerIndex, ref animatorController, ref nestedStateMachine, childStateMachineParents);
+                // A missing sub-state machine asset reference leaves this null
+                if (nestedStateMachine != null)
+                {
+                    ParseStateMachineStates(layerIndex, ref animatorController, ref nestedStateMachine, childStateMachineParents);
+                }
             }
         }
 
@@ -1104,14 +1107,11 @@ namespace Unity.Netcode.Components
                         stateHash = nextState.fullPathHash;
 
                         // Check if this transition can be synchronized using cross-fading
-                        if (m_DestinationStateToTransitionInfo.ContainsKey(layer))
+                        if (TryGetTransitionInfo(layer, nextState.shortNameHash, synchronizationStateInfo.shortNameHash, out var transitionInfo))
                         {
-                            if (TryGetTransitionInfo(layer, nextState.shortNameHash, synchronizationStateInfo.shortNameHash, out var transitionInfo))
-                            {
-                                stateHash = transitionInfo.OriginatingState;
-                                // Set the destination state to cross-fade to from the originating state
-                                animationState.DestinationStateHash = transitionInfo.DestinationState;
-                            }
+                            stateHash = transitionInfo.OriginatingState;
+                            // Set the destination state to cross-fade to from the originating state
+                            animationState.DestinationStateHash = transitionInfo.DestinationState;
                         }
                     }
 

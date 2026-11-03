@@ -239,6 +239,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(networkAnimator.TryGetTransitionInfo(0, stateB.nameHash, stateC.nameHash, out var infoFromC), Is.True);
             Assert.That(infoFromC.OriginatingState, Is.EqualTo(stateC.nameHash));
             Assert.That(infoFromC.TransitionDuration, Is.EqualTo(transitionFromC.duration));
+            Assert.That(networkAnimator.TryGetTransitionInfo(0, stateB.nameHash, stateB.nameHash, out _), Is.False);
         }
 
         private TestNetworkAnimator CreateNetworkAnimator(AnimatorController controller, string name)
