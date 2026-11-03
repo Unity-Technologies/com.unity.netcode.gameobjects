@@ -1071,6 +1071,13 @@ namespace Unity.Netcode
             OnSingletonReady?.Invoke();
         }
 
+        /// <summary>
+        /// Unity calls Awake when loading an instance of a script component.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom initialization logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call <c>base.Awake()</c> in your override to allow the base initialization to happen.
+        /// </summary>
         protected virtual void Awake()
         {
             if (Log == null)
@@ -1088,6 +1095,13 @@ namespace Unity.Netcode
             OnInstantiated?.Invoke(this);
         }
 
+        /// <summary>
+        /// Called when a component of an active GameObject is first enabled.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom initialization logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call  <c>base.OnEnable()</c> in your override to allow the base initialization to happen.
+        /// </remarks>
         protected virtual void OnEnable()
         {
             if (RunInBackground)
@@ -1766,8 +1780,21 @@ namespace Unity.Netcode
 #endif
         }
 
-        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
+        /// <summary>
+        /// Called when a GameObject or component is about to be destroyed.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom teardown logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call <c>base.OnDestroy()</c> in your override to allow the base teardown to happen.
+        /// </remarks>
         protected virtual void OnDestroy()
+        {
+            DestroyInternal();
+        }
+
+        // Internal destroy method that can't be overridden by derived classes.
+        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
+        private void DestroyInternal()
         {
             if (Log == null)
             {
