@@ -272,8 +272,8 @@ namespace Unity.Netcode.Components
         internal List<TransitionStateInfo> TransitionStateInfoList;
 
         // Used to get the associated transition information required to synchronize late joining clients with transitions
-        // [Layer][DestinationState][TransitionStateInfo]
-        private readonly Dictionary<int, Dictionary<int, TransitionStateInfo>> m_DestinationStateToTransitionInfo = new Dictionary<int, Dictionary<int, TransitionStateInfo>>();
+        // [Layer][DestinationState][TransitionStateInfo per originating state]
+        private readonly Dictionary<int, Dictionary<int, List<TransitionStateInfo>>> m_DestinationStateToTransitionInfo = new Dictionary<int, Dictionary<int, List<TransitionStateInfo>>>();
 
         // Named differently to avoid serialization conflicts with NetworkBehaviour
         internal NetworkManager LocalNetworkManager;
@@ -285,12 +285,42 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void BuildDestinationToTransitionInfoTable()
         {
+            m_DestinationStateToTransitionInfo.Clear();
             foreach (var entry in TransitionStateInfoList)
             {
-                m_DestinationStateToTransitionInfo.TryAdd(entry.Layer, new Dictionary<int, TransitionStateInfo>());
+                m_DestinationStateToTransitionInfo.TryAdd(entry.Layer, new Dictionary<int, List<TransitionStateInfo>>());
                 var destinationStateTransitionInfo = m_DestinationStateToTransitionInfo[entry.Layer];
-                destinationStateTransitionInfo.TryAdd(entry.DestinationState, entry);
+                if (!destinationStateTransitionInfo.TryGetValue(entry.DestinationState, out var transitions))
+                {
+                    transitions = new List<TransitionStateInfo>();
+                    destinationStateTransitionInfo.Add(entry.DestinationState, transitions);
+                }
+                transitions.Add(entry);
             }
+        }
+
+        /// <summary>
+        /// Gets the transition info for a destination state, preferring the entry that starts from the originating state
+        /// since several states can transition into the same destination.
+        /// </summary>
+        internal bool TryGetTransitionInfo(int layer, int destinationState, int originatingState, out TransitionStateInfo transitionInfo)
+        {
+            transitionInfo = null;
+            if (!m_DestinationStateToTransitionInfo.TryGetValue(layer, out var layerTransitions) || !layerTransitions.TryGetValue(destinationState, out var transitions))
+            {
+                return false;
+            }
+
+            transitionInfo = transitions[0];
+            foreach (var entry in transitions)
+            {
+                if (entry.OriginatingState == originatingState)
+                {
+                    transitionInfo = entry;
+                    break;
+                }
+            }
+            return true;
         }
 
         [Serializable]
@@ -366,13 +396,23 @@ namespace Unity.Netcode.Components
         private void AddExitTransitionStateInfo(int layerIndex, AnimatorState originatingState, AnimatorStateMachine exitingStateMachine, AnimatorStateTransition transition,
             AnimatorControllerParameter parameter, int transitionIndex, List<AnimatorStateMachine> parentStateMachines, int parentIndex)
         {
+            // Exiting the layer's root state machine re-enters it through its Entry node
             if (parentIndex < 0)
             {
+                AddStateMachineDestinations(layerIndex, originatingState, exitingStateMachine, transition, parameter, transitionIndex, new HashSet<AnimatorStateMachine>());
                 return;
             }
 
             var parentStateMachine = parentStateMachines[parentIndex];
-            foreach (var stateMachineTransition in parentStateMachine.GetStateMachineTransitions(exitingStateMachine))
+            var stateMachineTransitions = parentStateMachine.GetStateMachineTransitions(exitingStateMachine);
+            // With no transition out of the sub-state machine, its Exit goes through the parent's Entry node
+            if (stateMachineTransitions.Length == 0)
+            {
+                AddStateMachineDestinations(layerIndex, originatingState, parentStateMachine, transition, parameter, transitionIndex, new HashSet<AnimatorStateMachine>());
+                return;
+            }
+
+            foreach (var stateMachineTransition in stateMachineTransitions)
             {
                 if (stateMachineTransition.destinationState != null)
                 {
@@ -429,7 +469,11 @@ namespace Unity.Netcode.Components
                                         {
                                             AddExitTransitionStateInfo(layerIndex, animatorState, stateMachine, transition, parameter, z, parentStateMachines, parentStateMachines != null ? parentStateMachines.Count - 1 : -1);
                                         }
-                                        else if (transition.destinationStateMachine == null)
+                                        else if (transition.destinationStateMachine != null)
+                                        {
+                                            AddStateMachineDestinations(layerIndex, animatorState, transition.destinationStateMachine, transition, parameter, z, new HashSet<AnimatorStateMachine>());
+                                        }
+                                        else
                                         {
                                             Debug.LogError($"[{name}][Conditional Transition for {animatorState.name}] Conditional triggered transition has neither a DestinationState nor a DestinationStateMachine! This transition is not likely to synchronize properly. " +
                                                 $"Please file a GitHub issue about this error with details about your Animator's setup.");
@@ -1060,9 +1104,9 @@ namespace Unity.Netcode.Components
                         stateHash = nextState.fullPathHash;
 
                         // Check if this transition can be synchronized using cross-fading
-                        if (m_DestinationStateToTransitionInfo.TryGetValue(layer, out var layerTransitions))
+                        if (m_DestinationStateToTransitionInfo.ContainsKey(layer))
                         {
-                            if (layerTransitions.TryGetValue(nextState.shortNameHash, out var transitionInfo))
+                            if (TryGetTransitionInfo(layer, nextState.shortNameHash, synchronizationStateInfo.shortNameHash, out var transitionInfo))
                             {
                                 stateHash = transitionInfo.OriginatingState;
                                 // Set the destination state to cross-fade to from the originating state
@@ -1524,9 +1568,9 @@ namespace Unity.Netcode.Components
             {
                 // At this point all entries in the lookup table should be valid.
                 // Look up the transition info for this layer and destination state.
-                if (m_DestinationStateToTransitionInfo.TryGetValue(animationState.Layer, out var layerTransitions))
+                if (m_DestinationStateToTransitionInfo.ContainsKey(animationState.Layer))
                 {
-                    if (layerTransitions.TryGetValue(animationState.DestinationStateHash, out var transitionInfo))
+                    if (TryGetTransitionInfo(animationState.Layer, animationState.DestinationStateHash, animationState.StateHash, out var transitionInfo))
                     {
                         // Make sure we are on the originating/starting state we are going to cross-fade into
                         if (currentState.shortNameHash == animationState.StateHash)
