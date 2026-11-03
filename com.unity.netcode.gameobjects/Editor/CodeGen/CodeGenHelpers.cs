@@ -209,6 +209,36 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         }
 
         /// <summary>
+        /// Collects every type that assembly scoped code cannot access when it uses <paramref name="type"/>.
+        /// This is each private or protected nested type in its nesting chain, or in the chain of its generic arguments.
+        /// </summary>
+        /// <param name="type">The type the generated code uses.</param>
+        /// <param name="hidden">Receives each inaccessible type, without duplicates.</param>
+        public static void CollectTypesHiddenFromAssembly(this TypeReference type, List<TypeDefinition> hidden)
+        {
+            if (type is GenericInstanceType genericInstance)
+            {
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    argument.CollectTypesHiddenFromAssembly(hidden);
+                }
+            }
+            else if (type is TypeSpecification specification)
+            {
+                specification.ElementType.CollectTypesHiddenFromAssembly(hidden);
+                return;
+            }
+
+            for (var definition = type.Resolve(); definition != null && definition.IsNested; definition = definition.DeclaringType)
+            {
+                if ((definition.IsNestedPrivate || definition.IsNestedFamily || definition.IsNestedFamilyAndAssembly) && !hidden.Contains(definition))
+                {
+                    hidden.Add(definition);
+                }
+            }
+        }
+
+        /// <summary>
         /// Checks a generic method instantiation against the generic constraints of the method it instantiates.
         /// Mono does not enforce these on the calls codegen emits, but CoreCLR does, and it rejects the entire
         /// calling method if any single call in it violates them.
