@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-namespace Unity.Netcode.GameObjects.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal class NetworkAnimatorEditorTests
     {
