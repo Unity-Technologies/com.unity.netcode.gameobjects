@@ -69,13 +69,28 @@ namespace Unity.Netcode.GameObjects.Timing
             {
                 foreach (var behaviour in item.OwnerObject.ChildNetworkBehaviours.Values)
                 {
-                    behaviour.OnReanticipate(lastRoundTripTime);
+                    try
+                    {
+                        behaviour.OnReanticipate(lastRoundTripTime);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        UnityEngine.Debug.LogException(ex);
+                    }
                 }
                 item.ResetAnticipation();
             }
 
             ObjectsToReanticipate.Clear();
-            OnReanticipate?.Invoke(lastRoundTripTime);
+
+            try
+            {
+                OnReanticipate?.Invoke(lastRoundTripTime);
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogException(ex);
+            }
         }
 
         public void Update()
