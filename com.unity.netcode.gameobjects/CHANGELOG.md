@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Ensured a useful and human readable error is logged when a NetworkVariable is trying to serialize a private or protected type. (#4239)
 - Issue where `NetworkTime` reported a `TickOffset` of almost a whole tick, instead of zero, for some times that land on a tick (for example 0.3 at a tick rate of 10), which put `TickWithPartial` one tick ahead or, in long sessions, `Tick` one tick behind. Times between minus one tick and zero now report tick -1 with a positive `TickOffset`, as other negative times do. (#4228)
 - Issue where bits written with `BitWriter` were lost when a later `BitWriter.TryBeginWriteBits` call in the same bitwise context grew the `FastBufferWriter`. The bytes written earlier in that context were replaced with zeros or uninitialized memory. (#4226)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
