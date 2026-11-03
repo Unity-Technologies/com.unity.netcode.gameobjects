@@ -1106,12 +1106,12 @@ namespace Unity.Netcode
         /// <remarks>
         /// Override this method to implement custom initialization logic for a derived <see cref="NetworkManager"/>.
         /// Ensure you call <c>base.Awake()</c> in your override to allow the base initialization to happen.
-        /// </summary>
+        /// </remarks>
         protected virtual void Awake()
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
             }
 
             NetworkConfig?.InitializePrefabs();
@@ -1501,7 +1501,7 @@ namespace Unity.Netcode
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
                 Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
@@ -1599,7 +1599,7 @@ namespace Unity.Netcode
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
                 Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
@@ -1689,7 +1689,7 @@ namespace Unity.Netcode
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
                 Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
@@ -1877,7 +1877,7 @@ namespace Unity.Netcode
         {
             if (gameObject != null && scene == gameObject.scene)
             {
-                OnDestroy();
+                DestroyInternal();
             }
         }
 
@@ -2020,7 +2020,7 @@ namespace Unity.Netcode
             }
         }
 
-        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        // Ensures that the NetworkManager is cleaned up before DestroyInternal is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
             // Abrupt shutdown (or immediate exit of play mode).
@@ -2034,7 +2034,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            OnDestroy();
+            DestroyInternal();
 #if UNITY_EDITOR
             if (Singleton != null)
             {
@@ -2070,7 +2070,7 @@ namespace Unity.Netcode
 
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
                 Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
             }
 
@@ -2169,7 +2169,7 @@ namespace Unity.Netcode
 
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
             }
 
             // Do a validation pass on NetworkConfig properties
