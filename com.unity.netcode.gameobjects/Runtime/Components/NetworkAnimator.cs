@@ -1572,10 +1572,16 @@ namespace Unity.Netcode.Components
                 {
                     if (TryGetTransitionInfo(animationState.Layer, animationState.DestinationStateHash, animationState.StateHash, out var transitionInfo))
                     {
-                        // A late-joining client starts in its default state, which may not be the originating state,
-                        // so it cross-fades from whatever state it is in unless it is already mid-transition
-                        if (currentState.shortNameHash == animationState.StateHash || !m_Animator.IsInTransition(animationState.Layer))
+                        var onOriginatingState = currentState.shortNameHash == animationState.StateHash;
+                        if (onOriginatingState || !m_Animator.IsInTransition(animationState.Layer))
                         {
+                            // A late-joining client starts in its default state. CrossFade normalizes the duration to the
+                            // current state's length, so enter the originating state first and apply it before cross-fading.
+                            if (!onOriginatingState)
+                            {
+                                m_Animator.Play(animationState.StateHash, animationState.Layer, 0.0f);
+                                m_Animator.Update(0.0f);
+                            }
                             // Cross-fade from the current to the destination state for the transitions duration while starting at the server's current normalized time of the transition
                             m_Animator.CrossFade(transitionInfo.DestinationState, transitionInfo.TransitionDuration, transitionInfo.Layer, 0.0f, animationState.NormalizedTime);
                         }

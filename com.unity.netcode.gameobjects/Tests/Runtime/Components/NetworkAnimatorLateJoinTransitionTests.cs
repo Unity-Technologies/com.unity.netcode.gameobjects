@@ -1,6 +1,7 @@
 #if COM_UNITY_MODULES_ANIMATION && UNITY_EDITOR
 using System.Collections;
 using System.Text;
+using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEditor;
@@ -38,12 +39,18 @@ namespace Unity.Netcode.RuntimeTests
             m_DestinationState = rootStateMachine.AddState("State B");
             rootStateMachine.defaultState = m_DefaultState;
 
+            // The source clip is much longer than the default one, so a cross-fade normalized to the wrong state blends far faster
+            m_DefaultState.motion = CreateClip("Short", 1.0f);
+            m_SourceState.motion = CreateClip("Long", 100.0f);
+            m_DestinationState.motion = CreateClip("Destination", 1.0f);
+
             // Both states transition into the same destination, and the transitions are long enough to still be running when the client joins
             foreach (var state in new[] { m_DefaultState, m_SourceState })
             {
                 var transition = state.AddTransition(m_DestinationState);
                 transition.hasExitTime = false;
-                transition.duration = 10.0f;
+                transition.hasFixedDuration = false;
+                transition.duration = 0.5f;
                 transition.AddCondition(AnimatorConditionMode.If, 0.0f, k_TriggerName);
             }
             AssetDatabase.SaveAssets();
@@ -91,6 +98,15 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(errorLog => ReachingDestination(clientAnimator, errorLog));
             AssertOnTimeout($"Late-joining client did not cross-fade to {m_DestinationState.name}!");
+            Assert.That(clientAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash, Is.EqualTo(m_SourceState.nameHash), $"Late-joining client did not cross-fade from {m_SourceState.name}!");
+        }
+
+        private AnimationClip CreateClip(string name, float length)
+        {
+            var clip = new AnimationClip { name = name };
+            clip.SetCurve(string.Empty, typeof(Transform), "localScale.x", AnimationCurve.Linear(0.0f, 1.0f, length, 1.0f));
+            AssetDatabase.AddObjectToAsset(clip, m_Controller);
+            return clip;
         }
 
         private bool ReachingDestination(Animator animator, StringBuilder errorLog)
