@@ -125,6 +125,7 @@ namespace Unity.Netcode
             // When in distributed authority mode, there is no such thing as server write permissions
             InternalWritePerm = m_NetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
 
+            // Don't catch errors here, we want any failure here to be reported upward
             OnInitialize();
 
             // Some unit tests don't operate with a running NetworkManager.

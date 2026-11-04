@@ -372,7 +372,14 @@ namespace Unity.Netcode
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
-            OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
+            try
+            {
+                OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         /// <summary>
