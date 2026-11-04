@@ -116,12 +116,9 @@ In version 3.x, `NetworkTransform.UseHalfFloatPrecision` synchronizes position a
 
 In version 2.x, the `Lerp` and `SmoothDampening` interpolation types smooth by different amounts at different frame rates, because Netcode for GameObjects applies smoothing per frame instead of over time. Version 3.x applies smoothing over time, so results at 60 frames per second (fps) stay the same as in version 2.x, and results at other frame rates differ.
 
-## Netcode for Entities integration
+## Unity netcode integration
 
-> [!NOTE]
-> This integration is experimental, so it's not ready for production use. The features and documentation for this integration might change before it's verified for release.
-
-Version 3.x introduces the foundations of the unified GameObject layer for Netcode for Entities, known as the hybrid prefab concept. Version 3.x doesn't enable this integration by default for standard GameObject workflows. Standard `NetworkBehaviour`, `NetworkVariable`, and RPC workflows work the same as in version 2.x.
+Version 3.x introduces the foundations of the Unity netcode unified GameObject layer. When you add both a `GhostObject` and `NetworkObject` component to a prefab it becomes a "hybrid" prefab. When a hybrid prefab is registered within a network prefab list that is assigned to your `NetworkManager` component, Netcode for GameObjects will enter into "hybrid mode" when starting or joining a new session.  Standard `NetworkBehaviour`, `NetworkVariable`, and RPC workflows work the same as in version 2.x, with the exception that you can use both `NetworkBehaviour` and `GhostBehaviour` components (_with some limitations_).
 
 ## Additional resources
 
