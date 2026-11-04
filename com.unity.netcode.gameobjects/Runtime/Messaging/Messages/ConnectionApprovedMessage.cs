@@ -280,10 +280,6 @@ namespace Unity.Netcode
                 networkManager.SetSessionOwner(GetSessionOwner());
                 if (networkManager.LocalClient.IsSessionOwner)
                 {
-                    if (networkManager.NetworkConfig.EnableSceneManagement)
-                    {
-                        networkManager.SceneManager.InitializeScenesLoaded();
-                    }
                     if (networkManager.NetworkConfig.ConnectionApproval && networkManager.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkConfig.ConnectionApproval)} is enabled but is not supported when using a distributed authority topology. The {nameof(NetworkManager.ConnectionApprovalCallback)} will not be invoked.");

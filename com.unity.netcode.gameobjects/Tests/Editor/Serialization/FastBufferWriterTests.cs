@@ -1525,6 +1525,17 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenGrowingWriterStartsWithZeroSize_BufferGrows()
+        {
+            using var growingWriter = new FastBufferWriter(0, Allocator.Temp, 64);
+            Assert.IsTrue(growingWriter.TryBeginWrite(4));
+            Assert.AreEqual(4, growingWriter.Capacity);
+
+            growingWriter.WriteByteSafe(1);
+            Assert.AreEqual(new byte[] { 1 }, growingWriter.ToArray());
+        }
+
+        [Test]
         public void WhenTryingToWritePastMaxCapacity_GrowthDoesNotOccurAndTryBeginWriteReturnsFalse()
         {
             var growingWriter = new FastBufferWriter(300, Allocator.Temp, 500);

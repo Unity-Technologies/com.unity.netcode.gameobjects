@@ -2396,6 +2396,49 @@ namespace Unity.Netcode
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
+        // The local transform's state before a parent change. These values are used if the parent change is reverted.
+        private Vector3 m_LocalPositionBeforeParentChange;
+        private Quaternion m_LocalRotationBeforeParentChange;
+        private Vector3 m_LocalScaleBeforeParentChange;
+        private bool m_RevertingParentChange;
+
+        private void OnBeforeTransformParentChanged()
+        {
+            // Skips the parent change RevertParentChange makes, so the values it restores are not overwritten.
+            if (m_RevertingParentChange)
+            {
+                return;
+            }
+            var currentTransform = transform;
+            m_LocalPositionBeforeParentChange = currentTransform.localPosition;
+            m_LocalRotationBeforeParentChange = currentTransform.localRotation;
+            m_LocalScaleBeforeParentChange = currentTransform.localScale;
+        }
+
+        /// <summary>
+        /// Restores the cached parent and the local transform prior to the parent change.
+        /// </summary>
+        /// <remarks>
+        /// Setting <see cref="Transform.parent"/> keeps the world position. That only restores the original pose when the change also kept the world position.
+        /// Restoring the local transform under the cached parent works for either worldPositionStays value.
+        /// </remarks>
+        private void RevertParentChange()
+        {
+            m_RevertingParentChange = true;
+            try
+            {
+                var currentTransform = transform;
+                currentTransform.SetParent(m_CachedParent, false);
+                currentTransform.localPosition = m_LocalPositionBeforeParentChange;
+                currentTransform.localRotation = m_LocalRotationBeforeParentChange;
+                currentTransform.localScale = m_LocalScaleBeforeParentChange;
+            }
+            finally
+            {
+                m_RevertingParentChange = false;
+            }
+        }
+
         /// <summary>
         /// With distributed authority, we need to have a way to determine if the parenting action is authorized.
         /// This is set when handling an incoming ParentSyncMessage and when running as a DAHost and a client has disconnected.
@@ -2553,7 +2596,7 @@ namespace Unity.Netcode
         private void OnTransformParentChanged()
         {
             var networkManager = NetworkManager;
-            if (!AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
+            if (m_RevertingParentChange || !AutoObjectParentSync || (networkManager != null && networkManager.ShutdownInProgress))
             {
                 return;
             }
@@ -2565,7 +2608,7 @@ namespace Unity.Netcode
 
             if (networkManager == null || !networkManager.IsListening)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 // We want to log at any LogLevel, since we may not have a network manager may here.
                 NetworkLog.LogError($"[{name}] {nameof(networkManager)} is not listening, start a server or host before re-parenting.");
                 return;
@@ -2583,7 +2626,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogErrorServer($"[{name}] {nameof(NetworkObject)} can only be re-parented after being spawned!");
@@ -2598,7 +2641,7 @@ namespace Unity.Netcode
             // If we are spawned and don't have authority; reset the parent back to the cached parent and exit
             if (!isParentingAuthority)
             {
-                transform.parent = m_CachedParent;
+                RevertParentChange();
                 if (networkManager.LogLevel <= LogLevel.Error)
                 {
                     if (networkManager.DistributedAuthorityMode)
@@ -2619,7 +2662,7 @@ namespace Unity.Netcode
             {
                 if (!transform.parent.TryGetComponent(out NetworkObject parentObject))
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {
@@ -2629,7 +2672,7 @@ namespace Unity.Netcode
                 }
                 if (!parentObject.IsSpawned)
                 {
-                    transform.parent = m_CachedParent;
+                    RevertParentChange();
                     AuthorityAppliedParenting = false;
                     if (networkManager.LogLevel <= LogLevel.Error)
                     {

@@ -233,6 +233,11 @@ namespace Unity.Netcode
             var isSessionOwner = LocalClientId == sessionOwner;
             LocalClient.IsSessionOwner = isSessionOwner;
 
+            if (isSessionOwner && NetworkConfig.EnableSceneManagement)
+            {
+                SceneManager.InitializeScenesLoaded();
+            }
+
             foreach (var networkObject in SpawnManager.SpawnedObjects.Values)
             {
                 if (isSessionOwner)
