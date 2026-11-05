@@ -127,7 +127,7 @@ Version 3.x introduces the foundations of the unified GameObject layer for Netco
 
 CoreCLR introduces a new compilation pipeline that changes some custom serialization generation.
 
-## NetworkVariable serialization
+### NetworkVariable serialization
 
 The Mono compilation pipeline was capable of generating serialization for private and protected types. With CoreCLR, this is no longer possible and will fail the compilation. Ensure any types used inside NetworkVariables in your project are declared as `public` or `internal`.
 
