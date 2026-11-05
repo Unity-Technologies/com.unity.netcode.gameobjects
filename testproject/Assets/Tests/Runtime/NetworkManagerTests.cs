@@ -223,14 +223,14 @@ namespace TestProject.RuntimeTests
             client.StartClient();
 
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client.IsListening,  timeoutHelper);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client.IsListening, timeoutHelper);
             Assert.That(timeoutHelper.TimedOut, Is.False, "Client timed out waiting to connect!");
 
             Object.Destroy(client.gameObject);
 
             server.Shutdown();
             timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => !server.IsListening,  timeoutHelper);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => !server.IsListening, timeoutHelper);
             Assert.That(timeoutHelper.TimedOut, Is.False, "Timed out waiting for server to shutdown!");
 
             isListening = server.StartHost();
