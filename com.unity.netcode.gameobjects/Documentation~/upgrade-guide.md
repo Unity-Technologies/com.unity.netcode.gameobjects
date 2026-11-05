@@ -123,6 +123,14 @@ In version 2.x, the `Lerp` and `SmoothDampening` interpolation types smooth by d
 
 Version 3.x introduces the foundations of the unified GameObject layer for Netcode for Entities, known as the hybrid prefab concept. Version 3.x doesn't enable this integration by default for standard GameObject workflows. Standard `NetworkBehaviour`, `NetworkVariable`, and RPC workflows work the same as in version 2.x.
 
+## CoreCLR compilation changes
+
+CoreCLR introduces a new compilation pipeline that changes some custom serialization generation.
+
+### NetworkVariable serialization
+
+The Mono compilation pipeline was capable of generating serialization for private and protected types. With CoreCLR, this is no longer possible and will fail the compilation. Ensure any types used inside NetworkVariables in your project are declared as `public` or `internal`.
+
 ## Additional resources
 
 - [Install Netcode for GameObjects](install.md)
