@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [3.2.1] - 2026-11-05
+
+### Changed
+
+- Updated the upgrade guide that removes the note about the unified netcode being experimental.
+
 ## [3.2.0] - 2026-11-03
 
 ### Added
