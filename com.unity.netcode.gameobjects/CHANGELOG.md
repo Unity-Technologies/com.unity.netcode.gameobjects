@@ -18,12 +18,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Ensured a useful and human readable error is logged when a NetworkVariable is trying to serialize a private or protected type. (#4239)
 - Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4238)
 - Ensured all callbacks are wrapped with exception handling to avoid silent errors. (#4161)
 
 ### Security
 
 ### Obsolete
+
+## [3.2.1] - 2026-11-05
+
+### Changed
+
+- Updated the upgrade guide that removes the note about the unified netcode being experimental.
 
 ## [3.2.0] - 2026-11-03
 

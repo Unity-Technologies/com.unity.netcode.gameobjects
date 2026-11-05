@@ -209,6 +209,61 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         }
 
         /// <summary>
+        /// Collects every type that assembly scoped code cannot access when it uses <paramref name="type"/>.
+        /// This is each private or protected nested type in its nesting chain, or in the chain of its generic arguments.
+        /// A protected internal type is only hidden when it is declared in an assembly whose internals <paramref name="consumer"/> cannot see.
+        /// </summary>
+        /// <param name="type">The type the generated code uses.</param>
+        /// <param name="consumer">The assembly the generated code is emitted into.</param>
+        /// <param name="hidden">Receives each inaccessible type, without duplicates.</param>
+        public static void CollectTypesHiddenFromAssembly(this TypeReference type, AssemblyDefinition consumer, List<TypeDefinition> hidden)
+        {
+            if (type is GenericInstanceType genericInstance)
+            {
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    argument.CollectTypesHiddenFromAssembly(consumer, hidden);
+                }
+            }
+            else if (type is TypeSpecification specification)
+            {
+                specification.ElementType.CollectTypesHiddenFromAssembly(consumer, hidden);
+                return;
+            }
+
+            for (var definition = type.Resolve(); definition != null && definition.IsNested; definition = definition.DeclaringType)
+            {
+                var isHidden = definition.IsNestedPrivate || definition.IsNestedFamily || definition.IsNestedFamilyAndAssembly ||
+                    (definition.IsNestedFamilyOrAssembly && !consumer.CanSeeInternalsOf(definition.Module.Assembly));
+                if (isHidden && !hidden.Contains(definition))
+                {
+                    hidden.Add(definition);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether code in <paramref name="consumer"/> can access the internal members of <paramref name="owner"/>.
+        /// </summary>
+        /// <param name="consumer">The assembly that accesses the members.</param>
+        /// <param name="owner">The assembly that declares the members.</param>
+        /// <returns>True if both are the same assembly, or <paramref name="owner"/> grants <paramref name="consumer"/> InternalsVisibleTo.</returns>
+        private static bool CanSeeInternalsOf(this AssemblyDefinition consumer, AssemblyDefinition owner)
+        {
+            if (owner.Name.Name == consumer.Name.Name)
+            {
+                return true;
+            }
+
+            // InternalsVisibleTo takes "Name" or "Name, PublicKey=..."; only the simple name matters here.
+            return owner.CustomAttributes.Any(attribute =>
+                attribute.AttributeType.FullName == typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute).FullName &&
+                attribute.ConstructorArguments.Count == 1 &&
+                attribute.ConstructorArguments[0].Value is string friend &&
+                friend.Split(',')[0].Trim() == consumer.Name.Name);
+        }
+
+        /// <summary>
         /// Checks a generic method instantiation against the generic constraints of the method it instantiates.
         /// Mono does not enforce these on the calls codegen emits, but CoreCLR does, and it rejects the entire
         /// calling method if any single call in it violates them.
