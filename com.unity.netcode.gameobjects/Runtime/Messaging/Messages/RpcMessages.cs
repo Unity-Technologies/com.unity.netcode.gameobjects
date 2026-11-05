@@ -72,7 +72,8 @@ namespace Unity.Netcode
             }
 
 #if MULTIPLAYER_TOOLS && (DEBUG || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE)
-            networkBehaviour.TrackRpcMetricsReceive(ref metadata, ref context, payload.Length);
+            // Locally invoked RPCs have no message header, so the header and message sizes are 0 and only the payload size is known.
+            networkBehaviour.TrackRpcMetricsReceive(ref metadata, ref context, Math.Max(context.SerializedHeaderSize + (int)context.MessageSize, payload.Length));
 #endif
 
             try
