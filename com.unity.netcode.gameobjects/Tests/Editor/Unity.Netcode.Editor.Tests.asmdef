@@ -30,6 +30,11 @@
     ],
     "versionDefines": [
         {
+            "name": "com.unity.modules.animation",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_ANIMATION"
+        },
+        {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"

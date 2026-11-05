@@ -39,6 +39,11 @@
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
         },
         {
+            "name": "com.unity.modules.animation",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_ANIMATION"
+        },
+        {
             "name": "com.unity.modules.physics",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS"
