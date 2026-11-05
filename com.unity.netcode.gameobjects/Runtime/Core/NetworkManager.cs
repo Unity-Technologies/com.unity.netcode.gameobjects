@@ -1354,7 +1354,7 @@ namespace Unity.Netcode
             if (Log == null)
             {
                 Log = new ContextualLogger(this);
-                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable() is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
 
@@ -1419,7 +1419,7 @@ namespace Unity.Netcode
             if (Log == null)
             {
                 Log = new ContextualLogger(this);
-                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable() is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
 
@@ -1477,7 +1477,7 @@ namespace Unity.Netcode
             if (Log == null)
             {
                 Log = new ContextualLogger(this);
-                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable() is called in any derived NetworkManager classes."));
             }
             Log.CaptureFunctionCall();
 
@@ -1799,7 +1799,7 @@ namespace Unity.Netcode
             if (Log == null)
             {
                 Log = new ContextualLogger(this);
-                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable() is called in any derived NetworkManager classes."));
             }
 
             try
