@@ -439,22 +439,24 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                 // CoreCLR enforces member access on the generic calls emitted below; Mono does not.
                 var hiddenTypes = new List<TypeDefinition>();
-                type.CollectTypesHiddenFromAssembly(hiddenTypes);
+                type.CollectTypesHiddenFromAssembly(assembly, hiddenTypes);
                 if (hiddenTypes.Count > 0)
                 {
-#if ENABLE_CORECLR
-                    foreach (var hiddenType in hiddenTypes)
+                    // Use the target assembly's defines: a Mono editor can build a CoreCLR player.
+                    if (assemblyDefines.Contains("ENABLE_CORECLR"))
                     {
-                        m_Diagnostics.AddError($"{type} cannot be used in a network variable - Cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
+                        foreach (var hiddenType in hiddenTypes)
+                        {
+                            m_Diagnostics.AddError($"{type} cannot be used in a network variable - Cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
+                        }
+                        continue;
                     }
-                    continue;
-#else
+
                     // Log a warning in Mono so we can warn users who haven't yet switched their projects over.
                     foreach (var hiddenType in hiddenTypes)
                     {
                         m_Diagnostics.AddWarning($"NetworkVariable serialization for {type.Name} will fail in CoreCLR! With CoreCLR generated code cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
                     }
-#endif
                 }
 
                 if (serializeMethod != null)
