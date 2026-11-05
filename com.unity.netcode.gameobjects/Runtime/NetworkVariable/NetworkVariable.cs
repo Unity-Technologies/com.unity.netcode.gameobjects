@@ -162,7 +162,14 @@ namespace Unity.Netcode
                     NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
                     SetDirty(true);
                     m_IsDisposed = false;
-                    OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                    try
+                    {
+                        OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
                 }
             }
         }
@@ -196,7 +203,14 @@ namespace Unity.Netcode
             if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_LastInternalValue, ref m_InternalValue))
             {
                 SetDirty(true);
-                OnValueChanged?.Invoke(m_LastInternalValue, m_InternalValue);
+                try
+                {
+                    OnValueChanged?.Invoke(m_LastInternalValue, m_InternalValue);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
                 m_IsDisposed = false;
                 isDirty = true;
                 NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_LastInternalValue);
@@ -345,7 +359,14 @@ namespace Unity.Netcode
                 SetDirty(true);
             }
 
-            OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+            try
+            {
+                OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         /// <summary>

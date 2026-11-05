@@ -157,7 +157,7 @@ namespace Unity.Netcode
                 // Serialize NetworkVariable data
                 foreach (var sobj in SpawnedObjectsList)
                 {
-                    if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
+                    if (sobj.SpawnWithObservers && sobj.InvokeCheckObjectVisibility(OwnerClientId))
                     {
                         sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.

@@ -724,7 +724,15 @@ namespace Unity.Netcode
         {
             m_DirtyEvents.Add(listEvent);
             MarkNetworkObjectDirty();
-            OnListChanged?.Invoke(listEvent);
+
+            try
+            {
+                OnListChanged?.Invoke(listEvent);
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogException(ex);
+            }
         }
 
         /// <summary>

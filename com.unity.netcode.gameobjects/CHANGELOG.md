@@ -16,6 +16,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4238)
+- Ensured all callbacks are wrapped with exception handling to avoid silent errors. (#4161)
+
+### Security
+
+### Obsolete
+
+## [3.2.0] - 2026-11-03
+
+### Added
+
 - Added Unity CLI commands (`netcode.gameobjects` groups) to set up NetworkManagers and network prefabs, start and stop sessions, inspect clients and spawned objects, spawn, despawn and change ownership, simulate network conditions and sample network traffic. They are available when the project has `com.unity.pipeline` 0.9.0-exp.1 or later. (#4210)
 - Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
 - Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
@@ -31,6 +50,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where `NetworkTime` reported a `TickOffset` of almost a whole tick, instead of zero, for some times that land on a tick (for example 0.3 at a tick rate of 10), which put `TickWithPartial` one tick ahead or, in long sessions, `Tick` one tick behind. Times between minus one tick and zero now report tick -1 with a positive `TickOffset`, as other negative times do. (#4228)
+- Issue where bits written with `BitWriter` were lost when a later `BitWriter.TryBeginWriteBits` call in the same bitwise context grew the `FastBufferWriter`. The bytes written earlier in that context were replaced with zeros or uninitialized memory. (#4226)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
 - Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
 - Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4216)
