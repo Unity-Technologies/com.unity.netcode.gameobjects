@@ -10,6 +10,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4238)
+- Ensured all callbacks are wrapped with exception handling to avoid silent errors. (#4161)
+
+### Security
+
+### Obsolete
+
+## [3.2.0] - 2026-11-03
+
+### Added
+
 - Added Unity CLI commands (`netcode.gameobjects` groups) to set up NetworkManagers and network prefabs, start and stop sessions, inspect clients and spawned objects, spawn, despawn and change ownership, simulate network conditions and sample network traffic. They are available when the project has `com.unity.pipeline` 0.9.0-exp.1 or later. (#4210)
 - Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
 - Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
