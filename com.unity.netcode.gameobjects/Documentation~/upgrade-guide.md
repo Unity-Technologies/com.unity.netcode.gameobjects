@@ -120,6 +120,14 @@ In version 2.x, the `Lerp` and `SmoothDampening` interpolation types smooth by d
 
 Version 3.x introduces the foundations of the Unity netcode unified GameObject layer. When you add both a `GhostObject` and `NetworkObject` component to a prefab it becomes a "hybrid" prefab. When a hybrid prefab is registered within a network prefab list that is assigned to your `NetworkManager` component, Netcode for GameObjects will enter into "hybrid mode" when starting or joining a new session.  Standard `NetworkBehaviour`, `NetworkVariable`, and RPC workflows work the same as in version 2.x, with the exception that you can use both `NetworkBehaviour` and `GhostBehaviour` components (_with some limitations_).
 
+## CoreCLR compilation changes
+
+CoreCLR introduces a new compilation pipeline that changes some custom serialization generation.
+
+### NetworkVariable serialization
+
+The Mono compilation pipeline was capable of generating serialization for private and protected types. With CoreCLR, this is no longer possible and will fail the compilation. Ensure any types used inside NetworkVariables in your project are declared as `public` or `internal`.
+
 ## Additional resources
 
 - [Install Netcode for GameObjects](install.md)
