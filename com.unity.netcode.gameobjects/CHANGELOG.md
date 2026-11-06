@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4240)
+- Fixed a NullReferenceException that would be thrown if a MonoBehaviour derived from NetworkManager defines it's own Awake or OnEnable. (#4237)
 - Issue where `NetworkTime` reported a `TickOffset` of almost a whole tick, instead of zero, for some times that land on a tick (for example 0.3 at a tick rate of 10), which put `TickWithPartial` one tick ahead or, in long sessions, `Tick` one tick behind. Times between minus one tick and zero now report tick -1 with a positive `TickOffset`, as other negative times do. (#4227)
 - Issue where bits written with `BitWriter` were lost when a later `BitWriter.TryBeginWriteBits` call in the same bitwise context grew the `FastBufferWriter`. The bytes written earlier in that context were replaced with zeros or uninitialized memory. (#4225)
 - Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4223)
