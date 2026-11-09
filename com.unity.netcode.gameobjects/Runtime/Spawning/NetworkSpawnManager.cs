@@ -997,6 +997,19 @@ namespace Unity.Netcode
                 entitiesNetcode.m_ActiveWorld = previousWorld;
             }
         }
+
+        /// <summary>
+        /// Despawns the ghost of a hybrid instance handed to an <see cref="INetworkPrefabInstanceHandler"/>, which may keep the
+        /// GameObject for reuse. <see cref="SpawnGhost"/> spawns a new ghost when the instance is spawned again.
+        /// </summary>
+        internal static void DespawnGhostForPrefabHandler(NetworkObject networkObject)
+        {
+            var ghostObject = networkObject.GhostObject;
+            if (networkObject.HasGhost && ghostObject != null && ghostObject.IsSpawned && ghostObject.DelaySpawning)
+            {
+                ghostObject.Despawn();
+            }
+        }
 #endif
 
         /// <summary>
@@ -1601,6 +1614,10 @@ namespace Unity.Netcode
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
                     OnDespawnObject(networkObject, false);
+#if UNIFIED_NETCODE
+                    // The world is disposed after this, so a pooled instance must not keep a ghost linked to it.
+                    DespawnGhostForPrefabHandler(networkObject);
+#endif
                     // Leave destruction up to the handler
                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                 }
@@ -1972,6 +1989,9 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
+#if UNIFIED_NETCODE
+                    DespawnGhostForPrefabHandler(networkObject);
+#endif
                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                 }
                 else

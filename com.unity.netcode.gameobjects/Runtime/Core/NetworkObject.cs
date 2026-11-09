@@ -4241,9 +4241,11 @@ namespace Unity.Netcode
             {
                 Debug.Log($"[{nameof(NetworkObject)}] GhostBridge {name} detected and instantiated.");
             }
-            if (GhostObject.WasInitialized && NetworkObjectBridge.NetworkObjectId.Value != 0)
+            var networkObjectId = NetworkObjectBridge.NetworkObjectId.Value;
+            // A prefab handler instance is registered by HybridPrefabHandlerSpawnSystem before its Start runs.
+            if (GhostObject.WasInitialized && networkObjectId != 0 && !IsSpawned && !NetworkManager.SpawnManager.GhostSpawnManager.IsGhostPendingSpawn(networkObjectId))
             {
-                NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(NetworkObjectBridge.NetworkObjectId.Value, this);
+                NetworkManager.SpawnManager.GhostSpawnManager.RegisterGhostBridge(networkObjectId, this);
             }
         }
 #endif

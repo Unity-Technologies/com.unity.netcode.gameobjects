@@ -1164,6 +1164,17 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkDespawn()
         {
+#if UNIFIED_NETCODE
+            // The ghost replicates the kinematic state it reads when spawned, so a pooled server instance needs its authored state back.
+            if (NetworkObject.HasGhost)
+            {
+                if (m_LocalNetworkManager.IsServer)
+                {
+                    SetIsKinematic(m_OriginalKinematicState);
+                }
+                return;
+            }
+#endif
             if (UseRigidBodyForMotion && HasAuthority)
             {
                 DetachFromFixedJoint();
