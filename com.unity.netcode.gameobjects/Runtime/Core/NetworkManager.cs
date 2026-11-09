@@ -1100,11 +1100,18 @@ namespace Unity.Netcode
             OnSingletonReady?.Invoke();
         }
 
-        private void Awake()
+        /// <summary>
+        /// Unity calls Awake when loading an instance of a script component.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom initialization logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call <c>base.Awake()</c> in your override to allow the base initialization to happen.
+        /// </remarks>
+        protected virtual void Awake()
         {
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
             }
 
             NetworkConfig?.InitializePrefabs();
@@ -1124,7 +1131,14 @@ namespace Unity.Netcode
             }
         }
 
-        private void OnEnable()
+        /// <summary>
+        /// Called when a component of an active GameObject is first enabled.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom initialization logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call  <c>base.OnEnable()</c> in your override to allow the base initialization to happen.
+        /// </remarks>
+        protected virtual void OnEnable()
         {
             if (RunInBackground)
             {
@@ -1485,6 +1499,11 @@ namespace Unity.Netcode
         /// <returns>returns true if <see cref="NetworkManager"/> started in server mode successfully; otherwise false</returns>
         public bool StartServer()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Server))
@@ -1578,6 +1597,11 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
         public bool StartClient()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Client))
@@ -1663,6 +1687,11 @@ namespace Unity.Netcode
         /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
         public bool StartHost()
         {
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
             Log.CaptureFunctionCall();
 
             if (!CanStart(StartType.Host))
@@ -1848,7 +1877,7 @@ namespace Unity.Netcode
         {
             if (gameObject != null && scene == gameObject.scene)
             {
-                OnDestroy();
+                DestroyInternal();
             }
         }
 
@@ -1991,7 +2020,7 @@ namespace Unity.Netcode
             }
         }
 
-        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        // Ensures that the NetworkManager is cleaned up before DestroyInternal is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
             // Abrupt shutdown (or immediate exit of play mode).
@@ -2005,7 +2034,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            OnDestroy();
+            DestroyInternal();
 #if UNITY_EDITOR
             if (Singleton != null)
             {
@@ -2016,14 +2045,33 @@ namespace Unity.Netcode
 
         private bool m_IsDestroyed = false;
 
+        /// <summary>
+        /// Called when a GameObject or component is about to be destroyed.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to implement custom teardown logic for a derived <see cref="NetworkManager"/>.
+        /// Ensure you call <c>base.OnDestroy()</c> in your override to allow the base teardown to happen.
+        /// </remarks>
+        protected virtual void OnDestroy()
+        {
+            DestroyInternal();
+        }
+
+        // Internal destroy method that can't be overridden by derived classes.
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
-        private void OnDestroy()
+        private void DestroyInternal()
         {
             if (m_IsDestroyed)
             {
                 return;
             }
             m_IsDestroyed = true;
+
+            if (Log == null)
+            {
+                Log = new ContextualLogger(this);
+                Log.Warning(new Context(LogLevel.Normal, "No logger defined. Ensure base.Awake() and base.OnEnable is called in any derived NetworkManager classes."));
+            }
 
             try
             {
@@ -2120,7 +2168,7 @@ namespace Unity.Netcode
 
             if (Log == null)
             {
-                Log = new ContextualLogger(this, false);
+                Log = new ContextualLogger(this);
             }
 
             // Do a validation pass on NetworkConfig properties
