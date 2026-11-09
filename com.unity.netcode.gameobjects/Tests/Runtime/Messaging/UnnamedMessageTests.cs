@@ -198,6 +198,9 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public unsafe void ErrorMessageIsPrintedWhenAttemptingToSendUnnamedMessageWithTooBigBuffer()
         {
+#if !DEBUG
+            Assert.Ignore("The message size check only exists in builds that define DEBUG.");
+#endif
             // First try a valid send with the maximum allowed size (this is atm 1272)
             var msgSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>() - sizeof(NetworkBatchHeader);
             var bufferSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize;
