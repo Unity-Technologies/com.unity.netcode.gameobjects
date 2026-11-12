@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where every `NetworkObject` that started before a session logged a "Did not register because there is no session in progress!" warning when `NetworkManager.LogLevel` was `Developer`. Only `GhostObject` instances log it now. (#4245)
 - Fixed a NullReferenceException that would be thrown if a MonoBehaviour derived from NetworkManager defines it's own Awake or OnEnable. (#4244)
 - Issue where the unified bootstrap created a second world that ran a duplicate of every default system next to the default world. (#4243)
 - Ensured a useful and human readable error is logged when a NetworkVariable is trying to serialize a private or protected type. (#4239)
