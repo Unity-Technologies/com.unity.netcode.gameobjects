@@ -32,37 +32,40 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
-        public void AddWrappedType(TypeReference wrappedType)
+        /// <param name="wrappedType">The type to register NetworkVariable serialization for.</param>
+        /// <param name="origin">The field, type or method in the user's code that uses the type, so diagnostics about it can be double-clicked.
+        /// The source line is only looked up when a diagnostic needs it.</param>
+        public void AddWrappedType(TypeReference wrappedType, IMemberDefinition origin)
         {
-            if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+            if (!m_WrappedNetworkVariableTypes.ContainsKey(wrappedType))
             {
-                m_WrappedNetworkVariableTypes.Add(wrappedType);
+                m_WrappedNetworkVariableTypes.Add(wrappedType, origin);
 
                 var resolved = wrappedType.Resolve();
                 if (resolved != null)
                 {
                     if (resolved.FullName == "System.Collections.Generic.List`1")
                     {
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0], origin);
                     }
                     if (resolved.FullName == "System.Collections.Generic.HashSet`1")
                     {
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0], origin);
                     }
                     else if (resolved.FullName == "System.Collections.Generic.Dictionary`2")
                     {
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0], origin);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1], origin);
                     }
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     else if (resolved.FullName == "Unity.Collections.NativeHashSet`1")
                     {
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0], origin);
                     }
                     else if (resolved.FullName == "Unity.Collections.NativeHashMap`2")
                     {
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
-                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0], origin);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1], origin);
                     }
 #endif
                 }
@@ -125,7 +128,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                                 if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
                                 {
                                     var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
-                                    AddWrappedType(wrappedType);
+                                    AddWrappedType(wrappedType, resolved);
                                 }
                             }
 
@@ -136,7 +139,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                                     if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
                                     {
                                         var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
-                                        AddWrappedType(wrappedType);
+                                        AddWrappedType(wrappedType, method);
                                     }
                                 }
                             }
@@ -226,7 +229,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             var instructions = new List<Instruction>();
             var processor = staticCtorMethodDef.Body.GetILProcessor();
 
-            foreach (var type in m_WrappedNetworkVariableTypes)
+            foreach (var type in m_WrappedNetworkVariableTypes.Keys)
             {
                 if (type.Resolve() == null)
                 {
@@ -243,7 +246,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 // for types that aren't in our official supported types list.
                 GenericInstanceMethod serializeMethod = null;
                 GenericInstanceMethod equalityMethod;
-
+                var origin = m_WrappedNetworkVariableTypes[type];
 
                 if (type.Resolve().FullName == "Unity.Collections.NativeArray`1")
                 {
@@ -397,7 +400,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                         if (!hasEmptyConstructor)
                         {
-                            m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
+                            m_Diagnostics.AddError(origin, $"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
                             continue;
                         }
                         serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
@@ -413,10 +416,10 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                         {
                             if (typeInterface.InterfaceType.Name.Contains(typeof(IEquatable<>).Name) && typeInterface.InterfaceType.IsGenericInstance)
                             {
-                                m_Diagnostics.AddError($"{type}: A generic IEquatable '{typeInterface.InterfaceType.FullName}' is not supported.");
+                                m_Diagnostics.AddError(origin, $"{type}: A generic IEquatable '{typeInterface.InterfaceType.FullName}' is not supported.");
                             }
                         }
-                        m_Diagnostics.AddError($"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>.");
+                        m_Diagnostics.AddError(origin, $"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>.");
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 
@@ -427,13 +430,13 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                 // A single call violating its constraints makes CoreCLR reject this whole method, dropping every registration in the assembly.
                 if (serializeMethod != null && !serializeMethod.SatisfiesGenericConstraints(out var serializeViolation))
                 {
-                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - {serializeViolation}.");
+                    m_Diagnostics.AddError(origin, $"{type} cannot be used in a network variable - {serializeViolation}.");
                     continue;
                 }
 
                 if (!equalityMethod.SatisfiesGenericConstraints(out var equalityViolation))
                 {
-                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - {equalityViolation}.");
+                    m_Diagnostics.AddError(origin, $"{type} cannot be used in a network variable - {equalityViolation}.");
                     continue;
                 }
 
@@ -447,7 +450,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     {
                         foreach (var hiddenType in hiddenTypes)
                         {
-                            m_Diagnostics.AddError($"{type} cannot be used in a network variable - Cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
+                            m_Diagnostics.AddError(origin, $"{type} cannot be used in a network variable - Cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
                         }
                         continue;
                     }
@@ -455,7 +458,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     // Log a warning in Mono so we can warn users who haven't yet switched their projects over.
                     foreach (var hiddenType in hiddenTypes)
                     {
-                        m_Diagnostics.AddWarning($"NetworkVariable serialization for {type.Name} will fail in CoreCLR! With CoreCLR generated code cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
+                        m_Diagnostics.AddWarning(origin, $"NetworkVariable serialization for {type.Name} will fail in CoreCLR! With CoreCLR generated code cannot access the {hiddenType.Name} type to generate serialization as it is {(hiddenType.IsNestedPrivate ? "private" : "protected")}. To fix this, change the access modifier to internal or public.");
                     }
                 }
 
@@ -582,7 +585,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         private readonly Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new Dictionary<string, MethodReference>();
         private readonly List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new List<MethodReference>();
 
-        private HashSet<TypeReference> m_WrappedNetworkVariableTypes = new HashSet<TypeReference>();
+        /// <summary>
+        /// The types to register NetworkVariable serialization for, each mapped to where the user's code first uses it,
+        /// so diagnostics about the type can point there. See <see cref="CreateNetworkVariableTypeInitializers"/>.
+        /// </summary>
+        private Dictionary<TypeReference, IMemberDefinition> m_WrappedNetworkVariableTypes = new Dictionary<TypeReference, IMemberDefinition>();
 
         internal static readonly Type[] BaseSupportedTypes = new[]
         {
@@ -1290,10 +1297,17 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             return true;
         }
 
+        private struct FieldRef
+        {
+            public TypeReference Type;
+            public FieldDefinition Origin;
+        }
+
         // This gets all fields from this type as well as any parent types, up to (but not including) the base NetworkBehaviour class
         // Importantly... this also resolves any generics, so if the base class is Foo<T> and contains a field of NetworkVariable<T>,
         // and this class is Bar : Foo<int>, it will properly resolve NetworkVariable<T> to NetworkVariable<int>.
-        private void GetAllFieldsAndResolveGenerics(TypeDefinition type, ref List<TypeReference> fieldTypes, Dictionary<string, TypeReference> genericParameters = null)
+        // Each type is paired with the field it came from, so diagnostics about the type can point at the field's declaration.
+        private void GetAllFieldsAndResolveGenerics(TypeDefinition type, ref List<FieldRef> fieldTypes, Dictionary<string, TypeReference> genericParameters = null)
         {
             foreach (var field in type.Fields)
             {
@@ -1314,11 +1328,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                             newGenericType.GenericArguments.Add(argument);
                         }
                     }
-                    fieldTypes.Add(newGenericType);
+                    fieldTypes.Add(new FieldRef { Type = newGenericType, Origin = field });
                 }
                 else
                 {
-                    fieldTypes.Add(field.FieldType);
+                    fieldTypes.Add(new FieldRef { Type = field.FieldType, Origin = field });
                 }
             }
 
@@ -1437,11 +1451,12 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
             if (!typeDefinition.HasGenericParameters && !typeDefinition.IsGenericInstance)
             {
-                var fieldTypes = new List<TypeReference>();
+                var fieldTypes = new List<FieldRef>();
                 GetAllFieldsAndResolveGenerics(typeDefinition, ref fieldTypes);
-                foreach (var type in fieldTypes)
+                foreach (var fieldReference in fieldTypes)
                 {
-                    //var type = field.FieldType;
+                    var type = fieldReference.Type;
+                    var origin = fieldReference.Origin.DeclaringType == typeDefinition ? (IMemberDefinition)fieldReference.Origin : typeDefinition;
                     if (type.IsGenericInstance)
                     {
                         foreach (var attribute in type.Resolve().CustomAttributes)
@@ -1452,11 +1467,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                                 var genericInstanceType = (GenericInstanceType)type;
                                 if (idx < 0 || idx >= genericInstanceType.GenericArguments.Count)
                                 {
-                                    m_Diagnostics.AddError($"{type} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
+                                    m_Diagnostics.AddError(origin, $"{type} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
                                     continue;
                                 }
                                 var wrappedType = genericInstanceType.GenericArguments[idx];
-                                AddWrappedType(wrappedType);
+                                AddWrappedType(wrappedType, origin);
                             }
                         }
                     }
@@ -1485,11 +1500,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                                     var genericInstanceType = (GenericInstanceType)baseType;
                                     if (idx < 0 || idx >= genericInstanceType.GenericArguments.Count)
                                     {
-                                        m_Diagnostics.AddError($"{baseType} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
+                                        m_Diagnostics.AddError(origin, $"{baseType} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
                                         continue;
                                     }
                                     var wrappedType = genericInstanceType.GenericArguments[idx];
-                                    AddWrappedType(wrappedType);
+                                    AddWrappedType(wrappedType, origin);
                                 }
                             }
                         }
@@ -1626,6 +1641,18 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
         {
             CustomAttribute rpcAttribute = null;
+            var foundSignature = false;
+            SequencePoint signaturePoint = null;
+
+            SequencePoint Signature()
+            {
+                if (!foundSignature)
+                {
+                    signaturePoint = methodDefinition.GetSignatureLocation();
+                    foundSignature = true;
+                }
+                return signaturePoint;
+            }
 
             foreach (var customAttribute in methodDefinition.CustomAttributes)
             {
@@ -1639,51 +1666,51 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                     if (methodDefinition.IsStatic)
                     {
-                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be static!");
+                        m_Diagnostics.AddError(Signature(), "RPC method must not be static!");
                         isValid = false;
                     }
 
                     if (methodDefinition.IsAbstract)
                     {
-                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
+                        m_Diagnostics.AddError(Signature(), "RPC method must not be abstract!");
                         isValid = false;
                     }
 
                     if (methodDefinition.HasGenericParameters)
                     {
-                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be generic!");
+                        m_Diagnostics.AddError(Signature(), "RPC method must not be generic!");
                         isValid = false;
                     }
 
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
-                        m_Diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
+                        m_Diagnostics.AddError(Signature(), "RPC method must return `void`!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        m_Diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
+                        m_Diagnostics.AddError(Signature(), "ServerRpc method must end with 'ServerRpc' suffix!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        m_Diagnostics.AddError(Signature(), "ClientRpc method must end with 'ClientRpc' suffix!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.RpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("Rpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        m_Diagnostics.AddError(methodDefinition, "Rpc method must end with 'Rpc' suffix!");
+                        m_Diagnostics.AddError(Signature(), "Rpc method must end with 'Rpc' suffix!");
 
                         // Extra compiler information if a method was defined as a local function
                         if (methodDefinition.Name.Contains("Rpc|", StringComparison.OrdinalIgnoreCase) && methodDefinition.Name.StartsWith("g__", StringComparison.OrdinalIgnoreCase))
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} appears to be a local function. Local functions cannot be RPCs.");
+                            m_Diagnostics.AddError(Signature(), $"{methodDefinition.Name} appears to be a local function. Local functions cannot be RPCs.");
                         }
 
                         isValid = false;
@@ -1704,15 +1731,15 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             {
                 if (methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"ServerRpc method {methodDefinition} must be marked with 'ServerRpc' attribute!");
+                    m_Diagnostics.AddError(Signature(), $"ServerRpc method {methodDefinition.Name} must be marked with 'ServerRpc' attribute!");
                 }
                 else if (methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"ClientRpc method {methodDefinition} must be marked with 'ClientRpc' attribute!");
+                    m_Diagnostics.AddError(Signature(), $"ClientRpc method {methodDefinition.Name} must be marked with 'ClientRpc' attribute!");
                 }
                 else if (methodDefinition.Name.EndsWith("ExtRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Ext Rpc method {methodDefinition} must be marked with 'ExtRpc' attribute!");
+                    m_Diagnostics.AddError(Signature(), $"Ext Rpc method {methodDefinition.Name} must be marked with 'ExtRpc' attribute!");
                 }
 
                 return null;
@@ -2216,7 +2243,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             {
                 if (!hasRpcParams)
                 {
-                    m_Diagnostics.AddError($"{methodDefinition}: {nameof(SendTo)}.{nameof(SendTo.SpecifiedInParams)} cannot be used without a final parameter of type {CodeGenHelpers.RpcParams_FullName}.");
+                    m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{methodDefinition.Name}: {nameof(SendTo)}.{nameof(SendTo.SpecifiedInParams)} cannot be used without a final parameter of type {CodeGenHelpers.RpcParams_FullName}.");
                 }
 
                 foreach (var attrField in rpcAttribute.Fields)
@@ -2224,7 +2251,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     switch (attrField.Name)
                     {
                         case nameof(RpcAttribute.AllowTargetOverride):
-                            m_Diagnostics.AddWarning($"{methodDefinition}: {nameof(RpcAttribute.AllowTargetOverride)} is ignored with {nameof(SendTo)}.{nameof(SendTo.SpecifiedInParams)}");
+                            m_Diagnostics.AddWarning(methodDefinition.GetSignatureLocation(), $"{methodDefinition.Name}: {nameof(RpcAttribute.AllowTargetOverride)} is ignored with {nameof(SendTo)}.{nameof(SendTo.SpecifiedInParams)}");
                             break;
                     }
                 }
@@ -2233,7 +2260,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             {
                 if (!hasRpcParams)
                 {
-                    m_Diagnostics.AddError($"{methodDefinition}: {nameof(RpcAttribute.AllowTargetOverride)} cannot be used without a final parameter of type {CodeGenHelpers.RpcParams_FullName}.");
+                    m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{methodDefinition.Name}: {nameof(RpcAttribute.AllowTargetOverride)} cannot be used without a final parameter of type {CodeGenHelpers.RpcParams_FullName}.");
                 }
             }
 
@@ -2449,7 +2476,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                                     }
                                     else
                                     {
-                                        m_Diagnostics.AddError("Unsupported attribute parameter type.");
+                                        m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), "Unsupported attribute parameter type.");
                                     }
                                 }
 
@@ -2461,7 +2488,7 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
 
                         if (!found)
                         {
-                            m_Diagnostics.AddError($"{nameof(RpcAttribute)} contains field {field} which is not present in {nameof(RpcAttribute.RpcAttributeParams)}.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{nameof(RpcAttribute)} contains field {field} which is not present in {nameof(RpcAttribute.RpcAttributeParams)}.");
                         }
                     }
 
@@ -2486,14 +2513,14 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     if (paramType.FullName == CodeGenHelpers.ClientRpcSendParams_FullName ||
                         paramType.FullName == CodeGenHelpers.ClientRpcReceiveParams_FullName)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
+                        m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.ServerRpcSendParams_FullName ||
                         paramType.FullName == CodeGenHelpers.ServerRpcReceiveParams_FullName)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
+                        m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
                         continue;
                     }
                     // ServerRpcParams
@@ -2501,11 +2528,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ServerRpcParams)} must be the last parameter in a ServerRpc.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{nameof(ServerRpcParams)} must be the last parameter in a ServerRpc.");
                         }
                         if (!isServerRpc)
                         {
-                            m_Diagnostics.AddError($"Only ServerRpcs may accept {nameof(ServerRpcParams)} as a parameter.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"Only ServerRpcs may accept {nameof(ServerRpcParams)} as a parameter.");
                         }
                         continue;
                     }
@@ -2514,11 +2541,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ClientRpcParams)} must be the last parameter in a ClientRpc.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{nameof(ClientRpcParams)} must be the last parameter in a ClientRpc.");
                         }
                         if (!isClientRpc)
                         {
-                            m_Diagnostics.AddError($"Only clientRpcs may accept {nameof(ClientRpcParams)} as a parameter.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"Only clientRpcs may accept {nameof(ClientRpcParams)} as a parameter.");
                         }
                         continue;
                     }
@@ -2527,11 +2554,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} is invalid. {nameof(RpcParams)} must be the last parameter in a ClientRpc.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{methodDefinition.Name} is invalid. {nameof(RpcParams)} must be the last parameter in a ClientRpc.");
                         }
                         if (!isGenericRpc)
                         {
-                            m_Diagnostics.AddError($"{methodDefinition.Name} is invalid. Only Rpcs may accept {nameof(RpcParams)} as a parameter.");
+                            m_Diagnostics.AddError(methodDefinition.GetSignatureLocation(), $"{methodDefinition.Name} is invalid. Only Rpcs may accept {nameof(RpcParams)} as a parameter.");
                         }
                         continue;
                     }
