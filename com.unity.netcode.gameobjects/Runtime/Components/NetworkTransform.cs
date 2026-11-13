@@ -1857,6 +1857,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         private NetworkDeltaPosition m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0);
 
+        // Non-authority only: the network tick of the state that last set the half float base position.
+        private int m_HalfPositionBaseTick;
+
         internal void UpdatePositionSlerp()
         {
             if (m_PositionInterpolator != null)
@@ -2970,6 +2973,7 @@ namespace Unity.Netcode.Components
                 {
                     // With delta position teleport updates or synchronization, we create a new instance and provide the current network tick.
                     m_HalfPositionState = new NetworkDeltaPosition(newState.CurrentPosition, newState.NetworkTick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    m_HalfPositionBaseTick = newState.NetworkTick;
 
                     // When first synchronizing we determine if we need to apply the current delta position
                     // offset or not. This is specific to owner authoritative mode on the owner side only
@@ -3173,6 +3177,7 @@ namespace Unity.Netcode.Components
                 if (flagStates.SynchronizeBaseHalfFloat)
                 {
                     m_HalfPositionState = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition;
+                    m_HalfPositionBaseTick = newState.NetworkTick;
                 }
                 else
                 {
@@ -3325,6 +3330,15 @@ namespace Unity.Netcode.Components
             // from the old state (with unreliable traffic and/or mixed unreliable and reliable)
             if (UseUnreliableDeltas && oldState.NetworkTick > newState.NetworkTick && !newState.FlagStates.IsTeleportingNextFrame && !newState.FlagStates.UnreliableFrameSync)
             {
+                // A half float base sync is sent reliably and the deltas after it unreliably, so it can arrive after them.
+                // Its position is stale but its base is not: every later delta is relative to it. A base sync older than
+                // the applied base (from a former owner, after an ownership change) is still dropped.
+                var flagStates = newState.FlagStates;
+                if (flagStates.SynchronizeBaseHalfFloat && flagStates.UseHalfFloatPrecision && flagStates.HasPositionChange && newState.NetworkTick > m_HalfPositionBaseTick)
+                {
+                    m_HalfPositionState.CurrentBasePosition = newState.NetworkDeltaPosition.CurrentBasePosition;
+                    m_HalfPositionBaseTick = newState.NetworkTick;
+                }
                 return;
             }
 
