@@ -3325,6 +3325,13 @@ namespace Unity.Netcode.Components
             // from the old state (with unreliable traffic and/or mixed unreliable and reliable)
             if (UseUnreliableDeltas && oldState.NetworkTick > newState.NetworkTick && !newState.FlagStates.IsTeleportingNextFrame && !newState.FlagStates.UnreliableFrameSync)
             {
+                // A half float base sync is sent reliably and the deltas after it unreliably, so it can arrive after them.
+                // Its position is stale but its base is not: every later delta is relative to it.
+                var flagStates = newState.FlagStates;
+                if (flagStates.SynchronizeBaseHalfFloat && flagStates.UseHalfFloatPrecision && flagStates.HasPositionChange)
+                {
+                    m_HalfPositionState.CurrentBasePosition = newState.NetworkDeltaPosition.CurrentBasePosition;
+                }
                 return;
             }
 
