@@ -88,11 +88,10 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey -O %USERPROFILE%/.android/adbkey
     - command: gsudo NetSh Advfirewall set allprofiles state off
 
-    # Connect to Android device
-    - command: '"%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP%'
-
-    # Run tests for Android devices
+    # Connect to Android device and run tests
     - |
+      set ANDROID_SDK_ROOT=%CD%\.Editor\Data\PlaybackEngines\AndroidPlayer\SDK
+      "%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP% || exit /b 1
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
       UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
 {% else %}
