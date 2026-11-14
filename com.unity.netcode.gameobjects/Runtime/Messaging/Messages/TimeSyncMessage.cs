@@ -28,6 +28,11 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, Tick);
+            // Ignore stale time sync messages that arrive out of order
+            if (networkManager.NetworkTimeSystem.LastSyncedServerTimeSec > 0 && time.Time <= networkManager.NetworkTimeSystem.LastSyncedServerTimeSec)
+            {
+                return;
+            }
             networkManager.NetworkTimeSystem.SyncCount++;
             networkManager.NetworkTimeSystem.Sync(time.Time, networkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(context.SenderId) / 1000d);
         }

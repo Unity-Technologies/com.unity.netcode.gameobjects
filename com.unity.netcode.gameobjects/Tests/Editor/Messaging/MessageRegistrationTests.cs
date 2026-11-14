@@ -191,5 +191,18 @@ namespace Unity.Netcode.GameObjects.EditorTests
                 Assert.AreEqual(handlerFour, systemThree.MessageHandlers[systemThree.GetMessageType(typeof(TestMessageFour))]);
             }
         }
+
+        [Test]
+        public void WhenCheckingTimeSyncMessageDelivery_UsesUnreliableSequencedDelivery()
+        {
+            var delivery = MessageDelivery.GetDelivery(typeof(TimeSyncMessage));
+            Assert.AreEqual(NetworkDelivery.UnreliableSequenced, delivery);
+        }
+
+        [Test]
+        public void WhenCheckingTimeSyncMessageDeliveryType_UsesUnreliableSequencedDelivery()
+        {
+            Assert.AreEqual(NetworkDelivery.UnreliableSequenced, MessageDeliveryType<TimeSyncMessage>.DefaultDelivery);
+        }
     }
 }
