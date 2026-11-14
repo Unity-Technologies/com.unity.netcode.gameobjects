@@ -15,7 +15,7 @@ internal static class MessageDelivery
     /// - Skip the time sync messages since it has always used unreliable network delivery.
     /// </summary>
     private static readonly HashSet<NetworkMessageTypes> k_SkipMessageTypes = new HashSet<NetworkMessageTypes>(){
-        NetworkMessageTypes.NamedMessage, NetworkMessageTypes.Unnamed};
+        NetworkMessageTypes.NamedMessage, NetworkMessageTypes.Unnamed, NetworkMessageTypes.TimeSync};
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void OnApplicationStart()
@@ -49,6 +49,7 @@ internal static class MessageDelivery
             }
             s_MessageToDelivery.Add(messageType, NetworkDelivery.ReliableFragmentedSequenced);
         }
+        s_MessageToDelivery.Add(NetworkMessageTypes.TimeSync, NetworkDelivery.UnreliableSequenced);
         s_MessageToMessageType = ILPPMessageProvider.GetMessageTypesMap();
 
         // Fast path look-ups
@@ -81,19 +82,25 @@ internal static class MessageDelivery
     internal static NetworkDelivery GetDelivery(Type type)
     {
         // Return the default if not registered or null
-        if (type == null || k_SkipMessageTypes.Contains(s_MessageToMessageType[type]))
+        if (type == null || !s_MessageToMessageType.TryGetValue(type, out var messageType))
         {
             return NetworkDelivery.ReliableFragmentedSequenced;
         }
-        return GetDelivery(s_MessageToMessageType[type]);
+        return GetDelivery(messageType);
     }
 
     internal static NetworkDelivery GetDelivery(NetworkMessageTypes messageType)
     {
+        if (s_MessageToDelivery.TryGetValue(messageType, out var delivery))
+        {
+            return delivery;
+        }
+
         if (k_SkipMessageTypes.Contains(messageType))
         {
             throw new Exception($"{messageType} is not registered in the message type to network delivery map!");
         }
-        return s_MessageToDelivery[messageType];
+
+        return NetworkDelivery.ReliableFragmentedSequenced;
     }
 }
