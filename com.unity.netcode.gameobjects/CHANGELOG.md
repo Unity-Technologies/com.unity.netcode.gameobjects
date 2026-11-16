@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- ILPP diagnostic errors should now be clickable in the editor to go to the source of the issue. (#4250)
+
 ### Changed
 
 ### Deprecated
