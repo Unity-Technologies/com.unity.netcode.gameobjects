@@ -13,6 +13,10 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkTransformAutoParenting : IntegrationTestWithApproximation
     {
         public enum TransformSpace
@@ -22,6 +26,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 4;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private List<NetworkObject> m_PrefabsToSpawn = new List<NetworkObject>();
         private NetworkObject m_ParentToSpawn;
@@ -216,7 +227,13 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var prefabToSpawn in m_PrefabsToSpawn)
             {
-                yield return SpawnAndTest(prefabToSpawn, true);
+#if UNIFIED_NETCODE
+                // NGO parenting of a hybrid instance requires worldPositionStays disabled.
+                if (!m_AllPrefabsAsHybrid)
+#endif
+                {
+                    yield return SpawnAndTest(prefabToSpawn, true);
+                }
                 yield return SpawnAndTest(prefabToSpawn, false);
             }
         }
@@ -248,7 +265,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (m_ChildInstance.transform.parent)
                 {
+#if UNIFIED_NETCODE
+                    m_ChildInstance.TryRemoveParent(!m_AllPrefabsAsHybrid);
+#else
                     m_ChildInstance.TryRemoveParent();
+#endif
                 }
                 for (int j = 0; j < k_ParentsToSpawn; j++)
                 {

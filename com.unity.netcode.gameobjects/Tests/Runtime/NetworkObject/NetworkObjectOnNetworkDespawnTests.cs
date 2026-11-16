@@ -13,6 +13,10 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
     {
         private const string k_ObjectName = "TestDespawn";
@@ -23,6 +27,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 1;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
         private GameObject m_ObjectToSpawn;
         private NetworkObject m_NetworkObject;
 

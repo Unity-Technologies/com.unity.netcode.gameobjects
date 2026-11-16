@@ -231,7 +231,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
         /// <typeparam name="T">The type of elements in the HashSet</typeparam>
-        public static void InitializeEqualityChecker_HashSet<T>() where T : IEquatable<T>
+        public static void InitializeEqualityChecker_HashSet<T>()
         {
             NetworkVariableSerialization<HashSet<T>>.AreEqual = NetworkVariableEquality<T>.EqualityEqualsHashSet;
         }

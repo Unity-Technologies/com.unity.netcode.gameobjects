@@ -1,0 +1,7 @@
+<Project>
+    <!-- dotnet format: skip Entities / Netcode for Entities source generators (slow, and they can't resolve the Unity project path outside the Editor) -->
+    <ItemGroup>
+        <Analyzer Remove="$(MSBuildProjectDirectory)/Library/PackageCache/com.unity.netcode@*/**/*.dll" />
+        <Analyzer Remove="$(MSBuildProjectDirectory)/Library/PackageCache/com.unity.entities@*/**/*.dll" />
+    </ItemGroup>
+</Project>

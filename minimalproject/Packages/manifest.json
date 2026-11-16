@@ -2,6 +2,7 @@
   "disableProjectUpdate": false,
   "dependencies": {
     "com.unity.ide.rider": "3.0.38",
+    "com.unity.netcode": "https://github.cds.internal.unity3d.com/unity/unity.git?path=Workspace/com.unity.netcode#trunk",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.test-framework": "1.9.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

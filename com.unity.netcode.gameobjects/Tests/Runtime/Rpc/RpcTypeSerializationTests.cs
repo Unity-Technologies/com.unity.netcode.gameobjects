@@ -14,12 +14,20 @@ using Vector4 = UnityEngine.Vector4;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class RpcTypeSerializationTests : NetcodeIntegrationTest
     {
-        public RpcTypeSerializationTests()
+        public RpcTypeSerializationTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
         {
-            m_UseHost = false;
+            return true;
         }
+#endif
 
         internal class RpcTestNB : NetworkBehaviour
         {
@@ -1125,9 +1133,6 @@ namespace Unity.Netcode.RuntimeTests
 #endif
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -1256,7 +1261,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                TestValueType(
+                yield return TestValueType(
                     new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)),
                     new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)));
             }
@@ -1463,7 +1468,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                TestValueTypeArray(
+                yield return TestValueTypeArray(
                     new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
                     new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
             }
@@ -1542,9 +1547,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -1713,7 +1715,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                TestValueTypeNativeArray(
+                yield return TestValueTypeNativeArray(
                     new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) }, Allocator.Persistent),
                     new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) }, Allocator.Persistent));
             }
@@ -1961,7 +1963,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                TestValueTypeNativeList(
+                yield return TestValueTypeNativeList(
                     new NativeList<Pose>(Allocator.Persistent) { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
                     new NativeList<Pose>(Allocator.Persistent) { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
             }

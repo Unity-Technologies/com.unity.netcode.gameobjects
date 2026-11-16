@@ -14,10 +14,23 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Server)]
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.UnifiedHost)]
+    [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.UnifiedHost)]
+    [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.UnifiedServer)]
+    [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkObjectSynchronizationTests : NetcodeIntegrationTest
     {
         private const int k_NumberToSpawn = 30;
         protected override int NumberOfClients => 0;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private GameObject m_NetworkPrefab;
         private GameObject m_InValidNetworkPrefab;
@@ -94,11 +107,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkObjectDeserializationFailure()
         {
+#if UNIFIED_NETCODE
+            if (m_AllPrefabsAsHybrid)
+            {
+                Assert.Ignore("Removing a hybrid prefab from one client does not unregister its ghost prefab. All worlds in this process share that registration.");
+            }
+#endif
             m_CurrentLogLevel = LogLevel.Nothing;
             var authoritySpawnedNetworkObjects = new List<NetworkObject>();
             NetworkBehaviourWithNetworkVariables.ResetSpawnCount();
@@ -280,9 +296,6 @@ namespace Unity.Netcode.RuntimeTests
         /// will still be initialized properly
         /// </summary>
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkBehaviourSynchronization()
         {
             var authority = GetAuthorityNetworkManager();
@@ -290,7 +303,7 @@ namespace Unity.Netcode.RuntimeTests
             m_CurrentLogLevel = LogLevel.Normal;
             NetworkBehaviourSynchronizeFailureComponent.ResetBehaviour();
 
-            var spawnedObjectList = new List<GameObject>();
+            var spawnedObjectList = new List<NetworkObject>();
             var numberOfObjectsToSpawn = NetworkBehaviourSynchronizeFailureComponent.NumberOfFailureTypes * 4;
             // Spawn 11 more NetworkObjects where there should be 4 of each failure type
             for (int i = 0; i < numberOfObjectsToSpawn; i++)
@@ -298,22 +311,21 @@ namespace Unity.Netcode.RuntimeTests
                 var synchronizationObject = SpawnObject(m_SynchronizationPrefab, authority);
                 var synchronizationBehaviour = synchronizationObject.GetComponent<NetworkBehaviourSynchronizeFailureComponent>();
                 synchronizationBehaviour.AssignNextFailureType();
-                spawnedObjectList.Add(synchronizationObject);
+                spawnedObjectList.Add(synchronizationObject.GetComponent<NetworkObject>());
             }
 
             // Now spawn and connect a client that will fail to spawn half of the NetworkObjects spawned
             var newClient = CreateNewClient();
             yield return StartClient(newClient);
 
+            yield return WaitForSpawnedOnAllOrTimeOut(spawnedObjectList);
+            AssertOnTimeout($"Timed out waiting for newly joined client to spawn all NetworkObjects!");
+
             // Validate that when a NetworkBehaviour fails to synchronize and is skipped over it does not
             // impact the rest of the NetworkBehaviours.
             var clientSideNetworkObjects = s_GlobalNetworkObjects[newClient.LocalClientId];
-            yield return WaitForSpawnedOnAllOrTimeOut(clientSideNetworkObjects.Values);
-            AssertOnTimeout($"Timed out waiting for newly joined client to spawn all NetworkObjects!");
-
-            foreach (var spawnedObject in spawnedObjectList)
+            foreach (var authorityObject in spawnedObjectList)
             {
-                var authorityObject = spawnedObject.GetComponent<NetworkObject>();
                 var nonAuthorityObject = clientSideNetworkObjects[authorityObject.NetworkObjectId];
                 var clientSideSpawnedNetworkObject = nonAuthorityObject.GetComponent<NetworkObject>();
 
@@ -325,9 +337,6 @@ namespace Unity.Netcode.RuntimeTests
         /// A basic validation for the NetworkBehaviour.OnSynchronize method
         /// </summary>
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator NetworkBehaviourOnSynchronize()
         {
             var authority = GetAuthorityNetworkManager();
@@ -336,6 +345,9 @@ namespace Unity.Netcode.RuntimeTests
             // Now spawn and connect a client that will have custom serialized data applied during the client synchronization process.
             var newClient = CreateNewClient();
             yield return StartClient(newClient);
+
+            yield return WaitForSpawnedOnAllOrTimeOut(serverSideInstance.NetworkObject);
+            AssertOnTimeout($"Timed out waiting for newly joined client to spawn {serverSideInstance.name}!");
 
             var clientSideNetworkObjects = s_GlobalNetworkObjects[newClient.LocalClientId];
             var clientSideInstance = clientSideNetworkObjects[serverSideInstance.NetworkObjectId].GetComponent<NetworkBehaviourOnSynchronizeComponent>();

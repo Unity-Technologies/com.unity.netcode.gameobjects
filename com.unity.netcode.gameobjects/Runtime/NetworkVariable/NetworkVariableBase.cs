@@ -125,6 +125,7 @@ namespace Unity.Netcode
             // When in distributed authority mode, there is no such thing as server write permissions
             InternalWritePerm = m_NetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
 
+            // Don't catch errors here, we want any failure here to be reported upward
             OnInitialize();
 
             // Some unit tests don't operate with a running NetworkManager.
@@ -281,6 +282,13 @@ namespace Unity.Netcode
 
             if (m_IsDirty)
             {
+#if UNIFIED_NETCODE
+                // The implicit bool skips a destroyed behaviour, whose name the warning reads; ?. would not.
+                if (m_NetworkBehaviour)
+                {
+                    m_NetworkBehaviour.WarnIfNetworkVariableWrittenInPredictionLoop(Name);
+                }
+#endif
                 MarkNetworkBehaviourDirty();
             }
         }

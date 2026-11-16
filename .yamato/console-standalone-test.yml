@@ -49,8 +49,8 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics{% if platform.name == "switch" %} --extra-editor-arg=-overrideTextureCompression --extra-editor-arg=ForceUncompressed{% endif %} --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --arch {{ platform.architecture }}
+    - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics{% if platform.name == "switch" %} --extra-editor-arg=-overrideTextureCompression --extra-editor-arg=ForceUncompressed{% endif %} --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --build-only --timeout={{ test_timeout}}
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -88,8 +88,17 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
-    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --timeout={{ test_timeout }}
+    # Console players connect back to UTR's player connection listener on this VM, so the firewall must allow it
+    - command: gsudo NetSh Advfirewall set allprofiles state off
+    # Register the Bokken devkit with the platform's target tools so UTR can deploy and run the prebuilt player
+{% if platform.name == "ps5" %}
+    - command: gsudo prospero-ctrl target add %BOKKEN_DEVICE_IP%
+{% elsif platform.name == "ps4" %}
+    - command: orbis-ctrl add %BOKKEN_DEVICE_IP%
+{% else %}
+    - command: '"%GameDK%/bin/xbconnect" /WS %BOKKEN_DEVICE_IP%'
+{% endif %}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --scripting-backend=il2cpp --testproject={{ project.path }} --artifacts-path=test-results --player-load-path=build/players --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry={{ num_test_retries }} --timeout={{ test_timeout }}
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'

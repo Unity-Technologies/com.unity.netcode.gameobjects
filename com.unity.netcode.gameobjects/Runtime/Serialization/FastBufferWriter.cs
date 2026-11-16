@@ -193,7 +193,7 @@ namespace Unity.Netcode
 
         internal unsafe void Grow(int additionalSizeRequired)
         {
-            var desiredSize = Handle->Capacity * 2;
+            var desiredSize = Math.Max(Handle->Capacity * 2, 1);
             while (desiredSize < Position + additionalSizeRequired)
             {
                 desiredSize *= 2;
@@ -204,7 +204,8 @@ namespace Unity.Netcode
 #if DEBUG
             UnsafeUtility.MemSet(newBuffer, 0, newSize);
 #endif
-            UnsafeUtility.MemCpy(newBuffer, Handle->BufferPointer, Length);
+            // Not Length: bytes written in an open bitwise context are not committed to Position until it is disposed.
+            UnsafeUtility.MemCpy(newBuffer, Handle->BufferPointer, Handle->Capacity);
             if (Handle->BufferGrew)
             {
                 UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);

@@ -37,7 +37,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c webgl -c il2cpp {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloading the editor with additional webgl and il2cpp components
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c webgl -c il2cpp --arch {{ platform.architecture }} # Downloading the editor with additional webgl and il2cpp components
 
     # The following step builds the player with defined options such as:
     # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
@@ -45,7 +45,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     # Engine is initialized in ‘nographics’ mode since we don't need any graphics for this case (--extra-editor-arg=-nographics)
     # In case of failure the job will be rerunned once (--reruncount=1) with clean library (--clean-library-on-rerun). Note that this is build only step so no tests are being executed
     # This will perform only building phase (--build-only) with a timeout set by the test_timeout variable in the project metafile.
-    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
+    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --rerun-strategy=Test --retry={{ num_test_retries }} --clean-library-on-rerun --build-only --timeout={{ test_timeout }}
   artifacts:
     logs:
       paths:

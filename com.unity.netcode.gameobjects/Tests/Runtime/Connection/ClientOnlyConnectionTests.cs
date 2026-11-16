@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
@@ -50,7 +51,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkManager.StartClient();
 
             // Unity Transport throws an error when it times out
-            LogAssert.Expect(LogType.Error, "Failed to connect to server.");
+            LogAssert.Expect(LogType.Error, new Regex("^Failed to connect to server\\."));
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_WasDisconnected, m_TimeoutHelper);
             Assert.False(m_TimeoutHelper.TimedOut, "Timed out waiting for client to timeout waiting to connect!");
 

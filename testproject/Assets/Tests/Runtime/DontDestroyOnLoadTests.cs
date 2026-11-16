@@ -22,6 +22,13 @@ namespace TestProject.RuntimeTests
 
         public DontDestroyOnLoadTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         protected override void OnServerAndClientsCreated()
         {
             m_DontDestroyOnLoadObject = CreateNetworkObjectPrefab("DDOLObject");

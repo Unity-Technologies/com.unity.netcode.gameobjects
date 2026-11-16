@@ -10,9 +10,6 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
-#if UNIFIED_NETCODE
-    [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.UnifiedHost)]
-#endif
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";

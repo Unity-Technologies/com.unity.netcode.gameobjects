@@ -74,9 +74,9 @@ To un-register a prefab handler, you can [invoke the `NetworkManager.PrefabHandl
 
 ## Object spawning with prefab handlers
 
-Once a prefab handler is registered, Netcode for GameObjects automatically uses the defined `Initialize` and `Destroy` methods to manage the object lifecycle. [Spawn the network prefab as usual](../basics/object-spawning.md#spawning-a-network-prefab-overview) and the `Initialize` method will be called on whichever handler is registered with the spawned network prefab.
+Once a prefab handler is registered, Netcode for GameObjects automatically uses the defined `Initialize` and `Destroy` methods to manage the object lifecycle. [Spawn the network prefab as usual](../basics/object-spawning.md#spawn-a-network-prefab) and the `Initialize` method will be called on whichever handler is registered with the spawned network prefab.
 
-Note that the `Initialize` method is only called on non-authority clients. To customize network prefab behavior on the authority, you can use [prefab overrides](../basics/object-spawning.md#taking-prefab-overrides-into-consideration).
+Note that the `Initialize` method is only called on non-authority clients. To customize network prefab behavior on the authority, you can use [prefab overrides](../basics/object-spawning.md#consider-prefab-overrides).
 
 ### Object spawning with custom data
 
@@ -255,4 +255,4 @@ When it comes to including instantiation data, you should be cautious about incl
 ## Additional resources
 
 - [Object pooling](./object-pooling.md)
-- [Authority prefab overrides](../basics/object-spawning.md#taking-prefab-overrides-into-consideration)
+- [Authority prefab overrides](../basics/object-spawning.md#consider-prefab-overrides)

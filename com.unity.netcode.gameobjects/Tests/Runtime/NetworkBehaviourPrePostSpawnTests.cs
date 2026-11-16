@@ -8,9 +8,19 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class NetworkBehaviourPrePostSpawnTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         // TODO: [CmbServiceTests] Adapt to run with the service
         protected override bool UseCMBService()

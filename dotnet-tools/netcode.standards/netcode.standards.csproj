@@ -12,4 +12,8 @@
         <PackageReference Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="ExcludeGenerators.targets" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

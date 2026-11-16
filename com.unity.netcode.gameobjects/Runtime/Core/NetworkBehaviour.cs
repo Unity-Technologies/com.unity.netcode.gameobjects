@@ -74,6 +74,54 @@ namespace Unity.Netcode
         private const int k_RpcMessageDefaultSize = 1024; // 1k
         private const int k_RpcMessageMaximumSize = 1024 * 64; // 64k
 
+#if UNIFIED_NETCODE
+        private bool m_WarnedRpcInPredictionLoop;
+        private bool m_WarnedNetworkVariableInPredictionLoop;
+
+        /// <summary>
+        /// Whether this hybrid instance's ghost is currently inside the Netcode for Entities prediction loop.
+        /// </summary>
+        private bool IsInGhostPredictionLoop()
+        {
+            if (m_NetworkObject == null || !m_NetworkObject.HasGhost)
+            {
+                return false;
+            }
+            var ghostObject = m_NetworkObject.GhostObject;
+            return ghostObject != null && ghostObject.IsSpawned && ghostObject.NetworkTime.IsInPredictionLoop;
+        }
+
+        // RPCs and NetworkVariables are not rolled back or tick aligned, so a re-simulated tick sends or writes them again.
+        // Warned once per NetworkBehaviour.
+        private void WarnIfRpcSentInPredictionLoop()
+        {
+            if (m_WarnedRpcInPredictionLoop || !IsInGhostPredictionLoop())
+            {
+                return;
+            }
+            m_WarnedRpcInPredictionLoop = true;
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            {
+                NetworkLog.LogWarning($"[{name}][{GetType().Name}] An RPC was sent from inside the Netcode for Entities prediction loop, which is not supported. " +
+                    "RPCs are not part of prediction and are sent again for every re-simulated tick.");
+            }
+        }
+
+        internal void WarnIfNetworkVariableWrittenInPredictionLoop(string variableName)
+        {
+            if (m_WarnedNetworkVariableInPredictionLoop || !IsInGhostPredictionLoop())
+            {
+                return;
+            }
+            m_WarnedNetworkVariableInPredictionLoop = true;
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            {
+                NetworkLog.LogWarning($"[{name}][{GetType().Name}][{variableName}] A NetworkVariable was written from inside the Netcode for Entities prediction loop, which is not supported. " +
+                    "NetworkVariables are not rolled back, so re-simulated ticks write it again and its value can move backwards.");
+            }
+        }
+#endif
+
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal FastBufferWriter __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
@@ -83,6 +131,9 @@ namespace Unity.Netcode
             {
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
+#if UNIFIED_NETCODE
+            WarnIfRpcSentInPredictionLoop();
+#endif
 
             return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
@@ -137,7 +188,14 @@ namespace Unity.Netcode
                     MessageSize = 0
                 };
                 serverRpcMessage.ReadBuffer = tempBuffer;
-                serverRpcMessage.Handle(ref context);
+                try
+                {
+                    serverRpcMessage.Handle(ref context);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
                 rpcWriteSize = tempBuffer.Length;
             }
             else
@@ -161,6 +219,9 @@ namespace Unity.Netcode
             {
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
+#if UNIFIED_NETCODE
+            WarnIfRpcSentInPredictionLoop();
+#endif
 
             return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
@@ -267,7 +328,14 @@ namespace Unity.Netcode
                     MessageSize = 0
                 };
                 clientRpcMessage.ReadBuffer = tempBuffer;
-                clientRpcMessage.Handle(ref context);
+                try
+                {
+                    clientRpcMessage.Handle(ref context);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
 
             bufferWriter.Dispose();
@@ -339,6 +407,9 @@ namespace Unity.Netcode
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }
+#if UNIFIED_NETCODE
+            WarnIfRpcSentInPredictionLoop();
+#endif
             return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
 
@@ -640,9 +711,25 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SetIsDestroying()
         {
-            // We intentionally invoke this before setting the IsDestroying flag.
-            OnIsDestroying();
+            try
+            {
+                // We intentionally invoke this before setting the IsDestroying flag.
+                OnIsDestroying();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            // Set outside of the try-catch: a throwing override must not leave this flag false.
             IsDestroying = true;
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="NetworkObject.ResetIsDestroying"/>.
+        /// </summary>
+        internal void ResetIsDestroying()
+        {
+            IsDestroying = false;
         }
 
         /// <summary>
@@ -931,7 +1018,14 @@ namespace Unity.Netcode
             {
                 UpdateNetworkVariableOnOwnershipChanged();
             }
-            OnGainedOwnership();
+            try
+            {
+                OnGainedOwnership();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
@@ -948,7 +1042,14 @@ namespace Unity.Netcode
 
         internal void InternalOnOwnershipChanged(ulong previous, ulong current)
         {
-            OnOwnershipChanged(previous, current);
+            try
+            {
+                OnOwnershipChanged(previous, current);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>

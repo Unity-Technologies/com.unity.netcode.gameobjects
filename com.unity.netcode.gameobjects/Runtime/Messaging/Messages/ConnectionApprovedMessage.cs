@@ -157,7 +157,7 @@ namespace Unity.Netcode
                 // Serialize NetworkVariable data
                 foreach (var sobj in SpawnedObjectsList)
                 {
-                    if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
+                    if (sobj.SpawnWithObservers && sobj.InvokeCheckObjectVisibility(OwnerClientId))
                     {
                         sobj.AddObserver(OwnerClientId);
                         // In distributed authority mode, we send the currently known observers of each NetworkObject to the client being synchronized.
@@ -281,10 +281,6 @@ namespace Unity.Netcode
                 networkManager.SetSessionOwner(GetSessionOwner());
                 if (networkManager.LocalClient.IsSessionOwner)
                 {
-                    if (networkManager.NetworkConfig.EnableSceneManagement)
-                    {
-                        networkManager.SceneManager.InitializeScenesLoaded();
-                    }
                     if (networkManager.NetworkConfig.ConnectionApproval && networkManager.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkConfig.ConnectionApproval)} is enabled but is not supported when using a distributed authority topology. The {nameof(NetworkManager.ConnectionApprovalCallback)} will not be invoked.");

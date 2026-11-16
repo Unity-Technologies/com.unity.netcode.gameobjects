@@ -208,6 +208,203 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             }
         }
 
+        /// <summary>
+        /// Collects every type that assembly scoped code cannot access when it uses <paramref name="type"/>.
+        /// This is each private or protected nested type in its nesting chain, or in the chain of its generic arguments.
+        /// A protected internal type is only hidden when it is declared in an assembly whose internals <paramref name="consumer"/> cannot see.
+        /// </summary>
+        /// <param name="type">The type the generated code uses.</param>
+        /// <param name="consumer">The assembly the generated code is emitted into.</param>
+        /// <param name="hidden">Receives each inaccessible type, without duplicates.</param>
+        public static void CollectTypesHiddenFromAssembly(this TypeReference type, AssemblyDefinition consumer, List<TypeDefinition> hidden)
+        {
+            if (type is GenericInstanceType genericInstance)
+            {
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    argument.CollectTypesHiddenFromAssembly(consumer, hidden);
+                }
+            }
+            else if (type is TypeSpecification specification)
+            {
+                specification.ElementType.CollectTypesHiddenFromAssembly(consumer, hidden);
+                return;
+            }
+
+            for (var definition = type.Resolve(); definition != null && definition.IsNested; definition = definition.DeclaringType)
+            {
+                var isHidden = definition.IsNestedPrivate || definition.IsNestedFamily || definition.IsNestedFamilyAndAssembly ||
+                    (definition.IsNestedFamilyOrAssembly && !consumer.CanSeeInternalsOf(definition.Module.Assembly));
+                if (isHidden && !hidden.Contains(definition))
+                {
+                    hidden.Add(definition);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether code in <paramref name="consumer"/> can access the internal members of <paramref name="owner"/>.
+        /// </summary>
+        /// <param name="consumer">The assembly that accesses the members.</param>
+        /// <param name="owner">The assembly that declares the members.</param>
+        /// <returns>True if both are the same assembly, or <paramref name="owner"/> grants <paramref name="consumer"/> InternalsVisibleTo.</returns>
+        private static bool CanSeeInternalsOf(this AssemblyDefinition consumer, AssemblyDefinition owner)
+        {
+            if (owner.Name.Name == consumer.Name.Name)
+            {
+                return true;
+            }
+
+            // InternalsVisibleTo takes "Name" or "Name, PublicKey=..."; only the simple name matters here.
+            return owner.CustomAttributes.Any(attribute =>
+                attribute.AttributeType.FullName == typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute).FullName &&
+                attribute.ConstructorArguments.Count == 1 &&
+                attribute.ConstructorArguments[0].Value is string friend &&
+                friend.Split(',')[0].Trim() == consumer.Name.Name);
+        }
+
+        /// <summary>
+        /// Checks a generic method instantiation against the generic constraints of the method it instantiates.
+        /// Mono does not enforce these on the calls codegen emits, but CoreCLR does, and it rejects the entire
+        /// calling method if any single call in it violates them.
+        /// </summary>
+        /// <param name="method">The instantiation to validate.</param>
+        /// <param name="violation">Why the instantiation is invalid, or null when it is valid.</param>
+        /// <returns>True if every generic argument satisfies its parameter's constraints.</returns>
+        public static bool SatisfiesGenericConstraints(this GenericInstanceMethod method, out string violation)
+        {
+            var genericParameters = method.ElementMethod.Resolve().GenericParameters;
+            for (var i = 0; i < genericParameters.Count; ++i)
+            {
+                var parameter = genericParameters[i];
+                var argument = method.GenericArguments[i];
+                violation = GetConstraintViolation(parameter, argument, method.GenericArguments);
+                if (violation != null)
+                {
+                    violation = $"{argument.FullName} {violation} (required by {parameter.Name} on {method.ElementMethod.Name})";
+                    return false;
+                }
+            }
+
+            violation = null;
+            return true;
+        }
+
+        private static string GetConstraintViolation(GenericParameter parameter, TypeReference argument, IList<TypeReference> methodArguments)
+        {
+            var resolved = argument.Resolve();
+            if (resolved == null)
+            {
+                return "could not be resolved";
+            }
+
+            if (parameter.HasNotNullableValueTypeConstraint && (!resolved.IsValueType || resolved.FullName == typeof(Nullable<>).FullName))
+            {
+                return "is not a non-nullable value type";
+            }
+
+            if (parameter.HasReferenceTypeConstraint && resolved.IsValueType)
+            {
+                return "is not a reference type";
+            }
+
+            if (parameter.HasDefaultConstructorConstraint && !resolved.IsValueType && (resolved.IsAbstract || !HasPublicParameterlessConstructor(resolved)))
+            {
+                return "does not have a public parameterless constructor";
+            }
+
+            foreach (var constraint in parameter.Constraints)
+            {
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
+                var constraintType = constraint;
+#else
+                var constraintType = constraint.ConstraintType;
+#endif
+                // The unmanaged constraint is encoded as System.ValueType modreq(UnmanagedType); the runtime only checks the value type part.
+                if (constraintType is RequiredModifierType modifierType)
+                {
+                    constraintType = modifierType.ElementType;
+                }
+
+                constraintType = SubstituteGenericArguments(constraintType, GenericParameterType.Method, methodArguments);
+                if (constraintType.FullName == typeof(ValueType).FullName)
+                {
+                    continue;
+                }
+
+                if (!IsAssignableTo(argument, constraintType.FullName))
+                {
+                    return $"does not implement or derive from {constraintType.FullName}";
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasPublicParameterlessConstructor(TypeDefinition type)
+        {
+            foreach (var method in type.Methods)
+            {
+                if (method.IsConstructor && !method.IsStatic && method.IsPublic && !method.HasParameters)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAssignableTo(TypeReference type, string targetFullName)
+        {
+            if (type.FullName == targetFullName)
+            {
+                return true;
+            }
+
+            var resolved = type.Resolve();
+            if (resolved == null)
+            {
+                return false;
+            }
+
+            // Interfaces and the base type are declared against the definition's own generic parameters, so close them over this instance's arguments.
+            var typeArguments = (type as GenericInstanceType)?.GenericArguments;
+            foreach (var implemented in resolved.Interfaces)
+            {
+                if (IsAssignableTo(SubstituteGenericArguments(implemented.InterfaceType, GenericParameterType.Type, typeArguments), targetFullName))
+                {
+                    return true;
+                }
+            }
+
+            return resolved.BaseType != null && IsAssignableTo(SubstituteGenericArguments(resolved.BaseType, GenericParameterType.Type, typeArguments), targetFullName);
+        }
+
+        private static TypeReference SubstituteGenericArguments(TypeReference type, GenericParameterType parameterType, IList<TypeReference> arguments)
+        {
+            if (arguments == null)
+            {
+                return type;
+            }
+
+            if (type is GenericParameter genericParameter && genericParameter.Type == parameterType)
+            {
+                return arguments[genericParameter.Position];
+            }
+
+            if (type is GenericInstanceType genericInstance)
+            {
+                var substituted = new GenericInstanceType(genericInstance.ElementType);
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    substituted.GenericArguments.Add(SubstituteGenericArguments(argument, parameterType, arguments));
+                }
+                return substituted;
+            }
+
+            return type;
+        }
+
         public static bool IsSerializable(this TypeReference typeReference)
         {
             var typeSystem = typeReference.Module.TypeSystem;

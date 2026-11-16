@@ -7,10 +7,17 @@ namespace Unity.Netcode.GameObjects.Timing
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
-    /// The network time system maintains both a local and a server time. The local time is based on the server time
-    /// as last received from the server plus an offset based on the current RTT - in other words, it is a best-guess
-    /// effort at predicting what the server tick will be when a given network action is processed on the server.
+    /// The network time system maintains both a local and a server time. The local time is the server time as last
+    /// received from the server, plus half the current RTT to account for the delivery delay of that value, plus
+    /// <see cref="LocalBufferSec"/> - in other words, it is a best-guess estimate of what the server clock reads
+    /// right now.
     /// </summary>
+    /// <remarks>
+    /// <see cref="LocalTime"/> is not a prediction of the server tick that will process a message sent from this
+    /// client. Its lead over the server clock is <see cref="LocalBufferSec"/>, which does not scale with latency,
+    /// so a message sent at <see cref="LocalTime"/> arrives before or after that tick depending on the RTT. For the
+    /// measured client-to-server latency in ticks, use <see cref="TickLatency"/>, which is based on the full RTT.
+    /// </remarks>
     [Serializable]
     [MovedFrom(true, "Unity.Netcode", null, null)]
     public class NetworkTimeSystem
@@ -253,8 +260,13 @@ namespace Unity.Netcode.GameObjects.Timing
                 return true;
             }
 
-            m_CurrentLocalTimeOffset += deltaTimeSec * (m_DesiredLocalTimeOffset > m_CurrentLocalTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
-            m_CurrentServerTimeOffset += deltaTimeSec * (m_DesiredServerTimeOffset > m_CurrentServerTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
+            // Move each offset toward its target by at most AdjustmentRatio of this frame's delta, stopping once it gets there.
+            // Stepping the full amount every frame overshot the target, so a synced clock alternated between running fast and
+            // slow, and anything driven by it juddered.
+            // Math.Clamp throws on a negative step, so a negative delta or AdjustmentRatio applies no adjustment.
+            var maximumStep = Math.Max(0.0, deltaTimeSec * AdjustmentRatio);
+            m_CurrentLocalTimeOffset += Math.Clamp(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset, -maximumStep, maximumStep);
+            m_CurrentServerTimeOffset += Math.Clamp(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset, -maximumStep, maximumStep);
 
             return false;
         }

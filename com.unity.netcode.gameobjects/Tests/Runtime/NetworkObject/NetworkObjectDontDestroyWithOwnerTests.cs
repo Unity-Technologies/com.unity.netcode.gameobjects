@@ -13,10 +13,21 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
     {
         private const int k_NumberObjectsToSpawn = 16;
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         public enum ParentedPass
         {
@@ -154,7 +165,8 @@ namespace Unity.Netcode.RuntimeTests
                 var destroyObjectId = m_DestroyObjectIds[i];
                 var dontDestroyObject = networkManager.SpawnManager.SpawnedObjects[dontDestroyObjectId];
                 var destroyObject = networkManager.SpawnManager.SpawnedObjects[destroyObjectId];
-                Assert.IsTrue(dontDestroyObject.TrySetParent(destroyObject), $"[Client-{networkManager.LocalClientId}][Parent Failure] Could not parent {destroyObject.name} under {dontDestroyObject.name}!");
+                // NGO parenting of a hybrid instance requires worldPositionStays disabled. The pose does not matter for this test.
+                Assert.IsTrue(dontDestroyObject.TrySetParent(destroyObject, false), $"[Client-{networkManager.LocalClientId}][Parent Failure] Could not parent {destroyObject.name} under {dontDestroyObject.name}!");
             }
         }
 

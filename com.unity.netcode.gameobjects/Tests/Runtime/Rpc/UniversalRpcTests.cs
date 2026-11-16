@@ -528,6 +528,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+    internal static class ClientIdArrayExtensions
+    {
+        // Not named Contains: from C# 14, ids.Contains(id) on an array is ambiguous between span extension methods.
+        public static bool ContainsId(this ulong[] ids, ulong id) => Array.IndexOf(ids, id) >= 0;
+    }
+
     internal class UniversalRpcTestsBase : NetcodeIntegrationTest
     {
         public static int YieldCheck = 0;
@@ -1557,12 +1563,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
-            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient.Contains(c)).ToArray(), false);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray());
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray(), false);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray());
 
             // Pass some time to make sure that no other client ever receives this
             TimeTravel(1f, 30);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray());
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray());
         }
 
         private void SendingWithGroupNotOverride(SendTo defaultSendTo, ulong[] recipient, ulong objectOwner, ulong sender, AllocationType allocationType)
@@ -1600,12 +1606,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
-            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray(), false);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray(), false);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray());
 
             // Pass some time to make sure that no other client ever receives this
             TimeTravel(1f, 30);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray());
         }
         #endregion
 
@@ -2028,12 +2034,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
-            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient.Contains(c)).ToArray(), false);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray());
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray(), false);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray());
 
             // Pass some time to make sure that no other client ever receives this
             TimeTravel(1f, 30);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray());
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray());
         }
 
     }
@@ -2105,12 +2111,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
-            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray(), false);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => !recipient.ContainsId(c)).ToArray(), false);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray());
 
             // Pass some time to make sure that no other client ever receives this
             TimeTravel(1f, 30);
-            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.ContainsId(c)).ToArray());
         }
 
     }

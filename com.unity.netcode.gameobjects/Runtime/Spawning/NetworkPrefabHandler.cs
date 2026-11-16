@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-#if UNIFIED_NETCODE && !UNIFIED_NETCODE_7_0_0
-using Unity.NetCode;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -32,7 +29,7 @@ namespace Unity.Netcode
         /// </summary>
         private readonly Dictionary<uint, uint> m_PrefabInstanceToPrefabAsset = new Dictionary<uint, uint>();
 
-        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab) => $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.name}\"";
+        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab) => $"{nameof(NetworkPrefab)} \"{networkPrefab.GetDebugName()}\"";
 
         /// <summary>
         /// Use a <see cref="GameObject"/> to register a class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface with the <see cref="NetworkPrefabHandler"/>
@@ -341,13 +338,27 @@ namespace Unity.Netcode
             {
                 if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
-                    prefabInstanceHandler.Destroy(networkObjectInstance);
+                    try
+                    {
+                        prefabInstanceHandler.Destroy(networkObjectInstance);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
                 }
             }
             // Otherwise the NetworkObject is the source NetworkPrefab
             else if (m_PrefabAssetToPrefabHandler.TryGetValue(networkObjectInstanceHash, out var prefabInstanceHandler))
             {
-                prefabInstanceHandler.Destroy(networkObjectInstance);
+                try
+                {
+                    prefabInstanceHandler.Destroy(networkObjectInstance);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
         }
 

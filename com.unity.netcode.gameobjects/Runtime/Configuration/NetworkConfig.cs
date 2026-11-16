@@ -52,6 +52,20 @@ namespace Unity.Netcode
         [Tooltip("The tickrate. This value controls how often netcode runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
         public uint TickRate = 30;
 
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Whether Netcode for GameObjects sets the Netcode for Entities snapshot packet size when a session
+        /// carrying GhostObjects starts.
+        /// </summary>
+        /// <remarks>
+        /// The default suits the 200-1000 moving instances most projects run. Netcode for Entities' own default is
+        /// one MTU, which round-robins above roughly 230 GhostObjects and drops their update rate well below
+        /// <see cref="TickRate"/>. Turn this off to keep whatever the NetcodeConfig asset specifies.
+        /// </remarks>
+        [Tooltip("When enabled, NGO will drive the N4E snapshot size setting for this project. The value defaults to 4096 bytes. This is a measured estimate for a project that uses the default tick rate of 30 and could have roughly 200-1000 spawned hybrid prefab instances.")]
+        public bool AutoConfigureSnapshotSize = true;
+#endif
+
         /// <summary>
         /// The amount of seconds for the server to wait for the connection approval handshake to complete before the client is disconnected.
         ///
@@ -387,6 +401,19 @@ namespace Unity.Netcode
 
             Prefabs.Initialize();
         }
+
+#if UNIFIED_NETCODE
+        /// <summary>
+        /// Registers any prefab list assigned after Awake and the <see cref="PlayerPrefab"/>, and returns false for a distributed authority session with a hybrid prefab registered.
+        /// </summary>
+        internal bool InitializePrefabsForStart(NetworkPrefabHandler prefabHandler)
+        {
+            InitializePrefabs();
+            // A player prefab outside the prefab lists still decides hybrid mode, so it is registered before the session starts.
+            prefabHandler.RegisterPlayerPrefab();
+            return NetworkTopology != NetworkTopologyTypes.DistributedAuthority || Prefabs.ValidateForDistributedAuthority();
+        }
+#endif
 
         [NonSerialized]
         private bool m_DidWarnOldPrefabList = false;

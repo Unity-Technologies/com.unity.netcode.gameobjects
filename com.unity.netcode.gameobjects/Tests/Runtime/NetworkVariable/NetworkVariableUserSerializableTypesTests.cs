@@ -142,9 +142,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator WhenUsingAUserSerializableNetworkVariableWithUserSerialization_ReplicationWorks()
         {
             UserNetworkVariableSerialization<MyTypeOne>.WriteValue = (FastBufferWriter writer, in MyTypeOne value) =>
@@ -185,9 +182,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO NetworkVariable serialization codegen not generated for some types on CoreCLR (falls back to FallbackSerializer), see https://jira.unity3d.com/browse/UUM-149592")]
-#endif
         public IEnumerator WhenUsingAUserSerializableNetworkVariableWithUserSerializationViaExtensionMethod_ReplicationWorks()
         {
             UserNetworkVariableSerialization<MyTypeTwo>.WriteValue = NetworkVariableUserSerializableTypesTestsExtensionMethods.WriteValueSafe;

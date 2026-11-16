@@ -20,6 +20,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         public static IEnumerable<TestFixtureData> TestDataSource() =>
             Enum.GetValues(typeof(HostOrServer)).OfType<HostOrServer>().Select(x => new TestFixtureData(x));
 
@@ -126,6 +133,8 @@ namespace Unity.Netcode.RuntimeTests
             serverTestComponentC.ChangeValuesB(1100, 2200, 3300);
             serverTestComponentC.ChangeValuesC(1110, 2220, 3330);
 
+            yield return WaitForSpawnedOnAllOrTimeOut(serverTestObject);
+            AssertOnTimeout($"Not all clients spawned {serverTestObject.name}!");
             yield return WaitForTicks(authority, 2);
         }
 

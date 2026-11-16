@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using Unity.Netcode;
@@ -9,323 +10,165 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    /// <summary>
-    /// TODO: This test needs to be converted to an integration test 
-    /// </summary>
-    public class MessageOrderingTests
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    public class MessageOrderingTests : NetcodeIntegrationTest
     {
-        private GameObject m_Prefab;
+        // Must be 1 for these tests.
+        protected override int NumberOfClients => 1;
 
-        private NetworkManager m_ServerNetworkManager;
-        private NetworkManager[] m_ClientNetworkManagers;
+        private GameObject m_OwnershipPrefab;
+        private GameObject m_SpawnRpcDespawnPrefab;
 
-        [OneTimeSetUp]
-        public void OneTimeSetup()
+        public MessageOrderingTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        private static void ResetStatics()
         {
-            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
-            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
-            // Excluding from unified tests. If deemed needed, update test, then  remove.
-            NetcodeIntegrationTestHelpers.IgnoreIfUnifiedTestsEnvironmentVariableSet();
-        }
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
-        {
-            // Make sure these static values are reset
             Support.SpawnRpcDespawn.ClientUpdateCount = 0;
             Support.SpawnRpcDespawn.ServerUpdateCount = 0;
             Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
             Support.SpawnRpcDespawn.ExecuteClientRpc = false;
-            yield break;
         }
 
-        [UnityTearDown]
-        public IEnumerator Teardown()
+        protected override IEnumerator OnSetup()
         {
-            // Shutdown and clean up both of our NetworkManager instances
-            if (m_Prefab)
+            ResetStatics();
+            return base.OnSetup();
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            ResetStatics();
+            return base.OnTearDown();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_OwnershipPrefab = CreateNetworkObjectPrefab("OwnershipObject");
+
+            m_SpawnRpcDespawnPrefab = CreateNetworkObjectPrefab("SpawnRpcDespawnObject");
+            m_SpawnRpcDespawnPrefab.AddComponent<SpawnRpcDespawn>();
+            Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
+            base.OnServerAndClientsCreated();
+        }
+
+        /// <summary>
+        /// Adds a unique <see cref="SpawnRpcDespawnInstanceHandler"/> to each given <see cref="NetworkManager"/>.
+        /// </summary>
+        private List<SpawnRpcDespawnInstanceHandler> AddSpawnRpcDespawnHandlers(IEnumerable<NetworkManager> networkManagers)
+        {
+            var networkObject = m_SpawnRpcDespawnPrefab.GetComponent<NetworkObject>();
+            var handlers = new List<SpawnRpcDespawnInstanceHandler>();
+            foreach (var networkManager in networkManagers)
             {
-                Object.Destroy(m_Prefab);
-                m_Prefab = null;
-                NetcodeIntegrationTestHelpers.Destroy();
-                Support.SpawnRpcDespawn.ClientUpdateCount = 0;
-                Support.SpawnRpcDespawn.ServerUpdateCount = 0;
-                Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
-                Support.SpawnRpcDespawn.ExecuteClientRpc = false;
+                var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, networkManager);
+                networkManager.PrefabHandler.AddHandler(networkObject, handler);
+                handlers.Add(handler);
             }
-            yield break;
+            return handlers;
+        }
+
+        private static bool AllHandlersSpawned(List<SpawnRpcDespawnInstanceHandler> handlers)
+        {
+            foreach (var handler in handlers)
+            {
+                if (!handler.WasSpawned)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static bool AllHandlersDestroyed(List<SpawnRpcDespawnInstanceHandler> handlers)
+        {
+            foreach (var handler in handlers)
+            {
+                if (!handler.WasDestroyed)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         [UnityTest]
         public IEnumerator SpawnChangeOwnership()
         {
-            const int numClients = 1;
-            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-            m_Prefab = new GameObject("Object");
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
-            m_Prefab.AddComponent<NetworkObjectTestComponent>();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            var authorityInstance = SpawnObject(m_OwnershipPrefab, GetAuthorityNetworkManager()).GetComponent<NetworkObject>();
+            authorityInstance.ChangeOwnership(nonAuthority.LocalClientId);
 
-            // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            var validNetworkPrefab = new NetworkPrefab
-            {
-                Prefab = m_Prefab
-            };
-            server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            }
-
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
-
-            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
-            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
-            serverNetworkObject.Spawn();
-            serverNetworkObject.ChangeOwnership(clients[0].LocalClientId);
-
-            // Wait until all objects have spawned.
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == numClients + 1);
-            Assert.False(timeoutHelper.TimedOut, "Did not successfully spawn all expected NetworkObjects");
+            var timeoutHelper = new TimeoutHelper(8.0f);
+            yield return WaitForSpawnedOnAllOrTimeOut(authorityInstance, timeoutHelper);
+            AssertOnTimeout("Did not successfully spawn all expected NetworkObjects", timeoutHelper);
+            Assert.AreEqual(nonAuthority.LocalClientId, nonAuthority.SpawnManager.SpawnedObjects[authorityInstance.NetworkObjectId].OwnerClientId,
+                $"[Client-{nonAuthority.LocalClientId}] Does not own {authorityInstance.name}!");
         }
 
         [UnityTest]
         public IEnumerator SpawnRpcDespawn()
         {
             var frameCountStart = Time.frameCount;
-            // Must be 1 for this test.
-            const int numClients = 1;
-            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out m_ServerNetworkManager, out m_ClientNetworkManagers));
-            m_Prefab = new GameObject("Object");
-            m_Prefab.AddComponent<SpawnRpcDespawn>();
-            Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
+            var clientHandlers = AddSpawnRpcDespawnHandlers(m_ClientNetworkManagers);
 
-            // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var clientHandlers = new List<SpawnRpcDespawnInstanceHandler>();
-            //var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
-            //server.PrefabHandler.AddHandler(networkObject.GlobalObjectIdHash, handler);
-            foreach (var client in m_ClientNetworkManagers)
+            SpawnObject(m_SpawnRpcDespawnPrefab, GetAuthorityNetworkManager()).GetComponent<SpawnRpcDespawn>().Activate();
+
+            // Every client receives the client RPC, including the host's own client.
+            var expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + TotalClients;
+            bool AllClientRpcsReceivedAndHandled(StringBuilder errorLog)
             {
-                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, client);
-                client.PrefabHandler.AddHandler(networkObject, clientHandler);
-                clientHandlers.Add(clientHandler);
-            }
-
-            var validNetworkPrefab = new NetworkPrefab
-            {
-                Prefab = m_Prefab
-            };
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            }
-
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers, null, 512);
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, m_ClientNetworkManagers.Length + 1, null, 512);
-
-            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
-            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            serverNetworkObject.Spawn();
-
-            SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
-            srdComponent.Activate();
-
-            // Wait until all objects have spawned.
-            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + numClients + 1; // Clients plus host
-            int maxFrames = 240 + Time.frameCount;
-            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            var clientCountReached = false;
-            var allHandlersSpawned = false;
-            var allHandlersDestroyed = false;
-            var waitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-
-            while (!(allHandlersSpawned && clientCountReached && allHandlersDestroyed))
-            {
-                clientCountReached = (Support.SpawnRpcDespawn.ClientUpdateCount == expectedCount);
-                foreach (var clientHandler in clientHandlers)
+                if (Support.SpawnRpcDespawn.ClientUpdateCount != expectedCount)
                 {
-                    allHandlersSpawned = clientHandler.WasSpawned;
-                    allHandlersDestroyed = clientHandler.WasDestroyed;
-                    if (!allHandlersSpawned || !allHandlersDestroyed)
-                    {
-                        break;
-                    }
+                    errorLog.Append($"Client count ({Support.SpawnRpcDespawn.ClientUpdateCount}) did not match the expected count ({expectedCount})!");
+                    return false;
                 }
-
-                if (Time.frameCount > maxFrames)
+                if (!AllHandlersSpawned(clientHandlers))
                 {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Did not successfully call all expected client RPCs");
-                        break;
-                    }
+                    errorLog.Append("Not all client-side handlers were spawned!");
+                    return false;
                 }
-
-                yield return waitForTick;
+                if (!AllHandlersDestroyed(clientHandlers))
+                {
+                    errorLog.Append("Not all client-side handlers were destroyed!");
+                    return false;
+                }
+                return true;
             }
-
-            Assert.True(allHandlersSpawned, $"Not all client-side handlers were spawned!");
-            Assert.True(allHandlersDestroyed, $"Not all client-side handlers were destroyed!");
-            Assert.True(clientCountReached, $"Client count ({Support.SpawnRpcDespawn.ClientUpdateCount}) did not match the expected count ({expectedCount})");
+            var timeoutHelper = new TimeoutHelper(5.0f);
+            yield return WaitForConditionOrTimeOut(AllClientRpcsReceivedAndHandled, timeoutHelper);
+            AssertOnTimeout("Did not successfully call all expected client RPCs!", timeoutHelper);
 
             Debug.Log($"It took {Time.frameCount - frameCountStart} frames to process the MessageOrdering.SpawnRpcDespawn integration test.");
         }
-
-        private ulong m_SpawnedNetworkObjectId;
 
         [UnityTest]
         public IEnumerator RpcOnNetworkSpawn()
         {
             Support.SpawnRpcDespawn.ExecuteClientRpc = true;
-            // Must be 1 for this test.
-            const int numClients = 1;
-            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-            m_Prefab = new GameObject("Object");
-            m_Prefab.AddComponent<SpawnRpcDespawn>();
-            Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
-
-            // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var handlers = new List<SpawnRpcDespawnInstanceHandler>();
-            var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, server);
+            var authority = GetAuthorityNetworkManager();
 
             // We *must* always add a unique handler to both the server and the clients
-            server.PrefabHandler.AddHandler(networkObject, handler);
-            handlers.Add(handler);
-            foreach (var client in clients)
-            {
-                // Create a unique SpawnRpcDespawnInstanceHandler per client
-                handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash, client);
-                handlers.Add(handler);
-                client.PrefabHandler.AddHandler(networkObject, handler);
-            }
+            var handlers = AddSpawnRpcDespawnHandlers(new[] { authority });
+            handlers.AddRange(AddSpawnRpcDespawnHandlers(m_ClientNetworkManagers));
 
-            var validNetworkPrefab = new NetworkPrefab
-            {
-                Prefab = m_Prefab
-            };
-            server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
-            }
-
-            var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
-
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(false, server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length, null, 512);
-
-            var serverNetworkObject = NetworkObject.InstantiateAndSpawn(m_Prefab, server);
-
-            m_SpawnedNetworkObjectId = serverNetworkObject.GlobalObjectIdHash;
+            var serverNetworkObject = NetworkObject.InstantiateAndSpawn(m_SpawnRpcDespawnPrefab, authority);
 
             // Make sure everyone spawns the object
-            var allClientsSpawnedObject = false;
-            var waitPeriod = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
-            var timeout = Time.realtimeSinceStartup + 4.0f;
-            while (!allClientsSpawnedObject)
-            {
-                if (timeout < Time.realtimeSinceStartup)
-                {
-                    Assert.Fail($"Timed out waiting for all clients to spawn {serverNetworkObject.name}!");
-                }
-                foreach (var client in clients)
-                {
-                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedNetworkObjectId))
-                    {
-                        yield return waitPeriod;
-                        continue;
-                    }
-                }
-                allClientsSpawnedObject = true;
-            }
+            var timeoutHelper = new TimeoutHelper(4.0f);
+            yield return WaitForSpawnedOnAllOrTimeOut(serverNetworkObject, timeoutHelper);
+            AssertOnTimeout($"Timed out waiting for all clients to spawn {serverNetworkObject.name}!", timeoutHelper);
 
-            // Wait until all objects have spawned.
-            const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (!Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled)
-            {
-                if (Time.frameCount > maxFrames)
-                {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Did not successfully call all expected client RPCs");
-                        break;
-                    }
-                }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-
-            Assert.True(handler.WasSpawned);
-            Assert.True(Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled);
+            timeoutHelper = new TimeoutHelper(5.0f);
+            yield return WaitForConditionOrTimeOut(() => Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled, timeoutHelper);
+            AssertOnTimeout("Did not successfully call all expected client RPCs", timeoutHelper);
+            Assert.True(AllHandlersSpawned(handlers), "Not all handlers were spawned!");
 
             // Despawning the server-side NetworkObject will invoke the handler's OnDestroy method
             serverNetworkObject.Despawn();
-            yield return waitForTickInterval;
-
-            var hasTimedOut = false;
-            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
-            var allHandlersDestroyed = false;
-            while (!allHandlersDestroyed && !hasTimedOut)
-            {
-                allHandlersDestroyed = true;
-                foreach (var handlerInstance in handlers)
-                {
-                    if (!handlerInstance.WasDestroyed)
-                    {
-                        allHandlersDestroyed = false;
-                        break;
-                    }
-                }
-                hasTimedOut = timeOutPeriod < Time.realtimeSinceStartup;
-                yield return waitForTickInterval;
-            }
-
-            Assert.False(hasTimedOut, "Timed out waiting for handlers to be destroyed");
+            timeoutHelper = new TimeoutHelper(2.0f);
+            yield return WaitForConditionOrTimeOut(() => AllHandlersDestroyed(handlers), timeoutHelper);
+            AssertOnTimeout("Timed out waiting for handlers to be destroyed", timeoutHelper);
         }
     }
 }

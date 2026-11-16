@@ -8,6 +8,9 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
         internal class DummyNetVar : NetworkVariableBase
@@ -102,6 +105,13 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
         protected override int NumberOfClients => 1;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer)
         {

@@ -96,9 +96,19 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class OwnerModifiedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private GameObject m_SpawnObject;
 

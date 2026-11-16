@@ -28,8 +28,8 @@
     "versionDefines": [
         {
             "name": "com.unity.netcode",
-            "expression": "7.0.0",
-            "define": "UNIFIED_NETCODE_7_0_0"
+            "expression": "7.2.0",
+            "define": "UNIFIED_NETCODE"
         },
         {
             "name": "com.unity.multiplayer.tools",
@@ -100,6 +100,11 @@
             "name": "com.unity.multiplayer.playmode",
             "expression": "0.1.0",
             "define": "UNITY_MULTIPLAYER_PLAYMODE"
+        },
+        {
+            "name": "Unity",
+            "expression": "7000.0.0a12",
+            "define": "UNITY_ENTITIES_WORLD_LIFETIME_CHANGES"
         },
         {
             "name": "Unity",

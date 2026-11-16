@@ -1,13 +1,16 @@
-# NetworkTime and ticks
+# Network time and ticks
 
-## LocalTime and ServerTime
+Understand how Netcode for GameObjects calculates network time, and when to use local time or server time.
 
-Why are there two different time values and which one should be used?
+## Local time and server time
 
-Netcode for GameObjects (Netcode) uses a star topology. That means all communications happen between the clients and the server/host and never between clients directly. Messages take time to transmit over the network. That's why `RPCs` and `NetworkVariable` won't happen immediately on other machines. `NetworkTime` allows to use time while considering those transmission delays.
+Netcode for GameObjects uses a star topology. That means all communications happen between the clients and the server or host, and never between clients directly. Messages take time to transmit over the network, so RPCs and `NetworkVariable` updates don't take effect immediately on other machines. Use `NetworkTime` to work with time while accounting for these transmission delays.
 
-- `LocalTime` on a client is ahead of the server. If a server RPC is sent at `LocalTime` from a client it will roughly arrive at `ServerTime` on the server.
-- `ServerTime` on clients is behind the server. If a client RPC is sent at `ServerTime` from the server to clients it will roughly arrive at `ServerTime` on the clients.
+- `LocalTime` on a client is ahead of the server. It's the client's estimate of what the server clock reads right now: the last server time the client received, plus half the round trip time (RTT) to account for that message's own travel, plus a one-tick buffer.
+- `ServerTime` on clients is behind the server. If the server sends a client RPC at `ServerTime`, the RPC arrives at roughly `ServerTime` on the clients.
+
+> [!NOTE]
+> `LocalTime` leads the server clock by a fixed one tick, and that lead doesn't scale with latency. A message a client sends at `LocalTime` therefore reaches the server exactly as the server clock reaches the same value only when the RTT is about two ticks, which is roughly 67 ms at the default tick rate of 30. On faster connections the message arrives before that point, and on slower connections after it. Don't use `LocalTime` to predict which server tick processes a given message. For the measured latency in ticks, use `NetworkTimeSystem.TickLatency`, which is based on the full RTT. To give outgoing messages more lead, increase `NetworkTimeSystem.LocalBufferSec`, as described in [Configure the network time system](#configure-the-network-time-system).
 
 ```mermaid
 sequenceDiagram
@@ -16,29 +19,31 @@ sequenceDiagram
     participant Receiver as Client ServerTime
     Note over Owner: Send message to server at LocalTime.
     Owner->>Server: Delay when sending message
-    Note over Server: Message arrives at ServerTime.
+    Note over Server: Message arrives near LocalTime, offset by half RTT minus one tick.
     Note over Server: On server: ServerTime == LocalTime.
     Note over Server: Send message to clients at LocalTime.
     Server->>Receiver: Delay when sending message
     Note over Receiver: Message arrives at ServerTime.
 ```
 
-`LocalTime`
-- Use for player objects with client authority.
-- Use if just a general time value is needed.
+Use `LocalTime` in the following cases:
 
-`ServerTime`:
-- For player objects with server authority (For example, by sending inputs to the server via RPCs)
-- In sync with position updates of NetworkTransform for all `NetworkObjects` where the client isn't authoritative over the transform.
-- For everything on non client controlled `NetworkObjects`.
+- For player objects with client authority.
+- For a general time value.
 
-## Examples
+Use `ServerTime` in the following cases:
 
-### Example 1: Using network time to synchronize environments
+- For player objects with server authority, for example by sending inputs to the server through RPCs.
+- To stay in sync with position updates of the `NetworkTransform` component for all `NetworkObject` instances where the client isn't authoritative over the transform.
+- For everything on `NetworkObject` instances that the client doesn't control.
 
-Many games have environmental objects which move in a fixed pattern. By using network time these objects can be moved without having to synchronize their positions with a NetworkTransform.
+## Network time examples
 
-For instance the following code can be used to create a moving elevator platform for a client authoritative game:
+### Synchronize environments with network time
+
+Many games have environmental objects that move in a fixed pattern. Use network time to move these objects without synchronizing their positions with a `NetworkTransform` component.
+
+For example, the following code creates a moving elevator platform for a client-authoritative game:
 
 ```csharp
 using Unity.Netcode;
@@ -55,9 +60,9 @@ public class MovingPlatform : MonoBehaviour
 }
 ```
 
-### Example 2: Using network time to create a synced event
+### Create a synced event with network time
 
-Most of the time aligning an effect precisely to time isn't needed. But in some cases for important effects or gameplay events it can help to improve consistency especially for clients with bad network connections.
+You don't usually need to align an effect precisely to time. However, for important effects or gameplay events, precise alignment improves consistency, especially for clients with poor network connections.
 
 ```csharp
 using System.Collections;
@@ -131,16 +136,17 @@ sequenceDiagram
 ```
 
 > [!NOTE]
-> Some components such as NetworkTransform add additional buffering. When trying to align an RPC event like in this example, an additional delay would need to be added.
+> Some components, such as `NetworkTransform`, add additional buffering. When you align an RPC event as in this example, add an extra delay.
 
-## Network Ticks
+## Network ticks
 
-Network ticks are run at a fixed rate. The 'Tick Rate' field on the NetworkManager can be used to set the tick rate.
+Network ticks run at a fixed rate. To set the tick rate, use the **Tick Rate** field on the NetworkManager component.
 
-What does changing the network tick affect? Changes to `NetworkVariables` aren't sent immediately. Instead during each network tick changes to `NetworkVariables` are collected and sent out to other peers.
+Changing the network tick rate affects when Netcode for GameObjects sends `NetworkVariable` changes. It doesn't send them immediately. Instead, it collects the changes during each network tick and sends them to other peers.
 
-To run custom code once per network tick (before `NetworkVariable` changes are collected) the `Tick` event on the `NetworkTickSystem` can be used.
-```cs
+To run custom code once per network tick, before Netcode for GameObjects collects `NetworkVariable` changes, subscribe to the `Tick` event on the `NetworkTickSystem`.
+
+```csharp
 public override void OnNetworkSpawn()
 {
     NetworkManager.NetworkTickSystem.Tick += Tick;
@@ -158,13 +164,13 @@ public override void OnNetworkDespawn() // don't forget to unsubscribe
 ```
 
 > [!NOTE]
-> When using `FixedUpdate` or physics in your game, set the network tick rate to the same rate as the fixed update rate. The `FixedUpdate` rate can be changed in `Edit > Project Settings > Time Fixed Timestep`.
+> When you use `FixedUpdate` or physics in your game, set the network tick rate to the same rate as the fixed update rate. To change the `FixedUpdate` rate, go to **Edit** > **Project Settings** > **Time** and set **Fixed Timestep**.
 
-## Network FixedTime
+## Network fixed time
 
-`Network FixedTime` can be used to get a time value representing the time during a network tick. This works similar to `FixedUpdate` where `Time.fixedTime` represents the time during the `FixedUpdate`.
+Use `FixedTime` to get a time value that represents the time during a network tick. This works in the same way as `FixedUpdate`, where `Time.fixedTime` represents the time during the `FixedUpdate`.
 
-```cs
+```csharp
 public void Update()
 {
     double time = NetworkManager.Singleton.LocalTime.Time; // time during this Update
@@ -172,17 +178,23 @@ public void Update()
 }
 ```
 
-## NetworkTime Precision
+## Network time precision
 
-Network time values are calculated using double precisions. This allows time to stay accurate on long running servers. For game servers which run sessions for a long time (multiple hours or days) don't convert this value in a float and always use doubles for time related calculations.
+Netcode for GameObjects calculates network time values as double-precision floating-point values. This keeps time accurate on long-running servers. If your game server runs sessions for a long time, such as multiple hours or days, don't convert this value to a float. Always use doubles for time-related calculations.
 
-For games with short play sessions casting the time to float is safe or `TimeAsFloat` can be used.
+For games with short play sessions, you can safely cast the time to a float or use `TimeAsFloat`.
 
-## NetworkTimeSystem Configuration
+## Configure the network time system
+
+To change how Netcode for GameObjects calculates network time, configure the `NetworkTimeSystem`. Refer to [`NetworkTimeSystem`](xref:Unity.Netcode.GameObjects.Timing.NetworkTimeSystem) for information about the properties you can modify. You can safely adjust all properties at runtime. For example, increase the buffer values for a client with a poor connection.
 
 > [!NOTE]
-> The properties of the `NetworkTimeSystem` should be left untouched on the server/host. Changing the values on the client is sufficient to change the behavior of the time system.
+> Don't change the properties of the `NetworkTimeSystem` on the server or host. To change the behavior of the time system, change the values on the client instead.
 
-The way network time gets calculated can be configured in the `NetworkTimeSystem` if needed. Refer to the [API docs](xref:Unity.Netcode.GameObjects.Timing.NetworkTimeSystem) for information about the properties which can be modified. All properties can be safely adjusted at runtime. For instance, buffer values can be increased for a player with a bad connection.
+## Additional resources
 
-<!-- On page code -->
+- [`NetworkTimeSystem` API reference](xref:Unity.Netcode.GameObjects.Timing.NetworkTimeSystem)
+- [NetworkManager](../components/core/networkmanager.md)
+- [NetworkTransform](../components/helper/networktransform.md)
+- [NetworkVariable](../basics/networkvariable.md)
+- [Remote procedure calls (RPCs)](message-system/rpc.md)

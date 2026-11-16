@@ -1,4 +1,4 @@
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+#if COM_UNITY_MODULES_PHYSICS
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;

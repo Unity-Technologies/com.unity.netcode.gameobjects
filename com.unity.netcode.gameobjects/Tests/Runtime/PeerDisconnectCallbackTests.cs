@@ -17,14 +17,15 @@ namespace Unity.Netcode.RuntimeTests
     /// - When a server disconnects a client that:
     /// -- The client detects this disconnection.
     /// -- The server cleans up the transport to NGO client (and vice versa) mappings.
-    /// - When <see cref="DisconnectTests.OwnerPersistence.DestroyWithOwner"/> the server-side player object is destroyed
-    /// - When <see cref="DisconnectTests.OwnerPersistence.DontDestroyWithOwner"/> the server-side player object ownership is transferred back to the server
     /// </summary>
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedServer)]
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class PeerDisconnectCallbackTests : NetcodeIntegrationTest
     {
-
         public enum ClientDisconnectType
         {
             ServerDisconnectsClient,
@@ -32,6 +33,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 3;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private int m_ClientDisconnectCount;
         private int m_PeerDisconnectCount;
@@ -104,13 +112,20 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-#if ENABLE_CORECLR
-        [Explicit("NGO multi-instance test sessions fail to start/connect or time out on CoreCLR, see https://jira.unity3d.com/browse/UUM-149591")]
-#endif
         public IEnumerator TestPeerDisconnectCallback([Values] ClientDisconnectType clientDisconnectType, [Values(1ul, 2ul, 3ul)] ulong disconnectedClient)
         {
             m_TargetClientShutdown = false;
-            m_TargetClient = m_ClientNetworkManagers[disconnectedClient - 1];
+            // Client ids follow connection order, which is not guaranteed to match creation order
+            m_TargetClient = null;
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager.LocalClientId == disconnectedClient)
+                {
+                    m_TargetClient = clientNetworkManager;
+                    break;
+                }
+            }
+            Assert.NotNull(m_TargetClient, $"No client has id {disconnectedClient}!");
             m_TargetClientId = m_TargetClient.LocalClientId;
             m_TargetClient.OnClientStopped += ClientToDisconnect_OnClientStopped;
             foreach (var client in m_NetworkManagers)

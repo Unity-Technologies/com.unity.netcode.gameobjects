@@ -12,9 +12,20 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.DAHost)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+    [TestFixture(HostOrServer.UnifiedServer)]
+#endif
     internal class ComponentControllerTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
 
         private StringBuilder m_ErrorLog = new StringBuilder();
         private GameObject m_TestPrefab;
@@ -113,6 +124,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_AuthorityController.NetworkObjectId))
                 {
                     m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Does not have a spawned instance of {m_AuthorityController.name}!");
+                    continue;
                 }
                 var controller = networkManager.SpawnManager.SpawnedObjects[m_AuthorityController.NetworkObjectId].GetComponent<ComponentController>();
                 ControllerStateMatches(controller);
@@ -128,6 +140,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_AuthorityController.NetworkObjectId))
                 {
                     m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Does not have a spawned instance of {m_AuthorityController.name}!");
+                    continue;
                 }
                 var controller = networkManager.SpawnManager.SpawnedObjects[m_AuthorityController.NetworkObjectId].GetComponent<ComponentController>();
                 for (int i = 0; i < controller.ValidComponents.Count; i++)

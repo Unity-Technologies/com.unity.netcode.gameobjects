@@ -18,9 +18,69 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where every `NetworkObject` that started before a session logged a "Did not register because there is no session in progress!" warning when `NetworkManager.LogLevel` was `Developer`. Only `GhostObject` instances log it now. (#4245)
+- Fixed a NullReferenceException that would be thrown if a MonoBehaviour derived from NetworkManager defines it's own Awake or OnEnable. (#4244)
+- Issue where the unified bootstrap created a second world that ran a duplicate of every default system next to the default world. (#4243)
+- Ensured a useful and human readable error is logged when a NetworkVariable is trying to serialize a private or protected type. (#4239)
+- Issue where `NetworkAnimator` logged an error for a trigger-conditioned transition into an Exit node, and a client that joined during that transition, or during one into a sub-state machine, did not synchronize with it. Transitions that pass through Exit, Entry or sub-state machine nodes now resolve to the state they reach, and a late-joining client cross-fades from the matching originating state when several states transition into the same destination. (#4238)
+- Ensured all callbacks are wrapped with exception handling to avoid silent errors. (#4161)
+
 ### Security
 
 ### Obsolete
+
+## [3.2.1] - 2026-11-05
+
+### Changed
+
+- Updated the upgrade guide that removes the note about the unified netcode being experimental.
+
+## [3.2.0] - 2026-11-03
+
+### Added
+
+- Added Unity CLI commands (`netcode.gameobjects` groups) to set up NetworkManagers and network prefabs, start and stop sessions, inspect clients and spawned objects, spawn, despawn and change ownership, simulate network conditions and sample network traffic. They are available when the project has `com.unity.pipeline` 0.9.0-exp.1 or later. (#4210)
+- Added alignment of the Netcode for Entities tick rates with `NetworkConfig.TickRate` when a session carrying `GhostObject` prefabs is started, so `GhostObject` updates land on the same interval as the rest of Netcode for GameObjects. (#4144)
+- Added `NetworkConfig.AutoConfigureSnapshotSize`, enabled by default, which sets the Netcode for Entities snapshot packet size to 4096 bytes when a session carrying `GhostObject` prefabs is started. Netcode for Entities defaults to a single MTU, which updates `GhostObject`s well below the tick rate at the instance counts Netcode for GameObjects projects typically run. Disable it to manage the value yourself. (#4144)
+
+### Changed
+
+- A hybrid mode session now disables `NetcodeConfig.AutomaticStateReplication` at runtime, as Netcode for GameObjects puts each connection in game once the client has synchronized. (#4209)
+- Renamed the Editor assembly definition files to match their assembly names. Assembly names and GUIDs are unchanged. (#4187)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Issue where `NetworkTime` reported a `TickOffset` of almost a whole tick, instead of zero, for some times that land on a tick (for example 0.3 at a tick rate of 10), which put `TickWithPartial` one tick ahead or, in long sessions, `Tick` one tick behind. Times between minus one tick and zero now report tick -1 with a positive `TickOffset`, as other negative times do. (#4228)
+- Issue where bits written with `BitWriter` were lost when a later `BitWriter.TryBeginWriteBits` call in the same bitwise context grew the `FastBufferWriter`. The bytes written earlier in that context were replaced with zeros or uninitialized memory. (#4226)
+- Issue where a growable `FastBufferWriter` created with a size of 0 never returned from its first write or `TryBeginWrite` call that needed the buffer to grow. (#4224)
+- Issue where a `FastBufferReader` created with an offset and the default length of -1 read past the end of its source. The `ArraySegment<byte>` overload that takes an offset now applies it from the start of the segment. (#4222)
+- Issue where a client synchronized while a `NetworkList<T>` still had unsent changes applied those changes twice, resulting in duplicate entries and index-based events landing on the wrong elements on that client. (#4216)
+- Issue where showing a `NetworkObject` with `NetworkShow` while its `NetworkVariable` updates were held back by `NetworkVariableUpdateTraits` stopped those pending changes from being sent until the variable was modified again. (#4216)
+- Issue where a client promoted to session owner could throw an exception when synchronizing a newly joining client. (#4214)
+- Issue where `NetworkManager.OnNetCodeDisconnect` was not invoked when a connection closed during a hybrid mode session, only when the session shut down. (#4209)
+- Issue where a rejected parent change, for example one made by a client without parenting authority, restored the `NetworkObject`'s parent but left it at the moved position when the change was made with `worldPositionStays` disabled. The original position, rotation and scale are now restored. (#4202)
+- Issue where a client's clock kept alternating between running slightly fast and slightly slow on every frame, even after it had synchronized with the server. Interpolated objects juddered (a periodic motion artifact caused by mismatched frame rates): they moved in uneven steps instead of smoothly. Barely noticeable at the default `NetworkTimeSystem.AdjustmentRatio`, and clearly visible at higher values. (#4195)
+- Issue where the IL post-processor could not resolve core library types, such as `Guid` and `List<T>`, in assemblies compiled against .NET reference assemblies, for example when targeting .NET 10. Those split the core library across `System.Runtime`, `System.Collections` and other assemblies. (#4188)
+- Fixed issue where a prefab added to a `NetworkPrefabsList` while a session was running was registered more than once and logged a duplicate `GlobalObjectIdHash` error. (#4184)
+- Issue where moving a `NetworkObject` into another scene made the clients that did not observe it log "Trying to synchronize NetworkObjectId but it was not spawned". The scene migration is now only sent to the clients that observe the `NetworkObject`. (#4176)
+- Issue where a `NetworkObject` that was moved into another scene while hidden from a client spawned in that client's active scene when it was shown with `NetworkShow`, instead of the scene it is in on the server. (#4176)
+- Fixed an issue where mixed authority nested `NetworkTransform` instances could stop child/nested instances from updating because an authoritative `NetworkTransform` (root or otherwise) would remove the `NetworkObject` from the update group, preventing non-authoritative instances from updating their state on the authority side. (#4169)
+- Issue where the hybrid mode `NetcodeConfig` validation messages were not interpolated, so they reported placeholders instead of the setting that was wrong. (#4144)
+- Issue where a hybrid mode session failed to start unless `NetcodeConfig.EnableClientServerBootstrap` was set to `DisableAutomaticBootstrap`. Netcode for GameObjects creates the world itself and no longer needs that setting changed. (#4144)
+
+### Security
+
+### Obsolete
+
+## [3.1.0] - 2026-10-04
+
+### Changed
+
+- Updated Netcode for Entities dependency to 7.1.0
 
 ## [3.0.0] - 2026-09-14
 

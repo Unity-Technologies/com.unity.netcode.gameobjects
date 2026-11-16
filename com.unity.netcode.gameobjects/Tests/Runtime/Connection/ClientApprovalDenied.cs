@@ -7,9 +7,23 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.Host)]
+#if UNIFIED_NETCODE
+    [TestFixture(HostOrServer.UnifiedHost)]
+#endif
     internal class ClientApprovalDenied : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
+
+        public ClientApprovalDenied(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         private bool m_ApproveConnection = true;
         private ulong m_PendingClientId = 0;
         private ulong m_DisconnectedClientId = 0;

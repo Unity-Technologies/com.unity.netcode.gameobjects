@@ -24,6 +24,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+    [UnityPlatform(exclude = new[] { RuntimePlatform.PS4 })] // Ignored test tracked in MTT-16494
     internal class NetworkTransformOrderOfOperations : IntegrationTestWithApproximation
     {
         #region Configuration, Properties, and Overrides

@@ -45,7 +45,7 @@ GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
 
 If the player already had a prefab instance assigned, then the client owns the NetworkObject of that prefab instance unless there's additional server-side specific user code that removes or changes the ownership.
 
-Alternatively, you can choose not to spawn anything immediately after a client connects and instead use a [NetworkBehaviour component](networkbehaviour.md) to handle avatar/initial player prefab selection. This NetworkBehaviour component could be configured by the server or initiating session owner, or be associated with an [in-scene](../../basics/scenemanagement/inscene-placed-networkobjects.md) or [dynamically spawned](../../basics/object-spawning.md#dynamically-spawned-network-prefabs) NetworkObject, as suits the needs of your project.
+Alternatively, you can choose not to spawn anything immediately after a client connects and instead use a [NetworkBehaviour component](networkbehaviour.md) to handle avatar/initial player prefab selection. This NetworkBehaviour component could be configured by the server or initiating session owner, or be associated with an [in-scene](../../basics/scenemanagement/inscene-placed-networkobjects.md) or [dynamically spawned](../../basics/object-spawning.md#spawn-network-prefabs-dynamically) NetworkObject, as suits the needs of your project.
 
 ### Client-server contexts only
 
@@ -55,7 +55,7 @@ In addition to the [session-mode agnostic spawning methods](#session-mode-agnost
 
 In addition to the [session-mode agnostic spawning methods](#session-mode-agnostic-methods) above, you can use the [`OnFetchLocalPlayerPrefabToSpawn`](xref:Unity.Netcode.NetworkManager.OnFetchLocalPlayerPrefabToSpawn) method to assign a unique player prefab on a per-client basis when in [distributed authority contexts](../../terms-concepts/distributed-authority.md).
 
-To use `OnFetchLocalPlayerPrefabToSpawn` in your project, assign a callback handler to `OnFetchLocalPlayerPrefabToSpawn` and whatever the client script returns is what will be spawned for that client. Ensure that the prefab being spawned is in a NetworkPrefabList [registered with the NetworkManager](../../basics/object-spawning.md#registering-a-network-prefab).
+To use `OnFetchLocalPlayerPrefabToSpawn` in your project, assign a callback handler to `OnFetchLocalPlayerPrefabToSpawn` and whatever the client script returns is what will be spawned for that client. Ensure that the prefab being spawned is in a NetworkPrefabList [registered with the NetworkManager](../../basics/object-spawning.md#register-a-network-prefab).
 
 If you don't assign a callback handler to `OnFetchLocalPlayerPrefabToSpawn`, then the default behavior is to return the `NetworkConfig.PlayerPrefab` (or null if neither are set).
 

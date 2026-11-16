@@ -42,6 +42,13 @@ namespace TestProject.RuntimeTests
 
         public RpcObserverTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+#if UNIFIED_NETCODE
+        protected override bool UseUnifiedTests()
+        {
+            return true;
+        }
+#endif
+
         protected override void OnServerAndClientsCreated()
         {
             m_TestPrefab = CreateNetworkObjectPrefab($"{nameof(RpcObserverObject)}");
@@ -106,6 +113,14 @@ namespace TestProject.RuntimeTests
             m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
             yield return s_DefaultWaitForTick;
 
+#if UNIFIED_NETCODE
+            // Disconnecting a client disposes every world in the process when hybrid prefabs are registered.
+            if (m_AllPrefabsAsHybrid)
+            {
+                m_ServerNetworkManager.LogLevel = LogLevel.Normal;
+                yield break;
+            }
+#endif
             // Validate we can still just send to the host-client when no clients are connected
             if (m_UseHost)
             {

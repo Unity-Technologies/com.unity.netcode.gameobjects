@@ -33,6 +33,7 @@ internal static class Program
         foreach (var file in Directory.GetFiles(project, pattern))
         {
             var procInfo = new ProcessStartInfo("dotnet");
+            procInfo.Environment["CustomAfterMicrosoftCommonTargets"] = Path.Combine(AppContext.BaseDirectory, "ExcludeGenerators.targets");
 
             procInfo.Arguments = check
                 ? $"format whitespace {file} --no-restore --verify-no-changes --verbosity {verbosity}"
