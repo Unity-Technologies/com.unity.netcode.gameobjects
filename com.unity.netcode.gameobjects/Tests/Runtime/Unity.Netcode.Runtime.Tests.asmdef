@@ -3,6 +3,7 @@
     "rootNamespace": "Unity.Netcode.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
+        "Unity.Burst",
         "Unity.Collections",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",

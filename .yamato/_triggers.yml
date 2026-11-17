@@ -46,6 +46,22 @@
 
 #-----------------------------------------------------------------------------------
 
+# Temporary: the LargeWorldCoordinate RelativeTo platform probe. Comment "/ci lwc-probe" on the PR to run it.
+# Each job below can also be started on its own.
+lwc_relativeto_probe:
+  name: LWC RelativeTo platform probe
+  dependencies:
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_6000.7
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_6000.7
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_testproject_android_6000.7
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_testproject_ios-arm64_6000.7
+    - .yamato/console-standalone-test.yml#console_standalone_test_testproject_ps4_6000.7
+    - .yamato/console-standalone-test.yml#console_standalone_test_testproject_ps5_6000.7
+    - .yamato/console-standalone-test.yml#console_standalone_test_testproject_GameCoreXboxOne_6000.7
+    - .yamato/console-standalone-test.yml#console_standalone_test_testproject_GameCoreScarlett_6000.7
+  triggers:
+    expression: pull_request.comment eq "lwc-probe"
+
 # After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
 # This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
 pr_minimal_required_checks:
