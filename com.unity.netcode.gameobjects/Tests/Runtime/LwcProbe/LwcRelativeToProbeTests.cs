@@ -510,7 +510,7 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
 
         private static float FromOrdered(long ordered)
         {
-            return BitConverter.Int32BitsToSingle(ordered < 0 ? (int)((long)int.MinValue - ordered) : (int)ordered);
+            return BitConverter.Int32BitsToSingle(ordered < 0 ? (int)(int.MinValue - ordered) : (int)ordered);
         }
 
         // The value times 2^149, so every float is an integer.
