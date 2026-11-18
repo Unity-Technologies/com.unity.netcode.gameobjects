@@ -273,39 +273,17 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
         private NativeArray<Pair> m_Pairs;
         private Expected[] m_Expected;
         private int m_UnderHalfCell;
+        private NativeArray<Pair> m_TinyPairs;
+        private Expected[] m_TinyExpected;
 
         [Test]
         public void RelativeToFormsPerFloatMode()
         {
-            var scalars = BuildScalarCases();
-            var pairCount = scalars.Count / 3;
-            m_Pairs = new NativeArray<Pair>(pairCount, Allocator.Persistent);
-            m_Expected = new Expected[pairCount * 3];
-            m_UnderHalfCell = 0;
-            for (int i = 0; i < pairCount; i++)
-            {
-                var x = scalars[3 * i];
-                var y = scalars[3 * i + 1];
-                var z = scalars[3 * i + 2];
-                m_Pairs[i] = new Pair
-                {
-                    CellA = new int3(x.CellA, y.CellA, z.CellA),
-                    OffsetA = new float3(x.OffsetA, y.OffsetA, z.OffsetA),
-                    CellB = new int3(x.CellB, y.CellB, z.CellB),
-                    OffsetB = new float3(x.OffsetB, y.OffsetB, z.OffsetB),
-                };
-                for (int axis = 0; axis < 3; axis++)
-                {
-                    m_Expected[3 * i + axis] = ExactDifference(scalars[3 * i + axis]);
-                    if (m_Expected[3 * i + axis].UnderHalfCell)
-                    {
-                        m_UnderHalfCell++;
-                    }
-                }
-            }
+            m_Pairs = ToPairs(BuildScalarCases(), out m_Expected, out m_UnderHalfCell);
+            m_TinyPairs = ToPairs(BuildTinyScalarCases(), out m_TinyExpected, out _);
 
             var report = new StringBuilder();
-            report.AppendLine($"LWCPROBE platform={Application.platform} processArch={RuntimeInformation.ProcessArchitecture} pointer={IntPtr.Size * 8}bit cpu=\"{SystemInfo.processorType}\" scalars={pairCount * 3} underHalfCell={m_UnderHalfCell}");
+            report.AppendLine($"LWCPROBE platform={Application.platform} processArch={RuntimeInformation.ProcessArchitecture} pointer={IntPtr.Size * 8}bit cpu=\"{SystemInfo.processorType}\" scalars={m_Expected.Length} underHalfCell={m_UnderHalfCell} tinyScalars={m_TinyExpected.Length}");
             var failures = new StringBuilder();
             try
             {
@@ -321,6 +299,7 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
             finally
             {
                 m_Pairs.Dispose();
+                m_TinyPairs.Dispose();
             }
 
             Debug.Log(report.ToString());
@@ -337,11 +316,15 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
             var managed = new NativeArray<int>(1, Allocator.Persistent);
             var timingPairs = m_Pairs.GetSubArray(m_Pairs.Length - k_TimingPairs, k_TimingPairs);
             var timingResults = new NativeArray<float3>(k_TimingPairs, Allocator.Persistent);
+            var tinyResults = new NativeArray<float3>(m_TinyPairs.Length, Allocator.Persistent);
             try
             {
                 run(m_Pairs, results, managed, 1);
-                var summary = Compare(results);
+                var summary = Compare(results, m_Expected);
                 var burst = managed[0] == 0;
+
+                run(m_TinyPairs, tinyResults, managed, 1);
+                var tiny = Compare(tinyResults, m_TinyExpected);
 
                 run(timingPairs, timingResults, managed, 1);
                 var best = double.MaxValue;
@@ -354,6 +337,7 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
                 }
 
                 report.AppendLine($"LWCPROBE form={form} mode={mode} burst={burst} inexact={summary.Inexact} collapsed={summary.Collapsed} underHalfCellInexact={summary.UnderHalfCellInexact}/{m_UnderHalfCell} maxUlp={summary.MaxUlp} hash=0x{summary.Hash:x16} nsPerElement={best:F3}");
+                report.AppendLine($"LWCPROBE tiny form={form} mode={mode} inexact={tiny.Inexact} collapsed={tiny.Collapsed} maxUlp={tiny.MaxUlp} hash=0x{tiny.Hash:x16}");
                 if (!burst)
                 {
                     failures.AppendLine($"{form}/{mode} did not run Burst-compiled, so its results say nothing about Burst.");
@@ -368,10 +352,41 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
                 results.Dispose();
                 managed.Dispose();
                 timingResults.Dispose();
+                tinyResults.Dispose();
             }
         }
 
-        private Summary Compare(NativeArray<float3> results)
+        private static NativeArray<Pair> ToPairs(List<ScalarCase> scalars, out Expected[] expected, out int underHalfCell)
+        {
+            var pairCount = scalars.Count / 3;
+            var pairs = new NativeArray<Pair>(pairCount, Allocator.Persistent);
+            expected = new Expected[pairCount * 3];
+            underHalfCell = 0;
+            for (int i = 0; i < pairCount; i++)
+            {
+                var x = scalars[3 * i];
+                var y = scalars[3 * i + 1];
+                var z = scalars[3 * i + 2];
+                pairs[i] = new Pair
+                {
+                    CellA = new int3(x.CellA, y.CellA, z.CellA),
+                    OffsetA = new float3(x.OffsetA, y.OffsetA, z.OffsetA),
+                    CellB = new int3(x.CellB, y.CellB, z.CellB),
+                    OffsetB = new float3(x.OffsetB, y.OffsetB, z.OffsetB),
+                };
+                for (int axis = 0; axis < 3; axis++)
+                {
+                    expected[3 * i + axis] = ExactDifference(scalars[3 * i + axis]);
+                    if (expected[3 * i + axis].UnderHalfCell)
+                    {
+                        underHalfCell++;
+                    }
+                }
+            }
+            return pairs;
+        }
+
+        private static Summary Compare(NativeArray<float3> results, Expected[] expectedValues)
         {
             var summary = new Summary { Hash = 14695981039346656037UL, };
             for (int i = 0; i < results.Length; i++)
@@ -380,7 +395,7 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
                 for (int axis = 0; axis < 3; axis++)
                 {
                     var got = result[axis];
-                    var expected = m_Expected[3 * i + axis];
+                    var expected = expectedValues[3 * i + axis];
                     var bits = (uint)BitConverter.SingleToInt32Bits(got);
                     for (int b = 0; b < 4; b++)
                     {
@@ -395,7 +410,8 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
                             summary.UnderHalfCellInexact++;
                         }
                     }
-                    if (expected.NonZero && got == 0)
+                    // A bit test, since a denormals-are-zero player would also count a subnormal result as zero.
+                    if (expected.NonZero && (bits & 0x7FFFFFFF) == 0)
                     {
                         summary.Collapsed++;
                     }
@@ -413,7 +429,9 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
             public float OffsetB;
         }
 
-        // Inputs come from integer operations and exact float steps, so every platform runs the same cases.
+        // Inputs come from integer operations and exact float steps, so every platform runs the same cases. Offsets below
+        // 2^-100 are left out: PlayStation players flush subnormals to zero, and differences of the remaining offsets
+        // are never subnormal. BuildTinyScalarCases reports those inputs on their own lines.
         private static List<ScalarCase> BuildScalarCases()
         {
             var cases = new List<ScalarCase>();
@@ -432,8 +450,6 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
             }
             AddOffset(edges, 1e-30f);
             AddOffset(edges, -1e-30f);
-            AddOffset(edges, float.Epsilon);
-            AddOffset(edges, -float.Epsilon);
 
             foreach (var cellA in new[] { -30, 0, 1000, short.MaxValue - 1 })
             {
@@ -468,12 +484,64 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
             return cases;
         }
 
+        private static List<ScalarCase> BuildTinyScalarCases()
+        {
+            var minNormal = BitConverter.Int32BitsToSingle(0x00800000);
+            var offsets = new List<float> { 0f, 1f, -256f, };
+            foreach (var magnitude in new[] { float.Epsilon, Step(0f, 6), Step(minNormal, -1), minNormal, BitConverter.Int32BitsToSingle(17 << 23), })
+            {
+                offsets.Add(magnitude);
+                offsets.Add(Negate(magnitude));
+            }
+
+            var cases = new List<ScalarCase>();
+            foreach (var cellA in new[] { 0, 1000 })
+            {
+                for (int d = -1; d <= 1; d++)
+                {
+                    foreach (var offsetA in offsets)
+                    {
+                        foreach (var offsetB in offsets)
+                        {
+                            cases.Add(new ScalarCase { CellA = cellA, OffsetA = offsetA, CellB = cellA - d, OffsetB = offsetB, });
+                        }
+                    }
+                }
+            }
+            while (cases.Count % 3 != 0)
+            {
+                cases.Add(new ScalarCase());
+            }
+            return cases;
+        }
+
+        // Bit tests and bit compares only: a denormals-are-zero player treats a subnormal as equal to zero.
+        private static bool IsTiny(float value)
+        {
+            int bits = BitConverter.SingleToInt32Bits(value) & 0x7FFFFFFF;
+            return bits != 0 && bits < (27 << 23);
+        }
+
+        private static float Negate(float value)
+        {
+            return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(value) ^ int.MinValue);
+        }
+
         private static void AddOffset(List<float> offsets, float offset)
         {
-            if (offset < 512f && offset >= -512f && !offsets.Contains(offset))
+            if (offset >= 512f || offset < -512f || IsTiny(offset))
             {
-                offsets.Add(offset);
+                return;
             }
+            int bits = BitConverter.SingleToInt32Bits(offset);
+            foreach (var existing in offsets)
+            {
+                if (BitConverter.SingleToInt32Bits(existing) == bits)
+                {
+                    return;
+                }
+            }
+            offsets.Add(offset);
         }
 
         private static uint Next(ref uint state)
@@ -493,7 +561,12 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
                 var k = (int)(Next(ref state) % (1u << 25)) - (1 << 24);
                 return k * (1f / 32768f);
             }
-            var magnitude = BitConverter.Int32BitsToSingle((int)(Next(ref state) % (uint)BitConverter.SingleToInt32Bits(512f)));
+            float magnitude;
+            do
+            {
+                magnitude = BitConverter.Int32BitsToSingle((int)(Next(ref state) % (uint)BitConverter.SingleToInt32Bits(512f)));
+            }
+            while (IsTiny(magnitude));
             return (Next(ref state) & 1) == 0 ? magnitude : -magnitude;
         }
 
@@ -534,6 +607,18 @@ namespace Unity.Netcode.RuntimeTests.LwcProbe
         private static Expected ExactDifference(ScalarCase c)
         {
             var exact = ((BigInteger)(c.CellA - c.CellB) * 1024 << 149) + Scaled(c.OffsetA) - Scaled(c.OffsetB);
+            if (BigInteger.Abs(exact) < (BigInteger.One << 23))
+            {
+                // Below 2^-126 the result is a whole number of 2^-149 steps, so it is a subnormal float held exactly.
+                // Built from bits, since the double path below flushes it to zero on a denormals-are-zero player.
+                var magnitude = (int)BigInteger.Abs(exact);
+                return new Expected
+                {
+                    Value = BitConverter.Int32BitsToSingle(exact.Sign < 0 ? magnitude | int.MinValue : magnitude),
+                    NonZero = !exact.IsZero,
+                    UnderHalfCell = true,
+                };
+            }
             var guess = (float)((double)exact * Math.Pow(2, -149));
             var best = guess;
             var bestDistance = BigInteger.Abs(exact - Scaled(guess));
