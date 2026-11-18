@@ -1,0 +1,22 @@
+{
+    "name": "LwcProbe.Tests",
+    "rootNamespace": "Unity.Netcode.RuntimeTests.LwcProbe",
+    "references": [
+        "UnityEngine.TestRunner",
+        "Unity.Burst",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
