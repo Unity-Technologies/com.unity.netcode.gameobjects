@@ -211,7 +211,7 @@ validation_editors:
         - d10b18af948ab4eec1d5a72341d5243157a0dd72
         - trunk
     standards:
-        - 6000.7.0b1
+        - 6000.7.0b8
     pinnedTrunk:  d10b18af948ab4eec1d5a72341d5243157a0dd72
 
 
