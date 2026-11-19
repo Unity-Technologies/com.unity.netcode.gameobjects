@@ -197,7 +197,7 @@ test_platforms:
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv3.X official support started from 6000.7.0b1 editor
 # TODO: When a new editor will be released it should be added to this list
-# standards editor is used for standards check so we won't get random manifest changes due to newer editor being used
+# Standards check uses the package's minimum editor (unity + unityRelease in package.json), resolved at runtime in project-standards.yml
 
 validation_editors:
     default:
@@ -210,8 +210,6 @@ validation_editors:
         - 6000.7
         - d10b18af948ab4eec1d5a72341d5243157a0dd72
         - trunk
-    standards:
-        - 6000.7.0b8
     pinnedTrunk:  d10b18af948ab4eec1d5a72341d5243157a0dd72
 
 
