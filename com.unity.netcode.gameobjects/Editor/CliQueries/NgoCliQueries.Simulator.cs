@@ -363,15 +363,15 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         {
             if (delayMs > 2000)
             {
-                throw new ArgumentException("delay_ms must be at most 2000 (-1 leaves it unchanged).");
+                throw new ArgumentException("delay-ms must be at most 2000 (-1 leaves it unchanged).");
             }
             if (jitterMs > 200)
             {
-                throw new ArgumentException("jitter_ms must be at most 200 (-1 leaves it unchanged).");
+                throw new ArgumentException("jitter-ms must be at most 200 (-1 leaves it unchanged).");
             }
             if (dropPercent > 100)
             {
-                throw new ArgumentException("drop_percent must be at most 100 (-1 leaves it unchanged).");
+                throw new ArgumentException("drop-percent must be at most 100 (-1 leaves it unchanged).");
             }
 
             SimulatorPresetInfo chosen = null;
@@ -380,7 +380,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                 var presets = ListSimulatorPresets().Presets;
                 if (presets.Count == 0)
                 {
-                    throw new ArgumentException($"{PresetsUnavailableReason} Pass delay_ms, jitter_ms and drop_percent instead.");
+                    throw new ArgumentException($"{PresetsUnavailableReason} Pass delay-ms, jitter-ms and drop-percent instead.");
                 }
                 chosen = MatchPreset(presets, preset.Trim()) ?? throw new ArgumentException($"Unknown preset '{preset}'. Presets: {JoinNames(presets, p => p.Name)}.");
             }
@@ -478,7 +478,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return new SimulatorPresetListResult
             {
                 Source = null,
-                Note = $"{PresetsUnavailableReason} Without them, set delay_ms, jitter_ms and drop_percent directly.",
+                Note = $"{PresetsUnavailableReason} Without them, set delay-ms, jitter-ms and drop-percent directly.",
             };
 #endif
         }
@@ -491,7 +491,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         {
             if (durationMs < 10 || durationMs > 120_000)
             {
-                throw new ArgumentException("duration_ms must be between 10 and 120000.");
+                throw new ArgumentException("duration-ms must be between 10 and 120000.");
             }
             RequireLiveTransports("simulate a lag spike");
             var result = new SimulatorResult { Previous = NgoCliSimulator.Snapshot() };
