@@ -13,7 +13,7 @@
   # Jobs configurations are generated using nested loops through:
     # 1. For all NGO projects (testproject, testproject-tools-interation, minimalproject)
     # 2. For default platform only (Ubuntu) since standards would not vary between platforms (no need for checks on more platforms)
-    # 3. For minimal supported editor version (6000.7.0b1). Note that standards may very depending on version used (image/editor)
+    # 3. For minimal supported editor version, resolved at runtime from unity + unityRelease in com.unity.netcode.gameobjects/package.json. Note that standards may very depending on version used (image/editor)
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
   # Requires .NET SDK installed (should be preinstalled on the image so we just check for version)
@@ -29,9 +29,8 @@
 
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.standards -%}
-standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
-  name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
+standards_{{ platform.name }}_{{ project.name }}:
+  name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, package min editor]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -44,10 +43,10 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     - dotnet --version
     - dotnet format --version
     
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c editor --arch {{ platform.architecture }}
+    - python3 -c "import json; p=json.load(open('com.unity.netcode.gameobjects/package.json')); print(p['unity'] + '.' + p['unityRelease'])"
+    - unity-downloader-cli --fast --wait -u $(python3 -c "import json; p=json.load(open('com.unity.netcode.gameobjects/package.json')); print(p['unity'] + '.' + p['unityRelease'])") -c editor --arch {{ platform.architecture }}
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
     - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix # Auto-fix formatting issues
     - 'git diff --exit-code || (echo "ERROR: Code formatting issues found. Run dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --fix locally and commit the changes. Note that dotnet version that was used in this check depends on the image that was used so local results may differ (see the first command of this job to know which dotnet version was used)" && exit 1)' # Fail if formatter made any changes
-{% endfor -%}
 {% endfor -%}
 {% endfor -%}
