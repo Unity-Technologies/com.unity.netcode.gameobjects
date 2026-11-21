@@ -221,7 +221,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
         {
             var dryRun = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, true);
             Assert.IsFalse(dryRun.Created);
-            CollectionAssert.IsEmpty(NgoCliQueries.FindManagers(), "dry_run changes nothing.");
+            CollectionAssert.IsEmpty(NgoCliQueries.FindManagers(), "dry-run changes nothing.");
             Assert.IsTrue(dryRun.Notes.Exists(n => n.Contains("Distributed authority")));
 
             var result = NgoCliQueries.CreateNetworkManager("Net", NetworkTopologyTypes.DistributedAuthority, "10.0.0.5", 9000, false);
@@ -462,7 +462,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
 
             var dryRun = NgoCliQueries.SetConfig("tick_rate", "60", null, true);
             Assert.AreEqual(30u, dryRun.Previous);
-            Assert.AreEqual(30u, manager.NetworkConfig.TickRate, "dry_run changes nothing.");
+            Assert.AreEqual(30u, manager.NetworkConfig.TickRate, "dry-run changes nothing.");
 
             NgoCliQueries.SetConfig("tick_rate", "60", null, false);
             Assert.AreEqual(60u, manager.NetworkConfig.TickRate);

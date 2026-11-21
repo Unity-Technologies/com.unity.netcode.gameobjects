@@ -27,7 +27,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         [CliGroupCommand(k_Group, "Spawned NetworkObjects of the running NetworkManager, as this peer sees them: network id, name, prefab id hash, owner, authority, player object, in-scene placed, hybrid, position. Requires a running session.", Tags = new[] { Tag })]
         private static object ListObjects(
-            [CliArg("name_contains", "Only objects whose name contains this text.")] string nameContains = null,
+            [CliArg("name-contains", "Only objects whose name contains this text.")] string nameContains = null,
             [CliArg("owner", "Only objects owned by this client id. -1 for all.")] long owner = -1,
             [CliArg("limit", "Maximum objects returned.")] int limit = 100,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
@@ -44,7 +44,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("prefab", "Prefab path, GUID or name.", Required = true)] string prefab,
             [CliArg("position", "World position as [x, y, z]. Defaults to the prefab's.")] float[] position = null,
             [CliArg("owner", "Owning client id (client-server only). -1 for the server.")] long owner = -1,
-            [CliArg("player_object", "Spawn it as the owner's player object.")] bool playerObject = false,
+            [CliArg("player-object", "Spawn it as the owner's player object.")] bool playerObject = false,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
             => NgoCliOutput.ToWire(NgoCliQueries.Spawn(prefab, position, owner, playerObject, manager));
 
@@ -68,7 +68,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("topology", "ClientServer or DistributedAuthority.")] NetworkTopologyTypes topology = NetworkTopologyTypes.ClientServer,
             [CliArg("address", "Address clients connect to.")] string address = "127.0.0.1",
             [CliArg("port", "Port the server listens on and clients connect to.")] int port = 7777,
-            [CliArg("dry_run", "Validate and report without changing the scene.")] bool dryRun = false)
+            [CliArg("dry-run", "Validate and report without changing the scene.")] bool dryRun = false)
             => NgoCliOutput.ToWire(NgoCliQueries.CreateNetworkManager(name, topology, address, port, dryRun));
 
         [CliGroupCommand(k_Group, "Network prefabs lists in the project with their prefabs (path, prefab id hash, overrides, hybrid), the lists and player prefab each NetworkManager uses, and whether the default list is generated automatically.", Tags = new[] { Tag })]
@@ -80,13 +80,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         private static object RegisterPrefab(
             [CliArg("prefab", "Prefab path, GUID or name.", Required = true)] string prefab,
             [CliArg("list", "NetworkPrefabsList asset path.")] string list = null,
-            [CliArg("dry_run", "Validate and report without changing the list.")] bool dryRun = false)
+            [CliArg("dry-run", "Validate and report without changing the list.")] bool dryRun = false)
             => NgoCliOutput.ToWire(NgoCliQueries.RegisterPrefab(prefab, list, dryRun));
 
         [CliGroupCommand(k_Group, "Make a prefab a network prefab: add a NetworkObject to its root and report its prefab id hash and list registration. Saves the prefab. Not allowed in play mode.", Tags = new[] { Tag })]
         private static object MakePrefab(
             [CliArg("prefab", "Prefab path, GUID or name.", Required = true)] string prefab,
-            [CliArg("dry_run", "Validate and report without changing the prefab.")] bool dryRun = false)
+            [CliArg("dry-run", "Validate and report without changing the prefab.")] bool dryRun = false)
             => NgoCliOutput.ToWire(NgoCliQueries.MakePrefab(prefab, dryRun));
 
         [CliGroupCommand(k_Group, "Check the project for problems that otherwise show when a session starts: NetworkManager setups in the open scenes (transport, topology, prefab lists, player prefab, hierarchy, hybrid prefab requirements) and network prefabs (NetworkBehaviours without a NetworkObject, nested or misplaced NetworkObjects, NetworkManagers in network prefabs, missing or duplicate prefab ids, unregistered prefabs, broken list entries).", Tags = new[] { Tag })]
@@ -142,13 +142,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         [CliGroupCommand(k_Group, "Shut the NetworkManager down (any role). Clients disconnect; a host or server ends the session for everyone.", Tags = new[] { k_Tag })]
         private static object Stop(
-            [CliArg("discard_message_queue", "Drop queued messages instead of sending them first.")] bool discardMessageQueue = false,
+            [CliArg("discard-message-queue", "Drop queued messages instead of sending them first.")] bool discardMessageQueue = false,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
             => NgoCliOutput.ToWire(NgoCliQueries.Stop(manager, discardMessageQueue));
 
         [CliGroupCommand(k_Group, "Disconnect a client from the server or host, with an optional reason the client receives.", Tags = new[] { k_Tag })]
         private static object Kick(
-            [CliArg("client_id", "Client id, from netcode.gameobjects list_clients.", Required = true)] long clientId,
+            [CliArg("client-id", "Client id, from netcode.gameobjects list_clients.", Required = true)] long clientId,
             [CliArg("reason", "Disconnect reason sent to the client.")] string reason = null,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
             => NgoCliOutput.ToWire(NgoCliQueries.Kick(clientId, reason, manager));
@@ -162,9 +162,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return NgoCliOutput.ToWire(result);
         }
 
-        [CliGroupCommand(k_Group, "Wait until the session is ready: a client connected and synchronized, or a server or host with at least min_clients remote clients. Returns ready false with the reason on timeout.", Tags = new[] { k_Tag })]
+        [CliGroupCommand(k_Group, "Wait until the session is ready: a client connected and synchronized, or a server or host with at least min-clients remote clients. Returns ready false with the reason on timeout.", Tags = new[] { k_Tag })]
         private static async Task<object> WaitReady(
-            [CliArg("min_clients", "Server or host: remote clients to wait for. Distributed authority: other clients in the session.")] int minClients = 0,
+            [CliArg("min-clients", "Server or host: remote clients to wait for. Distributed authority: other clients in the session.")] int minClients = 0,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null,
             [CliArg("timeout", "Seconds to wait.")] double timeoutInSeconds = 30)
         {
@@ -187,9 +187,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         private static object Set(
             [CliArg("enable", "Turn the simulator on (true) or off (false).")] bool enable = true,
             [CliArg("preset", "Preset name from netcode.gameobjects.simulator list_presets (needs Multiplayer Tools).")] string preset = null,
-            [CliArg("delay_ms", "Packet delay in milliseconds, 0-2000. -1 leaves it unchanged.")] int delayMs = -1,
-            [CliArg("jitter_ms", "Packet jitter in milliseconds, 0-200. -1 leaves it unchanged.")] int jitterMs = -1,
-            [CliArg("drop_percent", "Packet loss in percent, 0-100. -1 leaves it unchanged.")] int dropPercent = -1)
+            [CliArg("delay-ms", "Packet delay in milliseconds, 0-2000. -1 leaves it unchanged.")] int delayMs = -1,
+            [CliArg("jitter-ms", "Packet jitter in milliseconds, 0-200. -1 leaves it unchanged.")] int jitterMs = -1,
+            [CliArg("drop-percent", "Packet loss in percent, 0-100. -1 leaves it unchanged.")] int dropPercent = -1)
             => NgoCliOutput.ToWire(NgoCliQueries.SetSimulator(enable, preset, delayMs, jitterMs, dropPercent));
 
         [CliGroupCommand(k_Group, "Network condition presets (home broadband, mobile 2G to 5G…) with their delay, jitter and loss. They come from Multiplayer Tools.", Tags = new[] { k_Tag })]
@@ -198,7 +198,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
         [CliGroupCommand(k_Group, "Drop every packet for a short time, then restore the simulator settings. Tests how gameplay copes with a lag spike. Requires a running session.", Tags = new[] { k_Tag })]
         private static object LagSpike(
-            [CliArg("duration_ms", "Spike length in milliseconds, 10-120000.")] int durationMs = 500)
+            [CliArg("duration-ms", "Spike length in milliseconds, 10-120000.")] int durationMs = 500)
             => NgoCliOutput.ToWire(NgoCliQueries.StartLagSpike(durationMs));
 
         [CliGroupCommand(k_Group, "Drop every packet until turned off, so connections time out. Tests disconnect handling. Requires a running session to turn on.", Tags = new[] { k_Tag })]
@@ -223,7 +223,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("field", "Field name, from settableFields of netcode.gameobjects.config get.", Required = true)] string field,
             [CliArg("value", "New value, e.g. 60, true, DistributedAuthority or a prefab path.", Required = true)] string value,
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null,
-            [CliArg("dry_run", "Validate and report without changing anything.")] bool dryRun = false)
+            [CliArg("dry-run", "Validate and report without changing anything.")] bool dryRun = false)
             => NgoCliOutput.ToWire(NgoCliQueries.SetConfig(field, value, manager, dryRun));
     }
 }
