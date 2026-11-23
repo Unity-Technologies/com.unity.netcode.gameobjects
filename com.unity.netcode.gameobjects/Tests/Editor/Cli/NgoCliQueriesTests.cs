@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Netcode.GameObjects.Editor.Cli;
 using Unity.Netcode.GameObjects.Editor.Configuration;
 using Unity.Netcode.Transports.UTP;
@@ -438,6 +439,45 @@ namespace Unity.Netcode.GameObjects.EditorTests
             Assert.Throws<InvalidOperationException>(() => NgoCliQueries.Audit("config", null, 50, null), "Asking for the NetworkManager checks needs one.");
         }
 
+        /// <summary>
+        /// A NetworkObject added to a scene before its first save has no network id. Saving gives it one (the save
+        /// hook regenerates it and saves again), and audit reports any in-scene object still without one.
+        /// </summary>
+        [Test]
+        public void InSceneNetworkObject_GetsItsIdOnSave_AndAuditReportsMissingIds()
+        {
+            var gameManager = new GameObject("GameManager", typeof(NetworkObject));
+            var networkObject = gameManager.GetComponent<NetworkObject>();
+            Assert.AreEqual(0u, networkObject.GlobalObjectIdHash, "A scene with no path can't give it an id yet.");
+
+            var unsaved = NgoCliQueries.Audit("scenes", null, 50, null);
+            Assert.AreEqual(1, unsaved.SceneObjectsChecked);
+            Assert.AreEqual("SCENE_NOT_SAVED", Only(unsaved.Issues).Code);
+            Assert.IsNull(unsaved.ManagersChecked, "scope scenes skips the NetworkManager checks.");
+
+            var scenePath = $"{k_Folder}/CliIdScene.unity";
+            Assert.IsTrue(EditorSceneManager.SaveScene(gameManager.scene, scenePath));
+            Assert.AreNotEqual(0u, networkObject.GlobalObjectIdHash, "Saving assigns the id.");
+            var assigned = networkObject.GlobalObjectIdHash;
+
+            // The id has to be in the saved file, which is what clones and builds load.
+            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            var reopened = Only(new List<NetworkObject>(FindObjects.FromSceneByType<NetworkObject>(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), true)));
+            Assert.AreEqual(assigned, reopened.GlobalObjectIdHash);
+            Assert.IsEmpty(NgoCliQueries.Audit("scenes", null, 50, null).Issues);
+
+            // A scene saved before this fix can still hold an object with no id.
+            reopened.GlobalObjectIdHash = 0;
+            var missing = Only(NgoCliQueries.Audit("scenes", null, 50, null).Issues);
+            Assert.AreEqual("IN_SCENE_ID_MISSING", missing.Code);
+            Assert.AreEqual("error", missing.Severity);
+            Assert.AreEqual(scenePath, missing.Asset);
+            StringAssert.Contains("GameManager", missing.Message);
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.Audit("everything", null, 50, null));
+        }
+
         // --- Config ---
 
         [Test]
@@ -776,6 +816,143 @@ namespace Unity.Netcode.GameObjects.EditorTests
             yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
             var stoppedServer = Assert.ThrowsAsync<InvalidOperationException>(() => NgoCliQueries.ReconnectAsync(null, 5));
             StringAssert.Contains("stopped as the server", stoppedServer.Message);
+        }
+
+        internal enum CliTestPhase { Waiting, Playing }
+
+        internal struct CliTestScore : INetworkSerializeByMemcpy
+        {
+            public int Points;
+            public FixedString32Bytes Label;
+        }
+
+        internal class CliStateBehaviour : NetworkBehaviour
+        {
+            public NetworkVariable<int> Counter = new NetworkVariable<int>();
+            public NetworkVariable<Vector3> Spot = new NetworkVariable<Vector3>();
+            public NetworkVariable<CliTestPhase> Phase = new NetworkVariable<CliTestPhase>();
+            public NetworkVariable<FixedString64Bytes> Title = new NetworkVariable<FixedString64Bytes>();
+            public NetworkVariable<CliTestScore> Score = new NetworkVariable<CliTestScore>();
+            public NetworkVariable<int> Secret = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
+            public NetworkList<int> Hits;
+
+            private void Awake()
+            {
+                // NetworkList allocates native memory, so it's created here rather than in a field initializer.
+                Hits = new NetworkList<int>();
+            }
+        }
+
+        internal class CliChildBehaviour : NetworkBehaviour
+        {
+            public NetworkVariable<bool> Lit = new NetworkVariable<bool>();
+        }
+
+        private static VariableState Variable(BehaviourState state, string name)
+        {
+            foreach (var variable in state.Variables)
+            {
+                if (variable.Name == name)
+                {
+                    return variable;
+                }
+            }
+            Assert.Fail($"{state.Behaviour} has no variable {name}.");
+            return null;
+        }
+
+        [Test]
+        public void FormatValue_TurnsValuesIntoPlainData()
+        {
+            Assert.AreEqual(5, NgoCliQueries.FormatValue(5, 0));
+            Assert.AreEqual("Playing", NgoCliQueries.FormatValue(CliTestPhase.Playing, 0));
+            CollectionAssert.AreEqual(new[] { 1f, 2f, 3f }, (float[])NgoCliQueries.FormatValue(new Vector3(1, 2, 3), 0));
+            Assert.AreEqual("hello", NgoCliQueries.FormatValue(new FixedString32Bytes("hello"), 0));
+            var score = (Dictionary<string, object>)NgoCliQueries.FormatValue(new CliTestScore { Points = 7, Label = "red" }, 0);
+            Assert.AreEqual(7, score["Points"]);
+            Assert.AreEqual("red", score["Label"]);
+            var many = new List<int>();
+            for (var i = 0; i < NgoCliQueries.MaxElementsShown + 5; i++)
+            {
+                many.Add(i);
+            }
+            Assert.AreEqual(NgoCliQueries.MaxElementsShown, ((List<object>)NgoCliQueries.FormatValue(many, 0)).Count, "Collections are capped.");
+            Assert.IsNull(NgoCliQueries.FormatValue(null, 0));
+        }
+
+        /// <summary>
+        /// get_object returns each owned behaviour's NetworkVariable values, nested behaviours with their child path,
+        /// and NetworkList contents, so they can be read without script eval.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RunningHost_GetObjectReturnsNetworkVariableValues()
+        {
+            UsePlayModeWithoutReload();
+            var manager = CreateManager(port: GetFreeUdpPort());
+            manager.NetworkConfig.EnableSceneManagement = false;
+
+            yield return new EnterPlayMode();
+
+            NgoCliQueries.Start(NgoCliQueries.SessionMode.Host, null, null, -1);
+            var ready = NgoCliQueries.WaitReadyAsync(null, 0, 10);
+            yield return WaitFor(ready);
+            Assert.IsTrue(ready.Result.Ready, ready.Result.Reason);
+
+            var root = new GameObject("CliStateObject");
+            root.AddComponent<NetworkObject>();
+            var state = root.AddComponent<CliStateBehaviour>();
+            var child = new GameObject("Lamp");
+            child.transform.SetParent(root.transform);
+            var lamp = child.AddComponent<CliChildBehaviour>();
+            var networkObject = root.GetComponent<NetworkObject>();
+            // Built at runtime, so it has no prefab id; the host is the only peer, so any id will do.
+            networkObject.GlobalObjectIdHash = 0x5EED;
+            networkObject.Spawn();
+
+            state.Counter.Value = 3;
+            state.Spot.Value = new Vector3(1, 2, 3);
+            state.Phase.Value = CliTestPhase.Playing;
+            state.Title.Value = "arena";
+            state.Score.Value = new CliTestScore { Points = 7, Label = "red" };
+            state.Secret.Value = 42;
+            state.Hits.Add(4);
+            state.Hits.Add(5);
+            lamp.Lit.Value = true;
+
+            var id = (long)networkObject.NetworkObjectId;
+            var detail = NgoCliQueries.GetObject(id, null);
+            CollectionAssert.AreEqual(new[] { nameof(CliStateBehaviour), nameof(CliChildBehaviour) }, detail.Behaviours);
+            Assert.AreEqual(2, detail.State.Count);
+
+            var rootState = detail.State[0];
+            Assert.IsNull(rootState.Path, "Behaviours on the NetworkObject's own GameObject have no path.");
+            Assert.AreEqual(3, Variable(rootState, "Counter").Value);
+            Assert.AreEqual("NetworkVariable<Int32>", Variable(rootState, "Counter").Type);
+            CollectionAssert.AreEqual(new[] { 1f, 2f, 3f }, (float[])Variable(rootState, "Spot").Value);
+            Assert.AreEqual("Playing", Variable(rootState, "Phase").Value);
+            Assert.AreEqual("arena", Variable(rootState, "Title").Value);
+            Assert.AreEqual(7, ((Dictionary<string, object>)Variable(rootState, "Score").Value)["Points"]);
+            Assert.AreEqual(42, Variable(rootState, "Secret").Value, "The server reads owner-only variables.");
+            var hits = Variable(rootState, "Hits");
+            CollectionAssert.AreEqual(new object[] { 4, 5 }, (List<object>)hits.Value);
+            Assert.AreEqual(2, hits.Count);
+            Assert.IsFalse(hits.Truncated);
+
+            var childState = detail.State[1];
+            Assert.AreEqual("Lamp", childState.Path);
+            Assert.AreEqual(true, Variable(childState, "Lit").Value);
+
+            var filtered = NgoCliQueries.GetObject(id, null, nameof(CliChildBehaviour));
+            Assert.AreEqual(nameof(CliChildBehaviour), Only(filtered.State).Behaviour);
+            Assert.Throws<ArgumentException>(() => NgoCliQueries.GetObject(id, null, "NoSuchBehaviour"));
+            Assert.IsNull(NgoCliQueries.GetObject(id, null, null, false).State, "variables false gives the short form.");
+
+            var wire = (Dictionary<string, object>)NgoCliOutput.ToWire(detail);
+            Assert.IsTrue(wire.ContainsKey("state"));
+
+            networkObject.Despawn();
+            NgoCliQueries.Stop(null, false);
+            yield return WaitForCondition(() => !manager.IsListening && !manager.ShutdownInProgress);
         }
 
         /// <summary>

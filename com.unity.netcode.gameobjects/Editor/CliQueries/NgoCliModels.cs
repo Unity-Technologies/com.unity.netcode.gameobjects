@@ -109,6 +109,30 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         public OwnershipInfo Ownership;
         public List<long> Observers;
         public List<string> Behaviours = new List<string>();
+        /// <summary>Each behaviour's NetworkVariable values as this peer sees them; null when variables weren't asked for.</summary>
+        public List<BehaviourState> State;
+    }
+
+    internal class BehaviourState
+    {
+        public string Behaviour;
+        /// <summary>The behaviour's GameObject below the NetworkObject; null on the NetworkObject's own GameObject.</summary>
+        public string Path;
+        public List<VariableState> Variables = new List<VariableState>();
+    }
+
+    internal class VariableState
+    {
+        public string Name;
+        public string Type;
+        public object Value;
+        /// <summary>For a list or other collection: the full element count, though at most MaxElementsShown are shown.</summary>
+        public int? Count;
+        public bool Truncated;
+        public NetworkVariableReadPermission ReadPerm;
+        public NetworkVariableWritePermission WritePerm;
+        /// <summary>Why there's no value: not sent to this client, or the read failed.</summary>
+        public string Note;
     }
 
     internal class OwnershipInfo
@@ -246,6 +270,8 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         public int? ManagersChecked;
         /// <summary>Set when network prefabs were checked.</summary>
         public int? PrefabsScanned;
+        /// <summary>Set when the NetworkObjects in the open scenes were checked.</summary>
+        public int? SceneObjectsChecked;
         public int Errors;
         public int Warnings;
         public bool Truncated;
@@ -257,7 +283,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         /// <summary>error or warning.</summary>
         public string Severity;
         public string Code;
-        /// <summary>config (NetworkManagers) or prefabs.</summary>
+        /// <summary>config (NetworkManagers), scenes (in-scene NetworkObjects) or prefabs.</summary>
         public string Area;
         public string Asset;
         public string Message;

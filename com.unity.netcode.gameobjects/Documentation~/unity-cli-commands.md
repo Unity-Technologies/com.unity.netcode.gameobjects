@@ -27,7 +27,7 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 | `status` | Each NetworkManager: role (host, server, client), connection state, local client id, topology, session owner, client and object counts, ticks, transport address, and whether the session runs hybrid prefabs. |
 | `list_clients` | Connected clients with their player object, owned object count and round trip time. |
 | `list_objects` | Spawned NetworkObjects as this peer sees them, filtered by name or owner. |
-| `get_object` | One NetworkObject: owner, authority, ownership flags and who can change them, observers and NetworkBehaviours. |
+| `get_object` | One NetworkObject: owner, authority, ownership flags and who can change them, observers, NetworkBehaviours (nested ones with their child path), and each behaviour's `NetworkVariable` and `NetworkList` values as this peer sees them. `--behaviour` limits the values to one behaviour type; `--variables false` leaves them out. |
 | `spawn` | Instantiate and spawn a registered network prefab at a position, optionally for an owner or as a player object. |
 | `despawn` | Despawn a NetworkObject, optionally keeping the GameObject. |
 | `change_owner` | Give a NetworkObject to another client, following the topology's ownership rules. |
@@ -35,7 +35,7 @@ To test with several players, use [Multiplayer Play Mode](https://docs.unity3d.c
 | `list_prefabs` | Network prefabs lists with their prefabs, and the lists and player prefab each NetworkManager uses. |
 | `register_prefab` | Add a network prefab to a network prefabs list and save the list. |
 | `make_prefab` | Add a NetworkObject to a prefab's root and report its prefab id hash. |
-| `audit` | Find setup problems that otherwise show when a session starts: in NetworkManagers (transport, topology, prefab lists, player prefab, hybrid prefab requirements) and in network prefabs (NetworkBehaviours without a NetworkObject, nested NetworkObjects, duplicate prefab ids, unregistered prefabs). `--scope config` or `--scope prefabs` runs one half. |
+| `audit` | Find setup problems that otherwise show when a session starts: in NetworkManagers (transport, topology, prefab lists, player prefab, hybrid prefab requirements), in in-scene NetworkObjects (no network id, so they never spawn), and in network prefabs (NetworkBehaviours without a NetworkObject, nested NetworkObjects, duplicate prefab ids, unregistered prefabs). `--scope config`, `--scope scenes` or `--scope prefabs` runs one part. |
 
 ### netcode.gameobjects.profiler
 

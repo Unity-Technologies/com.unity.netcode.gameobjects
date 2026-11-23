@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- `netcode.gameobjects get_object` returns each NetworkBehaviour's `NetworkVariable` and `NetworkList` values as the peer sees them, and the child path of nested behaviours. `--behaviour` limits the values to one behaviour type, and `--variables false` gives the previous short form.
+- `netcode.gameobjects audit` checks in-scene NetworkObjects for a missing network id (`GlobalObjectIdHash` 0), and takes `--scope scenes` to run only that check.
 - ILPP diagnostic errors should now be clickable in the editor to go to the source of the issue. (#4250)
 
 ### Changed
@@ -22,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Issue where a `NetworkObject` added to a scene before the scene was first saved, for example by an editor script, was saved with a `GlobalObjectIdHash` of 0 and never spawned. Saving the scene now assigns the missing id and saves it again.
 - Issue where every `NetworkObject` that started before a session logged a "Did not register because there is no session in progress!" warning when `NetworkManager.LogLevel` was `Developer`. Only `GhostObject` instances log it now. (#4245)
 - Fixed a NullReferenceException that would be thrown if a MonoBehaviour derived from NetworkManager defines it's own Awake or OnEnable. (#4244)
 - Issue where the unified bootstrap created a second world that ran a duplicate of every default system next to the default world. (#4243)
