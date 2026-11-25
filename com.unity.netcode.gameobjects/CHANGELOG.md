@@ -14,6 +14,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- The `netcode.gameobjects` CLI command parameters are now kebab-case, matching the `com.unity.pipeline` convention, for example `--dry-run`, `--client-id`, `--min-clients` and `--delay-ms`. The old snake_case names are refused. Command names and result fields are unchanged. The commands now require `com.unity.pipeline` 1.0.0 or later, which refuses unknown parameter names instead of ignoring them. (#4256)
+
 ### Deprecated
 
 ### Removed
