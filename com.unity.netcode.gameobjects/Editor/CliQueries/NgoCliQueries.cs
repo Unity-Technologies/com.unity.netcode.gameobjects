@@ -293,11 +293,16 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             return result;
         }
 
-        internal static ObjectDetail GetObject(long networkObjectId, string managerFilter)
+        internal static ObjectDetail GetObject(long networkObjectId, string managerFilter, string behaviourFilter = null, bool variables = true)
         {
             var manager = ResolveRunningManager(managerFilter);
             var networkObject = FindSpawnedObject(manager, networkObjectId);
-            return Describe(manager, networkObject);
+            var detail = Describe(manager, networkObject);
+            if (variables)
+            {
+                detail.State = DescribeBehaviourState(manager, networkObject, behaviourFilter);
+            }
+            return detail;
         }
 
         internal static ObjectDetail Describe(NetworkManager manager, NetworkObject networkObject)
@@ -309,13 +314,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             detail.DestroyWithScene = networkObject.DestroyWithScene;
             detail.DontDestroyWithOwner = networkObject.DontDestroyWithOwner;
             detail.Ownership = DescribeOwnership(manager, networkObject);
-            foreach (var behaviour in networkObject.GetComponentsInChildren<NetworkBehaviour>(true))
+            foreach (var behaviour in OwnedBehaviours(networkObject))
             {
-                // As NGO assigns them: a nested NetworkObject owns the behaviours below it.
-                if (behaviour.GetComponentInParent<NetworkObject>(true) == networkObject)
-                {
-                    detail.Behaviours.Add(behaviour.GetType().Name);
-                }
+                detail.Behaviours.Add(behaviour.GetType().Name);
             }
 
             // Observers are only tracked by the authority that decides visibility.

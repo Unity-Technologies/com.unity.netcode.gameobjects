@@ -83,6 +83,71 @@ namespace Unity.Netcode.GameObjects.Editor
     }
 
     /// <summary>
+    /// Gives in-scene placed <see cref="NetworkObject"/>s the GlobalObjectIdHash they missed, when their scene is saved.
+    /// </summary>
+    /// <remarks>
+    /// NetworkObject.OnValidate can only generate the hash once the scene has an asset path, and a later
+    /// revalidation of a plain scene object doesn't mark the scene dirty. So a NetworkObject added to a new scene
+    /// (by an editor script, for instance) and saved with it keeps a hash of 0, and never spawns. After each save,
+    /// this regenerates any hash that is still 0 and saves the scene again.
+    /// </remarks>
+    [InitializeOnLoad]
+    internal static class InSceneNetworkObjectIdRepair
+    {
+        private static bool s_Saving;
+
+        static InSceneNetworkObjectIdRepair()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.sceneSaved += OnSceneSaved;
+        }
+
+        /// <summary>Regenerates the hash of each NetworkObject in the scene that has none; returns how many now have one.</summary>
+        internal static int Repair(Scene scene)
+        {
+            var repaired = 0;
+            if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrEmpty(scene.path))
+            {
+                return repaired;
+            }
+            foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
+            {
+                if (networkObject.GlobalObjectIdHash != 0)
+                {
+                    continue;
+                }
+                networkObject.OnValidate();
+                if (networkObject.GlobalObjectIdHash != 0)
+                {
+                    repaired++;
+                }
+            }
+            return repaired;
+        }
+
+        private static void OnSceneSaved(Scene scene)
+        {
+            if (s_Saving || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+            if (Repair(scene) == 0)
+            {
+                return;
+            }
+            s_Saving = true;
+            try
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+            }
+            finally
+            {
+                s_Saving = false;
+            }
+        }
+    }
+
+    /// <summary>
     /// An <see cref="AssetPostprocessor"/> that sets the <see cref="NetworkObject.InScenePlaced"/> property to false for all <see cref="NetworkObject"/>s in prefabs.
     /// Ensures that InScenePlaced is always false for all prefab objects.
     /// This is important because when a prefab is instantiated in the scene, it should be treated as a dynamically spawned object.

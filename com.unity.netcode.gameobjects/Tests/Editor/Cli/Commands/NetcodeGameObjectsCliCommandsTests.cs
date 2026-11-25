@@ -27,7 +27,7 @@ namespace Unity.Netcode.GameObjects.EditorTests
             ["netcode.gameobjects status"] = new string[0],
             ["netcode.gameobjects list_clients"] = new[] { "manager" },
             ["netcode.gameobjects list_objects"] = new[] { "name-contains", "owner", "limit", "manager" },
-            ["netcode.gameobjects get_object"] = new[] { "id*", "manager" },
+            ["netcode.gameobjects get_object"] = new[] { "id*", "manager", "behaviour", "variables" },
             ["netcode.gameobjects spawn"] = new[] { "prefab*", "position", "owner", "player-object", "manager" },
             ["netcode.gameobjects despawn"] = new[] { "id*", "destroy", "manager" },
             ["netcode.gameobjects change_owner"] = new[] { "id*", "owner*", "manager" },

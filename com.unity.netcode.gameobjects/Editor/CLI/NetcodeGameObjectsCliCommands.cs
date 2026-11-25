@@ -33,11 +33,13 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
             => NgoCliOutput.ToWire(NgoCliQueries.ListObjects(manager, nameContains, owner, limit));
 
-        [CliGroupCommand(k_Group, "One spawned NetworkObject: owner, authority, ownership flags and who may change them, observers, NetworkBehaviours, scene and position. Requires a running session.", Tags = new[] { Tag })]
+        [CliGroupCommand(k_Group, "One spawned NetworkObject: owner, authority, ownership flags and who may change them, observers, NetworkBehaviours (nested ones with their child path), scene, position, and each behaviour's NetworkVariable and NetworkList values as this peer sees them. Requires a running session.", Tags = new[] { Tag })]
         private static object GetObject(
             [CliArg("id", "NetworkObjectId, from netcode.gameobjects list_objects.", Required = true)] long id,
-            [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null)
-            => NgoCliOutput.ToWire(NgoCliQueries.GetObject(id, manager));
+            [CliArg("manager", "NetworkManager name or hierarchy path, when there are several.")] string manager = null,
+            [CliArg("behaviour", "Only this NetworkBehaviour's variables, by type name.")] string behaviour = null,
+            [CliArg("variables", "Include NetworkVariable values. False gives the short form.")] bool variables = true)
+            => NgoCliOutput.ToWire(NgoCliQueries.GetObject(id, manager, behaviour, variables));
 
         [CliGroupCommand(k_Group, "Instantiate and spawn a registered network prefab. Server or host in client-server; any client in distributed authority (which then owns it). Returns the spawned object.", Tags = new[] { Tag })]
         private static object Spawn(
@@ -89,9 +91,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             [CliArg("dry-run", "Validate and report without changing the prefab.")] bool dryRun = false)
             => NgoCliOutput.ToWire(NgoCliQueries.MakePrefab(prefab, dryRun));
 
-        [CliGroupCommand(k_Group, "Check the project for problems that otherwise show when a session starts: NetworkManager setups in the open scenes (transport, topology, prefab lists, player prefab, hierarchy, hybrid prefab requirements) and network prefabs (NetworkBehaviours without a NetworkObject, nested or misplaced NetworkObjects, NetworkManagers in network prefabs, missing or duplicate prefab ids, unregistered prefabs, broken list entries).", Tags = new[] { Tag })]
+        [CliGroupCommand(k_Group, "Check the project for problems that otherwise show when a session starts: NetworkManager setups in the open scenes (transport, topology, prefab lists, player prefab, hierarchy, hybrid prefab requirements), in-scene NetworkObjects without a network id, and network prefabs (NetworkBehaviours without a NetworkObject, nested or misplaced NetworkObjects, NetworkManagers in network prefabs, missing or duplicate prefab ids, unregistered prefabs, broken list entries).", Tags = new[] { Tag })]
         private static object Audit(
-            [CliArg("scope", "all, config (NetworkManagers) or prefabs.")] string scope = "all",
+            [CliArg("scope", "all, config (NetworkManagers), scenes (in-scene NetworkObjects) or prefabs.")] string scope = "all",
             [CliArg("folder", "Prefabs only: prefabs under this folder, e.g. Assets/Prefabs.")] string folder = null,
             [CliArg("limit", "Maximum issues returned (counts include all).")] int limit = 200,
             [CliArg("manager", "Config only: this NetworkManager (name or hierarchy path). Omit for all.")] string manager = null)

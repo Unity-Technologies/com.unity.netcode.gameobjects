@@ -408,9 +408,9 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
         internal static ProjectAuditResult Audit(string scope, string folder, int limit, string managerFilter)
         {
             var normalized = string.IsNullOrWhiteSpace(scope) ? "all" : scope.Trim().ToLowerInvariant();
-            if (normalized is not ("all" or "config" or "prefabs"))
+            if (normalized is not ("all" or "config" or "scenes" or "prefabs"))
             {
-                throw new ArgumentException("scope must be all, config or prefabs.");
+                throw new ArgumentException("scope must be all, config, scenes or prefabs.");
             }
             if (limit < 1)
             {
@@ -419,7 +419,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
 
             var result = new ProjectAuditResult();
             var issues = new List<AuditIssue>();
-            if (normalized != "prefabs")
+            if (normalized is "all" or "config")
             {
                 // A project check shouldn't fail because the scene with the NetworkManager isn't open.
                 if (normalized == "all" && string.IsNullOrWhiteSpace(managerFilter) && FindManagers().Count == 0)
@@ -441,7 +441,24 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
                     }
                 }
             }
-            if (normalized != "config")
+            if (normalized is "all" or "scenes")
+            {
+                var scenes = AuditScenes();
+                result.SceneObjectsChecked = scenes.ObjectsChecked;
+                foreach (var issue in scenes.Issues)
+                {
+                    if (issue.Severity == "error")
+                    {
+                        result.Errors++;
+                    }
+                    else
+                    {
+                        result.Warnings++;
+                    }
+                    issues.Add(issue);
+                }
+            }
+            if (normalized is "all" or "prefabs")
             {
                 var prefabs = AuditPrefabs(folder, limit);
                 result.PrefabsScanned = prefabs.PrefabsScanned;
@@ -460,6 +477,58 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             }
             result.Issues = issues.GetRange(0, Math.Min(limit, issues.Count));
             return result;
+        }
+
+        /// <summary>
+        /// Checks the NetworkObjects placed in the open scenes for a missing network id (GlobalObjectIdHash 0). NGO
+        /// can't match such an object across peers, so it never spawns and a session that waits for it never starts.
+        /// It happens when a NetworkObject is added to a scene before the scene is first saved.
+        /// </summary>
+        internal static (int ObjectsChecked, List<AuditIssue> Issues) AuditScenes()
+        {
+            var issues = new List<AuditIssue>();
+            var checkedCount = 0;
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded)
+                {
+                    continue;
+                }
+                var unsaved = string.IsNullOrEmpty(scene.path);
+                var missing = new List<string>();
+                foreach (var networkObject in FindObjects.FromSceneByType<NetworkObject>(scene, true))
+                {
+                    checkedCount++;
+                    if (networkObject.GlobalObjectIdHash == 0)
+                    {
+                        missing.Add(GetHierarchyPath(networkObject.transform));
+                    }
+                }
+                if (missing.Count == 0)
+                {
+                    continue;
+                }
+                var names = string.Join(", ", missing.Count > 10 ? missing.GetRange(0, 10) : missing) + (missing.Count > 10 ? $" and {missing.Count - 10} more" : "");
+                issues.Add(unsaved
+                    ? new AuditIssue
+                    {
+                        Severity = "warning",
+                        Code = "SCENE_NOT_SAVED",
+                        Area = "scenes",
+                        Asset = SceneLabel(scene),
+                        Message = $"{missing.Count} NetworkObject(s) in a scene that has never been saved have no network id yet: {names}. Save the scene; NGO assigns the ids when it has a path.",
+                    }
+                    : new AuditIssue
+                    {
+                        Severity = "error",
+                        Code = "IN_SCENE_ID_MISSING",
+                        Area = "scenes",
+                        Asset = scene.path,
+                        Message = $"{missing.Count} in-scene NetworkObject(s) have no network id (GlobalObjectIdHash 0), so they never spawn: {names}. Save the scene to assign them (a scene saved by this NGO version gets them on save), or reopen it, mark it dirty and save.",
+                    });
+            }
+            return (checkedCount, issues);
         }
 
         /// <summary>
