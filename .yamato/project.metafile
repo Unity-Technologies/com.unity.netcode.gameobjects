@@ -25,7 +25,7 @@
 small_agent_platform:
     - name: ubuntu
       type: Unity::VM
-      image: package-ci/ubuntu-22.04:v4.87.0
+      image: package-ci/ubuntu-22.04:v4.90.0
       flavor: b1.small
 
 
@@ -40,7 +40,7 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.87.0
+          image: package-ci/ubuntu-22.04:v4.90.0
           flavor: b1.large
           standalone: StandaloneLinux64
           architecture: x64
@@ -48,7 +48,7 @@ test_platforms:
     desktop:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4.87.0
+          image: package-ci/ubuntu-22.04:v4.90.0
           flavor: b1.large
           smaller_flavor: b1.large
           larger_flavor: b1.xlarge
