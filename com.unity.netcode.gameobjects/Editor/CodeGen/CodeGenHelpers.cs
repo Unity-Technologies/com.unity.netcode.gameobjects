@@ -209,6 +209,61 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
         }
 
         /// <summary>
+        /// Collects every type that assembly scoped code cannot access when it uses <paramref name="type"/>.
+        /// This is each private or protected nested type in its nesting chain, or in the chain of its generic arguments.
+        /// A protected internal type is only hidden when it is declared in an assembly whose internals <paramref name="consumer"/> cannot see.
+        /// </summary>
+        /// <param name="type">The type the generated code uses.</param>
+        /// <param name="consumer">The assembly the generated code is emitted into.</param>
+        /// <param name="hidden">Receives each inaccessible type, without duplicates.</param>
+        public static void CollectTypesHiddenFromAssembly(this TypeReference type, AssemblyDefinition consumer, List<TypeDefinition> hidden)
+        {
+            if (type is GenericInstanceType genericInstance)
+            {
+                foreach (var argument in genericInstance.GenericArguments)
+                {
+                    argument.CollectTypesHiddenFromAssembly(consumer, hidden);
+                }
+            }
+            else if (type is TypeSpecification specification)
+            {
+                specification.ElementType.CollectTypesHiddenFromAssembly(consumer, hidden);
+                return;
+            }
+
+            for (var definition = type.Resolve(); definition != null && definition.IsNested; definition = definition.DeclaringType)
+            {
+                var isHidden = definition.IsNestedPrivate || definition.IsNestedFamily || definition.IsNestedFamilyAndAssembly ||
+                    (definition.IsNestedFamilyOrAssembly && !consumer.CanSeeInternalsOf(definition.Module.Assembly));
+                if (isHidden && !hidden.Contains(definition))
+                {
+                    hidden.Add(definition);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether code in <paramref name="consumer"/> can access the internal members of <paramref name="owner"/>.
+        /// </summary>
+        /// <param name="consumer">The assembly that accesses the members.</param>
+        /// <param name="owner">The assembly that declares the members.</param>
+        /// <returns>True if both are the same assembly, or <paramref name="owner"/> grants <paramref name="consumer"/> InternalsVisibleTo.</returns>
+        private static bool CanSeeInternalsOf(this AssemblyDefinition consumer, AssemblyDefinition owner)
+        {
+            if (owner.Name.Name == consumer.Name.Name)
+            {
+                return true;
+            }
+
+            // InternalsVisibleTo takes "Name" or "Name, PublicKey=..."; only the simple name matters here.
+            return owner.CustomAttributes.Any(attribute =>
+                attribute.AttributeType.FullName == typeof(System.Runtime.CompilerServices.InternalsVisibleToAttribute).FullName &&
+                attribute.ConstructorArguments.Count == 1 &&
+                attribute.ConstructorArguments[0].Value is string friend &&
+                friend.Split(',')[0].Trim() == consumer.Name.Name);
+        }
+
+        /// <summary>
         /// Checks a generic method instantiation against the generic constraints of the method it instantiates.
         /// Mono does not enforce these on the calls codegen emits, but CoreCLR does, and it rejects the entire
         /// calling method if any single call in it violates them.
@@ -505,14 +560,191 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             }
         }
 
+        /// <summary>
+        /// Finds the starting index of a method signature declaration
+        /// </summary>
+        /// <param name="line">The line of text to scan</param>
+        /// <param name="name">The name of the method to search for</param>
+        /// <returns>The starting index of the signature declaration if a declaration was found; otherwise -1</returns>
+        private static int IndexOfSignature(string line, string name)
+        {
+            var column = line.IndexOf(name, StringComparison.Ordinal);
+            while (column >= 0)
+            {
+                // Skip any whitespace between the name and what follows it
+                var end = column + name.Length;
+                while (end < line.Length && char.IsWhiteSpace(line[end]))
+                {
+                    end++;
+                }
+                if (end < line.Length && (line[end] == '(' || line[end] == '<'))
+                {
+                    return column;
+                }
+
+                // Check if there's a next match
+                column = line.IndexOf(name, column + 1, StringComparison.Ordinal);
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// Finds the line of <paramref name="method"/>'s signature declaration.
+        /// </summary>
+        /// <returns>The sequence point, or null if the method has no debug information.</returns>
+        public static SequencePoint GetSignatureLocation(this MethodDefinition method)
+        {
+            // The SourceLocation is the first line of the method body.
+            var bodyPoint = method.GetSourceLocation();
+            if (bodyPoint == null)
+            {
+                return method.DeclaringType.GetSourceLocation();
+            }
+
+            try
+            {
+                var lines = File.ReadAllLines(bodyPoint.Document.Url);
+                var startIndex = Math.Min(bodyPoint.StartLine, lines.Length) - 1;
+                // Work backwards from the first line in the method body
+                for (var i = startIndex; i >= 0; i--)
+                {
+                    // If this line includes the method definition: FooBar(
+                    var column = IndexOfSignature(lines[i], method.Name);
+                    if (column < 0)
+                    {
+                        // A line above the body that ends a statement or block belongs to the previous member.
+                        if (i < startIndex && (lines[i].Contains(';') || lines[i].Contains('}')))
+                        {
+                            break;
+                        }
+                        continue;
+                    }
+
+                    return new SequencePoint(method.Body.Instructions[0], bodyPoint.Document)
+                    {
+                        StartLine = i + 1,
+                        EndLine = i + 1,
+                        StartColumn = column + 1,
+                        EndColumn = column + 1 + method.Name.Length,
+                    };
+                }
+            }
+            catch (Exception)
+            {
+                // We don't need to do anything on failure
+            }
+            // If we didn't find anything else, just use the first line of the method body that we found earlier
+            return bodyPoint;
+        }
+
+        /// <summary>
+        /// Finds the first visible line of <paramref name="method"/> in the user's source, so a diagnostic or log can point at it.
+        /// </summary>
+        /// <returns>The sequence point, or null if the method has no debug information.</returns>
+        public static SequencePoint GetSourceLocation(this MethodDefinition method)
+        {
+            foreach (var sequencePoint in method.DebugInformation.SequencePoints)
+            {
+                if (sequencePoint.IsHidden)
+                {
+                    continue;
+                }
+                return sequencePoint;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the first visible line of any method in <paramref name="type"/>, so a diagnostic or log can at least open the right file.
+        /// </summary>
+        /// <returns>The sequence point, or null if the type has no debug information.</returns>
+        public static SequencePoint GetSourceLocation(this TypeDefinition type)
+        {
+            foreach (var method in type.Methods)
+            {
+                if (!method.HasBody)
+                {
+                    continue;
+                }
+
+                var sequencePoint = method.GetSourceLocation();
+                if (sequencePoint != null)
+                {
+                    return sequencePoint;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds where <paramref name="field"/> is declared in the user's source. Fields carry no debug information of their own,
+        /// but a field initializer is compiled into the constructor with a sequence point on the declaration, so this looks for
+        /// the store to the field there. Falls back to <see cref="GetSourceLocation(TypeDefinition)"/> when the field has no initializer.
+        /// </summary>
+        /// <returns>The sequence point, or null if the declaring type has no debug information.</returns>
+        public static SequencePoint GetSourceLocation(this FieldDefinition field)
+        {
+            var storeOpCode = field.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld;
+            foreach (var method in field.DeclaringType.Methods)
+            {
+                if (!method.IsConstructor || method.IsStatic != field.IsStatic || !method.HasBody)
+                {
+                    continue;
+                }
+                SequencePoint lastVisible = null;
+                foreach (var instruction in method.Body.Instructions)
+                {
+                    // Store the last visible line as the line we're looking for might not be visible
+                    // Once we find the line we're looking for we want to return the last visible line
+                    var sequencePoint = method.DebugInformation.GetSequencePoint(instruction);
+                    if (sequencePoint != null && !sequencePoint.IsHidden)
+                    {
+                        lastVisible = sequencePoint;
+                    }
+
+                    // We're only looking for the store op codes on fields
+                    var fieldReference = instruction.Operand as FieldReference;
+                    if (instruction.OpCode != storeOpCode || fieldReference == null)
+                    {
+                        continue;
+                    }
+
+                    // If this is the field we're looking for and we have a visible instruction, then we've found what we're looking for!
+                    if (fieldReference.Resolve() == field && lastVisible != null)
+                    {
+                        return lastVisible;
+                    }
+                }
+            }
+
+            return field.DeclaringType.GetSourceLocation();
+        }
+
+        /// <summary>
+        /// Finds where <paramref name="member"/> is in the user's source. Called only when a diagnostic or log needs a location,
+        /// because finding a field's line scans its constructor's IL.
+        /// </summary>
+        /// <returns>The sequence point, or null if there is no debug information.</returns>
+        public static SequencePoint GetSourceLocation(this IMemberDefinition member)
+        {
+            return member switch
+            {
+                MethodDefinition method => method.GetSourceLocation(),
+                FieldDefinition field => field.GetSourceLocation(),
+                TypeDefinition type => type.GetSourceLocation(),
+                _ => null,
+            };
+        }
+
         public static void AddError(this List<DiagnosticMessage> diagnostics, string message)
         {
             diagnostics.AddError((SequencePoint)null, message);
         }
 
-        public static void AddError(this List<DiagnosticMessage> diagnostics, MethodDefinition methodDefinition, string message)
+        public static void AddError(this List<DiagnosticMessage> diagnostics, IMemberDefinition member, string message)
         {
-            diagnostics.AddError(methodDefinition.DebugInformation.SequencePoints.FirstOrDefault(), message);
+            diagnostics.AddError(member?.GetSourceLocation(), message);
         }
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, SequencePoint sequencePoint, string message)
@@ -532,9 +764,9 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
             diagnostics.AddWarning((SequencePoint)null, message);
         }
 
-        public static void AddWarning(this List<DiagnosticMessage> diagnostics, MethodDefinition methodDefinition, string message)
+        public static void AddWarning(this List<DiagnosticMessage> diagnostics, IMemberDefinition member, string message)
         {
-            diagnostics.AddWarning(methodDefinition.DebugInformation.SequencePoints.FirstOrDefault(), message);
+            diagnostics.AddWarning(member?.GetSourceLocation(), message);
         }
 
         public static void AddWarning(this List<DiagnosticMessage> diagnostics, SequencePoint sequencePoint, string message)

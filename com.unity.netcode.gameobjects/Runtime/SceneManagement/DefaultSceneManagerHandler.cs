@@ -215,13 +215,25 @@ namespace Unity.Netcode
                 var scenHandleEntries = SceneNameToSceneHandles[sceneEntry.Key];
                 foreach (var sceneHandleEntry in scenHandleEntries)
                 {
-                    if (!sceneHandleEntry.Value.IsAssigned)
+                    if (sceneHandleEntry.Value.IsAssigned)
                     {
-                        if (sceneManager.VerifySceneBeforeUnloading == null || sceneManager.VerifySceneBeforeUnloading.Invoke(sceneHandleEntry.Value.Scene))
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Don't unload the scene if the user-configured handler says to keep it loaded
+                        if (sceneManager.VerifySceneBeforeUnloading != null && !sceneManager.VerifySceneBeforeUnloading.Invoke(sceneHandleEntry.Value.Scene))
                         {
-                            m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                            continue;
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
+
+                    m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
                 }
             }
             foreach (var sceneToUnload in m_ScenesToUnload)
@@ -379,18 +391,22 @@ namespace Unity.Netcode
                     // If using scene verification
                     if (sceneManager.VerifySceneBeforeLoading != null)
                     {
-                        // Determine if we should take this scene into consideration
-                        if (!sceneManager.VerifySceneBeforeLoading.Invoke(scene.buildIndex, scene.name, LoadSceneMode.Additive))
+                        try
                         {
-                            continue;
+                            // Determine if we should take this scene into consideration
+                            if (!sceneManager.VerifySceneBeforeLoading.Invoke(scene.buildIndex, scene.name, LoadSceneMode.Additive))
+                            {
+                                continue;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogException(ex);
                         }
                     }
 
                     // If the scene is not already in the ScenesLoaded list, then add it
-                    if (!sceneManager.ScenesLoaded.ContainsKey(scene.handle))
-                    {
-                        sceneManager.ScenesLoaded.Add(scene.handle, scene);
-                    }
+                    sceneManager.ScenesLoaded.TryAdd(scene.handle, scene);
                 }
             }
             // Set the client synchronization mode

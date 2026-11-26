@@ -112,10 +112,25 @@ namespace Unity.Netcode
             }
             else
             {
+#if UNITY_ENTITIES_WORLD_LIFETIME_CHANGES
+                // Entities creates the default world and all its systems before calling the bootstrap, so a local world
+                // here would run a second copy of every system against a world that holds none of the scene's entities.
+                LastCreatedWorld = World.DefaultGameObjectInjectionWorld;
+#else
                 LastCreatedWorld = CreateLocalWorld("LocalWorld");
+#endif
             }
 
-            OnInitialized?.Invoke();
+            // Always wrap events that can invoke user script in a try-catch to assure any
+            // proceeding script is still executed.
+            try
+            {
+                OnInitialized?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             return true;
         }

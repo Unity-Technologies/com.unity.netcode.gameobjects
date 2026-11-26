@@ -185,7 +185,7 @@ namespace Unity.Netcode.GameObjects.Editor.Cli
             ValidateTimeout(timeoutSeconds);
             if (minClients < 0)
             {
-                throw new ArgumentException("min_clients must be 0 or more.");
+                throw new ArgumentException("min-clients must be 0 or more.");
             }
             if (!EditorApplication.isPlaying)
             {

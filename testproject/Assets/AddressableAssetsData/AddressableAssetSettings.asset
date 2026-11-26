@@ -13,9 +13,6 @@ MonoBehaviour:
   m_Name: AddressableAssetSettings
   m_EditorClassIdentifier: 
   m_DefaultGroup: 93aa504d1b753cb41a8a779ae63f5795
-  m_currentHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
   m_ExtractTypeTreeData: 0
   m_DisableWriteTypeTree: 0
   m_OptimizeCatalogSize: 0
@@ -36,6 +33,7 @@ MonoBehaviour:
     m_AssemblyName: Unity.Addressables
     m_ClassName: UnityEngine.AddressableAssets.ResourceProviders.NativeContentAssetEntryProvider
   m_ArchiveContentDirectories: 1
+  m_ContentDirectoryArchiveMode: 2
   m_TargetArchiveSizeInMB: 2000
   m_IgnoreUnsupportedFilesInBuild: 0
   m_UniqueBundleIds: 0
@@ -130,4 +128,5 @@ MonoBehaviour:
   m_ActiveProfileId: b7ba5fc73af2a49449023b732cdf652d
   m_ContentDirectoryCatalogNameMigrated: 1
   m_CatalogFormatMigrated: 1
+  m_ContentDirectoryArchiveModeMigrated: 1
   m_CrcCachedBundleFlagMigrated: 1

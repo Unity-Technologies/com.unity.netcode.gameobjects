@@ -138,20 +138,18 @@ namespace Unity.Netcode.GameObjects.Timing
         private void UpdateCache()
         {
             double d = m_TimeSec / m_TickInterval;
-            m_CachedTick = (int)d;
-            // This check is needed due to double division imprecision of large numbers
-            if ((d - m_CachedTick) >= 0.999999999999)
+            // Floor keeps the offset positive for negative time.
+            double tick = Math.Floor(d);
+            double fraction = d - tick;
+            // Double division imprecision can land a whole tick just below its value (0.3 / 0.1 = 2.9999999999999996),
+            // and the error grows with the tick count.
+            if (fraction >= 1d - Math.Max(1e-12, Math.Abs(d) * 1e-13))
             {
-                m_CachedTick++;
+                tick++;
+                fraction = 0d;
             }
-            m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
-
-            // This handles negative time, decreases tick by 1 and makes offset positive.
-            if (m_CachedTick < 0 && m_CachedTickOffset != 0d)
-            {
-                m_CachedTick--;
-                m_CachedTickOffset = m_TickInterval + m_CachedTickOffset;
-            }
+            m_CachedTick = (int)tick;
+            m_CachedTickOffset = fraction * m_TickInterval;
         }
 
         /// <summary>

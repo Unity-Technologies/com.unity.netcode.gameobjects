@@ -1,6 +1,7 @@
 #if UNIFIED_NETCODE
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -17,6 +18,7 @@ namespace Unity.Netcode.RuntimeTests
     /// - A hybrid prefab instance spawned during a session that started without hybrid prefabs. It is not spawned.<br />
     /// - A hybrid player prefab counts toward hybrid mode before the session starts, so distributed authority rejects it.<br />
     /// - A NetworkPrefab override with a hybrid source or target prefab, in any topology. The entry is ignored.<br />
+    /// - A hybrid instance created before the session starts. With developer logging it warns, and a non-hybrid instance does not.<br />
     /// </summary>
     /// <remarks>
     /// The fixture's managers are not started. Each test creates its own <see cref="NetworkManager"/> that registers only the prefabs it needs.
@@ -213,6 +215,58 @@ namespace Unity.Netcode.RuntimeTests
             prefabList.Add(new NetworkPrefab() { Prefab = m_Prefab });
             Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(m_Prefab), "The prefab added to the list was not registered!");
             UnityEngine.Object.Destroy(prefabList);
+        }
+
+        /// <summary>
+        /// Validates that only a hybrid instance created before the session starts warns that it was not registered.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator PreSessionInstanceWarnsOnlyWhenHybrid()
+        {
+            var networkManager = CreateNetworkManager(NetworkTopologyTypes.ClientServer);
+            var cases = new (GameObject Prefab, LogLevel LogLevel, bool ExpectWarning)[]
+            {
+                (m_Prefab, LogLevel.Developer, false),
+                (m_HybridPrefab, LogLevel.Normal, false),
+                (m_HybridPrefab, LogLevel.Developer, true),
+            };
+
+            var warnings = new List<string>();
+            Application.LogCallback onLogMessage = (message, stackTrace, logType) =>
+            {
+                if (logType == LogType.Warning && message.Contains(NetworkObject.NotRegisteredWithoutSessionWarning))
+                {
+                    warnings.Add(message);
+                }
+            };
+            Application.logMessageReceived += onLogMessage;
+            try
+            {
+                foreach (var testCase in cases)
+                {
+                    warnings.Clear();
+                    networkManager.LogLevel = testCase.LogLevel;
+                    var instance = UnityEngine.Object.Instantiate(testCase.Prefab).GetComponent<NetworkObject>();
+                    instance.NetworkManagerOwner = networkManager;
+                    var instanceName = instance.name;
+                    var caseName = $"{instanceName}][{testCase.LogLevel}";
+
+                    // Start, where the instance is registered, runs on the next frame.
+                    yield return null;
+                    UnityEngine.Object.Destroy(instance.gameObject);
+                    yield return null;
+
+                    Assert.AreEqual(testCase.ExpectWarning ? 1 : 0, warnings.Count, $"[{caseName}] Unexpected number of not registered warnings!");
+                    if (testCase.ExpectWarning)
+                    {
+                        StringAssert.Contains(instanceName, warnings[0], $"[{caseName}] The warning does not name the instance!");
+                    }
+                }
+            }
+            finally
+            {
+                Application.logMessageReceived -= onLogMessage;
+            }
         }
 
         /// <summary>
