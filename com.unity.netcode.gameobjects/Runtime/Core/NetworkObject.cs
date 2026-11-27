@@ -4208,6 +4208,8 @@ namespace Unity.Netcode
         [HideInInspector]
         internal NetworkObjectBridge NetworkObjectBridge;
 
+        internal const string NotRegisteredWithoutSessionWarning = "Did not register because there is no session in progress!";
+
         private void InitGhost()
         {
             // Note: If hybrid prefabs are created prior to any NetworkManager instances,
@@ -4220,19 +4222,18 @@ namespace Unity.Netcode
                 return;
             }
 
+            if (!HasGhost || !NetworkObjectBridge || GhostObject.IsPrefab())
+            {
+                // Nothing to register
+                return;
+            }
 
             if (!NetworkManager.IsListening)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.LogWarning($"[{nameof(NetworkObject)}] Did not register because there is no session in progress!");
+                    Debug.LogWarning($"[{nameof(NetworkObject)}][{name}] {NotRegisteredWithoutSessionWarning}");
                 }
-                return;
-            }
-
-            if (!HasGhost || !NetworkObjectBridge || GhostObject.IsPrefab())
-            {
-                // Nothing to register
                 return;
             }
 

@@ -103,6 +103,11 @@
         },
         {
             "name": "Unity",
+            "expression": "7000.0.0a12",
+            "define": "UNITY_ENTITIES_WORLD_LIFETIME_CHANGES"
+        },
+        {
+            "name": "Unity",
             "expression": "[6000.4.0b5,6000.5.0a1)",
             "define": "NGO_FINDOBJECTS_NOSORTING"
         },

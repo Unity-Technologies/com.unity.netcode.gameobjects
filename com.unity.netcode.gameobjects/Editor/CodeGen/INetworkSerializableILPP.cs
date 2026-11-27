@@ -80,11 +80,11 @@ namespace Unity.Netcode.GameObjects.Editor.CodeGen
                         {
                             if (type.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                             {
-                                m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types may not implement {nameof(INetworkSerializable)} - choose one or the other.");
+                                m_Diagnostics.AddError(type, $"{nameof(INetworkSerializeByMemcpy)} types may not implement {nameof(INetworkSerializable)} - choose one or the other.");
                             }
                             if (!type.IsValueType)
                             {
-                                m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types must be unmanaged types.");
+                                m_Diagnostics.AddError(type, $"{nameof(INetworkSerializeByMemcpy)} types must be unmanaged types.");
                             }
                         }
                     }
