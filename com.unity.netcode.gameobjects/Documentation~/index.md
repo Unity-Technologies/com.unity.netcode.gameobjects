@@ -6,7 +6,7 @@ Netcode for GameObjects is a high-level networking library built for Unity for y
 
 Netcode for GameObjects supports the following versions:
 
-- Unity 6.0+ and later
+- Unity 6.7 or later
 - Mono and IL2CPP [Scripting Backends](https://docs.unity3d.com/Manual/scripting-backends.html)
 
 Netcode for GameObjects supports the following platforms:

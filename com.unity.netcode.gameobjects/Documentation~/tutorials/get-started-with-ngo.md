@@ -10,9 +10,9 @@ Before you begin, you need the following:
 
 - An active Unity account with a valid license.
 - The [Unity Hub](https://unity.com/download).
-- A supported version of the Unity Editor. Refer to the [Netcode for GameObjects requirements](https://docs-multiplayer.unity3d.com/netcode/current/installation).
+- A supported version of the Unity Editor. Refer to the [Netcode for GameObjects requirements](../install.md#compatibility).
 
-Before continuing, create a new project using Unity Editor version 2022.3 or later.
+Before continuing, create a new project using Unity Editor version 6.7 or later.
 
 ### Create an `Assets/Scripts/` folder
 
@@ -25,7 +25,7 @@ This is where you'll keep all your scripts as part of this Hello World project.
 
 ## Install Netcode for GameObjects
 
-Refer to [Install Netcode for GameObjects](https://docs-multiplayer.unity3d.com/netcode/current/installation).
+Refer to [Install Netcode for GameObjects](../install.md).
 
 ## Add the basic components
 
