@@ -12,7 +12,7 @@ Before you begin, you need the following:
 
 ### Compatibility
 
-- Unity Editor version 2021.3 or later
+- Unity Editor version 6.7 or later
 - Mono and IL2CPP [scripting backends](https://docs.unity3d.com/Manual/scripting-backends.html)
 
 ### Supported platforms
