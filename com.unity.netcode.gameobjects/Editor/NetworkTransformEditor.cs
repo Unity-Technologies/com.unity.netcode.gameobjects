@@ -101,7 +101,7 @@ namespace Unity.Netcode.GameObjects.Editor
         private void SetGUIActive(bool active = true)
         {
 #if UNIFIED_NETCODE
-            if (Application.IsPlaying(m_NetworkObject) && m_NetworkObject.HasGhost)
+            if (m_NetworkObject != null && m_NetworkObject.HasGhost && Application.IsPlaying(m_NetworkObject))
             {
                 GUI.enabled = false;
             }
@@ -122,8 +122,9 @@ namespace Unity.Netcode.GameObjects.Editor
             var networkTransform = target as NetworkTransform;
 
 #if UNIFIED_NETCODE
-            m_NetworkObject = networkTransform.GetComponent<NetworkObject>();
-            var hasGhost = m_NetworkObject.HasGhost;
+            // NetworkBehaviours can be nested anywhere beneath their NetworkObject
+            m_NetworkObject = networkTransform.NetworkObject;
+            var hasGhost = m_NetworkObject != null && m_NetworkObject.HasGhost;
             SetGUIActive();
 #else
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -333,7 +334,7 @@ namespace Unity.Netcode.GameObjects.Editor
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
-            if (hasGhost && networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
+            if (!hasGhost && networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n " +
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);

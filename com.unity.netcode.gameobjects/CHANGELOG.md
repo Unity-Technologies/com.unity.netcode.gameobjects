@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a `NetworkTransform` component placed on the child of the `NetworkObject` component failed to render the inspector. (#4261)
 - Issue where every `NetworkObject` that started before a session logged a "Did not register because there is no session in progress!" warning when `NetworkManager.LogLevel` was `Developer`. Only `GhostObject` instances log it now. (#4245)
 - Fixed a NullReferenceException that would be thrown if a MonoBehaviour derived from NetworkManager defines it's own Awake or OnEnable. (#4244)
 - Issue where the unified bootstrap created a second world that ran a duplicate of every default system next to the default world. (#4243)
